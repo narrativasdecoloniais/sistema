@@ -1,0 +1,222 @@
+@use "../../styles/tokens-publico" as pub;
+
+.pagina {
+  @include pub.tokens;
+  min-height: 100vh;
+  background: var(--papel);
+  color: var(--tinta);
+  padding: 3rem 2rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.tituloPagina {
+  font-family: var(--font-stencil), sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.aviso {
+  font-size: 0.85rem;
+  color: var(--barro);
+  font-weight: 700;
+  margin: 0;
+}
+
+.notaBloco {
+  font-size: 0.8rem;
+  color: var(--tinta);
+  opacity: 0.65;
+  margin: 0;
+}
+
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  border-top: 1px solid var(--areia);
+  padding-top: 2rem;
+
+  h2 {
+    font-size: 1.1rem;
+    color: var(--tinta);
+    margin: 0;
+  }
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.celulaCor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--areia);
+  border-radius: 4px;
+}
+
+.rotuloCor {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  opacity: 0.6;
+}
+
+.linhaAmostras {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.carimboCaixaPequena,
+.carimboCaixaMedia,
+.carimboCaixaGrande {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    position: relative;
+    z-index: 1;
+    font-size: 0.7rem;
+    color: var(--tinta);
+  }
+}
+
+.carimboCaixaPequena {
+  width: 80px;
+  height: 40px;
+}
+
+.carimboCaixaMedia {
+  width: 130px;
+  height: 56px;
+}
+
+.carimboCaixaGrande {
+  width: 200px;
+  height: 72px;
+}
+
+.texturaCaixaPequena,
+.texturaCaixaMedia,
+.texturaCaixaGrande {
+  position: relative;
+  background: var(--areia);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.texturaCaixaPequena {
+  width: 80px;
+  height: 80px;
+}
+
+.texturaCaixaMedia {
+  width: 140px;
+  height: 140px;
+}
+
+.texturaCaixaGrande {
+  width: 220px;
+  height: 140px;
+}
+
+.divisorAmostraCurto {
+  width: 80px;
+}
+
+.divisorAmostraMedio {
+  width: 160px;
+}
+
+.divisorAmostraLongo {
+  width: 100%;
+}
+
+.divisorAmostraVertical {
+  height: 60px;
+  display: flex;
+}
+
+.opcoesMarcacao {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.opcaoMarcacao {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--areia);
+  border-radius: 6px;
+
+  h3 {
+    font-size: 0.95rem;
+    color: var(--barro);
+    margin: 0 0 0.25rem;
+  }
+}
+
+.marcador {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.marcadorContagem {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.marcadorBuzio {
+  color: var(--buzio);
+}
+
+.marcadorTitulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+.entrarComCarimbo,
+.seloComCarimbo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  color: var(--tinta);
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+
+  &:hover {
+    color: var(--buzio);
+  }
+}
+
+.seloComCarimbo {
+  color: var(--barro);
+}
