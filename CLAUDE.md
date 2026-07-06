@@ -55,7 +55,7 @@ Pequenos e frequentes, mensagens em português, estilo Conventional Commits: `fe
 
 **Fase 1 (até dez/2026 — V edição):**
 
-1. Cadastro, login e autenticação — **em andamento**
+1. Cadastro, login e autenticação — **concluído**
 2. Painel administrativo (edições e atividades) — não iniciado
 3. Inscrições (vagas, lista de espera, conflito de horários) — não iniciado
 4. Credenciamento por QR code — não iniciado
