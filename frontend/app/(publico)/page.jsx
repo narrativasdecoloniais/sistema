@@ -1,58 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
-import { RiCalendarEventLine, RiAwardLine, RiFileUploadLine } from "@remixicon/react";
+import { motion, useReducedMotion } from "motion/react";
+import { RiUserAddLine, RiCalendarEventLine, RiCompass3Line, RiBook2Line } from "@remixicon/react";
 import Logo from "@/components/publico/Logo";
+import Buzio from "@/components/publico/Buzio";
 import styles from "./page.module.scss";
 
-const blocos = [
-  {
-    icone: RiCalendarEventLine,
-    titulo: "Programação",
-    texto:
-      "Mesas, oficinas e rodas de conversa ao longo de toda a edição — em breve com inscrições por atividade.",
-  },
-  {
-    icone: RiAwardLine,
-    titulo: "Certificação",
-    texto:
-      "Participantes credenciados recebem certificado de participação emitido pela organização do evento.",
-  },
-  {
-    icone: RiFileUploadLine,
-    titulo: "Submissão de trabalhos",
-    texto: "Em breve abriremos a chamada para submissão de trabalhos para esta edição.",
-  },
-];
-
-const itemVariants = {
-  oculto: { opacity: 0, y: 24 },
-  visivel: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+const secaoVariants = {
+  oculto: { opacity: 0, y: 32 },
+  visivel: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 export default function PaginaInicial() {
+  const reduzMovimento = useReducedMotion();
+
   return (
-    <main>
-      <section className={styles.hero}>
-        <motion.div
-          className={styles.seloWrapper}
-          initial="oculto"
-          animate="visivel"
-          variants={itemVariants}
-        >
-          <motion.span
-            className={styles.selo}
-            animate={{ rotate: [-8, -4, -8] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            V EDIÇÃO 2026
-          </motion.span>
-        </motion.div>
+    <>
+      <header id="hero-landing" className={styles.hero}>
+        <Link href="/login" className={styles.entrarCarimbo}>
+          Entrar
+        </Link>
 
         <motion.div
           className={styles.logoWrapper}
-          initial={{ opacity: 0, scale: 0.92 }}
+          initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
         >
@@ -63,56 +35,108 @@ export default function PaginaInicial() {
           Narrativas Interculturais, Decoloniais e Antirracistas em Educação
         </h1>
 
-        <motion.hr
-          className={styles.linha}
-          initial={{ opacity: 0, scaleX: 0 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        />
+        <p className={styles.legendas}>
+          <span>V Edição</span>
+          <span>Data a confirmar</span>
+          <span>UnB · Brasília-DF</span>
+          <span>Realização: GPDES/UnB</span>
+        </p>
 
-        <motion.p
-          className={styles.subtitulo}
-          initial="oculto"
-          animate="visivel"
-          variants={itemVariants}
-          transition={{ delay: 0.7 }}
-        >
+        <a href="#programacao" className={styles.convite}>
+          <span className={`${styles.conviteTexto} stencil`}>Programação ↓</span>
+          <motion.span
+            className={styles.conviteBuzio}
+            animate={reduzMovimento ? { y: 0 } : { y: [0, 6, 0] }}
+            transition={
+              reduzMovimento ? { duration: 0 } : { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
+            }
+          >
+            <Buzio className={styles.buzioIcone} />
+          </motion.span>
+        </a>
+      </header>
+
+      <motion.section
+        id="inscricoes"
+        className={styles.secao}
+        initial="oculto"
+        whileInView="visivel"
+        viewport={{ once: true, margin: "-80px" }}
+        variants={secaoVariants}
+      >
+        <div className={styles.secaoCabecalho}>
+          <RiUserAddLine className={styles.secaoIcone} />
+          <h2 className={styles.secaoTitulo}>Inscrições</h2>
+        </div>
+        <p className={styles.secaoTexto}>
           Um espaço de encontro entre pesquisadoras, pesquisadores, docentes,
           estudantes e comunidade para pensar educação a partir de outras
-          epistemologias. Promovido pelo GPDES/UnB.
-        </motion.p>
+          epistemologias.
+        </p>
+        <Link href="/cadastro" className={styles.cta}>
+          Inscreva-se
+        </Link>
+        <p className={styles.notaRodape}>
+          Participantes credenciados recebem certificado de participação
+          emitido pela organização do evento.
+        </p>
+      </motion.section>
 
-        <motion.div
-          initial="oculto"
-          animate="visivel"
-          variants={itemVariants}
-          transition={{ delay: 0.85 }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          className={styles.ctaWrapper}
-        >
-          <Link href="/cadastro" className={styles.cta}>
-            Inscreva-se
-          </Link>
-        </motion.div>
-      </section>
+      <motion.section
+        id="programacao"
+        className={styles.secao}
+        initial="oculto"
+        whileInView="visivel"
+        viewport={{ once: true, margin: "-80px" }}
+        variants={secaoVariants}
+      >
+        <div className={styles.secaoCabecalho}>
+          <RiCalendarEventLine className={styles.secaoIcone} />
+          <h2 className={styles.secaoTitulo}>Programação</h2>
+        </div>
+        <p className={styles.secaoTexto}>
+          Mesas, oficinas e rodas de conversa ao longo de toda a edição — em
+          breve com inscrições por atividade.
+        </p>
+      </motion.section>
 
-      <section className={styles.blocos}>
-        {blocos.map((bloco, indice) => (
-          <motion.div
-            key={bloco.titulo}
-            className={styles.bloco}
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5, delay: indice * 0.12 }}
-          >
-            <bloco.icone className={styles.blocoIcone} />
-            <h2 className={styles.blocoTitulo}>{bloco.titulo}</h2>
-            <p className={styles.blocoTexto}>{bloco.texto}</p>
-          </motion.div>
-        ))}
-      </section>
-    </main>
+      <motion.section
+        id="eixos"
+        className={styles.secao}
+        initial="oculto"
+        whileInView="visivel"
+        viewport={{ once: true, margin: "-80px" }}
+        variants={secaoVariants}
+      >
+        <div className={styles.secaoCabecalho}>
+          <RiCompass3Line className={styles.secaoIcone} />
+          <h2 className={styles.secaoTitulo}>Eixos</h2>
+        </div>
+        <p className={styles.secaoTexto}>
+          Os eixos temáticos desta edição serão anunciados em breve — cada um
+          vai organizar mesas, oficinas e rodas de conversa em torno de uma
+          pergunta comum sobre educação, interculturalidade e antirracismo.
+        </p>
+      </motion.section>
+
+      <motion.section
+        id="anais"
+        className={styles.secao}
+        initial="oculto"
+        whileInView="visivel"
+        viewport={{ once: true, margin: "-80px" }}
+        variants={secaoVariants}
+      >
+        <div className={styles.secaoCabecalho}>
+          <RiBook2Line className={styles.secaoIcone} />
+          <h2 className={styles.secaoTitulo}>Anais</h2>
+        </div>
+        <p className={styles.secaoTexto}>
+          Em breve abriremos a chamada para submissão de trabalhos desta
+          edição. Os anais das edições anteriores serão disponibilizados aqui
+          assim que organizados.
+        </p>
+      </motion.section>
+    </>
   );
 }

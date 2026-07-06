@@ -1,0 +1,104 @@
+.barra {
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.85rem 2rem;
+  background: var(--papel);
+  border-bottom: 1px solid var(--tinta);
+}
+
+.sobreposta {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+
+  &.oculta {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 0.2s ease;
+
+    &.oculta {
+      transform: none;
+    }
+  }
+}
+
+.emFluxo {
+  position: static;
+}
+
+.voltarTopo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.buzioIcone {
+  width: 18px;
+  height: 23px;
+  color: var(--buzio);
+}
+
+.ancoras {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+
+  li {
+    flex-shrink: 0;
+  }
+
+  a {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--tinta);
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--barro);
+      outline-offset: 3px;
+    }
+  }
+}
+
+.entrar {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  border: 1px solid var(--tinta);
+  padding: 0.4rem 0.9rem;
+  border-radius: 2px;
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--buzio);
+    color: var(--buzio);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}

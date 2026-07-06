@@ -1,8 +1,63 @@
 .footer {
-  padding: 2rem;
+  padding: 3rem 2rem 2rem;
   border-top: 2px solid var(--tinta);
   background: var(--areia);
   color: var(--tinta);
-  font-size: 0.85rem;
+}
+
+.colunas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2rem;
+  max-width: 960px;
+  margin: 0 auto 2rem;
+}
+
+.coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tituloColuna {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  a {
+    font-size: 0.9rem;
+    color: var(--tinta);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.emBreve {
+  font-size: 0.9rem;
+  margin: 0;
+  opacity: 0.6;
+}
+
+.creditos {
+  max-width: 960px;
+  margin: 0 auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(32, 25, 20, 0.15);
+  font-size: 0.8rem;
   text-align: center;
+  opacity: 0.75;
 }

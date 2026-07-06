@@ -1,12 +1,38 @@
 .hero {
   position: relative;
-  padding: 5rem 2rem 6rem;
+  min-height: 100svh;
+  padding: 5rem 2rem 4rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  gap: 2rem;
-  overflow: hidden;
+  gap: 1.75rem;
+}
+
+.entrarCarimbo {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--tinta);
+  border-radius: 2px;
+  color: var(--tinta);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--buzio);
+    color: var(--buzio);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
 }
 
 .logoWrapper {
@@ -14,35 +40,13 @@
   max-width: 560px;
   display: flex;
   justify-content: center;
-}
 
-.seloWrapper {
-  position: absolute;
-  top: 2.5rem;
-  right: 3rem;
-
-  @media (max-width: 720px) {
-    display: none;
+  @media (min-width: 900px) {
+    margin-right: 8%;
   }
 }
 
-.selo {
-  width: 96px;
-  height: 96px;
-  border: 2px solid var(--barro);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--barro);
-  text-align: center;
-  padding: 0.5rem;
-}
-
-// visível apenas para leitores de tela — a logo animada é decorativa (aria-hidden)
+// visível apenas para leitores de tela — a logo já contém o nome do evento
 .srOnly {
   position: absolute;
   width: 1px;
@@ -55,26 +59,97 @@
   border: 0;
 }
 
-.subtitulo {
-  max-width: 620px;
-  font-size: 1.05rem;
+.legendas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  opacity: 0.7;
+}
+
+.convite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  color: var(--tinta);
+  text-decoration: none;
+
+  &:hover .conviteTexto {
+    color: var(--buzio);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 4px;
+  }
+}
+
+.conviteTexto {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+.conviteBuzio {
+  display: block;
+}
+
+.buzioIcone {
+  width: 14px;
+  height: 18px;
+  color: var(--buzio);
+}
+
+.secao {
+  padding: 4rem 2rem;
+  max-width: 720px;
+  margin: 0 auto;
+  border-top: 1px solid var(--areia);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.secaoCabecalho {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.secaoIcone {
+  width: 24px;
+  height: 24px;
+  color: var(--barro);
+}
+
+.secaoTitulo {
+  font-size: 1.3rem;
+  color: var(--barro);
+}
+
+.secaoTexto {
+  font-size: 1rem;
   color: var(--tinta);
   opacity: 0.85;
+  line-height: 1.7;
+}
+
+.notaRodape {
+  font-size: 0.85rem;
+  color: var(--tinta);
+  opacity: 0.65;
   line-height: 1.6;
 }
 
-.linha {
-  width: 120px;
-  height: 3px;
-  background: var(--ocre);
-  border: none;
-}
-
-.ctaWrapper {
-  display: inline-block;
-}
-
 .cta {
+  align-self: flex-start;
   display: inline-block;
   padding: 0.9rem 2rem;
   background: var(--barro);
@@ -87,43 +162,9 @@
   &:hover {
     opacity: 0.9;
   }
-}
 
-.blocos {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1px;
-  background: var(--tinta);
-  border-top: 2px solid var(--tinta);
-  border-bottom: 2px solid var(--tinta);
-}
-
-.bloco {
-  background: var(--areia);
-  padding: 2.5rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-
-  &:nth-child(even) {
-    background: var(--papel);
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
   }
-}
-
-.blocoIcone {
-  width: 28px;
-  height: 28px;
-  color: var(--barro);
-}
-
-.blocoTitulo {
-  font-size: 1.1rem;
-  color: var(--barro);
-}
-
-.blocoTexto {
-  font-size: 0.9rem;
-  color: var(--tinta);
-  opacity: 0.85;
-  line-height: 1.6;
 }
