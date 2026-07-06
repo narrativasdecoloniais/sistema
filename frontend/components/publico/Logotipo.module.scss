@@ -1,0 +1,70 @@
+.logotipo {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: var(--tinta);
+  user-select: none;
+}
+
+.linhaEspalhada {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.linhaTopo {
+  font-size: clamp(0.65rem, 1.3vw, 1.05rem);
+}
+
+.linhaTopo + .linhaTopo {
+  margin-top: 0.2em;
+}
+
+.linhaBase {
+  font-size: clamp(0.5rem, 0.95vw, 0.8rem);
+  margin-top: 0.4em;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  justify-items: center;
+  font-family: var(--font-stencil), sans-serif;
+  font-size: clamp(2.2rem, 8.5vw, 5.5rem);
+  line-height: 1;
+  margin: 0.35em 0;
+}
+
+.celula {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.grao {
+  width: 55%;
+  height: 55%;
+  color: var(--ocre);
+}
+
+// versão compacta usada no header
+.pequena {
+  .linhaTopo {
+    font-size: clamp(0.32rem, 0.6vw, 0.42rem);
+  }
+
+  .grade {
+    font-size: clamp(1rem, 3.2vw, 1.4rem);
+    margin: 0.15em 0;
+  }
+
+  .linhaBase {
+    font-size: clamp(0.24rem, 0.45vw, 0.32rem);
+    margin-top: 0.2em;
+  }
+}

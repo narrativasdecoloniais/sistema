@@ -1,49 +1,112 @@
+"use client";
+
 import Link from "next/link";
-import Logo from "@/components/publico/Logo";
+import { motion } from "motion/react";
+import { RiCalendarEventLine, RiAwardLine, RiFileUploadLine } from "@remixicon/react";
+import Logotipo from "@/components/publico/Logotipo";
 import styles from "./page.module.scss";
+
+const blocos = [
+  {
+    icone: RiCalendarEventLine,
+    titulo: "Programação",
+    texto:
+      "Mesas, oficinas e rodas de conversa ao longo de toda a edição — em breve com inscrições por atividade.",
+  },
+  {
+    icone: RiAwardLine,
+    titulo: "Certificação",
+    texto:
+      "Participantes credenciados recebem certificado de participação emitido pela organização do evento.",
+  },
+  {
+    icone: RiFileUploadLine,
+    titulo: "Submissão de trabalhos",
+    texto: "Em breve abriremos a chamada para submissão de trabalhos para esta edição.",
+  },
+];
+
+const itemVariants = {
+  oculto: { opacity: 0, y: 24 },
+  visivel: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
 
 export default function PaginaInicial() {
   return (
     <main>
       <section className={styles.hero}>
-        <span className={styles.selo}>V EDIÇÃO 2026</span>
-        <Logo tamanho="grande" />
-        <h1 className={`${styles.titulo} stencil`}>
+        <motion.div
+          className={styles.seloWrapper}
+          initial="oculto"
+          animate="visivel"
+          variants={itemVariants}
+        >
+          <motion.span
+            className={styles.selo}
+            animate={{ rotate: [-8, -4, -8] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            V EDIÇÃO 2026
+          </motion.span>
+        </motion.div>
+
+        <div className={styles.logoWrapper}>
+          <Logotipo tamanho="grande" animado />
+        </div>
+
+        <h1 className={styles.srOnly}>
           Narrativas Interculturais, Decoloniais e Antirracistas em Educação
         </h1>
-        <hr className={styles.linha} />
-        <p className={styles.subtitulo}>
+
+        <motion.hr
+          className={styles.linha}
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        />
+
+        <motion.p
+          className={styles.subtitulo}
+          initial="oculto"
+          animate="visivel"
+          variants={itemVariants}
+          transition={{ delay: 0.7 }}
+        >
           Um espaço de encontro entre pesquisadoras, pesquisadores, docentes,
           estudantes e comunidade para pensar educação a partir de outras
           epistemologias. Promovido pelo GPDES/UnB.
-        </p>
-        <Link href="/cadastro" className={styles.cta}>
-          Inscreva-se
-        </Link>
+        </motion.p>
+
+        <motion.div
+          initial="oculto"
+          animate="visivel"
+          variants={itemVariants}
+          transition={{ delay: 0.85 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+          className={styles.ctaWrapper}
+        >
+          <Link href="/cadastro" className={styles.cta}>
+            Inscreva-se
+          </Link>
+        </motion.div>
       </section>
 
       <section className={styles.blocos}>
-        <div className={styles.bloco}>
-          <h2 className={styles.blocoTitulo}>Programação</h2>
-          <p className={styles.blocoTexto}>
-            Mesas, oficinas e rodas de conversa ao longo de toda a edição —
-            em breve com inscrições por atividade.
-          </p>
-        </div>
-        <div className={styles.bloco}>
-          <h2 className={styles.blocoTitulo}>Certificação</h2>
-          <p className={styles.blocoTexto}>
-            Participantes credenciados recebem certificado de participação
-            emitido pela organização do evento.
-          </p>
-        </div>
-        <div className={styles.bloco}>
-          <h2 className={styles.blocoTitulo}>Submissão de trabalhos</h2>
-          <p className={styles.blocoTexto}>
-            Em breve abriremos a chamada para submissão de trabalhos para
-            esta edição.
-          </p>
-        </div>
+        {blocos.map((bloco, indice) => (
+          <motion.div
+            key={bloco.titulo}
+            className={styles.bloco}
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, delay: indice * 0.12 }}
+          >
+            <bloco.icone className={styles.blocoIcone} />
+            <h2 className={styles.blocoTitulo}>{bloco.titulo}</h2>
+            <p className={styles.blocoTexto}>{bloco.texto}</p>
+          </motion.div>
+        ))}
       </section>
     </main>
   );

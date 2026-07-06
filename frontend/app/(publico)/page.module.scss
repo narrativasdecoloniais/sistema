@@ -9,15 +9,22 @@
   overflow: hidden;
 }
 
-.logoHero {
+.logoWrapper {
   width: 100%;
   max-width: 560px;
 }
 
-.selo {
+.seloWrapper {
   position: absolute;
   top: 2.5rem;
   right: 3rem;
+
+  @media (max-width: 720px) {
+    display: none;
+  }
+}
+
+.selo {
   width: 96px;
   height: 96px;
   border: 2px solid var(--barro);
@@ -25,24 +32,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(-8deg);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--barro);
   text-align: center;
   padding: 0.5rem;
-
-  @media (max-width: 720px) {
-    display: none;
-  }
 }
 
-.titulo {
-  font-size: clamp(1.8rem, 4vw, 3rem);
-  color: var(--tinta);
-  max-width: 900px;
-  line-height: 1.3;
+// visível apenas para leitores de tela — a logo animada é decorativa (aria-hidden)
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .subtitulo {
@@ -58,6 +66,10 @@
   height: 3px;
   background: var(--ocre);
   border: none;
+}
+
+.ctaWrapper {
+  display: inline-block;
 }
 
 .cta {
@@ -94,6 +106,12 @@
   &:nth-child(even) {
     background: var(--papel);
   }
+}
+
+.blocoIcone {
+  width: 28px;
+  height: 28px;
+  color: var(--barro);
 }
 
 .blocoTitulo {
