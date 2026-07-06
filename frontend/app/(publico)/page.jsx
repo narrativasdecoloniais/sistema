@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { RiCalendarEventLine, RiAwardLine, RiFileUploadLine } from "@remixicon/react";
-import Logotipo from "@/components/publico/Logotipo";
+import Logo from "@/components/publico/Logo";
 import styles from "./page.module.scss";
 
 const blocos = [
@@ -50,9 +50,14 @@ export default function PaginaInicial() {
           </motion.span>
         </motion.div>
 
-        <div className={styles.logoWrapper}>
-          <Logotipo tamanho="grande" animado />
-        </div>
+        <motion.div
+          className={styles.logoWrapper}
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+        >
+          <Logo tamanho="grande" />
+        </motion.div>
 
         <h1 className={styles.srOnly}>
           Narrativas Interculturais, Decoloniais e Antirracistas em Educação
