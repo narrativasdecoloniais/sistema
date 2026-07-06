@@ -10,5 +10,8 @@
 
 .grande {
   max-width: min(620px, 100%);
-  max-height: 44svh;
+  // teto real = 100svh menos o espaço fixo do hero (padding + legendas +
+  // convite + gaps, ~210px), com 68svh como limite pra não ficar gigante
+  // em telas muito altas.
+  max-height: min(68svh, calc(100svh - 210px));
 }
