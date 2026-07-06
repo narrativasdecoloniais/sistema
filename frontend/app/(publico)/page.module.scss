@@ -37,13 +37,9 @@
 
 .logoWrapper {
   width: 100%;
-  max-width: 560px;
+  max-width: 700px;
   display: flex;
   justify-content: center;
-
-  @media (min-width: 900px) {
-    margin-right: 8%;
-  }
 }
 
 // visível apenas para leitores de tela — a logo já contém o nome do evento
