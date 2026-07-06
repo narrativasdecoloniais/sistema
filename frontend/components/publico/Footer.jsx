@@ -1,4 +1,5 @@
 import Link from "next/link";
+import MarcaRodape from "@/components/graficos/MarcaRodape";
 import styles from "./Footer.module.scss";
 
 const ANCORAS = [
@@ -35,9 +36,12 @@ export default function Footer() {
         </div>
       </div>
 
-      <p className={styles.creditos}>
-        GPDES/UnB — Grupo de Pesquisa Diáspora, Educação e Sociedade
-      </p>
+      <div className={styles.linhaCreditos}>
+        <MarcaRodape tamanho={22} />
+        <p className={styles.creditos}>
+          GPDES/UnB — Grupo de Pesquisa Diáspora, Educação e Sociedade
+        </p>
+      </div>
     </footer>
   );
 }

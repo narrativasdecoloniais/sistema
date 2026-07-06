@@ -10,13 +10,17 @@
   // Amostrado do búzio no PNG oficial da logo — acento raro, não padronagem.
   --buzio: #edb153;
 
+  // Texto secundário sólido (não opacity) — verificado ~6.6:1 sobre --papel
+  // e ~5.6:1 sobre --areia, com margem folgada acima do mínimo AA (4.5:1).
+  --texto-suave: #5c5650;
+
   // Camada semântica usada pelos componentes compartilhados (forms/*) —
   // permite que o mesmo componente sirva às duas peles visuais.
   --cor-fundo: var(--papel);
   --cor-superficie: var(--areia);
   --cor-borda: var(--ocre);
   --cor-texto: var(--tinta);
-  --cor-texto-suave: rgba(32, 25, 20, 0.65);
+  --cor-texto-suave: var(--texto-suave);
   --cor-acento: var(--barro);
   --cor-erro: #a94434;
 }
