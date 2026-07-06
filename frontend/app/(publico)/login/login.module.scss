@@ -1,0 +1,27 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.link {
+  font-size: 0.85rem;
+  color: var(--barro);
+  align-self: flex-end;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.rodape {
+  font-size: 0.85rem;
+  color: var(--tinta);
+  text-align: center;
+
+  a {
+    color: var(--barro);
+    font-weight: 600;
+  }
+}

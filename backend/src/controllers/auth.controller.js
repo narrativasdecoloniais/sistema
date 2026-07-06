@@ -36,7 +36,7 @@ const cadastrar = asyncHandler(async (req, res) => {
 
 const confirmarEmail = asyncHandler(async (req, res) => {
   const token = String(req.query.token || "");
-  const registro = await tokenService.consumirToken(token, "CONFIRMACAO_EMAIL");
+  const registro = await tokenService.buscarTokenConfirmacaoEmailValido(token);
 
   if (!registro) {
     throw new ErroHttp(400, "Link de confirmação inválido ou expirado.");

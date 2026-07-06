@@ -1,0 +1,57 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 640px;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  color: var(--texto);
+}
+
+.secao {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.secaoTitulo {
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.linhaDados {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+
+  span:last-child {
+    color: var(--texto);
+    font-weight: 500;
+  }
+}
+
+.linha {
+  display: flex;
+  gap: 1rem;
+
+  > * {
+    flex: 1;
+  }
+}
+
+.perigo {
+  border-color: var(--erro);
+}
+
+.perigoTexto {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}

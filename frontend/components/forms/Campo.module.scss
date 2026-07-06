@@ -1,0 +1,65 @@
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.rotulo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+}
+
+.input {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font-size: 1rem;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cor-acento);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-acento) 20%, transparent);
+  }
+}
+
+.comErro {
+  border-color: var(--cor-erro);
+}
+
+.campoComBotao {
+  position: relative;
+  display: flex;
+
+  .input {
+    flex: 1;
+    padding-right: 4.5rem;
+  }
+}
+
+.botaoVisibilidade {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: var(--cor-acento);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.mensagemErro {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cor-erro);
+}

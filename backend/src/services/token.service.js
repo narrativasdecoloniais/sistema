@@ -45,8 +45,30 @@ async function consumirToken(token, tipo) {
   return registro;
 }
 
+// A confirmação de e-mail só marca um booleano idempotente, então o token pode
+// ser revisitado sem erro (o clique real do usuário costuma vir acompanhado de
+// pré-visitas de scanners de e-mail corporativos, além do double-effect do
+// React StrictMode em dev) — diferente da recuperação de senha, que continua
+// de uso único por ser uma ação sensível.
+async function buscarTokenConfirmacaoEmailValido(token) {
+  const registro = await prisma.tokenVerificacao.findUnique({ where: { token } });
+
+  if (!registro || registro.tipo !== "CONFIRMACAO_EMAIL") return null;
+  if (registro.expiraEm < new Date()) return null;
+
+  if (!registro.usadoEm) {
+    await prisma.tokenVerificacao.update({
+      where: { id: registro.id },
+      data: { usadoEm: new Date() },
+    });
+  }
+
+  return registro;
+}
+
 module.exports = {
   criarTokenConfirmacaoEmail,
   criarTokenRecuperacaoSenha,
   consumirToken,
+  buscarTokenConfirmacaoEmailValido,
 };

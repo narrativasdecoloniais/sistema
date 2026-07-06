@@ -1,0 +1,25 @@
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.linha {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.input {
+  margin-top: 0.2rem;
+  accent-color: var(--cor-acento);
+}
+
+.mensagemErro {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cor-erro);
+}

@@ -1,0 +1,14 @@
+@use "../../styles/tokens-publico" as pub;
+
+.wrapper {
+  @include pub.tokens;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+.conteudo {
+  flex: 1;
+}

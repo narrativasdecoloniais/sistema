@@ -1,0 +1,21 @@
+// Mesma família terrosa, dessaturada — área interna de produtividade.
+@mixin tokens {
+  --fundo: #fbfaf7;
+  --superficie: #ffffff;
+  --borda: #e7e1d6;
+  --texto: #2b2620;
+  --texto-suave: #7a7166;
+  --acento: #a05c3b;
+  --sucesso: #5c7a4e;
+  --alerta: #b98a3a;
+  --erro: #a94434;
+
+  // Camada semântica usada pelos componentes compartilhados (forms/*).
+  --cor-fundo: var(--fundo);
+  --cor-superficie: var(--superficie);
+  --cor-borda: var(--borda);
+  --cor-texto: var(--texto);
+  --cor-texto-suave: var(--texto-suave);
+  --cor-acento: var(--acento);
+  --cor-erro: var(--erro);
+}

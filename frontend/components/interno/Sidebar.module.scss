@@ -1,0 +1,46 @@
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--superficie);
+  border-right: 1px solid var(--borda);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  @media (max-width: 720px) {
+    width: 72px;
+  }
+}
+
+.marca {
+  font-weight: 700;
+  color: var(--texto);
+  padding: 0 0.5rem;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.link {
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  color: var(--texto-suave);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--texto);
+  }
+}
+
+.ativo {
+  background: var(--fundo);
+  color: var(--acento);
+  font-weight: 700;
+}

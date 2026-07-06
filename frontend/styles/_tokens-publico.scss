@@ -1,0 +1,19 @@
+// Paleta terrosa do site público — dialoga com a logo stencil preto sobre branco.
+@mixin tokens {
+  --tinta: #201914;
+  --barro: #9c4a2f;
+  --ocre: #c98a3d;
+  --areia: #ede4d4;
+  --papel: #faf6ee;
+  --cerrado: #55603f;
+
+  // Camada semântica usada pelos componentes compartilhados (forms/*) —
+  // permite que o mesmo componente sirva às duas peles visuais.
+  --cor-fundo: var(--papel);
+  --cor-superficie: var(--areia);
+  --cor-borda: var(--ocre);
+  --cor-texto: var(--tinta);
+  --cor-texto-suave: rgba(32, 25, 20, 0.65);
+  --cor-acento: var(--barro);
+  --cor-erro: #a94434;
+}

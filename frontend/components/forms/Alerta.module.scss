@@ -1,0 +1,18 @@
+.alerta {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.erro {
+  background: color-mix(in srgb, var(--cor-erro) 12%, transparent);
+  color: var(--cor-erro);
+  border: 1px solid color-mix(in srgb, var(--cor-erro) 40%, transparent);
+}
+
+.sucesso {
+  background: color-mix(in srgb, var(--cor-acento) 12%, transparent);
+  color: var(--cor-acento);
+  border: 1px solid color-mix(in srgb, var(--cor-acento) 40%, transparent);
+}
