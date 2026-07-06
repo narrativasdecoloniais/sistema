@@ -1,8 +1,12 @@
 .footer {
-  padding: 3rem 2rem 2rem;
-  border-top: 2px solid var(--tinta);
+  padding: 2rem 2rem 2rem;
   background: var(--areia);
   color: var(--tinta);
+}
+
+.divisorTopo {
+  color: var(--tinta);
+  margin-bottom: 2rem;
 }
 
 .colunas {

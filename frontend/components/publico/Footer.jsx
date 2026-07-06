@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Divisor from "@/components/graficos/Divisor";
 import MarcaRodape from "@/components/graficos/MarcaRodape";
 import styles from "./Footer.module.scss";
 
@@ -12,6 +13,9 @@ const ANCORAS = [
 export default function Footer() {
   return (
     <footer className={styles.footer}>
+      <div className={styles.divisorTopo}>
+        <Divisor />
+      </div>
       <div className={styles.colunas}>
         <nav aria-label="Links do rodapé" className={styles.coluna}>
           <h2 className={styles.tituloColuna}>Navegação</h2>

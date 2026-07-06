@@ -15,13 +15,16 @@ const secaoVariants = {
   visivel: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-function Marcador({ numero }) {
+function Marcador() {
   return (
     <div className={styles.marcador}>
       <BuzioGrafico tamanho={26} className={styles.marcadorBuzio} />
-      <span className={`${styles.marcadorEyebrow} stencil`}>{numero}</span>
     </div>
   );
+}
+
+function Eyebrow({ children }) {
+  return <span className={`${styles.eyebrow} stencil`}>{children}</span>;
 }
 
 function SeloEmBreve() {
@@ -87,13 +90,14 @@ export default function PaginaInicial() {
         variants={secaoVariants}
       >
         <div className={styles.divisorSecao}>
-          <Divisor />
+          <Divisor espessura={2} />
         </div>
-        <Marcador numero="01" />
+        <Marcador />
         <div className={styles.divisorColuna}>
           <Divisor orientacao="vertical" />
         </div>
         <div className={styles.conteudo}>
+          <Eyebrow>Participe</Eyebrow>
           <h2 className={styles.tituloPrincipal}>Inscrições</h2>
           <p className={styles.secaoTextoGrande}>
             Um espaço de encontro entre pesquisadoras, pesquisadores, docentes,
@@ -120,13 +124,14 @@ export default function PaginaInicial() {
       >
         <TexturaPapel className={styles.textura} />
         <div className={styles.divisorSecao}>
-          <Divisor />
+          <Divisor espessura={2} />
         </div>
-        <Marcador numero="02" />
+        <Marcador />
         <div className={styles.divisorColuna}>
           <Divisor orientacao="vertical" />
         </div>
         <div className={styles.conteudo}>
+          <Eyebrow>Agenda</Eyebrow>
           <h2 className={styles.tituloSecundario}>Programação</h2>
           <p className={styles.secaoTexto}>
             Mesas, oficinas e rodas de conversa ao longo de toda a edição — em
@@ -144,13 +149,14 @@ export default function PaginaInicial() {
         variants={secaoVariants}
       >
         <div className={styles.divisorSecao}>
-          <Divisor />
+          <Divisor espessura={2} />
         </div>
-        <Marcador numero="03" />
+        <Marcador />
         <div className={styles.divisorColuna}>
           <Divisor orientacao="vertical" />
         </div>
         <div className={styles.conteudo}>
+          <Eyebrow>Temas</Eyebrow>
           <div className={styles.tituloLinha}>
             <h2 className={styles.tituloSecundario}>Eixos</h2>
             <SeloEmBreve />
@@ -173,13 +179,14 @@ export default function PaginaInicial() {
       >
         <TexturaPapel className={styles.textura} />
         <div className={styles.divisorSecao}>
-          <Divisor />
+          <Divisor espessura={2} />
         </div>
-        <Marcador numero="04" />
+        <Marcador />
         <div className={styles.divisorColuna}>
           <Divisor orientacao="vertical" />
         </div>
         <div className={styles.conteudo}>
+          <Eyebrow>Publicações</Eyebrow>
           <div className={styles.tituloLinha}>
             <h2 className={styles.tituloSecundario}>Anais</h2>
             <SeloEmBreve />
