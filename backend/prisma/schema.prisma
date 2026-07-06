@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CategoriaUsuario {
+  ESTUDANTE
+  DOCENTE
+  PESQUISADOR
+  COMUNIDADE_EXTERNA
+}
+
+enum PapelUsuario {
+  PARTICIPANTE
+  AVALIADOR
+  ORGANIZADOR
+  ADMIN
+}
+
+enum TipoToken {
+  CONFIRMACAO_EMAIL
+  RECUPERACAO_SENHA
+}
+
+model Usuario {
+  id                  String           @id @default(uuid())
+  nome                String
+  email               String           @unique
+  cpf                 String           @unique
+  instituicao         String
+  categoria           CategoriaUsuario
+  senhaHash           String
+  emailConfirmado     Boolean          @default(false)
+  papeis              PapelUsuario[]   @default([PARTICIPANTE])
+  aceiteTermosEm      DateTime
+  aceitePrivacidadeEm DateTime
+  ativo               Boolean          @default(true)
+  anonimizadoEm       DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  tokens        TokenVerificacao[]
+  refreshTokens RefreshToken[]
+
+  @@map("usuarios")
+}
+
+model TokenVerificacao {
+  id        String    @id @default(uuid())
+  usuarioId String
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo      TipoToken
+  token     String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("tokens_verificacao")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiraEm   DateTime
+  revogadoEm DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@map("refresh_tokens")
+}
