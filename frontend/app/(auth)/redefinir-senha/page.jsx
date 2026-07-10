@@ -3,13 +3,12 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import CartaoFormulario from "@/components/publico/CartaoFormulario";
+import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import CampoSenha from "@/components/forms/CampoSenha";
-import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { redefinirSenhaSchema, extrairErros } from "@/lib/validacao";
-import styles from "../cadastro/cadastro.module.scss";
+import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 function FormularioRedefinirSenha() {
   const router = useRouter();
@@ -55,6 +54,7 @@ function FormularioRedefinirSenha() {
       <CampoSenha
         id="senha"
         rotulo="Nova senha"
+        variante="minimal"
         value={senha}
         onChange={(evento) => setSenha(evento.target.value)}
         erro={erros.senha}
@@ -62,13 +62,14 @@ function FormularioRedefinirSenha() {
       <CampoSenha
         id="confirmarSenha"
         rotulo="Confirmar nova senha"
+        variante="minimal"
         value={confirmarSenha}
         onChange={(evento) => setConfirmarSenha(evento.target.value)}
         erro={erros.confirmarSenha}
       />
-      <Botao type="submit" carregando={carregando}>
-        Redefinir senha
-      </Botao>
+      <button type="submit" className={styles.cta} disabled={carregando}>
+        {carregando ? "Aguarde..." : "Redefinir senha"}
+      </button>
       <p className={styles.rodape}>
         <Link href="/login">Voltar para o login</Link>
       </p>
@@ -78,10 +79,14 @@ function FormularioRedefinirSenha() {
 
 export default function PaginaRedefinirSenha() {
   return (
-    <CartaoFormulario titulo="Redefinir senha" subtitulo="Escolha uma nova senha para sua conta.">
+    <TelaAutenticacao
+      eyebrow="Área do participante"
+      titulo="Redefinir senha"
+      subtitulo="Escolha uma nova senha para sua conta."
+    >
       <Suspense fallback={<p>Carregando...</p>}>
         <FormularioRedefinirSenha />
       </Suspense>
-    </CartaoFormulario>
+    </TelaAutenticacao>
   );
 }

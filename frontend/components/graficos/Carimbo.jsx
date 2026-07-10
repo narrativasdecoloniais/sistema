@@ -1,4 +1,4 @@
-export default function Carimbo({ className = '', rotacao = 0 }) {
+export default function Carimbo({ className = '', rotacao = 0, preenchido = false }) {
   return (
     <svg
       viewBox="0 0 200 64"
@@ -12,9 +12,9 @@ export default function Carimbo({ className = '', rotacao = 0 }) {
         transform: rotacao ? `rotate(${rotacao}deg)` : undefined,
         pointerEvents: 'none',
       }}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
+      fill={preenchido ? 'currentColor' : 'none'}
+      stroke={preenchido ? 'none' : 'currentColor'}
+      strokeWidth={preenchido ? undefined : '2.5'}
       aria-hidden="true"
     >
       <path

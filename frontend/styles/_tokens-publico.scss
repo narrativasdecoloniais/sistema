@@ -22,5 +22,8 @@
   --cor-texto: var(--tinta);
   --cor-texto-suave: var(--texto-suave);
   --cor-acento: var(--barro);
-  --cor-erro: #a94434;
+  // mais saturado e mais vermelho que --barro/--ocre de propósito — o tom
+  // antigo (#a94434) ficava perto demais da família terrosa e o estado de
+  // erro em campos de formulário quase não se distinguia da borda normal
+  --cor-erro: #b3261e;
 }

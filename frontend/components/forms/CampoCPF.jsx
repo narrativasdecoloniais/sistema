@@ -1,7 +1,9 @@
 import { formatarCpf } from "@/lib/cpf";
 import styles from "./Campo.module.scss";
 
-export default function CampoCPF({ rotulo, erro, id, value, onChange, ...props }) {
+export default function CampoCPF({ rotulo, erro, id, value, onChange, variante, ...props }) {
+  const idErro = `${id}-erro`;
+
   function aoDigitar(evento) {
     evento.target.value = formatarCpf(evento.target.value);
     onChange(evento);
@@ -16,13 +18,19 @@ export default function CampoCPF({ rotulo, erro, id, value, onChange, ...props }
         id={id}
         inputMode="numeric"
         placeholder="000.000.000-00"
-        className={`${styles.input} ${erro ? styles.comErro : ""}`}
+        className={`${styles.input} ${variante ? styles[variante] : ""} ${erro ? styles.comErro : ""}`}
         value={value}
         onChange={aoDigitar}
         maxLength={14}
+        aria-invalid={erro ? "true" : undefined}
+        aria-describedby={erro ? idErro : undefined}
         {...props}
       />
-      {erro && <p className={styles.mensagemErro}>{erro}</p>}
+      {erro && (
+        <p id={idErro} className={styles.mensagemErro}>
+          {erro}
+        </p>
+      )}
     </div>
   );
 }

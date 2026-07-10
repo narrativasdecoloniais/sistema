@@ -40,6 +40,7 @@ Nunca misture os tokens das duas peles entre si.
 
 ## Convenções
 
+- Antes de criar ou alterar qualquer tela, leia e siga o `DESIGN.md`. Em caso de conflito com instruções antigas, o `DESIGN.md` vence.
 - Código (variáveis, funções, nomes de arquivo, commits de schema) em **inglês** onde for genérico de infraestrutura; **nomes de domínio do negócio** (models Prisma, rotas, mensagens) em **português**, já que refletem o vocabulário do próprio evento (ex.: `Usuario`, `/auth/cadastro`, `PapelUsuario`). Segue o que já foi estabelecido nas rotas e no schema — não traduza para inglês.
 - Toda UI, mensagens de erro/validação e e-mails em **português**.
 - Estilos sempre via `*.module.scss` importado no componente; nada de estilo inline exceto casos pontuais (ex.: valor dinâmico).
@@ -70,6 +71,6 @@ Pequenos e frequentes, mensagens em português, estilo Conventional Commits: `fe
 10. Migração Even3 — não iniciado
 11. Anais — não iniciado
 12. Site institucional — não iniciado
-13. Submissão de trabalhos — não iniciado
+13. Submissão de trabalhos — iniciado (LP com section de modalidades + páginas de detalhe por modalidade; fluxo de submissão em si ainda não construído)
 
 Ao concluir um módulo, atualize o status aqui nesta mesma sessão/PR.

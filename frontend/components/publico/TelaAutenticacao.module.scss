@@ -1,0 +1,172 @@
+.tela {
+  height: 100svh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  @media (max-width: 860px) {
+    height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr;
+  }
+}
+
+// metade esquerda é o próprio link de volta pra home no desktop (aqui não
+// há nav). No mobile ela some (ver comentário em .ladoFormulario) e o nav
+// padrão do site (renderizado pelo layout, só nessa largura) cumpre esse
+// papel. Fica travada na altura da viewport (nunca rola), mesmo quando o
+// formulário é mais alto.
+.ladoLogo {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem;
+  background: var(--papel);
+  text-decoration: none;
+
+  // no mobile a metade da logo prejudica a UX (empurra o formulário pra
+  // baixo da dobra) — some por completo, só o formulário fica.
+  @media (max-width: 860px) {
+    display: none;
+  }
+}
+
+.ladoLogoMoldura {
+  width: 100%;
+}
+
+// rola de forma independente quando o formulário é mais alto que a tela —
+// é essa metade que absorve o scroll, nunca a da logo
+.ladoFormulario {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 3rem 2rem 4rem;
+  // mais claro que --papel (usado no lado da logo) só pra separar os dois
+  // painéis sem precisar de linha divisória
+  background: color-mix(in srgb, var(--papel) 45%, white);
+
+  @media (max-width: 860px) {
+    height: auto;
+    overflow-y: visible;
+    // sem .ladoLogo pra diferenciar, o tom mais claro só criava uma costura
+    // visível com o --papel do restante da página — iguala os dois.
+    background: var(--papel);
+  }
+}
+
+.formularioWrapper {
+  width: 100%;
+  max-width: 380px;
+  // margin auto (em vez de align-items: center no pai) centraliza
+  // verticalmente quando cabe, mas degrada pra topo+scroll sem cortar o
+  // início do conteúdo quando o formulário é mais alto que a tela
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  @media (max-width: 860px) {
+    margin: 0;
+  }
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  color: var(--tinta);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  margin: 0 0 0.3rem;
+}
+
+.subtitulo {
+  font-size: 0.92rem;
+  color: var(--texto-suave);
+  margin: 0 0 1.75rem;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.linha {
+  display: flex;
+  gap: 1rem;
+flex-direction: column;
+  > * {
+    flex: 1;
+  }
+}
+
+.link {
+  align-self: flex-end;
+  margin-top: -0.4rem;
+  font-size: 0.85rem;
+  color: var(--barro);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 3px;
+  }
+}
+
+// retangular, cantos a 90°
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.4rem;
+  padding: 0.9rem 2rem;
+  border: none;
+  background: var(--barro);
+  color: var(--papel);
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
+}
+
+.rodape {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--tinta);
+  text-align: center;
+
+  a {
+    color: var(--barro);
+    font-weight: 600;
+  }
+}

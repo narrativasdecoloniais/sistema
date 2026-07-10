@@ -1,17 +1,39 @@
-.logo {
+.moldura {
+  position: relative;
+  aspect-ratio: 778 / 896;
+}
+
+.camadaBase,
+.camadaCor {
+  position: absolute;
+  inset: 0;
+}
+
+.imagem,
+.imagemSobreposta {
   display: block;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
 }
 
 .pequena {
-  max-width: min(88px, 100%);
+  width: min(88px, 100%);
 }
 
 .grande {
-  max-width: min(620px, 100%);
-  // teto real = 100svh menos o espaço fixo do hero (padding + legendas +
-  // convite + gaps, ~210px), com 68svh como limite pra não ficar gigante
-  // em telas muito altas.
-  max-height: min(68svh, calc(100svh - 210px));
+  width: min(620px, 100%);
+  // teto real = 100svh menos o espaço fixo do hero (nav fixo + padding +
+  // legendas + convite + gaps, ~280px), com 68svh como limite pra não ficar
+  // gigante em telas muito altas.
+  max-height: min(68svh, calc(100svh - 280px));
+}
+
+.branca {
+  --logo-principal: #fff;
+  --logo-acento: #fff;
+}
+
+.colorida {
+  --logo-principal: var(--tinta);
+  --logo-acento: var(--buzio);
 }

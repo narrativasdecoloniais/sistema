@@ -3,8 +3,9 @@
 import { useState } from "react";
 import styles from "./Campo.module.scss";
 
-export default function CampoSenha({ rotulo, erro, id, value, onChange, ...props }) {
+export default function CampoSenha({ rotulo, erro, id, value, onChange, variante, ...props }) {
   const [visivel, setVisivel] = useState(false);
+  const idErro = `${id}-erro`;
 
   return (
     <div className={styles.grupo}>
@@ -15,9 +16,11 @@ export default function CampoSenha({ rotulo, erro, id, value, onChange, ...props
         <input
           id={id}
           type={visivel ? "text" : "password"}
-          className={`${styles.input} ${erro ? styles.comErro : ""}`}
+          className={`${styles.input} ${variante ? styles[variante] : ""} ${erro ? styles.comErro : ""}`}
           value={value}
           onChange={onChange}
+          aria-invalid={erro ? "true" : undefined}
+          aria-describedby={erro ? idErro : undefined}
           {...props}
         />
         <button
@@ -29,7 +32,11 @@ export default function CampoSenha({ rotulo, erro, id, value, onChange, ...props
           {visivel ? "Ocultar" : "Mostrar"}
         </button>
       </div>
-      {erro && <p className={styles.mensagemErro}>{erro}</p>}
+      {erro && (
+        <p id={idErro} className={styles.mensagemErro}>
+          {erro}
+        </p>
+      )}
     </div>
   );
 }

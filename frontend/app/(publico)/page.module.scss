@@ -1,40 +1,14 @@
 .hero {
   position: relative;
   min-height: 100svh;
-  padding: 3rem 2rem 2.5rem;
+  // padding-top soma o espaço do nav fixo (~70px), que agora fica sempre visível.
+  padding: calc(3rem + 70px) 2rem 2.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   gap: 1.5rem;
-}
-
-.entrarCarimbo {
-  position: absolute;
-  top: 2rem;
-  right: 2rem;
-  padding: 0.5rem 1.2rem;
-  color: var(--tinta);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-decoration: none;
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
-
-  &:hover {
-    color: var(--buzio);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--barro);
-    outline-offset: 2px;
-  }
 }
 
 .logoWrapper {
@@ -100,9 +74,108 @@
 }
 
 .buzioIcone {
-  width: 14px;
-  height: 18px;
+  display: block;
+  width: 15px;
+  height: 16.6px;
   color: var(--buzio);
+}
+
+// ---- faixa de realização (fundo barro, logos brancas) ----
+
+.realizadores {
+  width: 100%;
+  background: var(--barro);
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+}
+
+.realizadoresConteudo {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.realizadoresLabel {
+  color: var(--papel);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.realizadoresLogo {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+
+// ---- seção "sobre o evento" (faixa verde-cerrado, abertura antes de Inscrições) ----
+
+.sobreEvento {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  background: color-mix(in srgb, var(--cerrado) 9%, var(--papel));
+  display: flex;
+  justify-content: center;
+  padding: clamp(4rem, 8vw, 7rem) 2rem;
+
+  @media (max-width: 700px) {
+    padding: clamp(3rem, 10vw, 5rem) 1.5rem;
+  }
+}
+
+// linha superior lembrando um cordão de búzios / trama de cestaria, em vez
+// de uma borda reta comum
+.sobreEventoDivisor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  color: var(--cerrado);
+  display: none;
+}
+
+.sobreEventoTextura {
+  color: var(--tinta);
+}
+
+.sobreEventoConteudo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 960px;
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  column-gap: 2rem;
+  align-items: start;
+
+  // búzios e eyebrow em branco (papel) sobre o verde; título e texto em
+  // marrom — só nesta seção, as demais mantêm a paleta padrão
+  .marcadorBuzio {
+    color: var(--barro);
+  }
+
+  .eyebrow {
+    color: var(--barro);
+  }
+
+  .tituloSecundario,
+  .secaoTexto {
+    color: var(--barro);
+  }
+  .secaoTexto{
+    color: var(--tinta);
+  }
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+    row-gap: 1rem;
+  }
 }
 
 // ---- seções ----
@@ -110,54 +183,19 @@
 .secao {
   position: relative;
   overflow: hidden;
+  background: var(--papel);
   display: grid;
-  grid-template-columns: 100px 3px 1fr;
+  grid-template-columns: 100px 1fr;
   column-gap: 2rem;
   align-items: start;
-  padding: 2rem 2rem 4.5rem;
+  padding: clamp(4rem, 8vw, 7rem) 2rem;
   max-width: 960px;
   margin: 0 auto;
 
   @media (max-width: 700px) {
     grid-template-columns: 1fr;
     row-gap: 1rem;
-    padding: 1.75rem 1.5rem 3.5rem;
-  }
-}
-
-.secaoPrincipal {
-  padding-bottom: 5.5rem;
-}
-
-.papel {
-  background: var(--papel);
-}
-
-.areia {
-  background: var(--areia);
-}
-
-.cerrado {
-  background: color-mix(in srgb, var(--cerrado) 14%, var(--papel));
-}
-
-.textura {
-  z-index: 0;
-  color: var(--tinta);
-}
-
-.divisorSecao {
-  grid-column: 3;
-  max-width: 620px;
-  margin-bottom: 2.25rem;
-  color: var(--tinta);
-  opacity: 0.25;
-  position: relative;
-  z-index: 1;
-
-  @media (max-width: 700px) {
-    grid-column: 1;
-    max-width: none;
+    padding: clamp(3rem, 10vw, 5rem) 1.5rem;
   }
 }
 
@@ -176,20 +214,38 @@
   }
 }
 
+.marcadorBuzios {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
 .marcadorBuzio {
+  position: absolute;
+  display: block;
   color: var(--buzio);
 }
 
-.divisorColuna {
-  display: none;
-  align-self: stretch;
-  color: var(--ocre);
-  position: relative;
-  z-index: 1;
+.marcadorBuzioA {
+  top: 8px;
+  left: 0;
+  width: 16px;
+  height: 17.7px;
+}
 
-  @media (min-width: 701px) {
-    display: flex;
-  }
+.marcadorBuzioB {
+  top: 20px;
+  left: 24px;
+  width: 13px;
+  height: 17.3px;
+}
+
+.marcadorBuzioC {
+  top: 0;
+  left: 22px;
+  width: 14px;
+  height: 18px;
 }
 
 .conteudo {
@@ -200,13 +256,16 @@
   align-items: flex-start;
   text-align: left;
   gap: 0.85rem;
-  max-width: 620px;
+  max-width: 70ch;
 }
 
 .eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  color: var(--barro);
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
 }
 
 .tituloLinha {
@@ -216,14 +275,12 @@
   gap: 0.85rem;
 }
 
-.tituloPrincipal {
-  font-size: clamp(1.7rem, 3vw, 2.3rem);
-  color: var(--barro);
-}
-
 .tituloSecundario {
-  font-size: 1.3rem;
-  color: var(--barro);
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--tinta);
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
 }
 
 .secaoTexto {
@@ -244,16 +301,24 @@
   line-height: 1.6;
 }
 
-.cta {
+.ctaWrapper {
   align-self: flex-start;
-  display: inline-block;
+}
+
+.cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   padding: 0.9rem 2rem;
-  background: var(--barro);
   color: var(--papel);
-  border-radius: 4px;
   font-size: 1.05rem;
   font-weight: 700;
   text-decoration: none;
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
 
   &:hover {
     opacity: 0.9;
@@ -263,6 +328,10 @@
     outline: 2px solid var(--tinta);
     outline-offset: 2px;
   }
+}
+
+.ctaCarimbo {
+  color: var(--barro);
 }
 
 .seloEmBreve {
@@ -279,5 +348,126 @@
   span {
     position: relative;
     z-index: 1;
+  }
+}
+
+// ---- section Submissão (grade de cartões por modalidade) ----
+//
+// Cada cartão é um subgrid de 5 linhas (cabeçalho / prazo / resumo / CTA
+// primário / CTA secundário). Como as linhas são compartilhadas com a
+// grade-mãe, o conteúdo mais curto de um cartão herda a altura do mais longo
+// em cada linha — é assim que PRAZO e os dois botões terminam alinhados
+// entre cartões mesmo com títulos/textos de tamanhos diferentes, sem
+// precisar travar alturas manualmente.
+
+.modalidadesGrade {
+  align-self: stretch;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-rows: repeat(5, auto);
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.modalidadeCartao {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 5;
+  align-items: start;
+  gap: 0.65rem;
+  padding: 1.5rem;
+  border: 1px solid var(--ocre);
+  background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
+}
+
+.modalidadeCabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-self: start;
+}
+
+.modalidadeNome {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta);
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.modalidadeSubtitulo {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.modalidadePrazo {
+  align-self: start;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.modalidadeResumo {
+  align-self: start;
+  font-size: 0.9rem;
+  color: var(--tinta);
+  line-height: 1.6;
+}
+
+// CTA primário do cartão — retangular, cantos retos, dessaturado por estar
+// desabilitado (fluxo de submissão ainda não existe)
+.modalidadeCtaPrimario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.9rem 2rem;
+  background: var(--barro);
+  color: var(--papel);
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: not-allowed;
+  opacity: 0.55;
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
+}
+
+// botão secundário — mesmo cantos retos do CTA primário, só que em contorno
+// em vez de preenchido. Ancorado no fim da própria linha do subgrid: se o
+// rótulo de um cartão quebrar em duas linhas, o botão mais curto do cartão
+// vizinho desce e fica com a base rente à dele, em vez de "flutuar" no meio
+// da linha.
+.modalidadeLink {
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.9rem 2rem;
+  border: 1.5px solid var(--barro);
+  color: var(--barro);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--barro);
+    color: var(--papel);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 3px;
   }
 }

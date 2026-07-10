@@ -8,7 +8,9 @@
   --acento: #a05c3b;
   --sucesso: #5c7a4e;
   --alerta: #b98a3a;
-  --erro: #a94434;
+  // mais saturado e mais vermelho que --acento de propósito — em
+  // --tinta/--barro/--ocre o erro antigo (#a94434) quase se camuflava
+  --erro: #b3261e;
 
   // Camada semântica usada pelos componentes compartilhados (forms/*).
   --cor-fundo: var(--fundo);

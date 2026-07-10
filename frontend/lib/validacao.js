@@ -32,7 +32,10 @@ export const cadastroSchema = z
   });
 
 export const loginSchema = z.object({
-  cpf: z.string().refine((valor) => apenasDigitos(valor).length === 11, "CPF inválido"),
+  cpf: z
+    .string()
+    .min(1, "Informe o CPF")
+    .refine((valor) => apenasDigitos(valor).length === 11, "CPF inválido"),
   senha: z.string().min(1, "Informe a senha"),
 });
 

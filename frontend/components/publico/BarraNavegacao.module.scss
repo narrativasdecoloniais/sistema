@@ -1,11 +1,20 @@
 .barra {
+  position: relative;
   z-index: 40;
   display: flex;
   align-items: center;
   gap: 1.5rem;
   padding: 0.85rem 2rem;
-  background: var(--papel);
-  border-bottom: 1px solid var(--tinta);
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+// fundo verde + friso dourado só entram quando há conteúdo por baixo pra
+// justificar (rolou a página) — em rotas sem hero, fica sempre assim.
+.comFundo {
+  background: var(--cerrado);
+  border-bottom-color: var(--buzio);
 }
 
 .sobreposta {
@@ -13,23 +22,6 @@
   top: 0;
   left: 0;
   right: 0;
-  transform: translateY(0);
-  opacity: 1;
-  transition: transform 0.25s ease, opacity 0.25s ease;
-
-  &.oculta {
-    transform: translateY(-100%);
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    transition: opacity 0.2s ease;
-
-    &.oculta {
-      transform: none;
-    }
-  }
 }
 
 .emFluxo {
@@ -43,9 +35,95 @@
 }
 
 .buzioIcone {
+  display: block;
   width: 18px;
-  height: 23px;
+  height: 20px;
+  color: var(--tinta);
+  transition: color 0.4s ease;
+}
+
+.comFundo .buzioIcone {
   color: var(--buzio);
+}
+
+// o painel mobile é --papel (não mais um bloco de cor), então o ícone
+// precisa de contraste escuro aqui, mesmo com a barra em si ainda verde
+.menuAberto .buzioIcone {
+  color: var(--tinta);
+}
+
+// o selo é um carimbo sólido (marrom) com texto creme por cima — cor fixa,
+// independe do fundo do nav, porque o próprio carimbo já cria contraste local.
+.selo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.35rem 0.9rem;
+  color: var(--papel);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.seloCarimbo {
+  color: var(--barro);
+}
+
+// escondido no desktop — só aparece abaixo de 700px. Renderizado depois do
+// painel mobile no DOM (mesmo nível de stacking), então fica sempre por
+// cima dele — continua clicável como botão de fechar (vira um X).
+.hamburguer {
+  display: none;
+  position: relative;
+  width: 26px;
+  height: 20px;
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--tinta);
+  transition: color 0.4s ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 4px;
+  }
+}
+
+.linha {
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.comFundo .hamburguer {
+  color: var(--buzio);
+
+  &:focus-visible {
+    outline-color: var(--buzio);
+  }
+}
+
+.menuAberto .hamburguer {
+  color: var(--tinta);
+
+  &:focus-visible {
+    outline-color: var(--barro);
+  }
 }
 
 .ancoras {
@@ -68,6 +146,7 @@
     color: var(--tinta);
     text-decoration: none;
     white-space: nowrap;
+    transition: color 0.4s ease;
 
     &:hover {
       text-decoration: underline;
@@ -80,25 +159,134 @@
   }
 }
 
+.comFundo .ancoras a {
+  color: var(--papel);
+
+  &:focus-visible {
+    outline-color: var(--buzio);
+  }
+}
+
 .entrar {
+  position: relative;
   flex-shrink: 0;
+  padding: 0.4rem 1rem;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--tinta);
-  border: 1px solid var(--tinta);
-  padding: 0.4rem 0.9rem;
-  border-radius: 2px;
   text-decoration: none;
+  transition: color 0.4s ease;
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
 
   &:hover {
-    border-color: var(--buzio);
     color: var(--buzio);
   }
 
   &:focus-visible {
     outline: 2px solid var(--barro);
     outline-offset: 2px;
+  }
+}
+
+.comFundo .entrar {
+  color: var(--papel);
+
+  &:focus-visible {
+    outline-color: var(--buzio);
+  }
+}
+
+// ---- painel mobile: cobre a tela inteira, abaixo da barra ----
+//
+// fundo --papel (não um bloco de cor) — "fundo único por página" é regra
+// do DESIGN.md, e os links em Archivo (não stencil): stencil é reservado
+// pra título de dobra, quatro itens empilhados nele vira "cartaz demais".
+.painelMobile {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 5.5rem 2rem 2rem;
+  background: var(--papel);
+  overflow-y: auto;
+}
+
+.ancorasMobile {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  list-style: none;
+  margin: auto 0;
+  padding: 0;
+
+  a {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--tinta);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--barro);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--barro);
+      outline-offset: 3px;
+    }
+  }
+}
+
+// margin-top: auto no wrapper (não no link) empurra o botão pro fim do
+// painel, que ocupa 100% da altura via position: fixed; inset: 0
+.entrarMobileWrapper {
+  margin-top: auto;
+}
+
+.entrarMobile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem;
+  background: var(--barro);
+  color: var(--papel);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 700px) {
+  .hamburguer {
+    display: flex;
+  }
+
+  .ancoras,
+  .entrar {
+    display: none;
+  }
+
+  // com o menu mobile aberto, a barra (com o X pra fechar) fica travada no
+  // topo mesmo em rotas onde ela normalmente rola com a página.
+  .menuAberto {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .menuAberto .selo {
+    display: none;
   }
 }

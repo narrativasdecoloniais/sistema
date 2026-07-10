@@ -1,0 +1,24 @@
+@use "../../styles/tokens-publico" as pub;
+
+// grupo de rota deliberadamente fora de (publico) — telas aqui (login,
+// cadastro, recuperação/redefinição de senha, confirmação de e-mail) nunca
+// levam Footer. O nav padrão do site só aparece no mobile (ver .navMobile
+// abaixo) — no desktop essas telas ficam full-bleed, sem chrome nenhum,
+// usando o layout dividido de components/publico/TelaAutenticacao.
+.wrapper {
+  @include pub.tokens;
+  min-height: 100svh;
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+// no mobile, a metade com a logo (TelaAutenticacao) some por completo — o
+// nav padrão (com o ícone de voltar e o menu) assume o papel de navegação,
+// em vez de inventar um elemento novo só pra essas telas.
+.navMobile {
+  display: none;
+
+  @media (max-width: 860px) {
+    display: block;
+  }
+}

@@ -3,10 +3,10 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import CartaoFormulario from "@/components/publico/CartaoFormulario";
+import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
-import styles from "../cadastro/cadastro.module.scss";
+import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 function ConteudoConfirmacao() {
   const searchParams = useSearchParams();
@@ -47,10 +47,10 @@ function ConteudoConfirmacao() {
 
 export default function PaginaConfirmarEmail() {
   return (
-    <CartaoFormulario titulo="Confirmação de e-mail">
+    <TelaAutenticacao eyebrow="Área do participante" titulo="Confirmação de e-mail">
       <Suspense fallback={<p>Carregando...</p>}>
         <ConteudoConfirmacao />
       </Suspense>
-    </CartaoFormulario>
+    </TelaAutenticacao>
   );
 }

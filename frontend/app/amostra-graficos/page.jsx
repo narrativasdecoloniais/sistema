@@ -3,6 +3,7 @@ import Carimbo from "@/components/graficos/Carimbo";
 import Divisor from "@/components/graficos/Divisor";
 import TexturaPapel from "@/components/graficos/TexturaPapel";
 import MarcaRodape from "@/components/graficos/MarcaRodape";
+import BuziosSimbolos from "@/components/publico/buzios/BuziosSimbolos";
 import styles from "./amostra.module.scss";
 
 const CORES = [
@@ -19,6 +20,7 @@ const SECOES_EXEMPLO = ["Inscrições", "Programação", "Eixos", "Anais"];
 export default function AmostraGraficos() {
   return (
     <div className={styles.pagina}>
+      <BuziosSimbolos />
       <h1 className={styles.tituloPagina}>Amostra de grafismos</h1>
       <p className={styles.aviso}>
         Página temporária de revisão — remover antes de finalizar o módulo.

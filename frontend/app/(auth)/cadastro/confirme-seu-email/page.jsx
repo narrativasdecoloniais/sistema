@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import CartaoFormulario from "@/components/publico/CartaoFormulario";
+import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import Campo from "@/components/forms/Campo";
-import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { recuperarSenhaSchema, extrairErros } from "@/lib/validacao";
-import styles from "../cadastro.module.scss";
+import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 export default function PaginaConfirmeSeuEmail() {
   const [email, setEmail] = useState("");
@@ -39,27 +38,30 @@ export default function PaginaConfirmeSeuEmail() {
   }
 
   return (
-    <CartaoFormulario
+    <TelaAutenticacao
+      eyebrow="Área do participante"
       titulo="Confirme seu e-mail"
       subtitulo="Enviamos um link de confirmação para o e-mail informado no cadastro. Clique nele para ativar sua conta."
     >
       <form onSubmit={reenviar} className={styles.formulario}>
+        <p className={styles.rodape}>Não encontrou o e-mail? Verifique também a caixa de spam ou lixo eletrônico.</p>
         <Alerta tipo="sucesso">{mensagem}</Alerta>
         <Campo
           id="email"
           rotulo="Não recebeu? Informe seu e-mail para reenviarmos"
           type="email"
+          variante="minimal"
           value={email}
           onChange={(evento) => setEmail(evento.target.value)}
           erro={erros.email}
         />
-        <Botao type="submit" carregando={carregando}>
-          Reenviar e-mail de confirmação
-        </Botao>
+        <button type="submit" className={styles.cta} disabled={carregando}>
+          {carregando ? "Aguarde..." : "Reenviar e-mail de confirmação"}
+        </button>
         <p className={styles.rodape}>
           <Link href="/login">Voltar para o login</Link>
         </p>
       </form>
-    </CartaoFormulario>
+    </TelaAutenticacao>
   );
 }

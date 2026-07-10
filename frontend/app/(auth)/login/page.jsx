@@ -3,15 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import CartaoFormulario from "@/components/publico/CartaoFormulario";
+import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import Campo from "@/components/forms/Campo";
 import CampoSenha from "@/components/forms/CampoSenha";
-import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { loginSchema, extrairErros } from "@/lib/validacao";
 import { formatarCpf } from "@/lib/cpf";
-import styles from "./login.module.scss";
+import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 export default function PaginaLogin() {
   const router = useRouter();
@@ -45,12 +44,17 @@ export default function PaginaLogin() {
   }
 
   return (
-    <CartaoFormulario titulo="Entrar" subtitulo="Acesse com o CPF cadastrado no Narrativas.">
+    <TelaAutenticacao
+      eyebrow="Área do participante"
+      titulo="Entrar"
+      subtitulo="Acesse com o CPF cadastrado no Narrativas."
+    >
       <form onSubmit={aoSubmeter} className={styles.formulario}>
         <Alerta>{erroGeral}</Alerta>
         <Campo
           id="cpf"
           rotulo="CPF"
+          variante="minimal"
           inputMode="numeric"
           placeholder="000.000.000-00"
           maxLength={14}
@@ -61,6 +65,7 @@ export default function PaginaLogin() {
         <CampoSenha
           id="senha"
           rotulo="Senha"
+          variante="minimal"
           value={senha}
           onChange={(evento) => setSenha(evento.target.value)}
           erro={erros.senha}
@@ -68,9 +73,9 @@ export default function PaginaLogin() {
         <Link href="/recuperar-senha" className={styles.link}>
           Esqueci minha senha
         </Link>
-        <Botao type="submit" carregando={carregando}>
-          Entrar
-        </Botao>
+        <button type="submit" className={styles.cta} disabled={carregando}>
+          {carregando ? "Aguarde..." : "Entrar"}
+        </button>
         <p className={styles.rodape}>
           Ainda não tem conta? <Link href="/cadastro">Inscreva-se</Link>
         </p>
@@ -79,6 +84,6 @@ export default function PaginaLogin() {
           <Link href="/cadastro/confirme-seu-email">Reenviar</Link>
         </p>
       </form>
-    </CartaoFormulario>
+    </TelaAutenticacao>
   );
 }

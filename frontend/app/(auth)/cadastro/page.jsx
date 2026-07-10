@@ -3,17 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import CartaoFormulario from "@/components/publico/CartaoFormulario";
+import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import Campo from "@/components/forms/Campo";
 import CampoCPF from "@/components/forms/CampoCPF";
 import CampoSelect from "@/components/forms/CampoSelect";
 import CampoSenha from "@/components/forms/CampoSenha";
 import Checkbox from "@/components/forms/Checkbox";
-import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { cadastroSchema, extrairErros, categorias } from "@/lib/validacao";
-import styles from "./cadastro.module.scss";
+import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 const valoresIniciais = {
   nome: "",
@@ -61,7 +60,8 @@ export default function PaginaCadastro() {
   }
 
   return (
-    <CartaoFormulario
+    <TelaAutenticacao
+      eyebrow="Área do participante"
       titulo="Criar conta"
       subtitulo="Preencha seus dados para se inscrever no Narrativas."
     >
@@ -70,6 +70,7 @@ export default function PaginaCadastro() {
         <Campo
           id="nome"
           rotulo="Nome completo"
+          variante="minimal"
           value={dados.nome}
           onChange={(evento) => atualizarCampo("nome", evento.target.value)}
           erro={erros.nome}
@@ -78,6 +79,7 @@ export default function PaginaCadastro() {
           id="email"
           rotulo="E-mail"
           type="email"
+          variante="minimal"
           value={dados.email}
           onChange={(evento) => atualizarCampo("email", evento.target.value)}
           erro={erros.email}
@@ -85,6 +87,7 @@ export default function PaginaCadastro() {
         <CampoCPF
           id="cpf"
           rotulo="CPF"
+          variante="minimal"
           value={dados.cpf}
           onChange={(evento) => atualizarCampo("cpf", evento.target.value)}
           erro={erros.cpf}
@@ -92,6 +95,7 @@ export default function PaginaCadastro() {
         <Campo
           id="instituicao"
           rotulo="Instituição"
+          variante="minimal"
           value={dados.instituicao}
           onChange={(evento) => atualizarCampo("instituicao", evento.target.value)}
           erro={erros.instituicao}
@@ -99,6 +103,7 @@ export default function PaginaCadastro() {
         <CampoSelect
           id="categoria"
           rotulo="Categoria"
+          variante="minimal"
           value={dados.categoria}
           onChange={(evento) => atualizarCampo("categoria", evento.target.value)}
           erro={erros.categoria}
@@ -116,6 +121,7 @@ export default function PaginaCadastro() {
           <CampoSenha
             id="senha"
             rotulo="Senha"
+            variante="minimal"
             value={dados.senha}
             onChange={(evento) => atualizarCampo("senha", evento.target.value)}
             erro={erros.senha}
@@ -123,6 +129,7 @@ export default function PaginaCadastro() {
           <CampoSenha
             id="confirmarSenha"
             rotulo="Confirmar senha"
+            variante="minimal"
             value={dados.confirmarSenha}
             onChange={(evento) => atualizarCampo("confirmarSenha", evento.target.value)}
             erro={erros.confirmarSenha}
@@ -142,13 +149,13 @@ export default function PaginaCadastro() {
           onChange={(evento) => atualizarCampo("aceitePrivacidade", evento.target.checked)}
           erro={erros.aceitePrivacidade}
         />
-        <Botao type="submit" carregando={carregando}>
-          Criar conta
-        </Botao>
+        <button type="submit" className={styles.cta} disabled={carregando}>
+          {carregando ? "Aguarde..." : "Criar conta"}
+        </button>
         <p className={styles.rodape}>
           Já tem conta? <Link href="/login">Entrar</Link>
         </p>
       </form>
-    </CartaoFormulario>
+    </TelaAutenticacao>
   );
 }

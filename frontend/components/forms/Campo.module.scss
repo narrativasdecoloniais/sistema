@@ -30,6 +30,28 @@
   border-color: var(--cor-erro);
 }
 
+// sem caixa nem borda — mimetizado ao fundo, só uma linha sutil embaixo
+// marca onde o campo termina
+.minimal {
+  padding: 0.65rem 0.1rem;
+  border: none;
+  border-bottom: 1px solid var(--cor-borda);
+  border-radius: 0;
+  background: transparent;
+
+  &:focus {
+    box-shadow: none;
+    border-bottom-color: var(--cor-acento);
+    border-bottom-width: 2px;
+    // compensa o pixel a mais da borda de 2px pra o texto não pular
+    padding-bottom: calc(0.65rem - 1px);
+  }
+
+  &.comErro {
+    border-bottom-color: var(--cor-erro);
+  }
+}
+
 .campoComBotao {
   position: relative;
   display: flex;

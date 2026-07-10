@@ -1,0 +1,197 @@
+.pagina {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: calc(3rem + 70px) 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  @media (max-width: 700px) {
+    padding: calc(2rem + 70px) 1.5rem 3.5rem;
+  }
+}
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tinta);
+  font-size: clamp(2rem, 4.5vw, 2.8rem);
+  line-height: 1.15;
+}
+
+.subtitulo {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.prazo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+  margin-top: 0.4rem;
+}
+
+.divisor {
+  width: 100%;
+  color: var(--ocre);
+}
+
+.secaoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+
+  p {
+    font-size: 1rem;
+    color: var(--tinta);
+    line-height: 1.7;
+  }
+}
+
+.subtituloSecao {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+}
+
+.areasIntro {
+  font-size: 0.92rem;
+  color: var(--texto-suave);
+  line-height: 1.6;
+  margin: -0.3rem 0 0.2rem;
+}
+
+.areasGrade {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.areaCartao {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 0;
+  background: var(--papel);
+  
+  text-decoration: none;
+  // box-shadow soma às costas do border-left só no hover, sem alterar a
+  // largura da caixa (evita o texto "pular" quando a borda engrossa).
+  box-shadow: inset 0 0 0 0 var(--barro);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  border: 1px solid var(--areia);
+  border-left: 3px solid var(--barro);
+  &:hover {
+    background: var(--areia);
+  }
+.areaSeta{
+  border-left: 1px solid var(--areia);
+  color: var(--barro);
+}
+  &:hover .areaSeta {
+    background: var(--barro);
+    color: var(--papel);
+    
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: -2px;
+  }
+}
+
+.areaTexto {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.9rem 1.2rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.areaSeta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  background: transparent;
+  color: var(--tinta);
+  font-size: 1.1rem;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.areaEyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.areaTitulo {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--tinta);
+  line-height: 1.45;
+}
+
+.notaDocumentos {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.6;
+  padding: 1rem 1.2rem;
+  border: 1px dashed var(--ocre);
+}
+
+.acoes {
+  display: flex;
+}
+
+// retangular, cantos retos — não clicável porque ainda não existe fluxo de
+// submissão por trás
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 2rem;
+  background: var(--barro);
+  color: var(--papel);
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: not-allowed;
+  opacity: 0.55;
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
+}

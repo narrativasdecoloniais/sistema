@@ -1,4 +1,4 @@
-import { Archivo, Allerta_Stencil } from "next/font/google";
+import { Archivo, Saira_Stencil_One } from "next/font/google";
 import "@/styles/globals.scss";
 
 const archivo = Archivo({
@@ -7,9 +7,13 @@ const archivo = Archivo({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const allertaStencil = Allerta_Stencil({
-  subsets: ["latin"],
+// Escolhida sobre a Allerta Stencil após comparação visual contra a logo
+// oficial: traço grosso e corte geométrico ecoam o peso da logo, a Allerta
+// é fina demais. Ambas foram verificadas (glifo + render) para ç/ã/õ/á/é.
+const sairaStencilOne = Saira_Stencil_One({
+  subsets: ["latin", "latin-ext"],
   weight: "400",
+  display: "swap",
   variable: "--font-stencil",
 });
 
@@ -21,7 +25,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR" className={`${archivo.variable} ${allertaStencil.variable}`}>
+    <html lang="pt-BR" className={`${archivo.variable} ${sairaStencilOne.variable}`}>
       <body>{children}</body>
     </html>
   );
