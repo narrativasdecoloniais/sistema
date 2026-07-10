@@ -16,12 +16,7 @@ module.exports = {
   jwtRefreshSecret: obrigatoria("JWT_REFRESH_SECRET"),
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m",
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
-  smtp: {
-    host: process.env.SMTP_HOST || "",
-    port: Number(process.env.SMTP_PORT) || 587,
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
-    from: process.env.SMTP_FROM || "Narrativas <nao-responda@narrativas.unb.br>",
-  },
+  resendApiKey: process.env.RESEND_API_KEY || "",
+  emailFrom: process.env.EMAIL_FROM || "Narrativas <onboarding@resend.dev>",
   producao: process.env.NODE_ENV === "production",
 };

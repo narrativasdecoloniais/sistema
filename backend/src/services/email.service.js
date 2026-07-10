@@ -1,52 +1,55 @@
 const nodemailer = require("nodemailer");
 const env = require("../config/env");
 
-let transportadorPromise;
+// Railway (e a maioria dos PaaS) bloqueia portas de SMTP (25/465/587) no
+// tráfego de saída para prevenir abuso, então em produção o envio precisa
+// ser via API HTTP do Resend. Ethereal (SMTP) só é usado em dev local, onde
+// essa porta não é bloqueada.
+async function enviarViaResend({ para, assunto, html }) {
+  const resposta = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from: env.emailFrom, to: para, subject: assunto, html }),
+  });
 
-async function obterTransportador() {
-  if (transportadorPromise) return transportadorPromise;
-
-  if (env.smtp.host) {
-    transportadorPromise = Promise.resolve(
-      nodemailer.createTransport({
-        host: env.smtp.host,
-        port: env.smtp.port,
-        secure: env.smtp.port === 465,
-        auth: env.smtp.user ? { user: env.smtp.user, pass: env.smtp.pass } : undefined,
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-      })
-    );
-    return transportadorPromise;
+  if (!resposta.ok) {
+    const erro = await resposta.text();
+    throw new Error(`Falha ao enviar e-mail via Resend (${resposta.status}): ${erro}`);
   }
 
-  // Sem SMTP configurado: cria uma conta de teste Ethereal para não perder o e-mail em dev.
-  transportadorPromise = nodemailer.createTestAccount().then((conta) =>
-    nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: { user: conta.user, pass: conta.pass },
-    })
-  );
-  return transportadorPromise;
+  console.log(`[email] "${assunto}" enviado para ${para} via Resend`);
+}
+
+let transportadorEtherealPromise;
+
+async function obterTransportadorEthereal() {
+  if (!transportadorEtherealPromise) {
+    transportadorEtherealPromise = nodemailer.createTestAccount().then((conta) =>
+      nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: { user: conta.user, pass: conta.pass },
+      })
+    );
+  }
+  return transportadorEtherealPromise;
+}
+
+async function enviarViaEthereal({ para, assunto, html }) {
+  const transportador = await obterTransportadorEthereal();
+  const info = await transportador.sendMail({ from: env.emailFrom, to: para, subject: assunto, html });
+  console.log(`[email] "${assunto}" para ${para} — preview: ${nodemailer.getTestMessageUrl(info)}`);
 }
 
 async function enviarEmail({ para, assunto, html }) {
-  const transportador = await obterTransportador();
-  const info = await transportador.sendMail({
-    from: env.smtp.from,
-    to: para,
-    subject: assunto,
-    html,
-  });
-
-  const urlPreview = nodemailer.getTestMessageUrl(info);
-  if (urlPreview) {
-    console.log(`[email] "${assunto}" para ${para} — preview: ${urlPreview}`);
+  if (env.resendApiKey) {
+    await enviarViaResend({ para, assunto, html });
   } else {
-    console.log(`[email] "${assunto}" enviado para ${para}`);
+    await enviarViaEthereal({ para, assunto, html });
   }
 }
 
