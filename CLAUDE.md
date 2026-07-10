@@ -9,7 +9,7 @@ Plataforma exclusiva do evento "Narrativas Interculturais, Decoloniais e Antirra
 - **Backend:** Express (Node.js, JavaScript).
 - **Banco:** PostgreSQL + **Prisma** (`backend/prisma/schema.prisma`).
 - **Auth:** JWT em cookie httpOnly (access curto + refresh), senha com bcrypt.
-- **E-mail:** Nodemailer, SMTP configurável por `.env` (dev: Ethereal ou console).
+- **E-mail:** API HTTP do Resend (`RESEND_API_KEY` no `.env`; dev sem chave: Ethereal via Nodemailer, link de preview no console). Trocado de SMTP puro porque o Railway bloqueia portas de saída 25/465/587 em todos os planos — qualquer SMTP tradicional trava até estourar timeout em produção.
 
 Antes de propor qualquer alternativa a essa stack (outra lib de estilo, TypeScript, outro ORM etc.), pare e pergunte.
 
