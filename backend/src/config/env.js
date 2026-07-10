@@ -17,6 +17,7 @@ module.exports = {
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m",
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
   resendApiKey: process.env.RESEND_API_KEY || "",
+  cookieDomain: process.env.COOKIE_DOMAIN || undefined,
   emailFrom: process.env.EMAIL_FROM || "Narrativas <nao-responda@narrativasdecoloniais.com.br>",
   producao: process.env.NODE_ENV === "production",
 };

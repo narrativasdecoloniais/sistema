@@ -84,6 +84,7 @@ function definirCookiesSessao(res, { accessToken, refreshToken }) {
     sameSite: "lax",
     secure: env.producao,
     path: "/",
+    domain: env.cookieDomain,
   };
 
   res.cookie(NOME_COOKIE_ACESSO, accessToken, {
@@ -97,8 +98,8 @@ function definirCookiesSessao(res, { accessToken, refreshToken }) {
 }
 
 function limparCookiesSessao(res) {
-  res.clearCookie(NOME_COOKIE_ACESSO, { path: "/" });
-  res.clearCookie(NOME_COOKIE_REFRESH, { path: "/" });
+  res.clearCookie(NOME_COOKIE_ACESSO, { path: "/", domain: env.cookieDomain });
+  res.clearCookie(NOME_COOKIE_REFRESH, { path: "/", domain: env.cookieDomain });
 }
 
 module.exports = {
