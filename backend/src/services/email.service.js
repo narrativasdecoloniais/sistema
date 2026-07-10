@@ -13,6 +13,9 @@ async function obterTransportador() {
         port: env.smtp.port,
         secure: env.smtp.port === 465,
         auth: env.smtp.user ? { user: env.smtp.user, pass: env.smtp.pass } : undefined,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
       })
     );
     return transportadorPromise;
