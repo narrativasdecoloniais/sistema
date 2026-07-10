@@ -191,6 +191,7 @@
   padding: clamp(4rem, 8vw, 7rem) 2rem;
   max-width: 960px;
   margin: 0 auto;
+  border-top: 1px solid var(--areia);
 
   @media (max-width: 700px) {
     grid-template-columns: 1fr;
@@ -377,7 +378,6 @@
   align-items: start;
   gap: 0.65rem;
   padding: 1.5rem;
-  border: 1px solid var(--ocre);
   background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
 }
 
