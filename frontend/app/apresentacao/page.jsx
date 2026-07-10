@@ -206,7 +206,7 @@ export default function Apresentacao() {
         <p className={styles.texto}>
           A tipografia é protagonista porque o evento se chama Narrativas. Os
           títulos das seções usam a mesma família stencil da logo, tratando a
-          palavra como imagem principal, dialogando diretamento com o objeto do
+          palavra como imagem principal, dialogando diretamente com o objeto do
           encontro: textos, falas, contação, escuta.
         </p>
         <p className={styles.texto}>
