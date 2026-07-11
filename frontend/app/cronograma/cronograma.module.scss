@@ -1,0 +1,413 @@
+@use "../../styles/tokens-publico" as pub;
+
+.pagina {
+  @include pub.tokens;
+  background: var(--papel);
+  color: var(--tinta);
+  display: flex;
+  flex-direction: column;
+}
+
+// ---- hero ----
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 720px;
+  padding: clamp(4rem, 10vw, 7rem) 2rem clamp(2.5rem, 6vw, 3.5rem);
+  margin: 0 auto;
+  width: 100%;
+
+  @media (max-width: 700px) {
+    padding: clamp(3rem, 12vw, 5rem) 1.5rem 2rem;
+  }
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.tituloPrincipal {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.introducao {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--tinta);
+  margin: 0;
+  max-width: 66ch;
+}
+
+.resumoProgresso {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--barro);
+  margin: 0.25rem 0 0;
+}
+
+// ---- seções ----
+
+.secao {
+  position: relative;
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  column-gap: 2rem;
+  align-items: start;
+  padding: clamp(3rem, 7vw, 5rem) 2rem;
+  max-width: 980px;
+  margin: 0 auto;
+  border-top: 1px solid var(--areia);
+  width: 100%;
+  min-width: 0;
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+    row-gap: 1rem;
+    padding: clamp(2.5rem, 9vw, 4rem) 1.5rem;
+  }
+}
+
+.marcador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.3rem;
+
+  @media (max-width: 700px) {
+    justify-content: flex-start;
+  }
+}
+
+.marcadorBuzio {
+  color: var(--buzio);
+}
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 100%;
+  width: 100%;
+  // sem isto, o item de grid herda a largura mínima de conteúdo (min-content)
+  // da tabela de pagamento, empurrando a página inteira em vez de deixar
+  // o overflow-x da moldura da tabela rolar por conta própria.
+  min-width: 0;
+}
+
+.tituloSecao {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0;
+}
+
+.texto {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--tinta);
+  margin: 0;
+  max-width: 70ch;
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+// ---- tabela de pagamento ----
+
+.tabelaPagamentoMoldura {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--areia);
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabelaPagamento {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 480px;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--areia);
+    white-space: nowrap;
+  }
+
+  th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  @media (max-width: 700px) {
+    min-width: 420px;
+    font-size: 0.84rem;
+
+    th,
+    td {
+      padding: 0.6rem 0.75rem;
+    }
+  }
+}
+
+.situacaoPagamento {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.situacaoPaga {
+  color: var(--cerrado);
+}
+
+.situacaoPendente {
+  color: var(--texto-suave);
+}
+
+// ---- lista de módulos ----
+
+.listaModulos {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.moduloCartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.5rem;
+  border: 1px solid var(--areia);
+}
+
+.moduloCabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.moduloTitulos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.moduloNumero {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.moduloNome {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--tinta);
+  margin: 0;
+}
+
+.moduloMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.moduloMes {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.moduloResumo {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--texto-suave);
+  margin: 0;
+  max-width: 68ch;
+}
+
+.moduloNota {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--texto-suave);
+  font-style: italic;
+  margin: 0;
+}
+
+// ---- selo de status (módulo) ----
+
+.selo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.seloConcluido {
+  color: var(--papel);
+
+  .seloCarimbo {
+    color: var(--cerrado);
+  }
+}
+
+.seloEmAndamento {
+  color: var(--papel);
+
+  .seloCarimbo {
+    color: var(--barro);
+  }
+}
+
+.seloPlanejado {
+  color: var(--tinta);
+
+  .seloCarimbo {
+    color: var(--ocre);
+  }
+}
+
+// ---- lista de itens dentro do módulo ----
+
+.listaItens {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  padding: 0.6rem 0 0.6rem 1rem;
+  border-left: 2px solid var(--areia);
+}
+
+.itemConcluido {
+  border-left-color: var(--cerrado);
+}
+
+.itemEmAndamento {
+  border-left-color: var(--barro);
+}
+
+.itemPlanejado {
+  border-left-color: var(--ocre);
+}
+
+.itemLinha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.itemTitulo {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.itemStatus {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+}
+
+.itemStatusConcluido {
+  background: var(--cerrado);
+  color: var(--papel);
+}
+
+.itemStatusEmAndamento {
+  background: var(--barro);
+  color: var(--papel);
+}
+
+.itemStatusPlanejado {
+  background: var(--ocre);
+  color: var(--tinta);
+}
+
+.tagBastidor {
+  font-size: 0.68rem;
+  font-style: italic;
+  color: var(--texto-suave);
+  border: 1px solid var(--areia);
+  padding: 0.1rem 0.5rem;
+}
+
+.itemDescricao {
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--texto-suave);
+  margin: 0.3rem 0 0;
+  max-width: 68ch;
+}
+
+// ---- fechamento ----
+
+.fechamento {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 720px;
+  padding: clamp(3rem, 7vw, 5rem) 2rem clamp(4rem, 9vw, 7rem);
+  margin: 0 auto;
+  width: 100%;
+  border-top: 1px solid var(--areia);
+
+  @media (max-width: 700px) {
+    padding: clamp(2.5rem, 9vw, 4rem) 1.5rem 3.5rem;
+  }
+}
