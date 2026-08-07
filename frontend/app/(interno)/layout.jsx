@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { obterUsuarioAtual } from "@/lib/auth";
+import { PrimeReactProvider } from "primereact/api";
 import Shell from "@/components/interno/Shell";
+import ToastProvider from "@/components/interno/ToastProvider";
 import styles from "./layout.module.scss";
 
 export default async function LayoutInterno({ children }) {
@@ -12,7 +14,11 @@ export default async function LayoutInterno({ children }) {
 
   return (
     <div className={styles.wrapper}>
-      <Shell usuario={usuario}>{children}</Shell>
+      <PrimeReactProvider value={{ unstyled: true }}>
+        <ToastProvider>
+          <Shell usuario={usuario}>{children}</Shell>
+        </ToastProvider>
+      </PrimeReactProvider>
     </div>
   );
 }

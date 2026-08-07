@@ -1,0 +1,49 @@
+.secao {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.secaoTitulo {
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.linhaDados {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+
+  span:last-child {
+    color: var(--texto);
+    font-weight: 500;
+    word-break: break-word;
+  }
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  > * {
+    flex: 1 1 200px;
+  }
+}
+
+.perigo {
+  border-color: var(--erro);
+}
+
+.perigoTexto {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}

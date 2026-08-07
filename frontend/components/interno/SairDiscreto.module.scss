@@ -1,0 +1,26 @@
+.sair {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  cursor: pointer;
+  z-index: 10;
+
+  &:hover {
+    color: var(--texto);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}

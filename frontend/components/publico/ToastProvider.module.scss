@@ -1,0 +1,53 @@
+.regiao {
+  z-index: 2000;
+}
+
+.toast {
+  min-width: 280px;
+  max-width: 380px;
+  margin-bottom: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--papel);
+  border-left: 3px solid transparent;
+  box-shadow: 0 2px 10px rgba(32, 25, 20, 0.15);
+}
+
+.erro {
+  border-left-color: var(--cor-erro);
+
+  .texto,
+  .detalhe {
+    color: var(--cor-erro);
+  }
+}
+
+.sucesso {
+  border-left-color: var(--cor-acento);
+
+  .texto,
+  .detalhe {
+    color: var(--cor-acento);
+  }
+}
+
+.conteudo {
+  display: flex;
+  align-items: flex-start;
+}
+
+// sem ícone no público — só a borda colorida sinaliza o tipo
+.iconeOculto {
+  display: none;
+}
+
+.texto {
+  margin: 0;
+  flex: 1 1 auto;
+}
+
+.detalhe {
+  margin: 0;
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

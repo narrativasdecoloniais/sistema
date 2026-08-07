@@ -6,6 +6,13 @@ html,
 body {
   padding: 0;
   margin: 0;
+  // Trava contra sangramentos horizontais intencionais (ex. .heroFundoBlur em
+  // (publico)/page.module.scss, que estica 40px além das laterais de
+  // propósito pro filter: blur() ter margem pra amostrar) virarem uma barra
+  // de rolagem horizontal em telas estreitas. No html/body isso não corta
+  // elementos position:fixed (nav, faixas laterais) — diferente de aplicar
+  // overflow:hidden num container aninhado, que cortaria.
+  overflow-x: hidden;
 }
 
 body {

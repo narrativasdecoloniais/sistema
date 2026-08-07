@@ -1,0 +1,140 @@
+.raiz {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.raizMobile {
+  @media (min-width: 700.02px) {
+    display: none;
+  }
+}
+
+.raizDesktop {
+  @media (max-width: 700px) {
+    display: none;
+  }
+}
+
+.seletor {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  background: none;
+  border: none;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--texto);
+
+  &:hover {
+    background: var(--fundo);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.seletorTexto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+.raizMobile .seletorTexto {
+  max-width: 120px;
+}
+
+.seta {
+  display: block;
+  flex-shrink: 0;
+  color: var(--texto-suave);
+  transition: transform 0.15s ease;
+}
+
+.setaAberta {
+  transform: rotate(180deg);
+}
+
+.painel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 220px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  z-index: 20;
+}
+
+.item {
+  padding: 0.55rem 0.75rem;
+  border-radius: 4px;
+  color: var(--texto);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: -2px;
+  }
+}
+
+.itemAtivo {
+  color: var(--acento);
+  font-weight: 700;
+}
+
+// exceção documentada em DESIGN.md: botões de ação circulares (junto do
+// avatar de usuário) podem fugir do raio máx. de 6px do resto da UI interna
+.criar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  background: var(--fundo);
+  color: var(--texto-suave);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  svg {
+    display: block;
+  }
+
+  &:hover {
+    background: var(--acento);
+    color: var(--fundo);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}

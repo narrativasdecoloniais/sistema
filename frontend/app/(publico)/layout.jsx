@@ -5,8 +5,8 @@ import styles from "./layout.module.scss";
 export default function LayoutPublico({ children }) {
   return (
     <div className={styles.wrapper}>
-      <a href="#inscricoes" className={styles.skipLink}>
-        Pular para as inscrições
+      <a href="#atividades" className={styles.skipLink}>
+        Pular para as atividades
       </a>
       <BarraNavegacao />
       <main id="conteudo-principal" className={styles.conteudo}>

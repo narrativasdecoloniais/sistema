@@ -1,0 +1,97 @@
+.wrapper {
+  margin-bottom: 2rem;
+}
+
+.buzio {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: var(--buzio);
+}
+
+// linha contínua conectando as etapas — desenhada aqui (não pelo separador
+// nativo do PrimeReact, que só existe no DOM enquanto a etapa é a ativa)
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  padding-left: 1.25rem;
+  border-left: 1.5px solid var(--ocre);
+}
+
+.item {
+  position: relative;
+}
+
+.header {
+  display: flex;
+}
+
+// nav é só indicador de progresso, não navegação por clique — quem controla
+// a etapa ativa é o estado do fluxo na página
+.action {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: default;
+  pointer-events: none;
+}
+
+// marcador quadrado (raio bem abaixo do máx. 6px do DESIGN.md) reaproveitando
+// o span que o PrimeReact usa pro número "1/2/3" — o dígito fica presente no
+// DOM (acessibilidade anuncia a posição), só visualmente escondido, pra não
+// virar um badge numerado de template
+// centro do marcador cai exatamente sobre a linha de .root: puxa pra
+// esquerda o padding-left do pai (1.25rem) mais metade da própria largura
+// (4px), então -1.25rem - 4px = -1.5rem
+.numero {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-left: -1.5rem;
+  border-radius: 2px;
+  background: var(--areia);
+  border: 1.5px solid var(--ocre);
+  font-size: 0;
+  color: transparent;
+}
+
+.numeroAtivo {
+  background: var(--barro);
+  border-color: var(--barro);
+}
+
+.numeroConcluido {
+  background: var(--cerrado);
+  border-color: var(--cerrado);
+}
+
+.titulo {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+// DESIGN.md: hierarquia por cor/peso, nunca caixas coloridas
+.tituloAtivo {
+  color: var(--barro);
+}
+
+.tituloConcluido {
+  color: var(--cerrado);
+}
+
+// separador nativo escondido — a linha de conexão entre etapas é o
+// border-left de .root, contínua mesmo quando o separador nativo não está
+// no DOM (ele só existe enquanto a etapa é a ativa)
+.separadorOculto {
+  display: none;
+}
+
+// conteúdo da etapa ativa nasce aqui, logo abaixo do próprio cabeçalho
+.conteudoEtapa {
+  padding: 0.9rem 0 0.15rem;
+}

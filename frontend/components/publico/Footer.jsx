@@ -4,7 +4,7 @@ import styles from "./Footer.module.scss";
 
 const ANCORAS = [
   { href: "/#submissao", rotulo: "Submissão" },
-  { href: "/#inscricoes", rotulo: "Inscrições" },
+  { href: "/#atividades", rotulo: "Atividades" },
   { href: "/#programacao", rotulo: "Programação" },
   { href: "/#anais", rotulo: "Anais" },
 ];

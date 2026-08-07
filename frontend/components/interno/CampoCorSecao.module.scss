@@ -1,0 +1,67 @@
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rotulo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.opcao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+.raiz {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.inputOculto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.caixa {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--borda);
+  pointer-events: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.raiz[data-p-checked="true"] .caixa {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px var(--superficie), 0 0 0 4px var(--acento);
+}
+
+.raiz:has(:focus-visible) .caixa {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

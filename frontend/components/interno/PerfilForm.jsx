@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import Campo from "@/components/forms/Campo";
 import CampoSenha from "@/components/forms/CampoSenha";
 import CampoSelect from "@/components/forms/CampoSelect";
+import CampoFoto from "@/components/forms/CampoFoto";
 import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { atualizarPerfilSchema, alterarSenhaSchema, extrairErros, categorias } from "@/lib/validacao";
-import styles from "./page.module.scss";
+import styles from "./PerfilForm.module.scss";
 
 export default function PerfilForm({ usuarioInicial }) {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function PerfilForm({ usuarioInicial }) {
     nome: usuario?.nome || "",
     instituicao: usuario?.instituicao || "",
     categoria: usuario?.categoria || "",
+    foto: usuario?.foto || null,
   });
   const [errosPerfil, setErrosPerfil] = useState({});
   const [mensagemPerfil, setMensagemPerfil] = useState("");
@@ -37,7 +39,16 @@ export default function PerfilForm({ usuarioInicial }) {
     evento.preventDefault();
     setMensagemPerfil("");
 
-    const resultado = atualizarPerfilSchema.safeParse(perfil);
+    // Usuario.foto agora é uma URL assinada do storage, não a imagem em si —
+    // só reenviamos o campo quando o usuário realmente trocou ou removeu a
+    // foto (novo data URI ou null); caso contrário, a URL atual reprovaria a
+    // validação (que só aceita data:image/…) e sobrescreveria sem necessidade.
+    const dadosParaValidar = { ...perfil };
+    if (dadosParaValidar.foto === (usuario?.foto || null)) {
+      delete dadosParaValidar.foto;
+    }
+
+    const resultado = atualizarPerfilSchema.safeParse(dadosParaValidar);
     if (!resultado.success) {
       setErrosPerfil(extrairErros(resultado));
       return;
@@ -112,6 +123,14 @@ export default function PerfilForm({ usuarioInicial }) {
         <Alerta tipo={mensagemPerfil.includes("sucesso") ? "sucesso" : "erro"}>
           {mensagemPerfil}
         </Alerta>
+        <CampoFoto
+          id="foto"
+          rotulo="Foto de perfil"
+          usuario={usuario}
+          valor={perfil.foto}
+          onChange={(foto) => setPerfil((atual) => ({ ...atual, foto }))}
+          erro={errosPerfil.foto}
+        />
         <Campo
           id="nome"
           rotulo="Nome completo"

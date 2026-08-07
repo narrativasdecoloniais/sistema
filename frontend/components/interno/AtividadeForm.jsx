@@ -1,0 +1,418 @@
+"use client";
+
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { Button } from "primereact/button";
+import CampoTexto from "./CampoTexto";
+import CampoNumero from "./CampoNumero";
+import CampoArea from "./CampoArea";
+import CampoSelecao from "./CampoSelecao";
+import CampoCheckbox from "./CampoCheckbox";
+import Campo from "@/components/forms/Campo";
+import CampoFoto from "@/components/forms/CampoFoto";
+import Alerta from "@/components/forms/Alerta";
+import { apiClient } from "@/lib/apiClient";
+import { atividadeSchema, extrairErros } from "@/lib/validacao";
+import { gerarSlug } from "@/lib/slug";
+import { useToast } from "./ToastProvider";
+import styles from "./AtividadeForm.module.scss";
+
+function paraData(valor) {
+  if (!valor) return "";
+  return new Date(valor).toISOString().slice(0, 10);
+}
+
+function paraHora(valor) {
+  if (!valor) return "";
+  return new Date(valor).toISOString().slice(11, 16);
+}
+
+function combinar(valorAtual, { data, hora }) {
+  const novaData = data ?? paraData(valorAtual);
+  const novaHora = hora ?? paraHora(valorAtual);
+  if (!novaData) return "";
+  return `${novaData}T${novaHora || "00:00"}:00.000Z`;
+}
+
+// Soma horas a um horário "HH:MM", dando a volta na meia-noite se preciso.
+function somarHora(hora, horas) {
+  if (!hora) return "";
+  const [h, m] = hora.split(":").map(Number);
+  const totalMinutos = (((h * 60 + m + horas * 60) % (24 * 60)) + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(totalMinutos / 60)).padStart(2, "0")}:${String(totalMinutos % 60).padStart(2, "0")}`;
+}
+
+function estadoInicial(atividadeInicial) {
+  return {
+    tipoAtividadeId: atividadeInicial?.tipoAtividadeId || "",
+    nome: atividadeInicial?.nome || "",
+    slug: atividadeInicial?.slug || "",
+    descricao: atividadeInicial?.descricao || "",
+    cargaHoraria: atividadeInicial?.cargaHoraria ?? null,
+    local: atividadeInicial?.local || "",
+    exigeInscricao: atividadeInicial?.exigeInscricao ?? true,
+    semLimiteVagas: atividadeInicial?.semLimiteVagas || false,
+    vagas: atividadeInicial?.vagas ?? null,
+    inicioAtividade: atividadeInicial?.inicioAtividade || "",
+    fimAtividade: atividadeInicial?.fimAtividade || "",
+    pessoas: (atividadeInicial?.pessoas || []).map((pessoa) => ({
+      id: pessoa.id,
+      nome: pessoa.nome || "",
+      imagem: pessoa.imagem || null,
+      descricao: pessoa.descricao || "",
+      breveDescricao: pessoa.breveDescricao || "",
+      tipoParticipacaoId: pessoa.tipoParticipacao?.id || "",
+    })),
+  };
+}
+
+// AtividadePessoa.imagem agora é uma URL do storage, não a imagem em si — só
+// reenviamos o campo quando a foto realmente mudou (novo data URI) ou foi
+// removida (null); caso contrário a URL atual reprovaria a validação (que só
+// aceita data:image/…) e sobrescreveria sem necessidade.
+function paraPayload(dados, atividadeInicial) {
+  const imagensOriginais = new Map((atividadeInicial?.pessoas || []).map((pessoa) => [pessoa.id, pessoa.imagem]));
+
+  return {
+    ...dados,
+    descricao: dados.descricao || undefined,
+    cargaHoraria: dados.cargaHoraria ?? undefined,
+    local: dados.local || undefined,
+    pessoas: (dados.pessoas || []).map((pessoa) => {
+      const imagemOriginal = pessoa.id ? imagensOriginais.get(pessoa.id) ?? null : null;
+      const imagemAlterada = pessoa.imagem !== imagemOriginal;
+      return {
+        ...pessoa,
+        imagem: imagemAlterada ? pessoa.imagem : undefined,
+        descricao: pessoa.descricao || undefined,
+        breveDescricao: pessoa.breveDescricao || undefined,
+        tipoParticipacaoId: pessoa.tipoParticipacaoId || undefined,
+      };
+    }),
+  };
+}
+
+export default function AtividadeForm({
+  edicaoId,
+  atividadeInicial,
+  tiposAtividade,
+  tiposParticipacao,
+  aoSalvar,
+  aoCancelar,
+}) {
+  const { notificar } = useToast();
+  const modoEdicao = Boolean(atividadeInicial);
+
+  const [dados, setDados] = useState(() => estadoInicial(atividadeInicial));
+  const [erros, setErros] = useState({});
+  const [erroGeral, setErroGeral] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  function atualizarCampo(campo, valor) {
+    setDados((atual) => ({ ...atual, [campo]: valor }));
+  }
+
+  function aoMudarNome(valor) {
+    setDados((atual) => ({
+      ...atual,
+      nome: valor,
+      // Só gera o slug a partir do nome na criação — numa atividade já
+      // existente, o link público não deve mudar quando o nome é editado.
+      slug: modoEdicao ? atual.slug : gerarSlug(valor),
+    }));
+  }
+
+  function aoMudarAgenda(campo, valor) {
+    setDados((atual) => {
+      const novo = { ...atual, [campo]: valor };
+
+      if (campo === "inicioAtividade" && valor) {
+        // repete a data e soma 1h na hora do fim, só pra facilitar o
+        // preenchimento — o usuário pode ajustar o fim depois se quiser.
+        novo.fimAtividade = combinar(novo.fimAtividade, {
+          data: paraData(valor),
+          hora: somarHora(paraHora(valor), 1),
+        });
+      }
+
+      if (campo === "semLimiteVagas") {
+        novo.vagas = valor ? null : novo.vagas;
+      }
+
+      if (campo === "exigeInscricao" && !valor) {
+        novo.semLimiteVagas = false;
+        novo.vagas = null;
+      }
+
+      return novo;
+    });
+  }
+
+  function aoMudarPessoa(indice, campo, valor) {
+    setDados((atual) => {
+      const pessoas = [...atual.pessoas];
+      pessoas[indice] = { ...pessoas[indice], [campo]: valor };
+      return { ...atual, pessoas };
+    });
+  }
+
+  function aoAdicionarPessoa() {
+    setDados((atual) => ({
+      ...atual,
+      pessoas: [
+        ...atual.pessoas,
+        { nome: "", imagem: null, descricao: "", breveDescricao: "", tipoParticipacaoId: "" },
+      ],
+    }));
+  }
+
+  function aoRemoverPessoa(indice) {
+    setDados((atual) => ({
+      ...atual,
+      pessoas: atual.pessoas.filter((_, i) => i !== indice),
+    }));
+  }
+
+  async function aoSubmeter(evento) {
+    evento.preventDefault();
+    setErroGeral("");
+
+    const resultado = atividadeSchema.safeParse(paraPayload(dados, atividadeInicial));
+    if (!resultado.success) {
+      setErros(extrairErros(resultado));
+      return;
+    }
+    setErros({});
+    setSalvando(true);
+
+    try {
+      const resposta = modoEdicao
+        ? await apiClient.patch(
+            `/edicoes/${edicaoId}/atividades/${atividadeInicial.id}`,
+            resultado.data
+          )
+        : await apiClient.post(`/edicoes/${edicaoId}/atividades`, resultado.data);
+      notificar(
+        modoEdicao ? "Atividade atualizada com sucesso." : "Atividade criada com sucesso."
+      );
+      aoSalvar(resposta.atividade);
+    } catch (erro) {
+      setErroGeral(erro.message);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <form onSubmit={aoSubmeter} className={styles.formulario}>
+      <Alerta>{erroGeral}</Alerta>
+      <CampoSelecao
+        id="tipoAtividadeId"
+        rotulo="Tipo de atividade"
+        value={dados.tipoAtividadeId}
+        onChange={(evento) => atualizarCampo("tipoAtividadeId", evento.target.value)}
+        erro={erros.tipoAtividadeId}
+      >
+        <option value="">Selecione um tipo</option>
+        {tiposAtividade.map((tipo) => (
+          <option key={tipo.id} value={tipo.id}>
+            {tipo.nome}
+          </option>
+        ))}
+      </CampoSelecao>
+      {tiposAtividade.length === 0 && (
+        <p className={styles.avisoSemTipos}>
+          Nenhum tipo de atividade cadastrado ainda. Crie um em Configurações → Tipos de
+          atividade antes de cadastrar a atividade.
+        </p>
+      )}
+      <CampoTexto
+        id="nome"
+        rotulo="Nome da atividade"
+        value={dados.nome}
+        onChange={(evento) => aoMudarNome(evento.target.value)}
+        erro={erros.nome}
+      />
+      <CampoArea
+        id="descricao"
+        rotulo="Descrição"
+        linhas={4}
+        value={dados.descricao}
+        onChange={(evento) => atualizarCampo("descricao", evento.target.value)}
+        erro={erros.descricao}
+      />
+      <div className={styles.linha}>
+        <CampoNumero
+          id="cargaHoraria"
+          rotulo="Carga horária (horas)"
+          value={dados.cargaHoraria}
+          onValueChange={(evento) => atualizarCampo("cargaHoraria", evento.value)}
+          erro={erros.cargaHoraria}
+        />
+        <CampoTexto
+          id="local"
+          rotulo="Local"
+          value={dados.local}
+          onChange={(evento) => atualizarCampo("local", evento.target.value)}
+          erro={erros.local}
+        />
+      </div>
+
+      <div className={styles.linha}>
+        <Campo
+          id="data-inicio"
+          rotulo="Início da atividade"
+          type="date"
+          value={paraData(dados.inicioAtividade)}
+          onChange={(evento) =>
+            aoMudarAgenda("inicioAtividade", combinar(dados.inicioAtividade, { data: evento.target.value }))
+          }
+          erro={erros.inicioAtividade}
+        />
+        <Campo
+          id="hora-inicio"
+          rotulo="Hora"
+          type="time"
+          value={paraHora(dados.inicioAtividade)}
+          onChange={(evento) =>
+            aoMudarAgenda("inicioAtividade", combinar(dados.inicioAtividade, { hora: evento.target.value }))
+          }
+        />
+      </div>
+      <div className={styles.linha}>
+        <Campo
+          id="data-fim"
+          rotulo="Fim da atividade"
+          type="date"
+          value={paraData(dados.fimAtividade)}
+          onChange={(evento) =>
+            aoMudarAgenda("fimAtividade", combinar(dados.fimAtividade, { data: evento.target.value }))
+          }
+          erro={erros.fimAtividade}
+        />
+        <Campo
+          id="hora-fim"
+          rotulo="Hora"
+          type="time"
+          value={paraHora(dados.fimAtividade)}
+          onChange={(evento) =>
+            aoMudarAgenda("fimAtividade", combinar(dados.fimAtividade, { hora: evento.target.value }))
+          }
+        />
+      </div>
+      <CampoCheckbox
+        id="exige-inscricao"
+        rotulo="Exige inscrição"
+        checked={dados.exigeInscricao}
+        onChange={(valor) => aoMudarAgenda("exigeInscricao", valor)}
+      />
+      {dados.exigeInscricao && (
+        <>
+          <CampoCheckbox
+            id="sem-limite"
+            rotulo="Sem limite de participantes"
+            checked={dados.semLimiteVagas}
+            onChange={(valor) => aoMudarAgenda("semLimiteVagas", valor)}
+          />
+          {!dados.semLimiteVagas && (
+            <CampoNumero
+              id="vagas"
+              rotulo="Quantidade máxima de participantes"
+              value={dados.vagas}
+              onValueChange={(evento) => aoMudarAgenda("vagas", evento.value)}
+              erro={erros.vagas}
+            />
+          )}
+        </>
+      )}
+
+      <div className={styles.secaoPessoas}>
+        <span className={styles.rotuloLista}>Pessoas envolvidas</span>
+        {tiposParticipacao.length === 0 && (
+          <p className={styles.avisoSemTipos}>
+            Nenhum tipo de participação cadastrado ainda. Crie um em Configurações → Tipos de
+            participação para poder classificar as pessoas envolvidas (opcional).
+          </p>
+        )}
+        {dados.pessoas.map((pessoa, indice) => (
+          <div key={pessoa.id || indice} className={styles.cartaoPessoa}>
+            <CampoFoto
+              id={`pessoa-imagem-${indice}`}
+              rotulo="Foto"
+              usuario={{ nome: pessoa.nome }}
+              valor={pessoa.imagem}
+              onChange={(imagem) => aoMudarPessoa(indice, "imagem", imagem)}
+              erro={erros[`pessoas.${indice}.imagem`]}
+            />
+            <CampoTexto
+              id={`pessoa-nome-${indice}`}
+              rotulo="Nome"
+              value={pessoa.nome}
+              onChange={(evento) => aoMudarPessoa(indice, "nome", evento.target.value)}
+              erro={erros[`pessoas.${indice}.nome`]}
+            />
+            <CampoSelecao
+              id={`pessoa-tipo-participacao-${indice}`}
+              rotulo="Tipo de participação (opcional)"
+              value={pessoa.tipoParticipacaoId}
+              onChange={(evento) => aoMudarPessoa(indice, "tipoParticipacaoId", evento.target.value)}
+              erro={erros[`pessoas.${indice}.tipoParticipacaoId`]}
+            >
+              <option value="">Nenhum</option>
+              {tiposParticipacao.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nome}
+                </option>
+              ))}
+            </CampoSelecao>
+            <CampoTexto
+              id={`pessoa-breve-descricao-${indice}`}
+              rotulo="Breve descrição"
+              value={pessoa.breveDescricao}
+              onChange={(evento) => aoMudarPessoa(indice, "breveDescricao", evento.target.value)}
+              erro={erros[`pessoas.${indice}.breveDescricao`]}
+            />
+            <CampoArea
+              id={`pessoa-descricao-${indice}`}
+              rotulo="Descrição"
+              linhas={3}
+              value={pessoa.descricao}
+              onChange={(evento) => aoMudarPessoa(indice, "descricao", evento.target.value)}
+              erro={erros[`pessoas.${indice}.descricao`]}
+            />
+            <button
+              type="button"
+              className={styles.botaoRemoverPessoa}
+              onClick={() => aoRemoverPessoa(indice)}
+              aria-label="Remover pessoa"
+            >
+              <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+              Remover pessoa
+            </button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          label="Adicionar pessoa"
+          onClick={aoAdicionarPessoa}
+          pt={{ root: { className: styles.botaoSecundario } }}
+        />
+      </div>
+
+      <div className={styles.acoes}>
+        <Button
+          type="button"
+          label="Cancelar"
+          onClick={aoCancelar}
+          pt={{ root: { className: styles.botaoSecundario } }}
+        />
+        <Button
+          type="submit"
+          label={salvando ? "Aguarde..." : modoEdicao ? "Salvar" : "Criar atividade"}
+          disabled={salvando}
+          pt={{ root: { className: styles.botaoPrimario } }}
+        />
+      </div>
+    </form>
+  );
+}

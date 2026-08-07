@@ -1,0 +1,375 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 640px;
+}
+
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--borda);
+
+  &:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+.camposSecao {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-left: 3rem;
+
+  @media (max-width: 700px) {
+    padding-left: 0;
+  }
+}
+
+.cabecalhoSecao {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  @media (max-width: 700px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+.iconeSecao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  color: var(--acento);
+}
+
+.iconeSecaoPerigo {
+  background: var(--fundo);
+  color: var(--erro);
+}
+
+.textoCabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-top: 0.35rem;
+
+  @media (max-width: 700px) {
+    padding-top: 0;
+  }
+}
+
+.tituloSecao {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.descricaoSecao {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+  max-width: 46ch;
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  > * {
+    flex: 1 1 200px;
+  }
+}
+
+.secaoPerigo {
+  background: var(--superficie);
+  border: 1px solid var(--erro);
+  border-radius: 8px;
+  padding: 1.75rem;
+  margin-top: 1.25rem;
+}
+
+.perigoTexto {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.botaoPrimario,
+.botaoSecundario,
+.botaoPerigo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.botaoPrimario {
+  background: var(--acento);
+  color: var(--fundo);
+}
+
+.botaoSecundario {
+  background: transparent;
+  color: var(--acento);
+  border: 1px solid var(--acento);
+}
+
+.botaoPerigo {
+  background: transparent;
+  color: var(--erro);
+  border: 1px solid var(--erro);
+}
+
+.listaLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rotuloLista {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.linhaLink {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+
+  > * {
+    flex: 1 1 200px;
+  }
+}
+
+.botaoRemoverLink {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--erro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.previewLogoHero {
+  display: flex;
+  align-items: center;
+  width: 160px;
+  padding: 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.linhaPreviewHero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.blocoPreviewHero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rotuloPreviewHero {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.previewHero {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 320px;
+  min-height: 90px;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+}
+
+.previewHeroEstreito {
+  max-width: 200px;
+}
+
+.previewHeroFaixa {
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.previewHeroConteudo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  padding: 1.25rem;
+}
+
+.previewHeroBuzio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.previewHeroTexto {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.blocoFaixaHero {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.avisoContraste {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--alerta);
+  line-height: 1.5;
+}
+
+.listaCartoes {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cartaoRealizador {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.botaoRemoverRealizador {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0;
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--erro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.grupoRadio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.opcaoRadio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.raizRadio {
+  position: relative;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.inputOcultoRadio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.caixaRadio {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--borda);
+  border-radius: 50%;
+  background: var(--superficie);
+  pointer-events: none;
+  transition: border-color 0.15s ease, border-width 0.15s ease;
+}
+
+.raizRadio[data-p-checked="true"] .caixaRadio {
+  border-color: var(--acento);
+  border-width: 6px;
+}
+
+.raizRadio:has(:focus-visible) .caixaRadio {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}

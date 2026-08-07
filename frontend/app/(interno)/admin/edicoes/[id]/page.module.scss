@@ -1,0 +1,22 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 640px;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  color: var(--texto);
+}
+
+.periodo {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.texto {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+  line-height: 1.6;
+}

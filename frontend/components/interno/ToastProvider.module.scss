@@ -1,0 +1,65 @@
+.regiao {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 360px;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.erro {
+  border-color: color-mix(in srgb, var(--erro) 35%, var(--borda));
+}
+
+.conteudo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.detalhe {
+  font-size: 0.875rem;
+  color: var(--texto);
+  line-height: 1.4;
+}
+
+.fechar {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  color: var(--texto-suave);
+  cursor: pointer;
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--texto);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}

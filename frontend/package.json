@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "lsof -ti:3000 | xargs -r kill -9 2>/dev/null || true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -10,8 +11,12 @@
   },
   "dependencies": {
     "@remixicon/react": "^4.9.0",
+    "embla-carousel-react": "^8.6.0",
+    "lucide-react": "^1.25.0",
     "motion": "^12.42.2",
     "next": "^14.2.5",
+    "primeicons": "^8.0.0",
+    "primereact": "^10.9.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zod": "^3.23.8"

@@ -1,5 +1,5 @@
 import { obterUsuarioAtual } from "@/lib/auth";
-import PerfilForm from "./PerfilForm";
+import PerfilForm from "@/components/interno/PerfilForm";
 import styles from "./page.module.scss";
 
 export default async function PaginaParticipante() {

@@ -1,0 +1,16 @@
+.linha {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.hora {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--barro);
+}
+
+.conteudo {
+  min-width: 0;
+}

@@ -1,0 +1,11 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 640px;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  color: var(--texto);
+}

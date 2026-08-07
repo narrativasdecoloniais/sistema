@@ -33,7 +33,18 @@
   --logo-acento: #fff;
 }
 
+// --cor-texto-hero só existe dentro da Hero (ver page.module.scss); fora
+// dela (apresentação, login) o fallback --tinta mantém o comportamento atual.
 .colorida {
-  --logo-principal: var(--tinta);
+  --logo-principal: var(--cor-texto-hero, var(--tinta));
   --logo-acento: var(--buzio);
+}
+
+// derivada da logo customizada (enviada pelo gestor, já colorida) — força
+// tudo a branco pra virar a silhueta da camada revelada primeiro, sem exigir
+// um segundo arquivo do admin. Não mexe em .colorida, que mostra a arte como
+// enviada.
+.corForcada * {
+  fill: #fff !important;
+  stop-color: #fff !important;
 }

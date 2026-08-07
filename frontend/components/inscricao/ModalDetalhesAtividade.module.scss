@@ -1,0 +1,224 @@
+@use "../../styles/tokens-publico" as pub;
+
+// Renderizado via portal em document.body (ver ModalDetalhesAtividade.jsx),
+// fora da .wrapper de app/(publico)/layout.module.scss onde os tokens
+// públicos normalmente são declarados — sem isso, todo var(--papel)/
+// var(--barro)/etc. aqui dentro cairia no valor inicial (fundo/borda
+// transparentes, texto sem cor).
+.fundo {
+  @include pub.tokens;
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 25, 20, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 3000;
+
+  // Abaixo de 700px (mesmo corte de CarrosselAtividades/CarrosselFacilitadores),
+  // o painel vira tela cheia — sem isso, a margem de fundo visível ao redor
+  // desperdiça largura bem onde ela falta mais (carrosséis de pessoas).
+  @media (max-width: 700px) {
+    padding: 0;
+  }
+}
+
+.painel {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--papel);
+  border: 1px solid var(--ocre);
+  border-radius: 6px;
+
+  @media (max-width: 700px) {
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 0.75rem;
+
+  // Fixo no topo do próprio painel (que é quem rola) — o botão de fechar
+  // continua alcançável mesmo com a descrição/carrosséis rolados pra baixo.
+  @media (max-width: 700px) {
+    position: sticky;
+    top: 0;
+    background: var(--papel);
+    z-index: 1;
+  }
+}
+
+.tituloBloco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta);
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  line-height: 1.25;
+}
+
+// glyph de texto, não ícone de biblioteca — proibido no público (DESIGN.md)
+.fechar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--tinta);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.conteudo {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.metaBloco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.metaLinha {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--tinta);
+}
+
+.metaRotulo {
+  font-weight: 700;
+}
+
+.metaVagas {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.subtitulo {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  font-size: 1rem;
+}
+
+.descricao {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--tinta);
+  line-height: 1.7;
+}
+
+.carregandoPessoas {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.secaoPessoas {
+  display: flex;
+  flex-direction: column;
+}
+
+.pessoaUnica {
+  max-width: 220px;
+}
+
+// Mesmo padrão de "Pessoas envolvidas" de
+// app/(publico)/atividades/[slug]/page.module.scss: foto em moldura
+// quadrada, cantos retos — coerente com a estética de cartaz/stencil.
+.pessoaCartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+
+  p {
+    margin: 0;
+  }
+}
+
+.pessoaFoto {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--areia);
+  border: 1px solid var(--ocre);
+}
+
+.pessoaImagem {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pessoaInicial {
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: var(--barro);
+}
+
+.pessoaNome {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--tinta);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.pessoaDescricao {
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}

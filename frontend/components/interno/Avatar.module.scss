@@ -1,0 +1,16 @@
+// Exceção documentada em DESIGN.md à regra de raio máx. 6px: avatar de
+// usuário pode ser totalmente arredondado.
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--acento);
+  color: var(--superficie);
+  font-weight: 700;
+  line-height: 1;
+  object-fit: cover;
+  user-select: none;
+}

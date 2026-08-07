@@ -1,5 +1,16 @@
+// Fundo, texto e búzio da Hero são customizáveis por edição (ver SecaoHero.jsx
+// no admin). São 3 eixos independentes — por isso duas CSS custom properties
+// em vez de repetir um bloco fundo+texto por combinação (como .realizadores
+// abaixo faz, que sempre pareia as duas juntas): --cor-texto-hero/--cor-buzio-hero
+// têm um default (aparência atual) e cada atributo data-cor-* sobrescreve só
+// a sua própria propriedade, combinando livremente.
 .hero {
   position: relative;
+  // Contexto de empilhamento próprio — garante que o z-index: -1 do
+  // ::before de fundo (imagem borrada, ver abaixo) fique só atrás do
+  // conteúdo da própria .hero, sem depender de como o resto da página
+  // empilha por fora.
+  isolation: isolate;
   min-height: 100svh;
   // padding-top soma o espaço do nav fixo (~70px), que agora fica sempre visível.
   padding: calc(3rem + 70px) 2rem 2.5rem;
@@ -9,11 +20,199 @@
   justify-content: center;
   text-align: center;
   gap: 1.5rem;
+
+  --cor-texto-hero: var(--tinta);
+  --cor-buzio-hero: var(--buzio);
+  --cor-faixa-hero-desktop: var(--ocre);
+  --cor-faixa-hero-mobile: var(--ocre);
+  // Largura da coluna de conteúdo (logo, legendas, CTA) — usada também pelo
+  // .heroFundoBlur abaixo, pra a faixa desfocada acompanhar o conteúdo em
+  // vez de um recorte fixo desalinhado dele.
+  --largura-conteudo-hero: 700px;
+  // Fundo em duas camadas: --cor-fundo-hero-base é a cor escolhida (opaca);
+  // --opacidade-fundo-hero (setada inline por edição, ver
+  // PaginaInicialConteudo.jsx — só existe fallback 100% aqui) controla o
+  // quanto dela aparece, misturada com --papel via color-mix — sem isso, um
+  // fundo "transparente" não teria com o quê se misturar (a Hero não tem
+  // nada atrás, é o topo da página).
+  --cor-fundo-hero-base: var(--papel);
+  --opacidade-fundo-hero: 100%;
+  background-color: color-mix(in srgb, var(--cor-fundo-hero-base) var(--opacidade-fundo-hero), var(--papel));
+
+  &[data-cor-fundo="TINTA"] { --cor-fundo-hero-base: var(--tinta); }
+  &[data-cor-fundo="BARRO"] { --cor-fundo-hero-base: var(--barro); }
+  &[data-cor-fundo="OCRE"] { --cor-fundo-hero-base: var(--ocre); }
+  &[data-cor-fundo="CERRADO"] { --cor-fundo-hero-base: var(--cerrado); }
+
+  &[data-cor-texto="BARRO"] { --cor-texto-hero: var(--barro); }
+  &[data-cor-texto="OCRE"] { --cor-texto-hero: var(--ocre); }
+  &[data-cor-texto="BUZIO"] { --cor-texto-hero: var(--buzio); }
+  &[data-cor-texto="AREIA"] { --cor-texto-hero: var(--areia); }
+  &[data-cor-texto="PAPEL"] { --cor-texto-hero: var(--papel); }
+  &[data-cor-texto="CERRADO"] { --cor-texto-hero: var(--cerrado); }
+
+  &[data-cor-buzio="TINTA"] { --cor-buzio-hero: var(--tinta); }
+  &[data-cor-buzio="BARRO"] { --cor-buzio-hero: var(--barro); }
+  &[data-cor-buzio="OCRE"] { --cor-buzio-hero: var(--ocre); }
+  &[data-cor-buzio="AREIA"] { --cor-buzio-hero: var(--areia); }
+  &[data-cor-buzio="PAPEL"] { --cor-buzio-hero: var(--papel); }
+  &[data-cor-buzio="CERRADO"] { --cor-buzio-hero: var(--cerrado); }
+
+  &[data-cor-faixa-desktop="TINTA"] { --cor-faixa-hero-desktop: var(--tinta); }
+  &[data-cor-faixa-desktop="BARRO"] { --cor-faixa-hero-desktop: var(--barro); }
+  &[data-cor-faixa-desktop="BUZIO"] { --cor-faixa-hero-desktop: var(--buzio); }
+  &[data-cor-faixa-desktop="AREIA"] { --cor-faixa-hero-desktop: var(--areia); }
+  &[data-cor-faixa-desktop="PAPEL"] { --cor-faixa-hero-desktop: var(--papel); }
+  &[data-cor-faixa-desktop="CERRADO"] { --cor-faixa-hero-desktop: var(--cerrado); }
+
+  &[data-cor-faixa-mobile="TINTA"] { --cor-faixa-hero-mobile: var(--tinta); }
+  &[data-cor-faixa-mobile="BARRO"] { --cor-faixa-hero-mobile: var(--barro); }
+  &[data-cor-faixa-mobile="BUZIO"] { --cor-faixa-hero-mobile: var(--buzio); }
+  &[data-cor-faixa-mobile="AREIA"] { --cor-faixa-hero-mobile: var(--areia); }
+  &[data-cor-faixa-mobile="PAPEL"] { --cor-faixa-hero-mobile: var(--papel); }
+  &[data-cor-faixa-mobile="CERRADO"] { --cor-faixa-hero-mobile: var(--cerrado); }
+}
+
+// Fundo em imagem (ver CampoFundoHero.jsx no admin) — nítida, direto na
+// .hero. --imagem-fundo-hero-mobile/-desktop são url(...) setados inline em
+// PaginaInicialConteudo.jsx. cover + center: preenche a tela inteira sem
+// distorcer, recortando o que não couber — por isso a recomendação de um
+// arquivo por breakpoint (a Hero muda muito de proporção entre desktop
+// largo/baixo e mobile estreito/alto). Especificidade do atributo já basta
+// pra vencer o background-color de cima, sem precisar do truque :not()
+// usado pra esconder a faixa (aqui não há "nenhuma").
+.hero[data-fundo-tipo="IMAGEM"] {
+  background-color: var(--papel);
+  background-image: var(--imagem-fundo-hero-mobile);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+// Painel real (não pseudo-elemento) sobreposto no centro da Hero, mostrando
+// a mesma imagem borrada — por trás do texto/logo, pra continuar legível
+// sobre a foto. Renderizado só quando fundoHeroTipo === "IMAGEM" (ver
+// PaginaInicialConteudo.jsx). clip-path corta a mesma imagem de fundo (full
+// size, então o cover calcula igual ao da .hero — sem isso as duas versões
+// ficariam desalinhadas) só na faixa central; as laterais, fora do recorte,
+// não mostram nada desse painel e deixam a .hero nítida por trás aparecer.
+// Folga negativa nos 4 lados: filter: blur() amostra pixels além da própria
+// caixa do elemento; bem na borda, não há nada pra amostrar dali pra fora,
+// então o blur esmaece ali em vez de ficar uniforme — isso já acontecia em
+// cima/embaixo, mas também aparece nos lados quando o clip-path (calculado a
+// partir de --largura-conteudo-hero) encolhe numa tela mais estreita e a
+// faixa visível chega perto da borda real da caixa. O recorte do clip-path é
+// em % relativo à própria caixa, então esticar os 4 lados pela mesma medida
+// não desloca a faixa visível (a matemática se cancela) — só garante que tem
+// imagem real de sobra pra amostrar nas 4 direções.
+.heroFundoBlur {
+  position: absolute;
+  inset: -40px;
+  z-index: -1;
+  background-image: var(--imagem-fundo-hero-mobile);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(15px);
+  // Acompanha --largura-conteudo-hero (mesma variável do .logoWrapper) em
+  // vez de um recorte fixo em %, +160px de respiro (80px de cada lado) pra
+  // não colar o blur exatamente na borda do conteúdo. Em telas estreitas o
+  // cálculo passa a dar um valor negativo, que o clip-path trata como "sem
+  // corte" — a faixa então cobre a largura toda, degradação aceitável no
+  // mobile em vez de uma tira estreita/errada.
+  clip-path: inset(0 calc(50% - (var(--largura-conteudo-hero) + 160px) / 2));
+  pointer-events: none;
+}
+
+// Faixas decorativas encostadas nas laterais da tela — fundo (cor sólida ou
+// imagem, ver abaixo) e largura configuráveis separadamente pra mobile e
+// desktop, já que o gestor pode querer tratamentos bem diferentes (a faixa
+// fica bem mais estreita no mobile — ver --largura-faixa-hero em
+// layout.module.scss, mesmo breakpoint 1000px usado aqui). position: fixed
+// (em vez de absolute, preso à altura da .hero) pra continuar visível
+// durante toda a rolagem da página, não só enquanto a Hero está na tela.
+// z-index baixo — fica abaixo da nav (40), skip link (100) e toasts/modais.
+//
+// Mobile-first: a regra base usa as variáveis "-mobile"; o bloco dentro do
+// @media (min-width: 1000px) sobrescreve pras variáveis "-desktop". Cada
+// bloco usa o shorthand `background` (não só background-color) no modo cor,
+// o que reseta background-image/repeat/size de qualquer regra anterior —
+// necessário pra uma combinação tipo "mobile = imagem, desktop = cor sólida"
+// não deixar a imagem "vazando" pro desktop.
+.heroFaixa {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: var(--largura-faixa-hero);
+  background: var(--cor-faixa-hero-mobile);
+  pointer-events: none;
+}
+
+// --imagem-faixa-hero-mobile/-desktop são url(...) setados inline em
+// PaginaInicialConteudo.jsx (valor dinâmico, não dá pra prever em CSS
+// estático). Sem background-color aqui de propósito — se a imagem for um
+// PNG com áreas transparentes (ex. um shape serrilhado), é o conteúdo por
+// trás da faixa fixa que deve aparecer ali, não uma cor sólida. repeat-y +
+// background-size 100% auto: a imagem escala a largura pra sempre bater com
+// a da faixa (responsiva) e repete verticalmente ao longo da altura.
+.hero[data-faixa-tipo-mobile="IMAGEM"] .heroFaixa {
+  background-color: transparent;
+  background-image: var(--imagem-faixa-hero-mobile);
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  background-position: top;
+}
+
+// "Nenhuma" (ver CampoFaixaHero.jsx no admin) esconde o elemento. Repare que
+// o reset "mostrar" no @media abaixo usa :not([data-faixa-tipo-desktop=...])
+// em vez de só `.heroFaixa` — precisa da MESMA especificidade da regra de
+// esconder pra confiavelmente vencer o empate por ordem de declaração (mais
+// específico sempre vence, independe de ordem; com a mesma especificidade,
+// quem vem depois no arquivo vence). Sem isso, a faixa mobile "nenhuma"
+// continuaria escondida no desktop mesmo com data-faixa-tipo-desktop diferente.
+.hero[data-faixa-tipo-mobile="NENHUMA"] .heroFaixa {
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  .hero[data-fundo-tipo="IMAGEM"],
+  .heroFundoBlur {
+    background-image: var(--imagem-fundo-hero-desktop);
+  }
+
+  .heroFaixa {
+    background: var(--cor-faixa-hero-desktop);
+  }
+
+  .hero[data-faixa-tipo-desktop="IMAGEM"] .heroFaixa {
+    background-color: transparent;
+    background-image: var(--imagem-faixa-hero-desktop);
+    background-repeat: repeat-y;
+    background-size: 100% auto;
+    background-position: top;
+  }
+
+  .hero:not([data-faixa-tipo-desktop="NENHUMA"]) .heroFaixa {
+    display: block;
+  }
+
+  .hero[data-faixa-tipo-desktop="NENHUMA"] .heroFaixa {
+    display: none;
+  }
+}
+
+.heroFaixaEsquerda {
+  left: 0;
+}
+
+.heroFaixaDireita {
+  right: 0;
 }
 
 .logoWrapper {
   width: 100%;
-  max-width: 700px;
+  max-width: var(--largura-conteudo-hero);
   display: flex;
   justify-content: center;
 }
@@ -41,7 +240,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--tinta);
+  color: var(--cor-texto-hero);
   opacity: 0.7;
 }
 
@@ -51,11 +250,11 @@
   align-items: center;
   gap: 0.35rem;
   margin-top: 1rem;
-  color: var(--tinta);
+  color: var(--cor-texto-hero);
   text-decoration: none;
 
   &:hover .conviteTexto {
-    color: var(--buzio);
+    color: var(--cor-buzio-hero);
   }
 
   &:focus-visible {
@@ -77,17 +276,48 @@
   display: block;
   width: 15px;
   height: 16.6px;
-  color: var(--buzio);
+  color: var(--cor-buzio-hero);
 }
 
-// ---- faixa de realização (fundo barro, logos brancas) ----
+// ---- faixa de realização (cor de fundo escolhida pelo gestor por edição) ----
 
 .realizadores {
   width: 100%;
-  background: var(--barro);
   display: flex;
   justify-content: center;
   padding: 2.5rem 2rem;
+  background: var(--barro);
+  color: var(--papel);
+
+  // par fundo/texto de cada opção da paleta curada (ver CampoCorSecao.jsx no
+  // admin) — fundo claro (papel) usa texto escuro (tinta), os demais (mais
+  // escuros/saturados) usam texto claro (papel).
+  &[data-cor="PAPEL"] {
+    background: var(--papel);
+    color: var(--tinta);
+    border-top: 1px solid var(--ocre);
+    border-bottom: 1px solid var(--ocre);
+  }
+
+  &[data-cor="TINTA"] {
+    background: var(--tinta);
+    color: var(--papel);
+  }
+
+  &[data-cor="BARRO"] {
+    background: var(--barro);
+    color: var(--papel);
+  }
+
+  &[data-cor="OCRE"] {
+    background: var(--ocre);
+    color: var(--papel);
+  }
+
+  &[data-cor="CERRADO"] {
+    background: var(--cerrado);
+    color: var(--papel);
+  }
 }
 
 .realizadoresConteudo {
@@ -100,16 +330,29 @@
 }
 
 .realizadoresLabel {
-  color: var(--papel);
+  color: inherit;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.realizadoresLogo {
+.realizadoresGrade {
   width: 100%;
-  max-width: 320px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2rem;
+}
+
+.realizadorItem {
+  display: inline-flex;
+}
+
+.realizadorLogo {
+  max-width: 220px;
+  max-height: 72px;
+  width: auto;
   height: auto;
 }
 
@@ -302,39 +545,6 @@
   line-height: 1.6;
 }
 
-.ctaWrapper {
-  align-self: flex-start;
-}
-
-.cta {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  padding: 0.9rem 2rem;
-  color: var(--papel);
-  font-size: 1.05rem;
-  font-weight: 700;
-  text-decoration: none;
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--tinta);
-    outline-offset: 2px;
-  }
-}
-
-.ctaCarimbo {
-  color: var(--barro);
-}
-
 .seloEmBreve {
   position: relative;
   display: inline-flex;
@@ -447,6 +657,129 @@
 // vizinho desce e fica com a base rente à dele, em vez de "flutuar" no meio
 // da linha.
 .modalidadeLink {
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.9rem 2rem;
+  border: 1.5px solid var(--barro);
+  color: var(--barro);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--barro);
+    color: var(--papel);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 3px;
+  }
+}
+
+// ---- section Atividades (grade de cartões por atividade cadastrada) ----
+//
+// Subgrid de 4 linhas (cabeçalho / meta / resumo / link) — sem CTA de
+// inscrição no cartão porque a inscrição é por sessão, não pela atividade
+// como um todo; a escolha da sessão acontece na página de detalhe.
+
+.atividadesGrade {
+  align-self: stretch;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-rows: repeat(4, auto);
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.atividadeCartao {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 4;
+  align-items: start;
+  gap: 0.65rem;
+  padding: 1.5rem;
+  background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
+}
+
+.atividadeCabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-self: start;
+}
+
+.atividadeNome {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta);
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.atividadeTipo {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.atividadeMeta {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.atividadeResumo {
+  align-self: start;
+  font-size: 0.9rem;
+  color: var(--tinta);
+  line-height: 1.6;
+  // trunca em 3 linhas — o card mostra um resumo, a página de detalhe traz o
+  // texto completo.
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.inscricaoCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 2.5rem;
+  border: 1.5px solid var(--barro);
+  color: var(--barro);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--barro);
+    color: var(--papel);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 3px;
+  }
+}
+
+.atividadeLink {
   align-self: end;
   display: inline-flex;
   align-items: center;

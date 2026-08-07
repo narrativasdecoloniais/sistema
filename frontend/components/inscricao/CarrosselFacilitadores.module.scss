@@ -1,0 +1,64 @@
+.carrossel {
+  display: flex;
+  flex-direction: column;
+}
+
+// padding + margem negativa: overflow:hidden recorta na borda do padding
+// box, então sem essa folga o outline de foco do cartão seria cortado nas
+// bordas do viewport (mesmo ajuste de CarrosselAtividades.module.scss).
+.viewport {
+  overflow: hidden;
+  padding: 4px;
+  margin: -4px;
+}
+
+.container {
+  display: flex;
+  margin-left: -0.75rem;
+  touch-action: pan-y pinch-zoom;
+}
+
+.slide {
+  flex: 0 0 46%;
+  min-width: 0;
+  padding-left: 0.75rem;
+  display: flex;
+
+  @media (min-width: 700px) {
+    flex-basis: 30%;
+  }
+}
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.controle {
+  min-width: 44px;
+  min-height: 44px;
+  background: none;
+  border: 1.5px solid var(--ocre);
+  color: var(--barro);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.contador {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}

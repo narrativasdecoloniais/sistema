@@ -1,0 +1,84 @@
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  &:not(:first-child) {
+    margin-top: 1rem;
+  }
+}
+
+.rotuloGrupo {
+  padding: 0.4rem 0.75rem 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  color: var(--texto-suave);
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--texto);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: -2px;
+  }
+
+  @media (max-width: 700px) {
+    min-height: 44px;
+  }
+}
+
+.rotulo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ativo {
+  background: var(--fundo);
+  color: var(--acento);
+  font-weight: 700;
+}
+
+.seta {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.setaAberta {
+  transform: rotate(180deg);
+}
+
+.subitens {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.subitem {
+  padding-left: 2.1rem;
+  font-size: 0.85rem;
+}

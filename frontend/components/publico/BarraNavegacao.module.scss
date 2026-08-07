@@ -4,7 +4,10 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  padding: 0.85rem 2rem;
+  // horizontal soma a largura da faixa lateral fixa (ver .heroFaixa em
+  // page.module.scss) com um respiro fixo, pra logo/links/Entrar nunca
+  // ficarem por baixo dela nem colados na borda.
+  padding: 0.85rem calc(var(--largura-faixa-hero, 0px) + 1.5rem);
   background: transparent;
   border-bottom: 2px solid transparent;
   transition: background-color 0.4s ease, border-color 0.4s ease;

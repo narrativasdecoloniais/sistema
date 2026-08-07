@@ -1,0 +1,98 @@
+.raiz {
+  position: relative;
+  display: inline-flex;
+}
+
+.raizMobile {
+  @media (min-width: 700.02px) {
+    display: none;
+  }
+}
+
+.raizDesktop {
+  @media (max-width: 700px) {
+    display: none;
+  }
+}
+
+.gatilho {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--texto);
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+// alvo de toque >= 44px mesmo com avatar de 36px
+.gatilhoMobile {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.painel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  min-width: 180px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  z-index: 20;
+}
+
+.painelMobile {
+  left: 0;
+}
+
+.painelDesktop {
+  right: 0;
+}
+
+.item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0.55rem 0.75rem;
+  border-radius: 4px;
+  color: var(--texto);
+  text-decoration: none;
+  text-align: left;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: -2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.divisorMenu {
+  height: 1px;
+  margin: 0.3rem 0.4rem;
+  background: var(--borda);
+}

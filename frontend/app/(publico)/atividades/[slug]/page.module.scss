@@ -1,0 +1,223 @@
+.pagina {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: calc(3rem + 70px) 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  @media (max-width: 700px) {
+    padding: calc(2rem + 70px) 1.5rem 3.5rem;
+  }
+}
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta);
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  line-height: 1.2;
+}
+
+.subtitulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+  margin-top: 0.2rem;
+}
+
+.divisor {
+  width: 100%;
+  color: var(--ocre);
+}
+
+.secaoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+
+  p {
+    font-size: 1rem;
+    color: var(--tinta);
+    line-height: 1.7;
+  }
+}
+
+.subtituloSecao {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+}
+
+.sessoesLista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sessoesIntro {
+  margin: -0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.6;
+}
+
+// cada sessão é sua própria unidade de inscrição — por isso carrega o próprio
+// CTA em vez de um botão único e ambíguo para a atividade inteira.
+.sessaoItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
+}
+
+.sessaoInfoBloco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sessaoRotulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.sessaoInfo {
+  font-size: 0.92rem;
+  color: var(--tinta);
+}
+
+.sessaoDescricao {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.sessaoVagas {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--barro);
+}
+
+.sessaoCta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.5rem;
+  background: var(--barro);
+  color: var(--papel);
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
+}
+
+// Pessoas envolvidas: foto em moldura quadrada, cantos retos — coerente com
+// a estética de cartaz/stencil (sem avatares redondos, sem orgânico). Mesmo
+// padrão do cartão de convidados especiais da submissão por Conversatório.
+.convidadosGrade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1.5rem 1.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.convidadoCartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+
+  p {
+    margin: 0;
+  }
+}
+
+.convidadoFoto {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--areia);
+  border: 1px solid var(--ocre);
+}
+
+.convidadoImagem {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.convidadoInicial {
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  color: var(--barro);
+}
+
+.convidadoNome {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--tinta);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.convidadoAfiliacao {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.convidadoDescricao {
+  font-size: 0.8rem;
+  color: var(--tinta);
+  line-height: 1.5;
+}

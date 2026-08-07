@@ -1,6 +1,8 @@
 .sidebar {
   width: 220px;
   flex-shrink: 0;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--superficie);
   border-right: 1px solid var(--borda);
   padding: 1.5rem 1rem;
@@ -8,39 +10,135 @@
   flex-direction: column;
   gap: 2rem;
 
-  @media (max-width: 720px) {
-    width: 72px;
+  @media (max-width: 700px) {
+    width: 100%;
+    height: auto;
+    overflow-y: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--borda);
+    padding: 0;
+    gap: 0;
   }
 }
 
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  @media (max-width: 700px) {
+    padding: 0.75rem 1rem;
+  }
+}
+
+.topoEsquerda,
+.topoDireita {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .marca {
-  font-weight: 700;
-  color: var(--texto);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0 0.5rem;
+  color: var(--texto);
+
+  @media (max-width: 700px) {
+    display: none;
+  }
+}
+
+.buzio {
+  display: block;
+  width: 16px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--acento);
+}
+
+.nome {
+  font-size: 0.95rem;
+}
+
+.hamburguer {
+  display: none;
+
+  @media (max-width: 700px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: -0.5rem;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--texto);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--acento);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.linhas {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 14px;
+}
+
+.linha {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+
+  &:nth-child(1) {
+    top: 0;
+  }
+
+  &:nth-child(2) {
+    top: 6px;
+  }
+
+  &:nth-child(3) {
+    top: 12px;
+  }
+}
+
+.menuAberto .linha:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.menuAberto .linha:nth-child(2) {
+  opacity: 0;
+}
+
+.menuAberto .linha:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 .nav {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-}
 
-.link {
-  padding: 0.6rem 0.75rem;
-  border-radius: 6px;
-  color: var(--texto-suave);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-
-  &:hover {
-    background: var(--fundo);
-    color: var(--texto);
+  @media (max-width: 700px) {
+    display: none;
+    padding: 0 1rem 0.75rem;
   }
 }
 
-.ativo {
-  background: var(--fundo);
-  color: var(--acento);
-  font-weight: 700;
+.menuAberto .nav {
+  @media (max-width: 700px) {
+    display: flex;
+  }
 }

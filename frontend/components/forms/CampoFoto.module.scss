@@ -1,0 +1,44 @@
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rotulo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.acoes {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+// oculta visualmente o <input type="file"> nativo mantendo acessibilidade
+// (acionado via ref pelo botão "Escolher foto")
+.inputOculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+.mensagemErro {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cor-erro);
+}

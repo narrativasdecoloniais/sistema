@@ -2,11 +2,20 @@
 
 .wrapper {
   @include pub.tokens;
+  // Largura das faixas decorativas fixas nas laterais da tela (ver .heroFaixa
+  // em page.module.scss) — definida aqui, no ancestral comum, pra a navbar
+  // (BarraNavegacao) também poder ajustar o próprio padding e não ficar por
+  // baixo delas. Mesmos breakpoint/valores dos dois lugares.
+  --largura-faixa-hero: clamp(16px, 3vw, 40px);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--papel);
   color: var(--tinta);
+
+  @media (min-width: 1000px) {
+    --largura-faixa-hero: clamp(40px, 6vw, 96px);
+  }
 }
 
 .conteudo {
