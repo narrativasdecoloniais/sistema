@@ -24,27 +24,71 @@ enum PapelUsuario {
 enum TipoToken {
   CONFIRMACAO_EMAIL
   RECUPERACAO_SENHA
+  CONVITE_ORGANIZADOR
+}
+
+enum ModalidadeEdicao {
+  ONLINE
+  PRESENCIAL
+  HIBRIDO
+}
+
+// Paleta curada de fundo para seções da página pública da edição (DESIGN.md)
+// — --areia é proposital ficar de fora (DESIGN.md proíbe usá-la como faixa
+// de seção) e --buzio também (é assinatura, não fundo).
+enum CorSecao {
+  PAPEL
+  TINTA
+  BARRO
+  OCRE
+  CERRADO
+}
+
+// Paleta pública completa (inclui --buzio, cor de assinatura, e --areia) —
+// usada em campos de texto/ícone da Hero, onde --buzio precisa estar
+// disponível como opção (é a cor padrão do próprio búzio). CorSecao (acima)
+// fica reservado pra fundo de seção, que não pode usar --buzio nem --areia.
+enum CorPublica {
+  TINTA
+  BARRO
+  OCRE
+  BUZIO
+  AREIA
+  PAPEL
+  CERRADO
+}
+
+// Faixa lateral da Hero: cor sólida (corFaixaHero*), imagem enviada pelo
+// gestor (imagemFaixaHero*) ou nenhuma (elemento oculto) — ver
+// page.module.scss, .heroFaixa.
+enum TipoFaixaHero {
+  COR
+  IMAGEM
+  NENHUMA
 }
 
 model Usuario {
-  id                  String           @id @default(uuid())
+  id                  String            @id @default(uuid())
   nome                String
-  email               String           @unique
-  cpf                 String           @unique
-  instituicao         String
-  categoria           CategoriaUsuario
+  email               String            @unique
+  cpf                 String?           @unique
+  instituicao         String?
+  categoria           CategoriaUsuario?
+  foto                String?
   senhaHash           String
-  emailConfirmado     Boolean          @default(false)
-  papeis              PapelUsuario[]   @default([PARTICIPANTE])
-  aceiteTermosEm      DateTime
-  aceitePrivacidadeEm DateTime
-  ativo               Boolean          @default(true)
+  emailConfirmado     Boolean           @default(false)
+  papeis              PapelUsuario[]    @default([PARTICIPANTE])
+  aceiteTermosEm      DateTime?
+  aceitePrivacidadeEm DateTime?
+  ativo               Boolean           @default(true)
   anonimizadoEm       DateTime?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
-  tokens        TokenVerificacao[]
-  refreshTokens RefreshToken[]
+  tokens              TokenVerificacao[]
+  refreshTokens       RefreshToken[]
+  inscricoesEdicao    InscricaoEdicao[]
+  inscricoesAtividade InscricaoAtividade[]
 
   @@map("usuarios")
 }
@@ -72,4 +116,199 @@ model RefreshToken {
   createdAt  DateTime  @default(now())
 
   @@map("refresh_tokens")
+}
+
+model Edicao {
+  id                   String            @id @default(uuid())
+  numero               Int               @unique
+  nome                 String
+  descricao            String?
+  dataInicio           DateTime?
+  dataFim              DateTime?
+  slug                 String?           @unique
+  cargaHorariaTotal    Int?
+  instagram            String?
+  facebook             String?
+  linksExtras          Json?
+  modalidade           ModalidadeEdicao?
+  local                String?
+  pais                 String?
+  estado               String?
+  cidade               String?
+  fusoHorario          String?           @default("America/Sao_Paulo")
+  notificarAlteracoes  Boolean           @default(true)
+  corFundoRealizadores CorSecao          @default(BARRO)
+  // Logo customizada da Hero, enviada pelo gestor em SVG. Guardada como texto
+  // (não no GCS) porque precisa ser injetada inline no DOM para reaproveitar
+  // o efeito de reveal mascarado (rolo de tinta) — uma URL consumida via
+  // <img> não permitiria isso. logoSvgViewBox guarda o viewBox original do
+  // arquivo enviado, usado para renderizar a arte proporcionalmente dentro
+  // do quadro fixo 778x896 do componente Logo.
+  logoSvg              String?
+  logoSvgViewBox       String?
+  // Mapa "--logo-cor-N" -> hex, extraído automaticamente do SVG enviado (ver
+  // sanitizarSvgLogo.js) — os fill/stroke/stop-color originais do arquivo são
+  // reescritos pra referenciar essas variáveis, permitindo que o gestor edite
+  // cada cor depois sem precisar reenviar o arquivo (Logo.jsx aplica esse
+  // mapa como custom properties inline).
+  logoSvgCores         Json?
+  // Cores da Hero, customizáveis por edição — fundo reusa a paleta de 5
+  // tokens de CorSecao; texto e búzio usam a paleta pública completa
+  // (CorPublica), já que o búzio precisa poder usar sua própria cor de
+  // assinatura (--buzio). PAPEL como default de corFundoHero preserva a
+  // aparência atual (a Hero hoje não define fundo próprio).
+  corFundoHero         CorSecao          @default(PAPEL)
+  // Opacidade (0-100) do fundo da Hero — mistura corFundoHero com o --papel
+  // por trás via CSS color-mix() (ver .hero em page.module.scss). 100 =
+  // opaco, aparência atual. Só se aplica quando fundoHeroTipo = COR.
+  opacidadeFundoHero   Int               @default(100)
+  // Fundo da Hero pode ser cor sólida (corFundoHero/opacidadeFundoHero acima,
+  // compartilhados entre breakpoints) ou uma imagem — aí sim com um arquivo
+  // por breakpoint (desktop/mobile), já que a Hero muda muito de proporção
+  // entre os dois e uma imagem só distorceria ou cortaria mal num dos casos.
+  // Reusa TipoFaixaHero (COR/IMAGEM/NENHUMA) por já existir — NENHUMA não é
+  // oferecido na UI de fundo (fundo sempre precisa de algo).
+  fundoHeroTipo          TipoFaixaHero   @default(COR)
+  imagemFundoHeroDesktop String?
+  imagemFundoHeroMobile  String?
+  corTextoHero         CorPublica        @default(TINTA)
+  corBuzioHero         CorPublica        @default(BUZIO)
+  // Faixas decorativas encostadas nas laterais da Hero (ver page.module.scss,
+  // .heroFaixa) — cor independente do fundo/texto/búzio. Configuráveis
+  // separadamente pra desktop e mobile (o gestor pode, por exemplo, usar uma
+  // imagem larga no desktop e só cor sólida no mobile, já que a faixa fica
+  // bem mais estreita lá — ver --largura-faixa-hero em layout.module.scss).
+  // Cada uma pode ser cor sólida (corFaixaHero*) ou imagem enviada pelo
+  // gestor (imagemFaixaHero*, URL no GCS — imagem raster comum, ao contrário
+  // da logo, então não precisa ser inline: repete verticalmente via CSS
+  // background-repeat).
+  faixaHeroTipoDesktop TipoFaixaHero     @default(COR)
+  corFaixaHeroDesktop  CorPublica        @default(OCRE)
+  imagemFaixaHeroDesktop String?
+  faixaHeroTipoMobile  TipoFaixaHero     @default(COR)
+  corFaixaHeroMobile   CorPublica        @default(OCRE)
+  imagemFaixaHeroMobile String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  atividades   Atividade[]
+  realizadores EdicaoRealizador[]
+  inscricoes   InscricaoEdicao[]
+
+  @@map("edicoes")
+}
+
+model Atividade {
+  id              String        @id @default(uuid())
+  edicaoId        String
+  edicao          Edicao        @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipoAtividadeId String
+  tipoAtividade   TipoAtividade @relation(fields: [tipoAtividadeId], references: [id])
+  nome            String
+  slug            String
+  descricao       String?
+  cargaHoraria    Int?
+  local           String?
+  exigeInscricao  Boolean       @default(true)
+  semLimiteVagas  Boolean       @default(false)
+  vagas           Int?
+  inicioAtividade DateTime
+  fimAtividade    DateTime
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  pessoas    AtividadePessoa[]
+  inscricoes InscricaoAtividade[]
+
+  @@unique([edicaoId, slug])
+  @@map("atividades")
+}
+
+model TipoAtividade {
+  id        String   @id @default(uuid())
+  nome      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  atividades Atividade[]
+
+  @@map("tipos_atividade")
+}
+
+model AtividadePessoa {
+  id                 String            @id @default(uuid())
+  atividadeId        String
+  atividade          Atividade         @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  nome               String
+  imagem             String?
+  descricao          String?
+  breveDescricao     String?
+  tipoParticipacaoId String?
+  tipoParticipacao   TipoParticipacao? @relation(fields: [tipoParticipacaoId], references: [id])
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@map("atividade_pessoas")
+}
+
+model TipoParticipacao {
+  id        String   @id @default(uuid())
+  nome      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pessoas AtividadePessoa[]
+
+  @@map("tipos_participacao")
+}
+
+model EdicaoRealizador {
+  id        String   @id @default(uuid())
+  edicaoId  String
+  edicao    Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  nome      String
+  imagem    String
+  link      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("edicao_realizadores")
+}
+
+enum StatusInscricaoAtividade {
+  CONFIRMADA
+  LISTA_ESPERA
+}
+
+// Inscrição geral no evento (edição) — independente de haver ou não
+// atividades específicas com inscrição obrigatória. Uma por usuário por
+// edição; é o que o fluxo público de auto-inscrição cria uma única vez —
+// alterações depois disso exigem login (fora do escopo atual).
+model InscricaoEdicao {
+  id        String   @id @default(uuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  edicaoId  String
+  edicao    Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([usuarioId, edicaoId])
+  @@map("inscricoes_edicao")
+}
+
+model InscricaoAtividade {
+  id          String                   @id @default(uuid())
+  usuarioId   String
+  usuario     Usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  atividadeId String
+  atividade   Atividade                @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  status      StatusInscricaoAtividade
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  // Cancelamento de inscrição fica fora do escopo atual; se for adicionado,
+  // também será preciso decidir promoção automática de lista de espera.
+  @@unique([usuarioId, atividadeId])
+  @@index([atividadeId, status])
+  @@map("inscricoes_atividade")
 }

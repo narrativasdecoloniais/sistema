@@ -11,6 +11,14 @@ const meuPerfil = asyncHandler(async (req, res) => {
   return res.json({ usuario });
 });
 
+const buscar = asyncHandler(async (req, res) => {
+  const termo = String(req.query.termo || "").trim();
+  if (termo.length < 2) return res.json({ usuarios: [] });
+
+  const usuarios = await usuariosService.buscarPorTermo(termo);
+  return res.json({ usuarios });
+});
+
 const atualizarMeuPerfil = asyncHandler(async (req, res) => {
   const dados = atualizarPerfilSchema.parse(req.body);
   const usuario = await usuariosService.atualizarPerfil(req.usuario.id, dados);
@@ -36,4 +44,4 @@ const excluirMinhaConta = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Conta excluída com sucesso." });
 });
 
-module.exports = { meuPerfil, atualizarMeuPerfil, alterarMinhaSenha, excluirMinhaConta };
+module.exports = { meuPerfil, buscar, atualizarMeuPerfil, alterarMinhaSenha, excluirMinhaConta };

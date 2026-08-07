@@ -52,10 +52,32 @@ const redefinirSenhaSchema = z.object({
   path: ["confirmarSenha"],
 });
 
+const definirSenhaSchema = z
+  .object({
+    token: z.string().min(1, "Token ausente"),
+    cpf: z
+      .string()
+      .transform(apenasDigitos)
+      .refine(cpfValido, "CPF inválido"),
+    senha: senhaForte,
+    confirmarSenha: z.string(),
+    aceiteTermos: z.literal(true, {
+      errorMap: () => ({ message: "É necessário aceitar os termos de uso" }),
+    }),
+    aceitePrivacidade: z.literal(true, {
+      errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
+    }),
+  })
+  .refine((dados) => dados.senha === dados.confirmarSenha, {
+    message: "As senhas não coincidem",
+    path: ["confirmarSenha"],
+  });
+
 module.exports = {
   senhaForte,
   cadastroSchema,
   loginSchema,
   recuperarSenhaSchema,
   redefinirSenhaSchema,
+  definirSenhaSchema,
 };

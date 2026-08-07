@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "edicoes" ALTER COLUMN "dataInicio" DROP NOT NULL,
+ALTER COLUMN "dataFim" DROP NOT NULL;

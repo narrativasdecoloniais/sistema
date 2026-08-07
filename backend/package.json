@@ -4,20 +4,25 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "predev": "lsof -ti:4000 | xargs -r kill -9 2>/dev/null || true",
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "promover-papel": "node src/scripts/promoverPapel.js"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.21.0",
     "@prisma/client": "^5.20.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "dompurify": "^3.4.13",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
+    "jsdom": "^30.0.1",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.15",
     "zod": "^3.23.8"

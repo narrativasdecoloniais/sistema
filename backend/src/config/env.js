@@ -20,4 +20,8 @@ module.exports = {
   cookieDomain: process.env.COOKIE_DOMAIN || undefined,
   emailFrom: process.env.EMAIL_FROM || "Narrativas <nao-responda@narrativasdecoloniais.com.br>",
   producao: process.env.NODE_ENV === "production",
+  gcsProjectId: obrigatoria("GCS_PROJECT_ID"),
+  gcsBucketPublico: obrigatoria("GCS_BUCKET_PUBLICO"),
+  gcsBucketPrivado: obrigatoria("GCS_BUCKET_PRIVADO"),
+  gcsCredentials: JSON.parse(obrigatoria("GCS_CREDENTIALS_JSON")),
 };

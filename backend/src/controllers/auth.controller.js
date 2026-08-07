@@ -5,6 +5,7 @@ const {
   loginSchema,
   recuperarSenhaSchema,
   redefinirSenhaSchema,
+  definirSenhaSchema,
 } = require("../validators/auth.validators");
 const usuariosService = require("../services/usuarios.service");
 const tokenService = require("../services/token.service");
@@ -142,6 +143,30 @@ const redefinirSenha = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Senha redefinida com sucesso. Você já pode fazer login." });
 });
 
+const definirSenha = asyncHandler(async (req, res) => {
+  const dados = definirSenhaSchema.parse(req.body);
+  const registro = await tokenService.consumirToken(dados.token, "CONVITE_ORGANIZADOR");
+
+  if (!registro) {
+    throw new ErroHttp(400, "Link de convite inválido ou expirado.");
+  }
+
+  const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
+  if (cpfExistente && cpfExistente.id !== registro.usuarioId) {
+    throw new ErroHttp(409, "Já existe um cadastro com esse CPF.");
+  }
+
+  const agora = new Date();
+  await usuariosService.definirSenhaEAceites(registro.usuarioId, {
+    senha: dados.senha,
+    cpf: dados.cpf,
+    aceiteTermosEm: agora,
+    aceitePrivacidadeEm: agora,
+  });
+
+  return res.json({ mensagem: "Senha definida com sucesso. Você já pode fazer login." });
+});
+
 module.exports = {
   cadastrar,
   confirmarEmail,
@@ -151,4 +176,5 @@ module.exports = {
   logout,
   recuperarSenha,
   redefinirSenha,
+  definirSenha,
 };

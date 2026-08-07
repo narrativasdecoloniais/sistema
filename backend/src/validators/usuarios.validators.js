@@ -9,6 +9,11 @@ const atualizarPerfilSchema = z.object({
       errorMap: () => ({ message: "Categoria inválida" }),
     })
     .optional(),
+  foto: z
+    .string()
+    .refine((valor) => valor.startsWith("data:image/"), "Foto inválida")
+    .nullable()
+    .optional(),
 });
 
 const alterarSenhaSchema = z

@@ -3,6 +3,7 @@ const prisma = require("../config/prisma");
 
 const VALIDADE_CONFIRMACAO_EMAIL_HORAS = 48;
 const VALIDADE_RECUPERACAO_SENHA_HORAS = 2;
+const VALIDADE_CONVITE_ORGANIZADOR_HORAS = 24 * 7;
 
 function gerarTokenAleatorio() {
   return crypto.randomBytes(32).toString("hex");
@@ -25,6 +26,17 @@ async function criarTokenRecuperacaoSenha(usuarioId) {
 
   await prisma.tokenVerificacao.create({
     data: { usuarioId, tipo: "RECUPERACAO_SENHA", token, expiraEm },
+  });
+
+  return token;
+}
+
+async function criarTokenConviteOrganizador(usuarioId) {
+  const token = gerarTokenAleatorio();
+  const expiraEm = new Date(Date.now() + VALIDADE_CONVITE_ORGANIZADOR_HORAS * 60 * 60 * 1000);
+
+  await prisma.tokenVerificacao.create({
+    data: { usuarioId, tipo: "CONVITE_ORGANIZADOR", token, expiraEm },
   });
 
   return token;
@@ -69,6 +81,7 @@ async function buscarTokenConfirmacaoEmailValido(token) {
 module.exports = {
   criarTokenConfirmacaoEmail,
   criarTokenRecuperacaoSenha,
+  criarTokenConviteOrganizador,
   consumirToken,
   buscarTokenConfirmacaoEmailValido,
 };
