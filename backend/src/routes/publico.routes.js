@@ -6,8 +6,15 @@ const { limitadorAuth } = require("../middlewares/rateLimiter");
 const router = Router();
 
 router.get("/edicao-atual", publicoController.buscarEdicaoAtual);
+router.get("/edicoes-anteriores", publicoController.listarEdicoesAnteriores);
 router.get("/edicao-atual/atividades", publicoController.listarAtividades);
 router.get("/edicao-atual/atividades/:slug", publicoController.buscarAtividadePorSlug);
+router.get("/edicoes/:slug", publicoController.buscarEdicaoPorSlug);
+router.get("/edicoes/:slug/atividades", publicoController.listarAtividadesPorEdicaoSlug);
+router.get(
+  "/edicoes/:edicaoSlug/atividades/:atividadeSlug",
+  publicoController.buscarAtividadePorEdicaoSlug
+);
 router.use("/inscricao", limitadorAuth, inscricoesRoutes);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const asyncHandler = require("../utils/asyncHandler");
 const ErroHttp = require("../utils/erroHttp");
-const { atividadeSchema } = require("../validators/atividades.validators");
+const { atividadeSchema, atividadeHorarioSchema } = require("../validators/atividades.validators");
 const atividadesService = require("../services/atividades.service");
 const edicoesService = require("../services/edicoes.service");
 const tiposAtividadeService = require("../services/tiposAtividade.service");
@@ -57,6 +57,15 @@ const atualizar = asyncHandler(async (req, res) => {
   return res.json({ atividade });
 });
 
+const atualizarHorario = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const existente = await atividadesService.buscarPorId(req.params.edicaoId, req.params.id);
+  if (!existente) throw new ErroHttp(404, "Atividade não encontrada.");
+  const dados = atividadeHorarioSchema.parse(req.body);
+  const atividade = await atividadesService.atualizarHorario(req.params.id, dados);
+  return res.json({ atividade });
+});
+
 const excluir = asyncHandler(async (req, res) => {
   await garantirEdicao(req.params.edicaoId);
   const existente = await atividadesService.buscarPorId(req.params.edicaoId, req.params.id);
@@ -65,4 +74,4 @@ const excluir = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Atividade excluída com sucesso." });
 });
 
-module.exports = { listar, buscarPorId, criar, atualizar, excluir };
+module.exports = { listar, buscarPorId, criar, atualizar, atualizarHorario, excluir };

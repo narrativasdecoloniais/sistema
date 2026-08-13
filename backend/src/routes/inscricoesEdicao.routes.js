@@ -1,11 +1,11 @@
 const { Router } = require("express");
 const inscricoesEdicaoController = require("../controllers/inscricoesEdicao.controller");
-const autorizar = require("../middlewares/autorizar");
+const autorizarSecao = require("../middlewares/autorizarSecao");
 
 const router = Router({ mergeParams: true });
 
-router.get("/", autorizar("ADMIN", "ORGANIZADOR"), inscricoesEdicaoController.listar);
-router.post("/", autorizar("ADMIN", "ORGANIZADOR"), inscricoesEdicaoController.criar);
-router.delete("/:id", autorizar("ADMIN", "ORGANIZADOR"), inscricoesEdicaoController.excluir);
+router.get("/", autorizarSecao("INSCRICOES_GERAIS"), inscricoesEdicaoController.listar);
+router.post("/", autorizarSecao("INSCRICOES_GERAIS"), inscricoesEdicaoController.criar);
+router.delete("/:id", autorizarSecao("INSCRICOES_GERAIS"), inscricoesEdicaoController.excluir);
 
 module.exports = router;

@@ -50,6 +50,18 @@ async function buscarEdicaoAtual() {
   return prisma.edicao.findFirst({ orderBy: { numero: "desc" }, include: INCLUDE_PADRAO });
 }
 
+async function buscarPorSlug(slug) {
+  return prisma.edicao.findUnique({ where: { slug }, include: INCLUDE_PADRAO });
+}
+
+async function listarEdicoesAnteriores(numeroAtual) {
+  return prisma.edicao.findMany({
+    where: { numero: { lt: numeroAtual } },
+    orderBy: { numero: "desc" },
+    select: { id: true, numero: true, nome: true, slug: true },
+  });
+}
+
 async function criarEdicao(dados) {
   return prisma.edicao.create({ data: dados });
 }
@@ -116,6 +128,8 @@ module.exports = {
   listarEdicoes,
   buscarPorId,
   buscarEdicaoAtual,
+  buscarPorSlug,
+  listarEdicoesAnteriores,
   criarEdicao,
   atualizarEdicao,
   excluirEdicao,

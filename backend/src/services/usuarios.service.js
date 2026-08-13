@@ -13,6 +13,8 @@ const CAMPOS_PUBLICOS = {
   foto: true,
   emailConfirmado: true,
   papeis: true,
+  acessoCompleto: true,
+  secoesPermitidas: true,
   createdAt: true,
 };
 
@@ -81,7 +83,7 @@ async function criarUsuario(dados) {
 // admin convida alguém para organizar antes dessa pessoa ter se cadastrado por
 // conta própria. Senha e CPF reais só são definidos quando o convite é aceito
 // (ver definirSenhaEAceites), então o hash abaixo nunca é utilizável para login.
-async function criarUsuarioConvidado({ nome, email }) {
+async function criarUsuarioConvidado({ nome, email, acessoCompleto, secoesPermitidas }) {
   const senhaHash = await gerarHash(crypto.randomBytes(32).toString("hex"));
 
   return prisma.usuario.create({
@@ -90,6 +92,8 @@ async function criarUsuarioConvidado({ nome, email }) {
       email,
       senhaHash,
       papeis: ["ORGANIZADOR"],
+      acessoCompleto,
+      secoesPermitidas,
     },
   });
 }
@@ -171,6 +175,8 @@ async function anonimizarUsuario(id) {
         cpf: `anon-${id}`,
         instituicao: "",
         papeis: [],
+        acessoCompleto: false,
+        secoesPermitidas: [],
         ativo: false,
         anonimizadoEm: new Date(),
       },

@@ -1,13 +1,14 @@
 const { Router } = require("express");
 const atividadesController = require("../controllers/atividades.controller");
-const autorizar = require("../middlewares/autorizar");
+const autorizarSecao = require("../middlewares/autorizarSecao");
 
 const router = Router({ mergeParams: true });
 
-router.get("/", autorizar("ADMIN", "ORGANIZADOR"), atividadesController.listar);
-router.get("/:id", autorizar("ADMIN", "ORGANIZADOR"), atividadesController.buscarPorId);
-router.post("/", autorizar("ADMIN", "ORGANIZADOR"), atividadesController.criar);
-router.patch("/:id", autorizar("ADMIN", "ORGANIZADOR"), atividadesController.atualizar);
-router.delete("/:id", autorizar("ADMIN", "ORGANIZADOR"), atividadesController.excluir);
+router.get("/", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.listar);
+router.get("/:id", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.buscarPorId);
+router.post("/", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.criar);
+router.patch("/:id", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.atualizar);
+router.patch("/:id/horario", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.atualizarHorario);
+router.delete("/:id", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.excluir);
 
 module.exports = router;

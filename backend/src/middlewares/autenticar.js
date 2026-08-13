@@ -9,7 +9,12 @@ function autenticar(req, res, next) {
 
   try {
     const payload = verificarAccessToken(token);
-    req.usuario = { id: payload.sub, papeis: payload.papeis || [] };
+    req.usuario = {
+      id: payload.sub,
+      papeis: payload.papeis || [],
+      acessoCompleto: Boolean(payload.acessoCompleto),
+      secoesPermitidas: payload.secoesPermitidas || [],
+    };
     next();
   } catch (erro) {
     return res.status(401).json({ mensagem: "Sessão expirada. Faça login novamente." });

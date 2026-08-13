@@ -10,6 +10,8 @@ const CAMPOS_ORGANIZADOR = {
   email: true,
   cpf: true,
   papeis: true,
+  acessoCompleto: true,
+  secoesPermitidas: true,
 };
 
 async function listarOrganizadores() {
@@ -30,7 +32,11 @@ async function adicionarOrganizador(dados) {
 
     await prisma.usuario.update({
       where: { id: usuario.id },
-      data: { papeis: { push: "ORGANIZADOR" } },
+      data: {
+        papeis: { push: "ORGANIZADOR" },
+        acessoCompleto: dados.acessoCompleto,
+        secoesPermitidas: dados.secoesPermitidas,
+      },
     });
     await emailService.enviarEmailNotificacaoOrganizador(usuario);
 
@@ -40,6 +46,8 @@ async function adicionarOrganizador(dados) {
   const usuarioNovo = await usuariosService.criarUsuarioConvidado({
     nome: dados.nome,
     email: dados.email,
+    acessoCompleto: dados.acessoCompleto,
+    secoesPermitidas: dados.secoesPermitidas,
   });
 
   const token = await tokenService.criarTokenConviteOrganizador(usuarioNovo.id);
@@ -76,9 +84,26 @@ async function promoverAdmin(id) {
   return prisma.usuario.findUnique({ where: { id }, select: CAMPOS_ORGANIZADOR });
 }
 
+async function atualizarPermissoes(id, { acessoCompleto, secoesPermitidas }) {
+  const usuario = await usuariosService.buscarCompletoPorId(id);
+  if (!usuario || !usuario.papeis.includes("ORGANIZADOR")) {
+    throw new ErroHttp(404, "Organizador não encontrado.");
+  }
+  if (usuario.papeis.includes("ADMIN")) {
+    throw new ErroHttp(409, "Administradores já têm acesso total; não é possível restringir por seção.");
+  }
+
+  return prisma.usuario.update({
+    where: { id },
+    data: { acessoCompleto, secoesPermitidas },
+    select: CAMPOS_ORGANIZADOR,
+  });
+}
+
 module.exports = {
   listarOrganizadores,
   adicionarOrganizador,
   removerOrganizador,
   promoverAdmin,
+  atualizarPermissoes,
 };

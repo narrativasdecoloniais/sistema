@@ -62,4 +62,18 @@ const atividadeSchema = z
     path: ["vagas"],
   });
 
-module.exports = { atividadeSchema };
+const atividadeHorarioSchema = z
+  .object({
+    inicioAtividade: z.coerce.date({
+      errorMap: () => ({ message: "Informe uma data de início da atividade válida" }),
+    }),
+    fimAtividade: z.coerce.date({
+      errorMap: () => ({ message: "Informe uma data de término da atividade válida" }),
+    }),
+  })
+  .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
+    message: "O fim da atividade deve ser posterior ao início",
+    path: ["fimAtividade"],
+  });
+
+module.exports = { atividadeSchema, atividadeHorarioSchema };

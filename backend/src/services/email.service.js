@@ -137,15 +137,23 @@ function listaAtividadesHtml(inscricoes, { vazio }) {
   return `<ul style="margin: 0; padding-left: 20px;">${itens}</ul>`;
 }
 
-async function enviarEmailConfirmacaoInscricao(usuario, { edicao, confirmadas, listaEspera }) {
+async function enviarEmailConfirmacaoInscricao(
+  usuario,
+  { edicao, confirmadas, listaEspera, jaEstavaInscrito = false }
+) {
+  const eyebrow = jaEstavaInscrito ? "Atividades adicionadas" : "Comprovante de inscrição";
+  const introducao = jaEstavaInscrito
+    ? `Olá, ${usuario.nome}. Você adicionou novas atividades à sua inscrição no evento.`
+    : `Olá, ${usuario.nome}. Sua inscrição no evento está confirmada.`;
+
   const html = `
     <div style="background: ${CORES_EMAIL.papel}; padding: 32px 16px;">
       <div style="max-width: 600px; margin: 0 auto; background: ${CORES_EMAIL.areia}; border-top: 4px solid ${CORES_EMAIL.buzio}; padding: 32px;">
-        <p style="margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: ${CORES_EMAIL.barro};">Comprovante de inscrição</p>
+        <p style="margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: ${CORES_EMAIL.barro};">${eyebrow}</p>
         <h1 style="margin: 0 0 20px; font-size: 22px; color: ${CORES_EMAIL.tinta};">${edicao.nome}</h1>
 
         <p style="margin: 0 0 20px; color: ${CORES_EMAIL.tinta};">
-          Olá, ${usuario.nome}. Sua inscrição no evento está confirmada.
+          ${introducao}
         </p>
 
         <p style="margin: 24px 0 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: ${CORES_EMAIL.barro};">Atividades confirmadas</p>
@@ -175,7 +183,7 @@ async function enviarEmailConfirmacaoInscricao(usuario, { edicao, confirmadas, l
 
   await enviarEmail({
     para: usuario.email,
-    assunto: `Comprovante de inscrição — ${edicao.nome}`,
+    assunto: `${eyebrow} — ${edicao.nome}`,
     html,
   });
 }

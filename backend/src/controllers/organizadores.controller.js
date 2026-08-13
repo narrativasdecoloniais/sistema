@@ -1,5 +1,5 @@
 const asyncHandler = require("../utils/asyncHandler");
-const { organizadorSchema } = require("../validators/organizadores.validators");
+const { organizadorSchema, permissoesSchema } = require("../validators/organizadores.validators");
 const organizadoresService = require("../services/organizadores.service");
 
 const listar = asyncHandler(async (req, res) => {
@@ -23,4 +23,10 @@ const promover = asyncHandler(async (req, res) => {
   return res.json({ organizador });
 });
 
-module.exports = { listar, criar, excluir, promover };
+const atualizarPermissoes = asyncHandler(async (req, res) => {
+  const dados = permissoesSchema.parse(req.body);
+  const organizador = await organizadoresService.atualizarPermissoes(req.params.id, dados);
+  return res.json({ organizador });
+});
+
+module.exports = { listar, criar, excluir, promover, atualizarPermissoes };

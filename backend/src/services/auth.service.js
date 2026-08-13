@@ -22,7 +22,12 @@ function parseDuracaoParaMs(duracao) {
 
 function gerarAccessToken(usuario) {
   return jwt.sign(
-    { sub: usuario.id, papeis: usuario.papeis },
+    {
+      sub: usuario.id,
+      papeis: usuario.papeis,
+      acessoCompleto: usuario.acessoCompleto,
+      secoesPermitidas: usuario.secoesPermitidas,
+    },
     env.jwtAccessSecret,
     { expiresIn: env.accessTokenExpiresIn }
   );

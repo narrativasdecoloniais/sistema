@@ -27,6 +27,34 @@ enum TipoToken {
   CONVITE_ORGANIZADOR
 }
 
+// Seções administráveis do site, usadas para restringir o que um
+// ORGANIZADOR pode acessar (ver acessoCompleto/secoesPermitidas em
+// Usuario). Espelha 1:1 os itens de NavegacaoEdicao.jsx no frontend.
+// Algumas seções (PROGRAMACAO, CREDENCIAMENTO, CERTIFICADOS,
+// SUBMISSOES_*) ainda não têm rota backend própria — o valor já existe
+// no enum pra evitar uma segunda migration quando essas telas forem
+// implementadas (Postgres não remove valores de enum facilmente).
+// ADMIN sempre tem acesso total e nunca consulta este enum; "Início"
+// também fica de fora por ser sempre acessível a ADMIN/ORGANIZADOR.
+enum SecaoAdmin {
+  ATIVIDADES
+  PAGINA_EVENTO
+  PROGRAMACAO
+  SUBMISSOES_RECEBIMENTO
+  SUBMISSOES_AVALIACAO
+  SUBMISSOES_RESULTADO
+  SUBMISSOES_APRESENTACAO
+  SUBMISSOES_PUBLICACAO
+  INSCRICOES_GERAIS
+  INSCRICOES_ATIVIDADES
+  CREDENCIAMENTO
+  CERTIFICADOS
+  PARTICIPANTES
+  CONFIGURACOES_EVENTO
+  TIPOS_ATIVIDADE
+  TIPOS_PARTICIPACAO
+}
+
 enum ModalidadeEdicao {
   ONLINE
   PRESENCIAL
@@ -78,6 +106,13 @@ model Usuario {
   senhaHash           String
   emailConfirmado     Boolean           @default(false)
   papeis              PapelUsuario[]    @default([PARTICIPANTE])
+  // Só têm efeito para quem tem ORGANIZADOR em papeis — ADMIN sempre tem
+  // acesso total (bypass hardcoded em autorizarSecao), independente destes
+  // campos. acessoCompleto=true equivale ao comportamento antigo de
+  // ORGANIZADOR (acesso a tudo); quando false, o acesso é restrito às
+  // seções listadas em secoesPermitidas.
+  acessoCompleto      Boolean           @default(false)
+  secoesPermitidas    SecaoAdmin[]      @default([])
   aceiteTermosEm      DateTime?
   aceitePrivacidadeEm DateTime?
   ativo               Boolean           @default(true)
@@ -282,8 +317,10 @@ enum StatusInscricaoAtividade {
 
 // Inscrição geral no evento (edição) — independente de haver ou não
 // atividades específicas com inscrição obrigatória. Uma por usuário por
-// edição; é o que o fluxo público de auto-inscrição cria uma única vez —
-// alterações depois disso exigem login (fora do escopo atual).
+// edição; o fluxo público de auto-inscrição cria uma única vez, mas permite
+// voltar depois (reidentificação por CPF+e-mail) para adicionar inscrições
+// em novas atividades — editar/cancelar a inscrição geral em si continua
+// exigindo login (fora do escopo atual).
 model InscricaoEdicao {
   id        String   @id @default(uuid())
   usuarioId String

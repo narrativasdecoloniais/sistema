@@ -99,6 +99,14 @@ async function atualizarAtividade(id, dados) {
   });
 }
 
+async function atualizarHorario(id, { inicioAtividade, fimAtividade }) {
+  return prisma.atividade.update({
+    where: { id },
+    data: { inicioAtividade, fimAtividade },
+    include: INCLUDE_PADRAO,
+  });
+}
+
 async function excluirAtividade(id) {
   const totalInscricoes = await prisma.inscricaoAtividade.count({ where: { atividadeId: id } });
   if (totalInscricoes > 0) {
@@ -113,5 +121,6 @@ module.exports = {
   buscarPorSlug,
   criarAtividade,
   atualizarAtividade,
+  atualizarHorario,
   excluirAtividade,
 };

@@ -76,18 +76,32 @@ const finalizar = asyncHandler(async (req, res) => {
   });
 
   const usuario = await usuariosService.buscarCompletoPorId(req.usuarioInscricaoId);
+  const inscricoesNovas = resultado.inscricoesAtividade.filter((i) => resultado.novas.includes(i.id));
 
-  try {
-    await emailService.enviarEmailConfirmacaoInscricao(usuario, {
-      edicao,
-      confirmadas: resultado.inscricoesAtividade.filter((i) => i.status === "CONFIRMADA"),
-      listaEspera: resultado.inscricoesAtividade.filter((i) => i.status === "LISTA_ESPERA"),
-    });
-  } catch (erro) {
-    console.error("[inscricoes] falha ao enviar e-mail de confirmação:", erro);
+  // Quando o usuário já estava inscrito e não adicionou nenhuma atividade nova
+  // (corrida ou reenvio), não há nada novo para notificar por e-mail.
+  if (!resultado.jaEstavaInscrito || inscricoesNovas.length > 0) {
+    try {
+      await emailService.enviarEmailConfirmacaoInscricao(usuario, {
+        edicao,
+        confirmadas: inscricoesNovas.filter((i) => i.status === "CONFIRMADA"),
+        listaEspera: inscricoesNovas.filter((i) => i.status === "LISTA_ESPERA"),
+        jaEstavaInscrito: resultado.jaEstavaInscrito,
+      });
+    } catch (erro) {
+      console.error("[inscricoes] falha ao enviar e-mail de confirmação:", erro);
+    }
   }
 
   return res.status(201).json(resultado);
+});
+
+const cancelarAtividade = asyncHandler(async (req, res) => {
+  await inscricoesService.cancelarInscricaoAtividade(
+    req.usuarioInscricaoId,
+    req.params.inscricaoAtividadeId
+  );
+  return res.status(204).send();
 });
 
 module.exports = {
@@ -97,4 +111,5 @@ module.exports = {
   tokenPorSessao,
   buscarEstado,
   finalizar,
+  cancelarAtividade,
 };

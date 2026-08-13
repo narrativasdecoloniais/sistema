@@ -11,5 +11,10 @@ router.post("/cadastro", inscricoesController.cadastrar);
 router.get("/token-por-sessao", autenticar, inscricoesController.tokenPorSessao);
 router.get("/estado", autenticarInscricao, inscricoesController.buscarEstado);
 router.post("/finalizar", autenticarInscricao, inscricoesController.finalizar);
+router.delete(
+  "/atividades/:inscricaoAtividadeId",
+  autenticarInscricao,
+  inscricoesController.cancelarAtividade
+);
 
 module.exports = router;

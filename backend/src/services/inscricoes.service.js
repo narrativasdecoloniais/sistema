@@ -28,6 +28,23 @@ async function buscarInscricaoEdicao(usuarioId, edicaoId) {
   });
 }
 
+async function buscarInscricaoCompleta(edicaoId, usuarioId) {
+  const [inscricaoEdicao, inscricoesAtividade] = await Promise.all([
+    buscarInscricaoEdicao(usuarioId, edicaoId),
+    prisma.inscricaoAtividade.findMany({
+      where: { usuarioId, atividade: { edicaoId } },
+      include: {
+        atividade: {
+          select: { id: true, nome: true, inicioAtividade: true, fimAtividade: true, local: true },
+        },
+      },
+      orderBy: { atividade: { inicioAtividade: "asc" } },
+    }),
+  ]);
+
+  return { inscricaoEdicao, inscricoesAtividade };
+}
+
 async function listarAtividadesParaInscricao(edicaoId, usuarioId) {
   const atividades = await prisma.atividade.findMany({
     where: { edicaoId, exigeInscricao: true },
@@ -77,7 +94,12 @@ async function listarAtividadesParaInscricao(edicaoId, usuarioId) {
 async function buscarEstadoInscricao(edicaoId, usuarioId) {
   const jaInscrito = await buscarInscricaoEdicao(usuarioId, edicaoId);
   if (jaInscrito) {
-    return { jaInscritoNaEdicao: true, atividades: [] };
+    const [inscricaoAtual, atividadesComStatus] = await Promise.all([
+      buscarInscricaoCompleta(edicaoId, usuarioId),
+      listarAtividadesParaInscricao(edicaoId, usuarioId),
+    ]);
+    const atividades = atividadesComStatus.filter((atividade) => !atividade.statusInscricaoAtual);
+    return { jaInscritoNaEdicao: true, inscricaoAtual, atividades };
   }
 
   const atividades = await listarAtividadesParaInscricao(edicaoId, usuarioId);
@@ -107,10 +129,7 @@ function validarSemConflitos(atividades) {
 }
 
 async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds }) {
-  const jaInscrito = await buscarInscricaoEdicao(usuarioId, edicaoId);
-  if (jaInscrito) {
-    throw new ErroHttp(409, "Você já está inscrito(a) nesta edição.");
-  }
+  const jaEstavaInscrito = Boolean(await buscarInscricaoEdicao(usuarioId, edicaoId));
 
   const atividadesSelecionadas =
     atividadeIds.length > 0
@@ -123,47 +142,81 @@ async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds }) {
     throw new ErroHttp(400, "Uma ou mais atividades selecionadas são inválidas.");
   }
 
-  validarSemConflitos(atividadesSelecionadas);
+  if (jaEstavaInscrito && atividadesSelecionadas.length > 0) {
+    const inscricoesExistentes = await prisma.inscricaoAtividade.findMany({
+      where: { usuarioId, atividadeId: { in: atividadeIds } },
+      include: { atividade: { select: { nome: true } } },
+    });
+    if (inscricoesExistentes.length > 0) {
+      throw new ErroHttp(
+        409,
+        `Você já está inscrito(a) na atividade "${inscricoesExistentes[0].atividade.nome}".`
+      );
+    }
+  }
 
-  try {
-    return await prisma.$transaction(async (tx) => {
-      const inscricaoEdicao = await tx.inscricaoEdicao.create({
-        data: { usuarioId, edicaoId },
-      });
+  let atividadesJaInscritas = [];
+  if (jaEstavaInscrito) {
+    const inscricoesAnteriores = await prisma.inscricaoAtividade.findMany({
+      where: { usuarioId, atividade: { edicaoId } },
+      include: { atividade: true },
+    });
+    atividadesJaInscritas = inscricoesAnteriores.map((inscricao) => inscricao.atividade);
+  }
 
-      const inscricoesAtividade = [];
-      for (const atividade of atividadesSelecionadas) {
-        let status = "CONFIRMADA";
-        if (!atividade.semLimiteVagas) {
-          const confirmadas = await tx.inscricaoAtividade.count({
-            where: { atividadeId: atividade.id, status: "CONFIRMADA" },
-          });
-          status = confirmadas < atividade.vagas ? "CONFIRMADA" : "LISTA_ESPERA";
-        }
+  validarSemConflitos([...atividadesJaInscritas, ...atividadesSelecionadas]);
 
-        const inscricaoAtividade = await tx.inscricaoAtividade.create({
-          data: { usuarioId, atividadeId: atividade.id, status },
+  const idsCriadosAgora = await prisma.$transaction(async (tx) => {
+    await tx.inscricaoEdicao.upsert({
+      where: { usuarioId_edicaoId: { usuarioId, edicaoId } },
+      update: {},
+      create: { usuarioId, edicaoId },
+    });
+
+    const criados = [];
+    for (const atividade of atividadesSelecionadas) {
+      let status = "CONFIRMADA";
+      if (!atividade.semLimiteVagas) {
+        const confirmadas = await tx.inscricaoAtividade.count({
+          where: { atividadeId: atividade.id, status: "CONFIRMADA" },
         });
-        inscricoesAtividade.push({ ...inscricaoAtividade, atividade });
+        status = confirmadas < atividade.vagas ? "CONFIRMADA" : "LISTA_ESPERA";
       }
 
-      return { inscricaoEdicao, inscricoesAtividade };
-    });
-  } catch (erro) {
-    if (erro.code === "P2002") {
-      throw new ErroHttp(409, "Você já está inscrito(a) nesta edição.");
+      const inscricaoAtividade = await tx.inscricaoAtividade.create({
+        data: { usuarioId, atividadeId: atividade.id, status },
+      });
+      criados.push(inscricaoAtividade.id);
     }
-    throw erro;
+
+    return criados;
+  });
+
+  const { inscricaoEdicao, inscricoesAtividade } = await buscarInscricaoCompleta(edicaoId, usuarioId);
+  return { inscricaoEdicao, inscricoesAtividade, novas: idsCriadosAgora, jaEstavaInscrito };
+}
+
+async function cancelarInscricaoAtividade(usuarioId, inscricaoAtividadeId) {
+  const inscricaoAtividade = await prisma.inscricaoAtividade.findUnique({
+    where: { id: inscricaoAtividadeId },
+  });
+
+  if (!inscricaoAtividade || inscricaoAtividade.usuarioId !== usuarioId) {
+    throw new ErroHttp(404, "Inscrição em atividade não encontrada.");
   }
+
+  await prisma.inscricaoAtividade.delete({ where: { id: inscricaoAtividadeId } });
 }
 
 module.exports = {
   gerarTokenInscricao,
   verificarTokenInscricao,
   buscarInscricaoEdicao,
+  buscarInscricaoCompleta,
   buscarEstadoInscricao,
   listarAtividadesParaInscricao,
   haSobreposicao,
   validarSemConflitos,
   finalizarInscricao,
+  cancelarInscricaoAtividade,
 };
