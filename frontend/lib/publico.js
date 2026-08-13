@@ -184,6 +184,24 @@ export function agruparAtividadesPorHorarioInicio(atividades = []) {
     .map(([inicioIso, itens]) => ({ inicioIso, atividades: itens }));
 }
 
+// Agrupa pessoas envolvidas numa atividade pelo tipo de participação —
+// cada grupo vira sua própria seção com o tipo como título, em vez de uma
+// lista única "Pessoas envolvidas" (o rótulo do tipo já identifica cada
+// pessoa, então não precisa repetir em cada cartão). Pessoas sem tipo
+// definido caem num grupo à parte ao final.
+export function agruparPessoasPorTipoParticipacao(pessoas = []) {
+  const porTipo = new Map();
+
+  for (const pessoa of pessoas) {
+    const chave = pessoa.tipoParticipacao?.id ?? "sem-tipo";
+    const rotulo = pessoa.tipoParticipacao?.nome ?? "Outros participantes";
+    if (!porTipo.has(chave)) porTipo.set(chave, { rotulo, pessoas: [] });
+    porTipo.get(chave).pessoas.push(pessoa);
+  }
+
+  return Array.from(porTipo.values());
+}
+
 export function formatarDiaAtividade(iso) {
   const data = new Date(iso);
   const diaSemana = new Intl.DateTimeFormat("pt-BR", { weekday: "short", timeZone: "UTC" })

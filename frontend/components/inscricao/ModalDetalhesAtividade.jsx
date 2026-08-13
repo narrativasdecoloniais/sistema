@@ -2,23 +2,17 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { buscarAtividadePublicaPorSlug, formatarDiaAtividade, formatarFaixaHorario } from "@/lib/publico";
+import {
+  agruparPessoasPorTipoParticipacao,
+  buscarAtividadePublicaPorSlug,
+  formatarDiaAtividade,
+  formatarFaixaHorario,
+} from "@/lib/publico";
 import CarrosselFacilitadores from "./CarrosselFacilitadores";
 import styles from "./ModalDetalhesAtividade.module.scss";
 
 const SELETOR_FOCAVEIS =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-function agruparPorTipoParticipacao(pessoas) {
-  const porTipo = new Map();
-  for (const pessoa of pessoas) {
-    const chave = pessoa.tipoParticipacao?.id ?? "sem-tipo";
-    const rotulo = pessoa.tipoParticipacao?.nome ?? "Outros participantes";
-    if (!porTipo.has(chave)) porTipo.set(chave, { rotulo, pessoas: [] });
-    porTipo.get(chave).pessoas.push(pessoa);
-  }
-  return Array.from(porTipo.values());
-}
 
 // Mesmo padrão de acessibilidade de components/interno/Modal.jsx
 // (focus trap, ESC fecha, clique no fundo fecha, trava scroll do body,
@@ -136,7 +130,7 @@ export default function ModalDetalhesAtividade({ atividade, aoFechar }) {
         ? "Lotada — você entrará na lista de espera"
         : `${atividade.vagasRestantes} vagas restantes`;
 
-  const grupos = agruparPorTipoParticipacao(pessoas);
+  const grupos = agruparPessoasPorTipoParticipacao(pessoas);
 
   return createPortal(
     <div className={styles.fundo} onClick={aoClicarFundo}>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Divisor from "@/components/graficos/Divisor";
-import { formatarPeriodoAtividade } from "@/lib/publico";
+import { agruparPessoasPorTipoParticipacao, formatarPeriodoAtividade } from "@/lib/publico";
 import styles from "./DetalheAtividade.module.scss";
 
 // Compartilhado por /atividades/[slug] (edição atual) e
@@ -33,39 +33,37 @@ export default function DetalheAtividade({ atividade, permiteInscricao }) {
         </section>
       )}
 
-      {atividade.pessoas.length > 0 && (
-        <section className={styles.secaoTexto}>
-          <h2 className={styles.subtituloSecao}>Pessoas envolvidas</h2>
-          <ul className={styles.convidadosGrade}>
-            {atividade.pessoas.map((pessoa) => (
-              <li key={pessoa.id} className={styles.convidadoCartao}>
-                <div
-                  className={styles.convidadoFoto}
-                  aria-hidden={pessoa.imagem ? undefined : "true"}
-                >
-                  {pessoa.imagem ? (
-                    <img src={pessoa.imagem} alt="" className={styles.convidadoImagem} />
-                  ) : (
-                    <span className={styles.convidadoInicial}>
-                      {pessoa.nome.trim().charAt(0)}
-                    </span>
+      {atividade.pessoas.length > 0 &&
+        agruparPessoasPorTipoParticipacao(atividade.pessoas).map((grupo) => (
+          <section key={grupo.rotulo} className={styles.secaoTexto}>
+            <h2 className={styles.subtituloSecao}>{grupo.rotulo}</h2>
+            <ul className={styles.convidadosGrade}>
+              {grupo.pessoas.map((pessoa) => (
+                <li key={pessoa.id} className={styles.convidadoCartao}>
+                  <div
+                    className={styles.convidadoFoto}
+                    aria-hidden={pessoa.imagem ? undefined : "true"}
+                  >
+                    {pessoa.imagem ? (
+                      <img src={pessoa.imagem} alt="" className={styles.convidadoImagem} />
+                    ) : (
+                      <span className={styles.convidadoInicial}>
+                        {pessoa.nome.trim().charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <p className={styles.convidadoNome}>{pessoa.nome}</p>
+                  {pessoa.breveDescricao && (
+                    <p className={styles.convidadoDescricao}>{pessoa.breveDescricao}</p>
                   )}
-                </div>
-                <p className={styles.convidadoNome}>{pessoa.nome}</p>
-                {pessoa.tipoParticipacao && (
-                  <p className={styles.convidadoAfiliacao}>{pessoa.tipoParticipacao.nome}</p>
-                )}
-                {pessoa.breveDescricao && (
-                  <p className={styles.convidadoDescricao}>{pessoa.breveDescricao}</p>
-                )}
-                {pessoa.descricao && (
-                  <p className={styles.convidadoDescricao}>{pessoa.descricao}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+                  {pessoa.descricao && (
+                    <p className={styles.convidadoDescricao}>{pessoa.descricao}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
 
       <section className={styles.secaoTexto}>
         <h2 className={styles.subtituloSecao}>Quando e inscrição</h2>
