@@ -1,0 +1,146 @@
+// Mesmo tratamento retangular (sem raio) e paleta pública de
+// AtividadeSelecionavel.module.scss/page.module.scss — cartão maior (a
+// inscrição geral) com um cartão aninhado (as atividades) dentro.
+.cartao {
+  padding: 1.5rem;
+  background: var(--papel);
+  border: 1.5px solid var(--ocre);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.nomeEdicao {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+.periodo {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.atividades {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.subtitulo {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.subtituloEspera {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ocre);
+}
+
+.vazio {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  li {
+    padding: 0.75rem 0.9rem;
+    background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
+    font-size: 0.88rem;
+    color: var(--tinta);
+    line-height: 1.5;
+  }
+}
+
+.cancelar {
+  display: block;
+  margin-top: 0.4rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: var(--cor-erro);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cor-erro);
+    outline-offset: 3px;
+  }
+}
+
+.confirmacao {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--cor-erro);
+
+  span {
+    font-weight: 600;
+  }
+}
+
+.confirmar,
+.negar {
+  border: 1px solid var(--cor-erro);
+  background: none;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cor-erro);
+    outline-offset: 2px;
+  }
+}
+
+.confirmar {
+  background: var(--cor-erro);
+  color: var(--papel);
+  border-color: var(--cor-erro);
+}
+
+.negar {
+  color: var(--cor-erro);
+}

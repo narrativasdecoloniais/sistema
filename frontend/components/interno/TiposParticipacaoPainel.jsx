@@ -11,7 +11,7 @@ import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./TiposParticipacaoPainel.module.scss";
 
-export default function TiposParticipacaoPainel({ tiposIniciais }) {
+export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = true }) {
   const router = useRouter();
   const { notificar } = useToast();
 
@@ -74,10 +74,12 @@ export default function TiposParticipacaoPainel({ tiposIniciais }) {
             pessoas envolvidas nas atividades de todas as edições.
           </p>
         </div>
-        <Botao type="button" onClick={abrirCriacao}>
-          <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
-          Novo tipo
-        </Botao>
+        {podeEditar && (
+          <Botao type="button" onClick={abrirCriacao}>
+            <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
+            Novo tipo
+          </Botao>
+        )}
       </div>
 
       {tipos.length === 0 ? (
@@ -101,24 +103,26 @@ export default function TiposParticipacaoPainel({ tiposIniciais }) {
                 <tr key={tipo.id}>
                   <td data-rotulo="Nome">{tipo.nome}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
-                    <div className={styles.acoesLinha}>
-                      <button
-                        type="button"
-                        className={styles.botaoIcone}
-                        aria-label={`Editar ${tipo.nome}`}
-                        onClick={() => abrirEdicao(tipo)}
-                      >
-                        <Pencil size={16} strokeWidth={1.5} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
-                        aria-label={`Excluir ${tipo.nome}`}
-                        onClick={() => setConfirmandoId(tipo.id)}
-                      >
-                        <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
-                      </button>
-                    </div>
+                    {podeEditar && (
+                      <div className={styles.acoesLinha}>
+                        <button
+                          type="button"
+                          className={styles.botaoIcone}
+                          aria-label={`Editar ${tipo.nome}`}
+                          onClick={() => abrirEdicao(tipo)}
+                        >
+                          <Pencil size={16} strokeWidth={1.5} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
+                          aria-label={`Excluir ${tipo.nome}`}
+                          onClick={() => setConfirmandoId(tipo.id)}
+                        >
+                          <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

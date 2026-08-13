@@ -53,6 +53,13 @@ export function finalizarInscricao(token, atividadeIds) {
   });
 }
 
+export function cancelarInscricaoAtividade(token, inscricaoAtividadeId) {
+  return requisitar(`/publico/inscricao/atividades/${inscricaoAtividadeId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
 // Sobreposição parcial conta como conflito; um horário que termina
 // exatamente quando o outro começa não conta. Mesma lógica de
 // backend/src/services/inscricoes.service.js#haSobreposicao — manter

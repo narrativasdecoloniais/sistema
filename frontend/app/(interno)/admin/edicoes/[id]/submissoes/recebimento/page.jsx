@@ -1,6 +1,13 @@
+import { redirect } from "next/navigation";
+import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
 import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
 
-export default function PaginaSubmissoesRecebimento() {
+export default async function PaginaSubmissoesRecebimento({ params }) {
+  const usuario = await obterUsuarioAtual();
+  if (!temPermissaoSecao(usuario, "SUBMISSOES_RECEBIMENTO")) {
+    redirect(`/admin/edicoes/${params.id}`);
+  }
+
   return (
     <PaginaEmBreve
       titulo="Recebimento de submissões"

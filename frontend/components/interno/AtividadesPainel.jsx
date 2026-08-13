@@ -55,6 +55,10 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
       await apiClient.delete(`/edicoes/${edicaoId}/atividades/${id}`);
       setAtividades((atual) => atual.filter((item) => item.id !== id));
       notificar("Atividade excluída com sucesso.");
+      // Sem efeito quando chamado a partir da exclusão pela linha da tabela
+      // (nenhum modal de edição aberto); fecha o formulário quando a
+      // exclusão veio de dentro dele (AtividadeForm).
+      fecharModal();
       router.refresh();
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -153,6 +157,7 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
             tiposParticipacao={tiposParticipacao}
             aoSalvar={aoSalvar}
             aoCancelar={fecharModal}
+            aoExcluir={excluirAtividade}
           />
         </Modal>
       )}

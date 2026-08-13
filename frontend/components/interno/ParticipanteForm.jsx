@@ -4,14 +4,15 @@ import { useState } from "react";
 import Campo from "@/components/forms/Campo";
 import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
+import SeletorSecoesAdmin from "./SeletorSecoesAdmin";
 import { apiClient } from "@/lib/apiClient";
-import { organizadorSchema, extrairErros } from "@/lib/validacao";
+import { participanteSchema, extrairErros } from "@/lib/validacao";
 import { useToast } from "./ToastProvider";
-import styles from "./OrganizadorForm.module.scss";
+import styles from "./ParticipanteForm.module.scss";
 
-const valoresIniciais = { nome: "", email: "" };
+const valoresIniciais = { nome: "", email: "", acessoCompleto: false, secoesPermitidas: [] };
 
-export default function OrganizadorForm({ aoSalvar, aoCancelar }) {
+export default function ParticipanteForm({ aoSalvar, aoCancelar }) {
   const { notificar } = useToast();
 
   const [dados, setDados] = useState(valoresIniciais);
@@ -27,7 +28,7 @@ export default function OrganizadorForm({ aoSalvar, aoCancelar }) {
     evento.preventDefault();
     setErroGeral("");
 
-    const resultado = organizadorSchema.safeParse(dados);
+    const resultado = participanteSchema.safeParse(dados);
     if (!resultado.success) {
       setErros(extrairErros(resultado));
       return;
@@ -63,6 +64,12 @@ export default function OrganizadorForm({ aoSalvar, aoCancelar }) {
         value={dados.email}
         onChange={(evento) => atualizarCampo("email", evento.target.value)}
         erro={erros.email}
+      />
+      <SeletorSecoesAdmin
+        acessoCompleto={dados.acessoCompleto}
+        secoesSelecionadas={dados.secoesPermitidas}
+        onAlterarAcessoCompleto={(valor) => atualizarCampo("acessoCompleto", valor)}
+        onAlterarSecoes={(valor) => atualizarCampo("secoesPermitidas", valor)}
       />
       <div className={styles.acoes}>
         <Botao type="button" variante="secundario" onClick={aoCancelar}>

@@ -43,15 +43,6 @@
   line-height: 1.6;
 }
 
-.subtitulo {
-  margin: 0.5rem 0 0;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--barro);
-}
-
 .formulario {
   display: flex;
   flex-direction: column;
@@ -70,21 +61,15 @@
   gap: 1rem;
 }
 
-.listaResultado {
+// Rótulo do dia quando só existe um (NavegacaoDias, com abas, só aparece a
+// partir de dois dias) — sem o dia em algum lugar, a lista de atividades
+// fica sem nenhuma referência de data, só hora.
+.diaUnico {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-
-  li {
-    padding: 0.9rem 1rem;
-    background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
-    font-size: 0.9rem;
-    color: var(--tinta);
-    line-height: 1.5;
-  }
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--tinta);
+  text-transform: capitalize;
 }
 
 // retangular, cantos a 90° — mesmo padrão de CTA primário usado no restante

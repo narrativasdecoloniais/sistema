@@ -54,7 +54,7 @@ export default function Sidebar({ usuario }) {
       </div>
       {mostrarFerramentas && (
         <nav id="menu-interno" className={styles.nav}>
-          <NavegacaoEdicao idEdicaoAtual={idEdicaoAtual} />
+          <NavegacaoEdicao idEdicaoAtual={idEdicaoAtual} usuario={usuario} />
         </nav>
       )}
     </aside>

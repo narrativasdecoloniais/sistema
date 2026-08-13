@@ -8,8 +8,8 @@ import CampoCPF from "@/components/forms/CampoCPF";
 import CampoSelect from "@/components/forms/CampoSelect";
 import Checkbox from "@/components/forms/Checkbox";
 import { useToast } from "@/components/publico/ToastProvider";
-import ModalJaInscrito from "@/components/publico/ModalJaInscrito";
 import EtapasInscricao from "@/components/inscricao/EtapasInscricao";
+import CardInscricaoConfirmada from "@/components/inscricao/CardInscricaoConfirmada";
 import AtividadeSelecionavel from "@/components/inscricao/AtividadeSelecionavel";
 import NavegacaoDias, { idAbaDia, idPainelDia } from "@/components/inscricao/NavegacaoDias";
 import CarrosselAtividades from "@/components/inscricao/CarrosselAtividades";
@@ -28,14 +28,20 @@ import {
   buscarTokenPorSessao,
   buscarEstadoInscricao,
   finalizarInscricao,
+  cancelarInscricaoAtividade,
   haSobreposicao,
   agruparAtividadesPorDia,
   agruparAtividadesSimultaneas,
 } from "@/lib/inscricao";
-import { formatarPeriodoAtividade, formatarHoraAtividade } from "@/lib/publico";
+import { formatarHoraAtividade, formatarDiaAtividade } from "@/lib/publico";
 import styles from "./page.module.scss";
 
-function calcularPassos(possuiAtividades) {
+// modoAdicionar = visitante que já concluiu a inscrição geral numa visita
+// anterior e voltou pra escolher mais atividades — pula direto pra seleção,
+// sem repetir o passo de inscrição geral.
+function calcularPassos(possuiAtividades, modoAdicionar) {
+  if (modoAdicionar) return ["CPF", "Identificação", "Atividades", "Confirmação"];
+
   const passos = ["CPF", "Identificação", "Atividades"];
   if (possuiAtividades) passos.push("Inscrição em atividades");
   passos.push("Confirmação");
@@ -46,12 +52,6 @@ function calcularPassos(possuiAtividades) {
 // pra detectar expiração do token de inscrição e resetar o fluxo.
 const MENSAGEM_TOKEN_EXPIRADO = "Sessão de inscrição expirada. Volte ao início e informe seu CPF novamente.";
 
-// Mesma mensagem lançada nos dois pontos de guarda de
-// backend/src/services/inscricoes.service.js#finalizarInscricao — cobre a
-// corrida de reenvio duplo no /finalizar (o caso comum já é pego antes
-// disso, via GET /estado, mas essa checagem final é a autoridade real).
-const MENSAGEM_JA_INSCRITO = "Você já está inscrito(a) nesta edição.";
-
 const CADASTRO_INICIAL = {
   nome: "",
   email: "",
@@ -61,9 +61,10 @@ const CADASTRO_INICIAL = {
   aceitePrivacidade: false,
 };
 
-function indicePasso(etapa, possuiAtividades) {
+function indicePasso(etapa, possuiAtividades, modoAdicionar) {
   if (etapa === "carregando" || etapa === "cpf") return 0;
   if (etapa === "identidade" || etapa === "cadastro") return 1;
+  if (modoAdicionar) return etapa === "concluido" ? 3 : 2;
   if (etapa === "inscricao-geral") return 2;
   if (etapa === "aviso-atividades" || etapa === "atividades") return possuiAtividades ? 3 : 2;
   return possuiAtividades ? 4 : 3;
@@ -84,7 +85,9 @@ function InscricaoConteudo() {
   const [atividadesDisponiveis, setAtividadesDisponiveis] = useState([]);
   const [selecionadas, setSelecionadas] = useState(new Set());
   const [resultado, setResultado] = useState(null);
-  const [jaInscrito, setJaInscrito] = useState(false);
+  const [emailEnviado, setEmailEnviado] = useState(false);
+  const [modoAdicionar, setModoAdicionar] = useState(false);
+  const [inscricaoAtual, setInscricaoAtual] = useState(null);
   const [diaAtivo, setDiaAtivo] = useState(null);
 
   const [erros, setErros] = useState({});
@@ -125,10 +128,6 @@ function InscricaoConteudo() {
       notificar(erro.message, "erro");
       return;
     }
-    if (erro.message === MENSAGEM_JA_INSCRITO) {
-      setJaInscrito(true);
-      return;
-    }
     notificar(erro.message, "erro");
   }
 
@@ -137,7 +136,18 @@ function InscricaoConteudo() {
     setEdicao(dados.edicao);
 
     if (dados.jaInscritoNaEdicao) {
-      setJaInscrito(true);
+      setModoAdicionar(true);
+      setInscricaoAtual(dados.inscricaoAtual);
+      setAtividadesDisponiveis(dados.atividades);
+
+      if (dados.atividades.length === 0) {
+        setResultado(dados.inscricaoAtual);
+        setEmailEnviado(false);
+        setEtapa("concluido");
+        return;
+      }
+
+      setEtapa("atividades");
       return;
     }
 
@@ -267,6 +277,11 @@ function InscricaoConteudo() {
       const outra = atividadesDisponiveis.find((item) => item.id === outraId);
       if (outra && haSobreposicao(atividade, outra)) return outra;
     }
+
+    for (const item of inscricaoAtual?.inscricoesAtividade ?? []) {
+      if (haSobreposicao(atividade, item.atividade)) return item.atividade;
+    }
+
     return null;
   }
 
@@ -295,17 +310,52 @@ function InscricaoConteudo() {
   }
 
   async function aoFinalizar(atividadeIds = Array.from(selecionadas)) {
+    if (modoAdicionar && atividadeIds.length === 0) {
+      setResultado(inscricaoAtual);
+      setEmailEnviado(false);
+      setEtapa("concluido");
+      return;
+    }
+
     setCarregando(true);
 
     try {
       const dados = await finalizarInscricao(tokenInscricao, atividadeIds);
       setResultado(dados);
+      setEmailEnviado(true);
       setEtapa("concluido");
-      notificar("Inscrição confirmada! Enviamos um comprovante por e-mail.", "sucesso");
+      notificar(
+        modoAdicionar
+          ? "Atividades adicionadas! Enviamos um comprovante por e-mail."
+          : "Inscrição confirmada! Enviamos um comprovante por e-mail.",
+        "sucesso"
+      );
     } catch (erro) {
       tratarErro(erro);
     } finally {
       setCarregando(false);
+    }
+  }
+
+  // Cancela a inscrição numa atividade específica (a inscrição geral no
+  // evento não é afetada) e recarrega o estado do servidor — mais simples e
+  // confiável do que reconstruir manualmente os campos de vaga/tipo da
+  // atividade liberada no client.
+  async function aoCancelarAtividade(item) {
+    try {
+      await cancelarInscricaoAtividade(tokenInscricao, item.id);
+
+      const dados = await buscarEstadoInscricao(tokenInscricao);
+      setEdicao(dados.edicao);
+      if (dados.jaInscritoNaEdicao) {
+        setInscricaoAtual(dados.inscricaoAtual);
+        setAtividadesDisponiveis(dados.atividades);
+        setResultado((atual) => (atual ? dados.inscricaoAtual : atual));
+      }
+
+      notificar("Inscrição na atividade cancelada.", "sucesso");
+    } catch (erro) {
+      tratarErro(erro);
     }
   }
 
@@ -331,8 +381,8 @@ function InscricaoConteudo() {
       </header>
 
       <EtapasInscricao
-        passos={calcularPassos(atividadesDisponiveis.length > 0)}
-        passoAtualIndex={indicePasso(etapa, atividadesDisponiveis.length > 0)}
+        passos={calcularPassos(atividadesDisponiveis.length > 0, modoAdicionar)}
+        passoAtualIndex={indicePasso(etapa, atividadesDisponiveis.length > 0, modoAdicionar)}
       >
       {etapa === "carregando" && (
         <div className={styles.bloco}>
@@ -492,18 +542,31 @@ function InscricaoConteudo() {
 
       {etapa === "atividades" && (
         <div className={styles.bloco}>
+          {modoAdicionar && inscricaoAtual && (
+            <CardInscricaoConfirmada
+              edicao={edicao}
+              inscricoesAtividade={inscricaoAtual.inscricoesAtividade}
+              onCancelar={aoCancelarAtividade}
+            />
+          )}
+
           <p className={styles.instrucao}>
-            Selecione as atividades em que deseja se inscrever. Não é possível selecionar
-            atividades com horários conflitantes.
+            {modoAdicionar
+              ? "Selecione mais atividades em que deseja se inscrever. Não é possível selecionar atividades com horários conflitantes com as que você já tem."
+              : "Selecione as atividades em que deseja se inscrever. Não é possível selecionar atividades com horários conflitantes."}
           </p>
 
-          {dias.length > 1 && (
+          {dias.length > 1 ? (
             <NavegacaoDias
               dias={dias}
               chaveAtiva={chaveAtiva}
               onSelecionar={setDiaAtivo}
               idBase={idDias}
             />
+          ) : (
+            diaAtual && (
+              <p className={styles.diaUnico}>{formatarDiaAtividade(diaAtual.inicioIso).completo}</p>
+            )
           )}
 
           {diaAtual && (
@@ -565,51 +628,22 @@ function InscricaoConteudo() {
       {etapa === "concluido" && resultado && (
         <div className={styles.bloco}>
           <p className={styles.instrucao}>
-            Comprovante de inscrição — {nomeUsuario}, sua inscrição no evento{" "}
-            <strong>{edicao?.nome}</strong> está confirmada.
+            {nomeUsuario}, sua inscrição está confirmada.
           </p>
 
-          {resultado.inscricoesAtividade.filter((item) => item.status === "CONFIRMADA").length > 0 && (
-            <>
-              <p className={styles.subtitulo}>Atividades confirmadas</p>
-              <ul className={styles.listaResultado}>
-                {resultado.inscricoesAtividade
-                  .filter((item) => item.status === "CONFIRMADA")
-                  .map((item) => (
-                    <li key={item.id}>
-                      <strong>{item.atividade.nome}</strong>
-                      <br />
-                      {formatarPeriodoAtividade(item.atividade.inicioAtividade, item.atividade.fimAtividade)}
-                    </li>
-                  ))}
-              </ul>
-            </>
-          )}
-
-          {resultado.inscricoesAtividade.filter((item) => item.status === "LISTA_ESPERA").length > 0 && (
-            <>
-              <p className={styles.subtitulo}>Lista de espera</p>
-              <p className={styles.instrucao}>
-                Você não está confirmado(a) nas atividades abaixo, mas poderá ser chamado(a)
-                conforme surgirem vagas.
-              </p>
-              <ul className={styles.listaResultado}>
-                {resultado.inscricoesAtividade
-                  .filter((item) => item.status === "LISTA_ESPERA")
-                  .map((item) => (
-                    <li key={item.id}>
-                      <strong>{item.atividade.nome}</strong>
-                      <br />
-                      {formatarPeriodoAtividade(item.atividade.inicioAtividade, item.atividade.fimAtividade)}
-                    </li>
-                  ))}
-              </ul>
-            </>
-          )}
+          <CardInscricaoConfirmada
+            titulo="Inscrição confirmada"
+            edicao={edicao}
+            inscricoesAtividade={resultado.inscricoesAtividade}
+            onCancelar={aoCancelarAtividade}
+          />
 
           <p className={styles.instrucao}>
-            Enviamos um e-mail com esse comprovante. Alterações na sua inscrição poderão ser
-            feitas futuramente fazendo login no sistema.
+            {emailEnviado
+              ? "Enviamos um e-mail com esse comprovante. "
+              : ""}
+            Alterações na sua inscrição — como cancelar ou editar — poderão ser feitas futuramente
+            fazendo login no sistema.
           </p>
           <Link href="/" className={styles.link}>
             Voltar para a página inicial
@@ -620,10 +654,6 @@ function InscricaoConteudo() {
         </div>
       )}
       </EtapasInscricao>
-
-      {jaInscrito && (
-        <ModalJaInscrito nomeEdicao={edicao?.nome} cpf={cpf} onFechar={() => setJaInscrito(false)} />
-      )}
     </div>
   );
 }

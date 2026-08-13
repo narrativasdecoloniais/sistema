@@ -191,10 +191,17 @@ export const edicaoSchema = z
     path: ["dataFim"],
   });
 
-export const organizadorSchema = z.object({
-  nome: z.string().trim().min(3, "Informe o nome completo"),
-  email: z.string().trim().email("E-mail inválido"),
+export const permissoesSecoesSchema = z.object({
+  acessoCompleto: z.boolean().default(false),
+  secoesPermitidas: z.array(z.string()).default([]),
 });
+
+export const participanteSchema = z
+  .object({
+    nome: z.string().trim().min(3, "Informe o nome completo"),
+    email: z.string().trim().email("E-mail inválido"),
+  })
+  .merge(permissoesSecoesSchema);
 
 export const definirSenhaSchema = z
   .object({

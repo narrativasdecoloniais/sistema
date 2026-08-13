@@ -1,12 +1,12 @@
 import { notFound, redirect } from "next/navigation";
-import { obterUsuarioAtual, temPapel } from "@/lib/auth";
+import { obterUsuarioAtual, temPapel, temPermissaoSecao } from "@/lib/auth";
 import { buscarEdicaoPorId } from "@/lib/edicoes";
 import { listarTiposParticipacao } from "@/lib/tiposParticipacao";
 import TiposParticipacaoPainel from "@/components/interno/TiposParticipacaoPainel";
 
 export default async function PaginaTiposParticipacao({ params }) {
   const usuario = await obterUsuarioAtual();
-  if (!temPapel(usuario, "ADMIN")) {
+  if (!temPermissaoSecao(usuario, "TIPOS_PARTICIPACAO")) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
@@ -15,5 +15,5 @@ export default async function PaginaTiposParticipacao({ params }) {
 
   const tipos = await listarTiposParticipacao();
 
-  return <TiposParticipacaoPainel tiposIniciais={tipos} />;
+  return <TiposParticipacaoPainel tiposIniciais={tipos} podeEditar={temPapel(usuario, "ADMIN")} />;
 }

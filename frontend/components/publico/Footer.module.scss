@@ -47,6 +47,13 @@
   }
 }
 
+// edição anterior ainda sem página pública própria (sem slug) — mesmo
+// tamanho da lista, mas sem o tratamento de link.
+.semLink {
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--papel) 70%, transparent);
+}
+
 .emBreve {
   font-size: 0.9rem;
   margin: 0;

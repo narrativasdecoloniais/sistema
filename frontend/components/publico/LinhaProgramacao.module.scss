@@ -1,0 +1,61 @@
+.linha {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+// Coluna da hora — largura fixa, com um marcador (bolinha) no topo e uma
+// linha vertical descendo até a próxima linha, formando a timeline. Em
+// telas estreitas encolhe (não empilha) — a hora continua ao lado do card.
+.colunaHora {
+  flex: 0 0 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0.3rem;
+
+  @media (min-width: 640px) {
+    flex-basis: 76px;
+  }
+}
+
+.marcador {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--barro);
+}
+
+.hora {
+  margin-top: 0.4rem;
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--barro);
+  text-align: center;
+  white-space: nowrap;
+
+  @media (min-width: 640px) {
+    font-size: 0.95rem;
+  }
+}
+
+.linhaVertical {
+  flex: 1;
+  width: 1.5px;
+  min-height: 0.75rem;
+  margin-top: 0.5rem;
+  background: var(--ocre);
+  opacity: 0.35;
+}
+
+.conteudo {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 1rem;
+
+  @media (min-width: 640px) {
+    padding-bottom: 1.5rem;
+  }
+}

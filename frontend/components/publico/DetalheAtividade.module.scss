@@ -154,6 +154,15 @@
   }
 }
 
+// edição encerrada — mesmo lugar do CTA de inscrição, mas texto simples,
+// sem tratamento de botão (nada pra clicar).
+.sessaoEncerrada {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
 // Pessoas envolvidas: foto em moldura quadrada, cantos retos — coerente com
 // a estética de cartaz/stencil (sem avatares redondos, sem orgânico). Mesmo
 // padrão do cartão de convidados especiais da submissão por Conversatório.

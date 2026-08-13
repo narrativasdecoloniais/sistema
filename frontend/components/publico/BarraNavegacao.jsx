@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import BuziosSimbolos from "@/components/publico/buzios/BuziosSimbolos";
 import Carimbo from "@/components/graficos/Carimbo";
+import { paraNumeroRomano } from "@/lib/romanos";
+import { useEdicaoExibida } from "./EdicaoExibidaContext";
 import styles from "./BarraNavegacao.module.scss";
 
 const ANCORAS = [
@@ -19,7 +21,9 @@ const ANCORAS = [
 // continuidade à "assinatura" de movimento do site
 const EASE = [0.16, 1, 0.3, 1];
 
-export default function BarraNavegacao() {
+export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
+  const edicaoExibida = useEdicaoExibida();
+  const numeroEdicao = edicaoExibida ? edicaoExibida.numeroEdicao : numeroEdicaoProp;
   const pathname = usePathname();
   const naHome = pathname === "/";
   const [rolou, setRolou] = useState(!naHome);
@@ -139,10 +143,12 @@ export default function BarraNavegacao() {
           <use href="#buzio-simbolo-1" width="100%" height="100%" />
         </motion.svg>
       </Link>
-      <span className={styles.selo}>
-        <Carimbo className={styles.seloCarimbo} preenchido />
-        <span>V Edição</span>
-      </span>
+      {numeroEdicao && (
+        <span className={styles.selo}>
+          <Carimbo className={styles.seloCarimbo} preenchido />
+          <span>{paraNumeroRomano(numeroEdicao)} Edição</span>
+        </span>
+      )}
 
       <ul className={styles.ancoras}>
         {ANCORAS.map((ancora) => (

@@ -1,0 +1,138 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  color: var(--texto);
+  margin: 0 0 0.35rem;
+}
+
+.descricao {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+}
+
+.vazio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.vazioApoio {
+  margin: 0.35rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.calendarioWrapper {
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  overflow-x: auto;
+  padding: 1rem;
+
+  // Reskin do FullCalendar (v6) — sobrescreve as classes globais da lib,
+  // escopado sob este container pra não vazar pro resto do admin.
+  :global(.fc) {
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--texto);
+  }
+
+  :global(.fc-timegrid-slot-label-cushion) {
+    color: var(--texto-suave);
+    font-size: 0.75rem;
+  }
+
+  :global(.fc-timegrid-axis) {
+    border-color: var(--borda);
+  }
+
+  :global(.fc-theme-standard td),
+  :global(.fc-theme-standard th) {
+    border-color: var(--borda);
+  }
+
+  // Altura padrão da lib (1.5em ≈ 21px pro nosso font-size) é curta demais
+  // pra caber horário + nome + local num evento de 30min sem cortar texto.
+  :global(.fc-timegrid-slot) {
+    height: 4em;
+  }
+
+  :global(.fc-timegrid-now-indicator-line) {
+    border-color: var(--erro);
+  }
+
+  :global(.fc-timegrid-now-indicator-arrow) {
+    border-color: var(--erro);
+    color: var(--erro);
+  }
+
+  :global(.fc-event) {
+    border-radius: 6px;
+    border-width: 2px;
+    box-shadow: none;
+    cursor: pointer;
+  }
+
+  :global(.fc-event-main-frame) {
+    padding: 0;
+  }
+
+  :global(.fc-v-event .fc-event-main) {
+    padding: 0;
+  }
+}
+
+.calendarioMinLargura {
+  min-width: 640px;
+}
+
+.evento {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.3rem 0.5rem;
+  overflow: hidden;
+}
+
+.eventoHorario {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.eventoNome {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.eventoLocal {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .calendarioWrapper {
+    padding: 0.75rem;
+  }
+}

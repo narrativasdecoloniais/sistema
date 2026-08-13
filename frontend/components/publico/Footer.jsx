@@ -1,5 +1,7 @@
 import Link from "next/link";
 import MarcaRodape from "@/components/graficos/MarcaRodape";
+import { listarEdicoesAnteriores } from "@/lib/publico";
+import { paraNumeroRomano } from "@/lib/romanos";
 import styles from "./Footer.module.scss";
 
 const ANCORAS = [
@@ -9,7 +11,9 @@ const ANCORAS = [
   { href: "/#anais", rotulo: "Anais" },
 ];
 
-export default function Footer() {
+export default async function Footer() {
+  const edicoesAnteriores = await listarEdicoesAnteriores();
+
   return (
     <footer className={styles.footer}>
       <div className={styles.colunas}>
@@ -26,7 +30,25 @@ export default function Footer() {
 
         <div className={styles.coluna}>
           <h2 className={styles.tituloColuna}>Edições anteriores</h2>
-          <p className={styles.emBreve}>Em breve</p>
+          {edicoesAnteriores.length === 0 ? (
+            <p className={styles.emBreve}>Em breve</p>
+          ) : (
+            <ul className={styles.lista}>
+              {edicoesAnteriores.map((edicao) =>
+                edicao.slug ? (
+                  <li key={edicao.id}>
+                    <Link href={`/edicoes/${edicao.slug}`}>
+                      {paraNumeroRomano(edicao.numero)} edição — {edicao.nome}
+                    </Link>
+                  </li>
+                ) : (
+                  <li key={edicao.id} className={styles.semLink}>
+                    {paraNumeroRomano(edicao.numero)} edição — {edicao.nome}
+                  </li>
+                )
+              )}
+            </ul>
+          )}
         </div>
 
         <div className={styles.coluna}>

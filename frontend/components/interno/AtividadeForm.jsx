@@ -11,28 +11,13 @@ import CampoCheckbox from "./CampoCheckbox";
 import Campo from "@/components/forms/Campo";
 import CampoFoto from "@/components/forms/CampoFoto";
 import Alerta from "@/components/forms/Alerta";
+import ModalConfirmacao from "./ModalConfirmacao";
 import { apiClient } from "@/lib/apiClient";
 import { atividadeSchema, extrairErros } from "@/lib/validacao";
 import { gerarSlug } from "@/lib/slug";
+import { paraData, paraHora, combinar } from "@/lib/dataHoraIngenua";
 import { useToast } from "./ToastProvider";
 import styles from "./AtividadeForm.module.scss";
-
-function paraData(valor) {
-  if (!valor) return "";
-  return new Date(valor).toISOString().slice(0, 10);
-}
-
-function paraHora(valor) {
-  if (!valor) return "";
-  return new Date(valor).toISOString().slice(11, 16);
-}
-
-function combinar(valorAtual, { data, hora }) {
-  const novaData = data ?? paraData(valorAtual);
-  const novaHora = hora ?? paraHora(valorAtual);
-  if (!novaData) return "";
-  return `${novaData}T${novaHora || "00:00"}:00.000Z`;
-}
 
 // Soma horas a um horário "HH:MM", dando a volta na meia-noite se preciso.
 function somarHora(hora, horas) {
@@ -99,6 +84,7 @@ export default function AtividadeForm({
   tiposParticipacao,
   aoSalvar,
   aoCancelar,
+  aoExcluir,
 }) {
   const { notificar } = useToast();
   const modoEdicao = Boolean(atividadeInicial);
@@ -107,6 +93,18 @@ export default function AtividadeForm({
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+
+  async function aoConfirmarExclusao() {
+    setExcluindo(true);
+    try {
+      await aoExcluir(atividadeInicial.id);
+    } finally {
+      setExcluindo(false);
+      setConfirmandoExclusao(false);
+    }
+  }
 
   function atualizarCampo(campo, valor) {
     setDados((atual) => ({ ...atual, [campo]: valor }));
@@ -204,6 +202,7 @@ export default function AtividadeForm({
   }
 
   return (
+    <>
     <form onSubmit={aoSubmeter} className={styles.formulario}>
       <Alerta>{erroGeral}</Alerta>
       <CampoSelecao
@@ -399,20 +398,42 @@ export default function AtividadeForm({
         />
       </div>
 
-      <div className={styles.acoes}>
-        <Button
-          type="button"
-          label="Cancelar"
-          onClick={aoCancelar}
-          pt={{ root: { className: styles.botaoSecundario } }}
-        />
-        <Button
-          type="submit"
-          label={salvando ? "Aguarde..." : modoEdicao ? "Salvar" : "Criar atividade"}
-          disabled={salvando}
-          pt={{ root: { className: styles.botaoPrimario } }}
-        />
+      <div className={`${styles.acoes} ${modoEdicao && aoExcluir ? styles.acoesComExcluir : ""}`}>
+        {modoEdicao && aoExcluir && (
+          <button
+            type="button"
+            className={styles.botaoPerigo}
+            onClick={() => setConfirmandoExclusao(true)}
+          >
+            <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+            Excluir atividade
+          </button>
+        )}
+        <div className={styles.acoesPrincipais}>
+          <Button
+            type="button"
+            label="Cancelar"
+            onClick={aoCancelar}
+            pt={{ root: { className: styles.botaoSecundario } }}
+          />
+          <Button
+            type="submit"
+            label={salvando ? "Aguarde..." : modoEdicao ? "Salvar" : "Criar atividade"}
+            disabled={salvando}
+            pt={{ root: { className: styles.botaoPrimario } }}
+          />
+        </div>
       </div>
     </form>
+    {confirmandoExclusao && (
+      <ModalConfirmacao
+        titulo="Excluir atividade"
+        mensagem={`Tem certeza que deseja excluir "${atividadeInicial?.nome}"? Essa ação não pode ser desfeita.`}
+        confirmando={excluindo}
+        onConfirmar={aoConfirmarExclusao}
+        onCancelar={() => setConfirmandoExclusao(false)}
+      />
+    )}
+    </>
   );
 }

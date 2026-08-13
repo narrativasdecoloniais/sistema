@@ -1,6 +1,13 @@
+import { redirect } from "next/navigation";
+import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
 import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
 
-export default function PaginaSubmissoesAvaliacao() {
+export default async function PaginaSubmissoesAvaliacao({ params }) {
+  const usuario = await obterUsuarioAtual();
+  if (!temPermissaoSecao(usuario, "SUBMISSOES_AVALIACAO")) {
+    redirect(`/admin/edicoes/${params.id}`);
+  }
+
   return (
     <PaginaEmBreve
       titulo="Avaliação de submissões"

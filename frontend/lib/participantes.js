@@ -15,7 +15,10 @@ async function requisitarComCookies(caminho) {
   return resposta.json();
 }
 
-export async function listarOrganizadores() {
+// Endpoint backend continua em /organizadores (descreve contas com papel
+// ORGANIZADOR/ADMIN) — só a camada frontend chama-se "participantes",
+// alinhada com a tela que a consome.
+export async function listarParticipantes() {
   const dados = await requisitarComCookies("/organizadores");
   return dados?.organizadores || [];
 }

@@ -20,7 +20,7 @@ function agruparPorTipoParticipacao(pessoas) {
   return Array.from(porTipo.values());
 }
 
-// Mesmo padrão de acessibilidade de components/publico/ModalJaInscrito.jsx
+// Mesmo padrão de acessibilidade de components/interno/Modal.jsx
 // (focus trap, ESC fecha, clique no fundo fecha, trava scroll do body,
 // devolve foco ao fechar). Renderizado via portal pra document.body porque
 // este modal pode ser aberto a partir de um cartão dentro de um carrossel

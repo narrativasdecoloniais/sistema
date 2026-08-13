@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 
+export { temPapel, temPermissaoSecao } from "./permissoes";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Só pode ser usado em Server Components — encaminha os cookies da requisição
@@ -17,8 +19,4 @@ export async function obterUsuarioAtual() {
 
   const dados = await resposta.json();
   return dados.usuario;
-}
-
-export function temPapel(usuario, ...papeis) {
-  return Boolean(usuario?.papeis?.some((papel) => papeis.includes(papel)));
 }

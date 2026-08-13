@@ -7,6 +7,8 @@ import { Button } from "primereact/button";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { edicaoSchema, extrairErros } from "@/lib/validacao";
+import { gerarSlug } from "@/lib/slug";
+import { paraNumeroRomano } from "@/lib/romanos";
 import SecaoInformacoesBasicas from "./SecaoInformacoesBasicas";
 import SecaoDivulgacao from "./SecaoDivulgacao";
 import SecaoLocal from "./SecaoLocal";
@@ -67,6 +69,10 @@ export default function EdicaoForm({ edicaoInicial, resumido = false, usuario })
   const [erros, setErros] = useState({});
   const [salvando, setSalvando] = useState(false);
   const temporizadorRef = useRef(null);
+  // Só gera o slug a partir do número enquanto o admin não tiver digitado
+  // um manualmente — e só na criação (depois de salva, o link público não
+  // deve mudar sozinho se o número for corrigido).
+  const [slugTocado, setSlugTocado] = useState(Boolean(edicaoInicial?.slug));
 
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
@@ -97,7 +103,15 @@ export default function EdicaoForm({ edicaoInicial, resumido = false, usuario })
   }
 
   function aoMudar(campo, valor) {
-    setEdicao((atual) => ({ ...atual, [campo]: valor }));
+    if (campo === "slug") setSlugTocado(true);
+
+    setEdicao((atual) => {
+      const novo = { ...atual, [campo]: valor };
+      if (campo === "numero" && !modoEdicao && !slugTocado) {
+        novo.slug = valor ? `${gerarSlug(paraNumeroRomano(valor))}-narrativas` : "";
+      }
+      return novo;
+    });
   }
 
   function aoMudarImediato(campo, valor) {

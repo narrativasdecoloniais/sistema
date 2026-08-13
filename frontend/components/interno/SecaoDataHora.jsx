@@ -3,6 +3,7 @@ import Campo from "@/components/forms/Campo";
 import CampoSelecao from "./CampoSelecao";
 import CampoCheckbox from "./CampoCheckbox";
 import CabecalhoSecao from "./CabecalhoSecao";
+import { paraData, paraHora, combinar } from "@/lib/dataHoraIngenua";
 import styles from "./EdicaoForm.module.scss";
 
 const FUSOS = [
@@ -11,23 +12,6 @@ const FUSOS = [
   { valor: "America/Manaus", rotulo: "Manaus (GMT-4)" },
   { valor: "America/Rio_Branco", rotulo: "Rio Branco (GMT-5)" },
 ];
-
-function paraData(valor) {
-  if (!valor) return "";
-  return new Date(valor).toISOString().slice(0, 10);
-}
-
-function paraHora(valor) {
-  if (!valor) return "";
-  return new Date(valor).toISOString().slice(11, 16);
-}
-
-function combinar(valorAtual, { data, hora }) {
-  const novaData = data ?? paraData(valorAtual);
-  const novaHora = hora ?? paraHora(valorAtual);
-  if (!novaData) return "";
-  return `${novaData}T${novaHora || "00:00"}:00.000Z`;
-}
 
 export default function SecaoDataHora({ edicao, erros, aoMudar, aoSalvar, aoMudarImediato }) {
   return (

@@ -27,13 +27,19 @@
 }
 
 .slide {
-  flex: 0 0 88%;
+  // largura configurável via --largura-slide/--largura-slide-desktop
+  // (prop `estiloSlide` do componente) — por padrão, a mesma "espiadinha"
+  // já usada no fluxo de inscrição (88%/62%). Contextos mais estreitos
+  // (ex.: a timeline da Programação, que divide espaço com a coluna de
+  // hora) passam um valor menor pra deixar a espiadinha do próximo card
+  // realmente visível, não só uma fatia de padding sem conteúdo.
+  flex: 0 0 var(--largura-slide, 88%);
   min-width: 0;
   padding-left: 0.75rem;
   display: flex;
 
   @media (min-width: 700px) {
-    flex-basis: 62%;
+    flex-basis: var(--largura-slide-desktop, 62%);
   }
 }
 

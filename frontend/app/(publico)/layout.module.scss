@@ -20,6 +20,11 @@
 
 .conteudo {
   flex: 1;
+  // item flex de .wrapper (coluna) — sem isso, o <main> não encolhe abaixo
+  // do conteúdo mais largo lá dentro (min-width:auto padrão de item flex),
+  // deixando qualquer texto longo empurrar a página inteira pra largura
+  // maior que o viewport em telas estreitas, em vez de quebrar linha.
+  min-width: 0;
 }
 
 .skipLink {

@@ -1,12 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import Logo, { LOGO_DURACAO_ENTRADA } from "@/components/publico/Logo";
 import Carimbo from "@/components/graficos/Carimbo";
 import Divisor from "@/components/graficos/Divisor";
 import TexturaPapel from "@/components/graficos/TexturaPapel";
+import NavegacaoDias, { idAbaDia, idPainelDia } from "@/components/inscricao/NavegacaoDias";
+import CarrosselAtividades from "@/components/inscricao/CarrosselAtividades";
+import LinhaProgramacao from "@/components/publico/LinhaProgramacao";
+import CardAtividadeProgramacao from "@/components/publico/CardAtividadeProgramacao";
+import { agruparAtividadesPorDia } from "@/lib/inscricao";
+import {
+  formatarDiaAtividade,
+  formatarHoraCurta,
+  agruparAtividadesPorHorarioInicio,
+} from "@/lib/publico";
 import {
   MODALIDADES_SUBMISSAO,
   formatarPeriodoSubmissao,
@@ -196,11 +206,33 @@ export default function PaginaInicialConteudo({
   corFaixaHeroMobile = "OCRE",
   imagemFaixaHeroMobile,
   temEdicaoAtual = false,
+  edicaoSlug,
   dataEvento = "Data a confirmar",
   localEvento,
   realizacaoEvento = "Realização: GPDES/UnB",
 }) {
   const reduzMovimento = useReducedMotion();
+
+  const idDiasProgramacao = useId();
+  const diasProgramacao = useMemo(() => agruparAtividadesPorDia(atividades), [atividades]);
+  const [diaProgramacaoSelecionado, setDiaProgramacaoSelecionado] = useState(null);
+  const chaveDiaProgramacaoAtiva =
+    diaProgramacaoSelecionado && diasProgramacao.some((dia) => dia.chave === diaProgramacaoSelecionado)
+      ? diaProgramacaoSelecionado
+      : (diasProgramacao[0]?.chave ?? null);
+  const diaProgramacaoAtual =
+    diasProgramacao.find((dia) => dia.chave === chaveDiaProgramacaoAtiva) ?? null;
+
+  function renderizarCartaoProgramacao(atividade) {
+    return (
+      <CardAtividadeProgramacao
+        key={atividade.id}
+        atividade={atividade}
+        temEdicaoAtual={temEdicaoAtual}
+        edicaoSlug={edicaoSlug}
+      />
+    );
+  }
 
   const estiloHero = {
     "--opacidade-fundo-hero": `${opacidadeFundoHero}%`,
@@ -256,9 +288,11 @@ export default function PaginaInicialConteudo({
                 }
           }
         >
-          <span>{dataEvento}</span>
-          {localEvento && <span>{localEvento}</span>}
-          <span>{realizacaoEvento}</span>
+          <span className={styles.legendaPrincipal}>{dataEvento}</span>
+          {localEvento && (
+            <span className={`${styles.legendaPrincipal} ${styles.legendaLocal}`}>{localEvento}</span>
+          )}
+          <span className={styles.legendaSecundaria}>{realizacaoEvento}</span>
         </motion.p>
 
         <motion.a
@@ -488,12 +522,18 @@ export default function PaginaInicialConteudo({
                         {atividade.descricao}
                       </p>
                     )}
-                    <Link
-                      href={`/atividades/${atividade.slug}`}
-                      className={styles.atividadeLink}
-                    >
-                      Ver detalhes e inscreva-se →
-                    </Link>
+                    {(temEdicaoAtual || edicaoSlug) && (
+                      <Link
+                        href={
+                          temEdicaoAtual
+                            ? `/atividades/${atividade.slug}`
+                            : `/edicoes/${edicaoSlug}/atividades/${atividade.slug}`
+                        }
+                        className={styles.atividadeLink}
+                      >
+                        {temEdicaoAtual ? "Ver detalhes e inscreva-se →" : "Ver detalhes →"}
+                      </Link>
+                    )}
                   </motion.article>
                 );
               })}
@@ -524,10 +564,64 @@ export default function PaginaInicialConteudo({
           >
             Programação
           </motion.h2>
-          <motion.p className={styles.secaoTexto} variants={itemVariants}>
-            Mesas, oficinas e rodas de conversa ao longo de toda a edição — em
-            breve com inscrições por atividade.
+          <motion.p className={styles.secaoTextoGrande} variants={itemVariants}>
+            Mesas, oficinas e rodas de conversa ao longo de toda a edição.
           </motion.p>
+
+          {diasProgramacao.length === 0 ? (
+            <motion.p className={styles.secaoTexto} variants={itemVariants}>
+              A programação desta edição está sendo organizada — as atividades
+              aparecerão aqui assim que publicadas.
+            </motion.p>
+          ) : (
+            <motion.div className={styles.programacaoBloco} variants={itemVariants}>
+              {diasProgramacao.length > 1 ? (
+                <NavegacaoDias
+                  dias={diasProgramacao}
+                  chaveAtiva={chaveDiaProgramacaoAtiva}
+                  onSelecionar={setDiaProgramacaoSelecionado}
+                  idBase={idDiasProgramacao}
+                />
+              ) : (
+                diaProgramacaoAtual && (
+                  <p className={styles.programacaoDiaUnico}>
+                    {formatarDiaAtividade(diaProgramacaoAtual.inicioIso).completo}
+                  </p>
+                )
+              )}
+
+              {diaProgramacaoAtual && (
+                <div
+                  className={styles.programacaoTimeline}
+                  {...(diasProgramacao.length > 1
+                    ? {
+                        role: "tabpanel",
+                        id: idPainelDia(idDiasProgramacao, diaProgramacaoAtual.chave),
+                        "aria-labelledby": idAbaDia(idDiasProgramacao, diaProgramacaoAtual.chave),
+                      }
+                    : {})}
+                >
+                  {agruparAtividadesPorHorarioInicio(diaProgramacaoAtual.atividades).map((grupo) => (
+                    <LinhaProgramacao
+                      key={grupo.inicioIso}
+                      hora={formatarHoraCurta(grupo.inicioIso)}
+                    >
+                      {grupo.atividades.length === 1 ? (
+                        renderizarCartaoProgramacao(grupo.atividades[0])
+                      ) : (
+                        <CarrosselAtividades
+                          rotulo={`${grupo.atividades.length} atividades às ${formatarHoraCurta(grupo.inicioIso)}`}
+                          estiloSlide={{ "--largura-slide": "78%", "--largura-slide-desktop": "55%" }}
+                        >
+                          {grupo.atividades.map(renderizarCartaoProgramacao)}
+                        </CarrosselAtividades>
+                      )}
+                    </LinhaProgramacao>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       </motion.section>
 

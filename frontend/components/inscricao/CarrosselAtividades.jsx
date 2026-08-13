@@ -4,7 +4,7 @@ import { useId } from "react";
 import { useCarrosselEmbla } from "./useCarrosselEmbla";
 import styles from "./CarrosselAtividades.module.scss";
 
-export default function CarrosselAtividades({ children, rotulo }) {
+export default function CarrosselAtividades({ children, rotulo, estiloSlide }) {
   const idRotulo = useId();
   const { emblaRef, emblaApi, podeVoltar, podeAvancar, indice, total } = useCarrosselEmbla();
 
@@ -17,7 +17,7 @@ export default function CarrosselAtividades({ children, rotulo }) {
       </p>
 
       <div className={styles.viewport} ref={emblaRef} aria-labelledby={idRotulo}>
-        <div className={styles.container}>
+        <div className={styles.container} style={estiloSlide}>
           {cartoes.map((cartao) => (
             <div className={styles.slide} key={cartao.key}>
               {cartao}
