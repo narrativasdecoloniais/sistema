@@ -12,7 +12,6 @@ import styles from "./BarraNavegacao.module.scss";
 
 const ANCORAS = [
   { href: "/#submissao", rotulo: "Submissão" },
-  { href: "/#atividades", rotulo: "Atividades" },
   { href: "/#programacao", rotulo: "Programação" },
   { href: "/#anais", rotulo: "Anais" },
 ];

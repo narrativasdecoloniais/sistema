@@ -23,6 +23,9 @@ import {
 } from "@/lib/modalidadesSubmissao";
 import styles from "./page.module.scss";
 
+// TODO: substituir pela URL real assim que confirmada.
+const URL_GPDES = "#";
+
 const containerVariants = {
   oculto: {},
   visivel: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
@@ -296,7 +299,7 @@ export default function PaginaInicialConteudo({
         </motion.p>
 
         <motion.a
-          href="#atividades"
+          href="#sobre-evento"
           className={styles.convite}
           initial={reduzMovimento ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -375,6 +378,21 @@ export default function PaginaInicialConteudo({
               pública e para o desenvolvimento de práticas pedagógicas
               comprometidas com a justiça social, racial e climática.
             </motion.p>
+            {temEdicaoAtual && (
+              <motion.div className={styles.sobreEventoCtas} variants={itemVariants}>
+                <Link href="/inscricao" className={styles.inscricaoCta}>
+                  Inscreva-se →
+                </Link>
+                <a
+                  href={URL_GPDES}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.gpdesCta}
+                >
+                  Conheça o GPDES
+                </a>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </motion.section>
@@ -445,105 +463,6 @@ export default function PaginaInicialConteudo({
               </motion.article>
             ))}
           </motion.div>
-        </motion.div>
-      </motion.section>
-
-      <motion.section
-        id="atividades"
-        className={styles.secao}
-        initial="oculto"
-        whileInView="visivel"
-        viewport={{ once: true, margin: "-80px" }}
-        variants={containerVariants}
-      >
-        <Marcador />
-        <motion.div className={styles.conteudo} variants={containerVariants}>
-          <Eyebrow>Participe</Eyebrow>
-          <motion.h2
-            className={styles.tituloSecundario}
-            variants={itemVariants}
-          >
-            Atividades
-          </motion.h2>
-          <motion.p className={styles.secaoTextoGrande} variants={itemVariants}>
-            Conheça as atividades desta edição e inscreva-se.
-          </motion.p>
-
-          {temEdicaoAtual && (
-            <motion.div variants={itemVariants}>
-              <Link href="/inscricao" className={styles.inscricaoCta}>
-                Inscreva-se →
-              </Link>
-            </motion.div>
-          )}
-
-          {atividades.length === 0 ? (
-            <motion.p className={styles.secaoTexto} variants={itemVariants}>
-              A programação desta edição está sendo organizada — as atividades
-              aparecerão aqui assim que publicadas.
-            </motion.p>
-          ) : (
-            <motion.div
-              className={styles.atividadesGrade}
-              variants={containerVariants}
-            >
-              {atividades.map((atividade) => {
-                const meta = [
-                  atividade.local,
-                  atividade.cargaHoraria ? `${atividade.cargaHoraria}h` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ");
-
-                return (
-                  <motion.article
-                    key={atividade.id}
-                    className={styles.atividadeCartao}
-                    variants={itemVariants}
-                  >
-                    <div className={styles.atividadeCabecalho}>
-                      <h3 className={styles.atividadeNome}>{atividade.nome}</h3>
-                      <span className={styles.atividadeTipo}>
-                        {atividade.tipoAtividade.nome}
-                      </span>
-                    </div>
-                    <p className={styles.atividadeMeta}>
-                      {meta && <span>{meta}</span>}
-                      <span>
-                        {!atividade.exigeInscricao
-                          ? "Sem inscrição necessária"
-                          : atividade.semLimiteVagas
-                            ? "Vagas ilimitadas"
-                            : `${atividade.vagas} vagas`}
-                      </span>
-                    </p>
-                    {atividade.descricao && (
-                      <p className={styles.atividadeResumo}>
-                        {atividade.descricao}
-                      </p>
-                    )}
-                    {(temEdicaoAtual || edicaoSlug) && (
-                      <Link
-                        href={
-                          temEdicaoAtual
-                            ? `/atividades/${atividade.slug}`
-                            : `/edicoes/${edicaoSlug}/atividades/${atividade.slug}`
-                        }
-                        className={styles.atividadeLink}
-                      >
-                        {temEdicaoAtual ? "Ver detalhes e inscreva-se →" : "Ver detalhes →"}
-                      </Link>
-                    )}
-                  </motion.article>
-                );
-              })}
-            </motion.div>
-          )}
-
-          <motion.p className={styles.notaRodape} variants={itemVariants}>
-            Participantes credenciados recebem certificado de participação
-            emitido pela organização do evento.
-          </motion.p>
         </motion.div>
       </motion.section>
 

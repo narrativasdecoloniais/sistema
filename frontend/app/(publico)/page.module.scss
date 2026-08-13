@@ -574,12 +574,6 @@
   line-height: 1.7;
 }
 
-.notaRodape {
-  font-size: 0.85rem;
-  color: var(--texto-suave);
-  line-height: 1.6;
-}
-
 .seloEmBreve {
   position: relative;
   display: inline-flex;
@@ -717,98 +711,32 @@
   }
 }
 
-// ---- section Atividades (grade de cartões por atividade cadastrada) ----
-//
-// Subgrid de 4 linhas (cabeçalho / meta / resumo / link) — sem CTA de
-// inscrição no cartão porque a inscrição é por sessão, não pela atividade
-// como um todo; a escolha da sessão acontece na página de detalhe.
+// ---- CTAs da section Sobre o evento (Inscreva-se + Conheça o GPDES) ----
 
-.atividadesGrade {
-  align-self: stretch;
-  width: 100%;
-  min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  grid-template-rows: repeat(4, auto);
-  gap: 1.5rem;
+.sobreEventoCtas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin-top: 0.5rem;
 }
 
-.atividadeCartao {
-  display: grid;
-  grid-template-rows: subgrid;
-  grid-row: span 4;
-  align-items: start;
-  gap: 0.65rem;
-  padding: 1.5rem;
-  min-width: 0;
-  background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
-}
-
-.atividadeCabecalho {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  align-self: start;
-}
-
-.atividadeNome {
-  font-family: var(--font-stencil), sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--tinta);
-  font-size: 1.15rem;
-  line-height: 1.3;
-  overflow-wrap: break-word;
-}
-
-.atividadeTipo {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--texto-suave);
-}
-
-.atividadeMeta {
-  align-self: start;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--barro);
-}
-
-.atividadeResumo {
-  align-self: start;
-  font-size: 0.9rem;
-  color: var(--tinta);
-  line-height: 1.6;
-  // trunca em 3 linhas — o card mostra um resumo, a página de detalhe traz o
-  // texto completo.
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
+// CTA primário — preenchido, é a ação que queremos que a pessoa tome.
 .inscricaoCta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.9rem 2.5rem;
+  background: var(--barro);
   border: 1.5px solid var(--barro);
-  color: var(--barro);
+  color: var(--papel);
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-decoration: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
 
   &:hover {
-    background: var(--barro);
-    color: var(--papel);
+    opacity: 0.85;
   }
 
   &:focus-visible {
@@ -817,16 +745,16 @@
   }
 }
 
-.atividadeLink {
-  align-self: end;
+// CTA secundário — contorno, ação de apoio (institucional), não compete
+// visualmente com o Inscreva-se.
+.gpdesCta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  padding: 0.9rem 2rem;
+  padding: 0.9rem 2.5rem;
   border: 1.5px solid var(--barro);
   color: var(--barro);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-decoration: none;
