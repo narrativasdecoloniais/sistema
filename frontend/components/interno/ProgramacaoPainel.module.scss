@@ -123,6 +123,21 @@
   line-height: 1.2;
 }
 
+.eventoInscricao {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
 .eventoLocal {
   font-size: 0.7rem;
   opacity: 0.85;

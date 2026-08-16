@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Ticket } from "lucide-react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -84,6 +84,12 @@ function renderizarEvento(arg) {
       <span className={styles.eventoHorario}>{arg.timeText}</span>
       <span className={styles.eventoNome}>{atividade.nome}</span>
       {atividade.local && <span className={styles.eventoLocal}>{atividade.local}</span>}
+      {atividade.exigeInscricao && (
+        <span className={styles.eventoInscricao}>
+          <Ticket size={12} strokeWidth={1.5} aria-hidden="true" />
+          Exige inscrição
+        </span>
+      )}
     </div>
   );
 }

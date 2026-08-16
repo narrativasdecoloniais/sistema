@@ -359,6 +359,32 @@ function InscricaoConteudo() {
     }
   }
 
+  // Volta da tela de confirmação para a seleção de atividades sem sair da
+  // página. Não mexe em modoAdicionar — ligar essa flag aqui mudaria a forma
+  // do array de calcularPassos e re-renderizaria o Stepper com rótulos/
+  // contagem de passos diferentes para quem chegou pelo fluxo normal.
+  async function aoQuererMaisAtividades() {
+    setCarregando(true);
+    try {
+      const dados = await buscarEstadoInscricao(tokenInscricao);
+      setEdicao(dados.edicao);
+      setInscricaoAtual(dados.inscricaoAtual);
+      setAtividadesDisponiveis(dados.atividades);
+      setSelecionadas(new Set());
+
+      if (dados.atividades.length === 0) {
+        notificar("Você já está inscrito em todas as atividades disponíveis.", "sucesso");
+        return;
+      }
+
+      setEtapa("atividades");
+    } catch (erro) {
+      tratarErro(erro);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   // Único ponto que monta o cartão — garante que a lógica de conflito seja
   // idêntica no cartão avulso e no cartão dentro do carrossel.
   function renderizarCartao(atividade) {
@@ -637,6 +663,17 @@ function InscricaoConteudo() {
             inscricoesAtividade={resultado.inscricoesAtividade}
             onCancelar={aoCancelarAtividade}
           />
+
+          {atividadesDisponiveis.length > 0 && (
+            <button
+              type="button"
+              className={styles.cta}
+              disabled={carregando}
+              onClick={aoQuererMaisAtividades}
+            >
+              {carregando ? "Aguarde..." : "Inscrever-se em outras atividades"}
+            </button>
+          )}
 
           <p className={styles.instrucao}>
             {emailEnviado
