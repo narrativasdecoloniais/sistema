@@ -3,6 +3,7 @@ const edicoesController = require("../controllers/edicoes.controller");
 const atividadesRoutes = require("./atividades.routes");
 const inscricoesEdicaoRoutes = require("./inscricoesEdicao.routes");
 const inscricoesAtividadeRoutes = require("./inscricoesAtividade.routes");
+const modalidadesSubmissaoRoutes = require("./modalidadesSubmissao.routes");
 const autenticar = require("../middlewares/autenticar");
 const autorizar = require("../middlewares/autorizar");
 const autorizarSecao = require("../middlewares/autorizarSecao");
@@ -24,5 +25,6 @@ router.delete("/:id", autorizar("ADMIN"), edicoesController.excluir);
 router.use("/:edicaoId/atividades", atividadesRoutes);
 router.use("/:edicaoId/inscricoes-gerais", inscricoesEdicaoRoutes);
 router.use("/:edicaoId/inscricoes-atividades", inscricoesAtividadeRoutes);
+router.use("/:edicaoId/modalidades-submissao", modalidadesSubmissaoRoutes);
 
 module.exports = router;

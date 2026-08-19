@@ -5,6 +5,18 @@ const corPublicaSchema = z.enum(CORES_PUBLICAS, { errorMap: () => ({ message: "C
 const tipoFaixaSchema = z.enum(["COR", "IMAGEM", "NENHUMA"], {
   errorMap: () => ({ message: "Tipo de faixa inválido" }),
 }).optional();
+const tipoFundoNavSchema = z.enum(["TRANSPARENTE", "COR"], {
+  errorMap: () => ({ message: "Tipo de fundo inválido" }),
+}).optional();
+const corSecaoSchema = z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
+  errorMap: () => ({ message: "Cor inválida" }),
+}).optional();
+const opacidadeSchema = z.coerce
+  .number({ invalid_type_error: "Informe uma opacidade válida" })
+  .int("Informe uma opacidade válida")
+  .min(0, "A opacidade deve estar entre 0 e 100")
+  .max(100, "A opacidade deve estar entre 0 e 100")
+  .optional();
 
 const edicaoRealizadorSchema = z
   .object({
@@ -76,6 +88,7 @@ const edicaoSchema = z
     corFundoRealizadores: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
       errorMap: () => ({ message: "Cor inválida" }),
     }).optional(),
+    mostrarFaixaRealizadores: z.boolean().optional(),
     realizadores: z.array(edicaoRealizadorSchema).optional(),
     logoSvg: z.string().max(300_000, "Arquivo SVG muito grande").nullable().optional(),
     logoSvgCores: z
@@ -104,9 +117,83 @@ const edicaoSchema = z
     faixaHeroTipoDesktop: tipoFaixaSchema,
     corFaixaHeroDesktop: corPublicaSchema,
     imagemFaixaHeroDesktop: z.string().max(8_000_000, "Imagem muito grande").nullable().optional(),
+    larguraFaixaHeroDesktop: z.coerce
+      .number({ invalid_type_error: "Informe uma largura válida" })
+      .int("Informe uma largura válida")
+      .positive("Informe uma largura válida")
+      .optional(),
     faixaHeroTipoMobile: tipoFaixaSchema,
     corFaixaHeroMobile: corPublicaSchema,
     imagemFaixaHeroMobile: z.string().max(8_000_000, "Imagem muito grande").nullable().optional(),
+    larguraFaixaHeroMobile: z.coerce
+      .number({ invalid_type_error: "Informe uma largura válida" })
+      .int("Informe uma largura válida")
+      .positive("Informe uma largura válida")
+      .optional(),
+    // Liga/desliga a faixa lateral só na Hero — mesmo mecanismo de
+    // mostrarFaixaApresentacao/Modalidades/Agenda/Publicacoes abaixo.
+    mostrarFaixaHero: z.boolean().optional(),
+    // Cores da navbar — dois estados (Topo/Rolado, ver SecaoNavegacao.jsx no
+    // admin e BarraNavegacao.jsx no público).
+    fundoNavTopoTipo: tipoFundoNavSchema,
+    corFundoNavTopo: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
+      errorMap: () => ({ message: "Cor inválida" }),
+    }).optional(),
+    corTextoNavTopo: corPublicaSchema,
+    corIconeNavTopo: corPublicaSchema,
+    corBordaNavTopo: corPublicaSchema,
+    corFundoNavRolado: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
+      errorMap: () => ({ message: "Cor inválida" }),
+    }).optional(),
+    corTextoNavRolado: corPublicaSchema,
+    corIconeNavRolado: corPublicaSchema,
+    corBordaNavRolado: corPublicaSchema,
+    navMesmoEstilo: z.boolean().optional(),
+    // Demais dobras da página pública (ver SecaoAdmin no schema Prisma e
+    // TextoSecaoForm.jsx/AgendaForm.jsx no admin) — sem limite de caracteres
+    // em título/corpo, mesmo padrão adotado pra Atividade.descricao.
+    tituloApresentacao: z.string().trim().optional(),
+    corpoApresentacao: z.string().trim().optional(),
+    corFundoApresentacao: corSecaoSchema,
+    opacidadeFundoApresentacao: opacidadeSchema,
+    corTextoApresentacao: corPublicaSchema,
+    corBuzioApresentacao: corPublicaSchema,
+    corFundoBotaoApresentacao: corPublicaSchema,
+    corTextoBotaoApresentacao: corPublicaSchema,
+    tituloModalidades: z.string().trim().optional(),
+    corpoModalidades: z.string().trim().optional(),
+    corFundoModalidades: corSecaoSchema,
+    opacidadeFundoModalidades: opacidadeSchema,
+    corTextoModalidades: corPublicaSchema,
+    corBuzioModalidades: corPublicaSchema,
+    corFundoCardModalidades: corSecaoSchema,
+    opacidadeFundoCardModalidades: opacidadeSchema,
+    corTextoCardModalidades: corPublicaSchema,
+    corTextoSecundarioCardModalidades: corPublicaSchema,
+    corAcentoCardModalidades: corPublicaSchema,
+    corFundoBotaoCardModalidades: corPublicaSchema,
+    corTextoBotaoCardModalidades: corPublicaSchema,
+    corFundoAgenda: corSecaoSchema,
+    opacidadeFundoAgenda: opacidadeSchema,
+    corTextoAgenda: corPublicaSchema,
+    corBuzioAgenda: corPublicaSchema,
+    corFundoCardAgenda: corSecaoSchema,
+    opacidadeFundoCardAgenda: opacidadeSchema,
+    corTextoCardAgenda: corPublicaSchema,
+    corTextoSecundarioCardAgenda: corPublicaSchema,
+    corAcentoCardAgenda: corPublicaSchema,
+    tituloPublicacoes: z.string().trim().optional(),
+    corpoPublicacoes: z.string().trim().optional(),
+    corFundoPublicacoes: corSecaoSchema,
+    opacidadeFundoPublicacoes: opacidadeSchema,
+    corTextoPublicacoes: corPublicaSchema,
+    corBuzioPublicacoes: corPublicaSchema,
+    // Liga/desliga a faixa lateral fixa (definida em faixaHero*) enquanto
+    // cada seção está em tela — ver PaginaInicialConteudo.jsx.
+    mostrarFaixaApresentacao: z.boolean().optional(),
+    mostrarFaixaModalidades: z.boolean().optional(),
+    mostrarFaixaAgenda: z.boolean().optional(),
+    mostrarFaixaPublicacoes: z.boolean().optional(),
   })
   .refine((dados) => !dados.dataInicio || !dados.dataFim || dados.dataFim > dados.dataInicio, {
     message: "A data de término deve ser posterior à data de início",

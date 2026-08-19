@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ErroHttp = require("../utils/erroHttp");
 const edicoesService = require("../services/edicoes.service");
 const atividadesService = require("../services/atividades.service");
+const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.service");
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
@@ -56,6 +57,23 @@ const buscarAtividadePorSlug = asyncHandler(async (req, res) => {
   return res.json({ atividade });
 });
 
+const listarModalidadesSubmissao = asyncHandler(async (req, res) => {
+  const edicao = await edicoesService.buscarEdicaoAtual();
+  if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
+
+  const modalidades = await modalidadesSubmissaoService.listarModalidades(edicao.id);
+  return res.json({ modalidades });
+});
+
+const buscarModalidadeSubmissaoPorSlug = asyncHandler(async (req, res) => {
+  const edicao = await edicoesService.buscarEdicaoAtual();
+  if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
+
+  const modalidade = await modalidadesSubmissaoService.buscarPorSlug(edicao.id, req.params.slug);
+  if (!modalidade) throw new ErroHttp(404, "Modalidade de submissão não encontrada.");
+  return res.json({ modalidade });
+});
+
 module.exports = {
   buscarEdicaoAtual,
   listarEdicoesAnteriores,
@@ -64,4 +82,6 @@ module.exports = {
   buscarAtividadePorEdicaoSlug,
   listarAtividades,
   buscarAtividadePorSlug,
+  listarModalidadesSubmissao,
+  buscarModalidadeSubmissaoPorSlug,
 };

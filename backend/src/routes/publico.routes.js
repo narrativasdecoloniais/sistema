@@ -9,6 +9,11 @@ router.get("/edicao-atual", publicoController.buscarEdicaoAtual);
 router.get("/edicoes-anteriores", publicoController.listarEdicoesAnteriores);
 router.get("/edicao-atual/atividades", publicoController.listarAtividades);
 router.get("/edicao-atual/atividades/:slug", publicoController.buscarAtividadePorSlug);
+router.get("/edicao-atual/modalidades-submissao", publicoController.listarModalidadesSubmissao);
+router.get(
+  "/edicao-atual/modalidades-submissao/:slug",
+  publicoController.buscarModalidadeSubmissaoPorSlug
+);
 router.get("/edicoes/:slug", publicoController.buscarEdicaoPorSlug);
 router.get("/edicoes/:slug/atividades", publicoController.listarAtividadesPorEdicaoSlug);
 router.get(

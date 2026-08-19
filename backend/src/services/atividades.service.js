@@ -5,15 +5,19 @@ const ErroHttp = require("../utils/erroHttp");
 
 const INCLUDE_PADRAO = {
   tipoAtividade: true,
-  pessoas: { orderBy: { createdAt: "asc" }, include: { tipoParticipacao: true } },
+  pessoas: { orderBy: { ordem: "asc" }, include: { tipoParticipacao: true } },
 };
 
-async function camposPessoa(pessoa) {
+// `indice` reflete a posição da pessoa no array recebido do admin (já na
+// ordem final, definida pelo gestor) — nunca um valor de ordem vindo do
+// cliente, pra não confiar em algo que o front poderia forjar.
+async function camposPessoa(pessoa, indice) {
   const campos = {
     nome: pessoa.nome,
     descricao: pessoa.descricao ?? null,
     breveDescricao: pessoa.breveDescricao ?? null,
     tipoParticipacaoId: pessoa.tipoParticipacaoId,
+    ordem: indice,
   };
 
   if (pessoa.imagem === null) {
@@ -68,7 +72,10 @@ async function buscarPorSlug(edicaoId, slug) {
 
 async function criarAtividade(edicaoId, dados) {
   const { pessoas, ...camposAtividade } = dados;
-  const pessoasCriadas = pessoas && pessoas.length > 0 ? await Promise.all(pessoas.map(camposPessoa)) : undefined;
+  const pessoasCriadas =
+    pessoas && pessoas.length > 0
+      ? await Promise.all(pessoas.map((pessoa, indice) => camposPessoa(pessoa, indice)))
+      : undefined;
 
   return prisma.atividade.create({
     data: {

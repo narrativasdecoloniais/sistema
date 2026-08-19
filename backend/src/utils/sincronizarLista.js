@@ -17,8 +17,8 @@ async function sincronizarLista(modelo, chaveEstrangeira, paiId, itens, montarCa
     operacoes.push(modelo.deleteMany({ where: { id: { in: removidos.map((item) => item.id) } } }));
   }
 
-  for (const item of itens) {
-    const campos = await montarCampos(item);
+  for (const [indice, item] of itens.entries()) {
+    const campos = await montarCampos(item, indice);
     operacoes.push(
       item.id
         ? modelo.update({ where: { id: item.id }, data: campos })
