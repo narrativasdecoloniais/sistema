@@ -129,7 +129,6 @@ flex-direction: column;
   }
 }
 
-// retangular, cantos a 90°
 .cta {
   display: inline-flex;
   align-items: center;
@@ -137,6 +136,7 @@ flex-direction: column;
   margin-top: 0.4rem;
   padding: 0.9rem 2rem;
   border: none;
+  border-radius: 8px;
   background: var(--barro);
   color: var(--papel);
   font-size: 1.05rem;

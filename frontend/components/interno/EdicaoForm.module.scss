@@ -281,6 +281,43 @@
   line-height: 1.5;
 }
 
+.linhaPreviewNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.blocoPreviewNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 220px;
+}
+
+.previewNav {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 52px;
+  padding: 0 1rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  border-bottom-width: 3px;
+  overflow: hidden;
+}
+
+.previewNavIcone {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.previewNavTexto {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .listaCartoes {
   display: flex;
   flex-direction: column;

@@ -23,6 +23,7 @@ const EASE = [0.16, 1, 0.3, 1];
 export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
   const edicaoExibida = useEdicaoExibida();
   const numeroEdicao = edicaoExibida ? edicaoExibida.numeroEdicao : numeroEdicaoProp;
+  const nav = edicaoExibida?.navegacao;
   const pathname = usePathname();
   const naHome = pathname === "/";
   const [rolou, setRolou] = useState(!naHome);
@@ -59,6 +60,14 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
     setMenuAberto(false);
   }
 
+  // Resolve qual dos dois conjuntos de cor está ativo (Topo/Rolado) uma vez
+  // por render — quando navMesmoEstilo está ligado, "rolado" nunca fica
+  // ativo, então o estado de scroll deixa de mudar a cor (só a posição
+  // .sobreposta/.emFluxo continua reagindo a naHome, sem relação com cor).
+  const usarRolado = rolou && !nav?.navMesmoEstilo;
+  const estiloNav = usarRolado ? nav?.rolado : nav?.topo;
+  const fundoNavTipo = usarRolado ? "COR" : nav?.topo?.fundoTipo;
+
   const painelVariants = {
     oculto: {
       opacity: 0,
@@ -85,8 +94,21 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
     <nav
       aria-label="Navegação principal"
       className={`${styles.barra} ${naHome ? styles.sobreposta : styles.emFluxo} ${
-        rolou ? styles.comFundo : ""
-      } ${menuAberto ? styles.menuAberto : ""}`}
+        menuAberto ? styles.menuAberto : ""
+      }`}
+      data-fundo-nav-tipo={fundoNavTipo}
+      data-cor-fundo-nav={estiloNav?.corFundo}
+      data-cor-texto-nav={estiloNav?.corTexto}
+      data-cor-icone-nav={estiloNav?.corIcone}
+      data-cor-borda-nav={estiloNav?.corBorda}
+      style={
+        nav
+          ? {
+              "--largura-faixa-hero-mobile-valor": `${nav.larguraFaixaMobile}px`,
+              "--largura-faixa-hero-desktop-valor": `${nav.larguraFaixaDesktop}px`,
+            }
+          : undefined
+      }
     >
       <BuziosSimbolos />
 

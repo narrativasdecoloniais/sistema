@@ -23,8 +23,6 @@
 
   --cor-texto-hero: var(--tinta);
   --cor-buzio-hero: var(--buzio);
-  --cor-faixa-hero-desktop: var(--ocre);
-  --cor-faixa-hero-mobile: var(--ocre);
   // Largura da coluna de conteúdo (logo, legendas, CTA) — usada também pelo
   // .heroFundoBlur abaixo, pra a faixa desfocada acompanhar o conteúdo em
   // vez de um recorte fixo desalinhado dele.
@@ -57,20 +55,6 @@
   &[data-cor-buzio="AREIA"] { --cor-buzio-hero: var(--areia); }
   &[data-cor-buzio="PAPEL"] { --cor-buzio-hero: var(--papel); }
   &[data-cor-buzio="CERRADO"] { --cor-buzio-hero: var(--cerrado); }
-
-  &[data-cor-faixa-desktop="TINTA"] { --cor-faixa-hero-desktop: var(--tinta); }
-  &[data-cor-faixa-desktop="BARRO"] { --cor-faixa-hero-desktop: var(--barro); }
-  &[data-cor-faixa-desktop="BUZIO"] { --cor-faixa-hero-desktop: var(--buzio); }
-  &[data-cor-faixa-desktop="AREIA"] { --cor-faixa-hero-desktop: var(--areia); }
-  &[data-cor-faixa-desktop="PAPEL"] { --cor-faixa-hero-desktop: var(--papel); }
-  &[data-cor-faixa-desktop="CERRADO"] { --cor-faixa-hero-desktop: var(--cerrado); }
-
-  &[data-cor-faixa-mobile="TINTA"] { --cor-faixa-hero-mobile: var(--tinta); }
-  &[data-cor-faixa-mobile="BARRO"] { --cor-faixa-hero-mobile: var(--barro); }
-  &[data-cor-faixa-mobile="BUZIO"] { --cor-faixa-hero-mobile: var(--buzio); }
-  &[data-cor-faixa-mobile="AREIA"] { --cor-faixa-hero-mobile: var(--areia); }
-  &[data-cor-faixa-mobile="PAPEL"] { --cor-faixa-hero-mobile: var(--papel); }
-  &[data-cor-faixa-mobile="CERRADO"] { --cor-faixa-hero-mobile: var(--cerrado); }
 }
 
 // Fundo em imagem (ver CampoFundoHero.jsx no admin) — nítida, direto na
@@ -124,14 +108,17 @@
   pointer-events: none;
 }
 
-// Faixas decorativas encostadas nas laterais da tela — fundo (cor sólida ou
-// imagem, ver abaixo) e largura configuráveis separadamente pra mobile e
-// desktop, já que o gestor pode querer tratamentos bem diferentes (a faixa
-// fica bem mais estreita no mobile — ver --largura-faixa-hero em
-// layout.module.scss, mesmo breakpoint 1000px usado aqui). position: fixed
-// (em vez de absolute, preso à altura da .hero) pra continuar visível
-// durante toda a rolagem da página, não só enquanto a Hero está na tela.
-// z-index baixo — fica abaixo da nav (40), skip link (100) e toasts/modais.
+// Faixas decorativas encostadas nas laterais de cada seção — fundo (cor
+// sólida ou imagem) e largura vêm sempre da Hero (ver SecaoHero.jsx no
+// admin), mas cada seção renderiza o próprio par de faixas (ver
+// FaixaLateral em PaginaInicialConteudo.jsx) em vez de um único elemento
+// fixo cobrindo a página inteira — "mostrar ou não" por seção vira só
+// renderizar ou não o componente, sem precisar rastrear scroll. position:
+// absolute (preenche top:0/bottom:0 da própria seção, que por isso precisa
+// ser position:relative) — como as seções ficam uma emendada na outra sem
+// vão, o efeito visual é uma faixa contínua exatamente nas seções que a
+// mantiverem ligada. z-index baixo — fica abaixo da nav (40), skip link
+// (100) e toasts/modais.
 //
 // Mobile-first: a regra base usa as variáveis "-mobile"; o bloco dentro do
 // @media (min-width: 1000px) sobrescreve pras variáveis "-desktop". Cada
@@ -139,40 +126,51 @@
 // o que reseta background-image/repeat/size de qualquer regra anterior —
 // necessário pra uma combinação tipo "mobile = imagem, desktop = cor sólida"
 // não deixar a imagem "vazando" pro desktop.
-.heroFaixa {
-  position: fixed;
+.faixaLateral {
+  position: absolute;
   top: 0;
   bottom: 0;
   z-index: 1;
   width: var(--largura-faixa-hero);
   background: var(--cor-faixa-hero-mobile);
   pointer-events: none;
-}
 
-// --imagem-faixa-hero-mobile/-desktop são url(...) setados inline em
-// PaginaInicialConteudo.jsx (valor dinâmico, não dá pra prever em CSS
-// estático). Sem background-color aqui de propósito — se a imagem for um
-// PNG com áreas transparentes (ex. um shape serrilhado), é o conteúdo por
-// trás da faixa fixa que deve aparecer ali, não uma cor sólida. repeat-y +
-// background-size 100% auto: a imagem escala a largura pra sempre bater com
-// a da faixa (responsiva) e repete verticalmente ao longo da altura.
-.hero[data-faixa-tipo-mobile="IMAGEM"] .heroFaixa {
-  background-color: transparent;
-  background-image: var(--imagem-faixa-hero-mobile);
-  background-repeat: repeat-y;
-  background-size: 100% auto;
-  background-position: top;
-}
+  --cor-faixa-hero-mobile: var(--ocre);
+  --largura-faixa-hero: var(--largura-faixa-hero-mobile-valor, clamp(16px, 3vw, 40px));
 
-// "Nenhuma" (ver CampoFaixaHero.jsx no admin) esconde o elemento. Repare que
-// o reset "mostrar" no @media abaixo usa :not([data-faixa-tipo-desktop=...])
-// em vez de só `.heroFaixa` — precisa da MESMA especificidade da regra de
-// esconder pra confiavelmente vencer o empate por ordem de declaração (mais
-// específico sempre vence, independe de ordem; com a mesma especificidade,
-// quem vem depois no arquivo vence). Sem isso, a faixa mobile "nenhuma"
-// continuaria escondida no desktop mesmo com data-faixa-tipo-desktop diferente.
-.hero[data-faixa-tipo-mobile="NENHUMA"] .heroFaixa {
-  display: none;
+  &[data-cor-faixa-mobile="TINTA"] { --cor-faixa-hero-mobile: var(--tinta); }
+  &[data-cor-faixa-mobile="BARRO"] { --cor-faixa-hero-mobile: var(--barro); }
+  &[data-cor-faixa-mobile="BUZIO"] { --cor-faixa-hero-mobile: var(--buzio); }
+  &[data-cor-faixa-mobile="AREIA"] { --cor-faixa-hero-mobile: var(--areia); }
+  &[data-cor-faixa-mobile="PAPEL"] { --cor-faixa-hero-mobile: var(--papel); }
+  &[data-cor-faixa-mobile="CERRADO"] { --cor-faixa-hero-mobile: var(--cerrado); }
+
+  // --imagem-faixa-hero-mobile/-desktop são url(...) setados inline em
+  // PaginaInicialConteudo.jsx (valor dinâmico, não dá pra prever em CSS
+  // estático). Sem background-color aqui de propósito — se a imagem for um
+  // PNG com áreas transparentes (ex. um shape serrilhado), é o conteúdo por
+  // trás da faixa que deve aparecer ali, não uma cor sólida. repeat-y +
+  // background-size 100% auto: a imagem escala a largura pra sempre bater
+  // com a da faixa (responsiva) e repete verticalmente ao longo da altura.
+  &[data-faixa-tipo-mobile="IMAGEM"] {
+    background-color: transparent;
+    background-image: var(--imagem-faixa-hero-mobile);
+    background-repeat: repeat-y;
+    background-size: 100% auto;
+    background-position: top;
+  }
+
+  // "Nenhuma" (ver CampoFaixaHero.jsx no admin) esconde o elemento. Repare
+  // que o reset "mostrar" no @media abaixo usa :not([data-faixa-tipo-desktop=...])
+  // em vez de só `.faixaLateral` — precisa da MESMA especificidade da regra
+  // de esconder pra confiavelmente vencer o empate por ordem de declaração
+  // (mais específico sempre vence, independe de ordem; com a mesma
+  // especificidade, quem vem depois no arquivo vence). Sem isso, a faixa
+  // mobile "nenhuma" continuaria escondida no desktop mesmo com
+  // data-faixa-tipo-desktop diferente.
+  &[data-faixa-tipo-mobile="NENHUMA"] {
+    display: none;
+  }
 }
 
 @media (min-width: 1000px) {
@@ -181,11 +179,20 @@
     background-image: var(--imagem-fundo-hero-desktop);
   }
 
-  .heroFaixa {
+  .faixaLateral {
     background: var(--cor-faixa-hero-desktop);
+    --cor-faixa-hero-desktop: var(--ocre);
+    --largura-faixa-hero: var(--largura-faixa-hero-desktop-valor, clamp(40px, 6vw, 96px));
+
+    &[data-cor-faixa-desktop="TINTA"] { --cor-faixa-hero-desktop: var(--tinta); }
+    &[data-cor-faixa-desktop="BARRO"] { --cor-faixa-hero-desktop: var(--barro); }
+    &[data-cor-faixa-desktop="BUZIO"] { --cor-faixa-hero-desktop: var(--buzio); }
+    &[data-cor-faixa-desktop="AREIA"] { --cor-faixa-hero-desktop: var(--areia); }
+    &[data-cor-faixa-desktop="PAPEL"] { --cor-faixa-hero-desktop: var(--papel); }
+    &[data-cor-faixa-desktop="CERRADO"] { --cor-faixa-hero-desktop: var(--cerrado); }
   }
 
-  .hero[data-faixa-tipo-desktop="IMAGEM"] .heroFaixa {
+  .faixaLateral[data-faixa-tipo-desktop="IMAGEM"] {
     background-color: transparent;
     background-image: var(--imagem-faixa-hero-desktop);
     background-repeat: repeat-y;
@@ -193,20 +200,20 @@
     background-position: top;
   }
 
-  .hero:not([data-faixa-tipo-desktop="NENHUMA"]) .heroFaixa {
+  .faixaLateral:not([data-faixa-tipo-desktop="NENHUMA"]) {
     display: block;
   }
 
-  .hero[data-faixa-tipo-desktop="NENHUMA"] .heroFaixa {
+  .faixaLateral[data-faixa-tipo-desktop="NENHUMA"] {
     display: none;
   }
 }
 
-.heroFaixaEsquerda {
+.faixaLateralEsquerda {
   left: 0;
 }
 
-.heroFaixaDireita {
+.faixaLateralDireita {
   right: 0;
 }
 
@@ -312,6 +319,8 @@
 // ---- faixa de realização (cor de fundo escolhida pelo gestor por edição) ----
 
 .realizadores {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -388,14 +397,70 @@
 
 // ---- seção "sobre o evento" (faixa verde-cerrado, abertura antes de Inscrições) ----
 
+// Fundo/texto/búzio customizáveis por edição (ver TextoSecaoForm.jsx no
+// admin) — mesmos 3 eixos independentes da Hero (opacidadeFundoHero/
+// corTextoHero/corBuzioHero em .hero acima): --cor-fundo-secao-base (opaca)
+// misturada com --papel via --opacidade-fundo-secao (setada inline por
+// PaginaInicialConteudo.jsx), mais --cor-texto-secao/--cor-buzio-secao à
+// parte, combinando livremente. Default (fundo PAPEL 100%, texto tinta,
+// búzio barro) é uma aproximação da aparência original desta seção — o
+// degradê sutil cerrado-em-papel de antes não é replicável exatamente com
+// esse modelo genérico, então virou papel liso; ajustável em 1 clique no
+// admin se quiser recuperar um tom parecido (ex. fundo cerrado, opacidade baixa).
 .sobreEvento {
   position: relative;
   overflow: hidden;
   width: 100%;
-  background: color-mix(in srgb, var(--cerrado) 9%, var(--papel));
   display: flex;
   justify-content: center;
   padding: clamp(4rem, 8vw, 7rem) 2rem;
+
+  --cor-fundo-secao-base: var(--papel);
+  --opacidade-fundo-secao: 100%;
+  --cor-texto-secao: var(--tinta);
+  --cor-buzio-secao: var(--barro);
+  background-color: color-mix(in srgb, var(--cor-fundo-secao-base) var(--opacidade-fundo-secao), var(--papel));
+
+  &[data-cor-fundo="TINTA"] { --cor-fundo-secao-base: var(--tinta); }
+  &[data-cor-fundo="BARRO"] { --cor-fundo-secao-base: var(--barro); }
+  &[data-cor-fundo="OCRE"] { --cor-fundo-secao-base: var(--ocre); }
+  &[data-cor-fundo="CERRADO"] { --cor-fundo-secao-base: var(--cerrado); }
+
+  &[data-cor-texto="BARRO"] { --cor-texto-secao: var(--barro); }
+  &[data-cor-texto="OCRE"] { --cor-texto-secao: var(--ocre); }
+  &[data-cor-texto="BUZIO"] { --cor-texto-secao: var(--buzio); }
+  &[data-cor-texto="AREIA"] { --cor-texto-secao: var(--areia); }
+  &[data-cor-texto="PAPEL"] { --cor-texto-secao: var(--papel); }
+  &[data-cor-texto="CERRADO"] { --cor-texto-secao: var(--cerrado); }
+
+  &[data-cor-buzio="TINTA"] { --cor-buzio-secao: var(--tinta); }
+  &[data-cor-buzio="OCRE"] { --cor-buzio-secao: var(--ocre); }
+  &[data-cor-buzio="BUZIO"] { --cor-buzio-secao: var(--buzio); }
+  &[data-cor-buzio="AREIA"] { --cor-buzio-secao: var(--areia); }
+  &[data-cor-buzio="PAPEL"] { --cor-buzio-secao: var(--papel); }
+  &[data-cor-buzio="CERRADO"] { --cor-buzio-secao: var(--cerrado); }
+
+  // Cor dos botões "Inscreva-se"/"Conheça o GPDES" (.inscricaoCta/.gpdesCta
+  // abaixo) — eixo à parte do fundo/texto/búzio da seção, mesmo mecanismo
+  // do botão de Modalidades (--cor-fundo-botao-card, mais abaixo neste
+  // arquivo): um par único de cor compartilhado pelos dois botões, o
+  // secundário vira contorno da mesma cor.
+  --cor-fundo-botao-secao: var(--barro);
+  --cor-texto-botao-secao: var(--papel);
+
+  &[data-cor-fundo-botao-secao="TINTA"] { --cor-fundo-botao-secao: var(--tinta); }
+  &[data-cor-fundo-botao-secao="OCRE"] { --cor-fundo-botao-secao: var(--ocre); }
+  &[data-cor-fundo-botao-secao="BUZIO"] { --cor-fundo-botao-secao: var(--buzio); }
+  &[data-cor-fundo-botao-secao="AREIA"] { --cor-fundo-botao-secao: var(--areia); }
+  &[data-cor-fundo-botao-secao="PAPEL"] { --cor-fundo-botao-secao: var(--papel); }
+  &[data-cor-fundo-botao-secao="CERRADO"] { --cor-fundo-botao-secao: var(--cerrado); }
+
+  &[data-cor-texto-botao-secao="TINTA"] { --cor-texto-botao-secao: var(--tinta); }
+  &[data-cor-texto-botao-secao="BARRO"] { --cor-texto-botao-secao: var(--barro); }
+  &[data-cor-texto-botao-secao="OCRE"] { --cor-texto-botao-secao: var(--ocre); }
+  &[data-cor-texto-botao-secao="BUZIO"] { --cor-texto-botao-secao: var(--buzio); }
+  &[data-cor-texto-botao-secao="AREIA"] { --cor-texto-botao-secao: var(--areia); }
+  &[data-cor-texto-botao-secao="CERRADO"] { --cor-texto-botao-secao: var(--cerrado); }
 
   @media (max-width: 700px) {
     padding: clamp(3rem, 10vw, 5rem) 1.5rem;
@@ -427,22 +492,17 @@
   column-gap: 2rem;
   align-items: start;
 
-  // búzios e eyebrow em branco (papel) sobre o verde; título e texto em
-  // marrom — só nesta seção, as demais mantêm a paleta padrão
+  // eyebrow segue a mesma cor de texto da seção (não tem eixo próprio) —
+  // eyebrow só existe dentro destas 4 seções, então essa sobrescrita nunca
+  // vaza pra outros contextos.
   .marcadorBuzio {
-    color: var(--barro);
+    color: var(--cor-buzio-secao);
   }
 
-  .eyebrow {
-    color: var(--barro);
-  }
-
+  .eyebrow,
   .tituloSecundario,
   .secaoTexto {
-    color: var(--barro);
-  }
-  .secaoTexto{
-    color: var(--tinta);
+    color: var(--cor-texto-secao);
   }
 
   @media (max-width: 700px) {
@@ -453,24 +513,140 @@
 
 // ---- seções ----
 
+// Fundo precisa cobrir a largura toda da viewport (senão a cor customizável
+// por edição fica presa numa caixa de 960px, ver .modalidades/.agenda/
+// .publicacoes abaixo) — largura 100% + padding-inline calculado centraliza
+// o conteúdo na mesma largura de antes (960px) em vez de max-width+margin
+// auto, que limitava a própria caixa que carrega o fundo.
 .secao {
   position: relative;
   overflow: hidden;
-  background: var(--papel);
   display: grid;
   grid-template-columns: 100px 1fr;
   column-gap: 2rem;
   align-items: start;
-  padding: clamp(4rem, 8vw, 7rem) 2rem;
-  max-width: 960px;
-  margin: 0 auto;
+  width: 100%;
+  padding-block: clamp(4rem, 8vw, 7rem);
+  padding-inline: max(2rem, calc((100% - 960px) / 2));
   border-top: 1px solid var(--areia);
 
   @media (max-width: 700px) {
     grid-template-columns: 1fr;
     row-gap: 1rem;
-    padding: clamp(3rem, 10vw, 5rem) 1.5rem;
+    padding-block: clamp(3rem, 10vw, 5rem);
+    padding-inline: 1.5rem;
   }
+}
+
+// Fundo/texto/búzio customizáveis por edição (ver TextoSecaoForm.jsx/
+// AgendaForm.jsx no admin) — mesmos 3 eixos independentes da Hero
+// (opacidadeFundoHero/corTextoHero/corBuzioHero em .hero acima); um bloco só
+// porque as 3 seções usam os mesmos nomes de custom property (cada
+// instância é independente, sem conflito — não precisa duplicar por seção).
+.modalidades,
+.agenda,
+.publicacoes {
+  --cor-fundo-secao-base: var(--papel);
+  --opacidade-fundo-secao: 100%;
+  --cor-texto-secao: var(--tinta);
+  --cor-buzio-secao: var(--buzio);
+  background-color: color-mix(in srgb, var(--cor-fundo-secao-base) var(--opacidade-fundo-secao), var(--papel));
+
+  &[data-cor-fundo="TINTA"] { --cor-fundo-secao-base: var(--tinta); }
+  &[data-cor-fundo="BARRO"] { --cor-fundo-secao-base: var(--barro); }
+  &[data-cor-fundo="OCRE"] { --cor-fundo-secao-base: var(--ocre); }
+  &[data-cor-fundo="CERRADO"] { --cor-fundo-secao-base: var(--cerrado); }
+
+  &[data-cor-texto="BARRO"] { --cor-texto-secao: var(--barro); }
+  &[data-cor-texto="OCRE"] { --cor-texto-secao: var(--ocre); }
+  &[data-cor-texto="BUZIO"] { --cor-texto-secao: var(--buzio); }
+  &[data-cor-texto="AREIA"] { --cor-texto-secao: var(--areia); }
+  &[data-cor-texto="PAPEL"] { --cor-texto-secao: var(--papel); }
+  &[data-cor-texto="CERRADO"] { --cor-texto-secao: var(--cerrado); }
+
+  &[data-cor-buzio="TINTA"] { --cor-buzio-secao: var(--tinta); }
+  &[data-cor-buzio="BARRO"] { --cor-buzio-secao: var(--barro); }
+  &[data-cor-buzio="OCRE"] { --cor-buzio-secao: var(--ocre); }
+  &[data-cor-buzio="AREIA"] { --cor-buzio-secao: var(--areia); }
+  &[data-cor-buzio="PAPEL"] { --cor-buzio-secao: var(--papel); }
+  &[data-cor-buzio="CERRADO"] { --cor-buzio-secao: var(--cerrado); }
+
+  .marcadorBuzio {
+    color: var(--cor-buzio-secao);
+  }
+
+  .eyebrow,
+  .tituloSecundario,
+  .secaoTexto,
+  .secaoTextoGrande {
+    color: var(--cor-texto-secao);
+  }
+}
+
+// Cor dos CARDS dentro de Modalidades/Agenda (.modalidadeCartao abaixo e
+// CardAtividadeProgramacao.module.scss — este último herda as custom
+// properties por estar dentro de .agenda no DOM, mesmo sendo um arquivo
+// .module.scss diferente) — eixo à parte do fundo/texto/búzio da seção em
+// volta. Publicações não tem cards, por isso fica de fora deste bloco.
+// Defaults reproduzem a fórmula hardcoded de antes (color-mix(ocre 6%,
+// papel) + texto tinta + destaque barro).
+.modalidades,
+.agenda {
+  --cor-fundo-card-base: var(--ocre);
+  --opacidade-fundo-card: 6%;
+  --cor-texto-card: var(--tinta);
+  --cor-texto-secundario-card: var(--tinta);
+  --cor-acento-card: var(--barro);
+
+  &[data-cor-fundo-card="TINTA"] { --cor-fundo-card-base: var(--tinta); }
+  &[data-cor-fundo-card="BARRO"] { --cor-fundo-card-base: var(--barro); }
+  &[data-cor-fundo-card="PAPEL"] { --cor-fundo-card-base: var(--papel); }
+  &[data-cor-fundo-card="CERRADO"] { --cor-fundo-card-base: var(--cerrado); }
+
+  &[data-cor-texto-card="BARRO"] { --cor-texto-card: var(--barro); }
+  &[data-cor-texto-card="OCRE"] { --cor-texto-card: var(--ocre); }
+  &[data-cor-texto-card="BUZIO"] { --cor-texto-card: var(--buzio); }
+  &[data-cor-texto-card="AREIA"] { --cor-texto-card: var(--areia); }
+  &[data-cor-texto-card="PAPEL"] { --cor-texto-card: var(--papel); }
+  &[data-cor-texto-card="CERRADO"] { --cor-texto-card: var(--cerrado); }
+
+  &[data-cor-texto-secundario-card="BARRO"] { --cor-texto-secundario-card: var(--barro); }
+  &[data-cor-texto-secundario-card="OCRE"] { --cor-texto-secundario-card: var(--ocre); }
+  &[data-cor-texto-secundario-card="BUZIO"] { --cor-texto-secundario-card: var(--buzio); }
+  &[data-cor-texto-secundario-card="AREIA"] { --cor-texto-secundario-card: var(--areia); }
+  &[data-cor-texto-secundario-card="PAPEL"] { --cor-texto-secundario-card: var(--papel); }
+  &[data-cor-texto-secundario-card="CERRADO"] { --cor-texto-secundario-card: var(--cerrado); }
+
+  &[data-cor-acento-card="TINTA"] { --cor-acento-card: var(--tinta); }
+  &[data-cor-acento-card="OCRE"] { --cor-acento-card: var(--ocre); }
+  &[data-cor-acento-card="BUZIO"] { --cor-acento-card: var(--buzio); }
+  &[data-cor-acento-card="AREIA"] { --cor-acento-card: var(--areia); }
+  &[data-cor-acento-card="PAPEL"] { --cor-acento-card: var(--papel); }
+  &[data-cor-acento-card="CERRADO"] { --cor-acento-card: var(--cerrado); }
+}
+
+// Cor do BOTÃO dentro do card de modalidade (.modalidadeCtaPrimario/
+// .modalidadeLink) — eixo próprio, independente de --cor-acento-card (que
+// colore o prazo), pra o botão nunca ficar invisível por herdar a mesma cor
+// de outro elemento sem querer. Só Modalidades tem — o link de Agenda
+// (.detalhes) não tem preenchimento, então não precisa desse eixo.
+.modalidades {
+  --cor-fundo-botao-card: var(--barro);
+  --cor-texto-botao-card: var(--papel);
+
+  &[data-cor-fundo-botao-card="TINTA"] { --cor-fundo-botao-card: var(--tinta); }
+  &[data-cor-fundo-botao-card="OCRE"] { --cor-fundo-botao-card: var(--ocre); }
+  &[data-cor-fundo-botao-card="BUZIO"] { --cor-fundo-botao-card: var(--buzio); }
+  &[data-cor-fundo-botao-card="AREIA"] { --cor-fundo-botao-card: var(--areia); }
+  &[data-cor-fundo-botao-card="PAPEL"] { --cor-fundo-botao-card: var(--papel); }
+  &[data-cor-fundo-botao-card="CERRADO"] { --cor-fundo-botao-card: var(--cerrado); }
+
+  &[data-cor-texto-botao-card="TINTA"] { --cor-texto-botao-card: var(--tinta); }
+  &[data-cor-texto-botao-card="BARRO"] { --cor-texto-botao-card: var(--barro); }
+  &[data-cor-texto-botao-card="OCRE"] { --cor-texto-botao-card: var(--ocre); }
+  &[data-cor-texto-botao-card="BUZIO"] { --cor-texto-botao-card: var(--buzio); }
+  &[data-cor-texto-botao-card="AREIA"] { --cor-texto-botao-card: var(--areia); }
+  &[data-cor-texto-botao-card="CERRADO"] { --cor-texto-botao-card: var(--cerrado); }
 }
 
 .marcador {
@@ -617,7 +793,8 @@
   align-items: start;
   gap: 0.65rem;
   padding: 1.5rem;
-  background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cor-fundo-card-base) var(--opacidade-fundo-card), var(--papel));
 }
 
 .modalidadeCabecalho {
@@ -631,7 +808,7 @@
   font-family: var(--font-stencil), sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--tinta);
+  color: var(--cor-texto-card);
   font-size: 1.15rem;
   line-height: 1.3;
 }
@@ -639,7 +816,7 @@
 .modalidadeSubtitulo {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--texto-suave);
+  color: var(--cor-texto-secundario-card);
 }
 
 .modalidadePrazo {
@@ -648,26 +825,29 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--barro);
+  color: var(--cor-acento-card);
 }
 
 .modalidadeResumo {
   align-self: start;
   font-size: 0.9rem;
-  color: var(--tinta);
+  color: var(--cor-texto-card);
   line-height: 1.6;
 }
 
-// CTA primário do cartão — retangular, cantos retos, dessaturado por estar
-// desabilitado (fluxo de submissão ainda não existe)
+// CTA primário do cartão — dessaturado por estar desabilitado (fluxo de
+// submissão ainda não existe). Anel de foco fixo (não segue a cor de
+// destaque customizável) pra sempre ter contraste previsível, mesma
+// cautela já aplicada nos outros ajustes desta sessão.
 .modalidadeCtaPrimario {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   padding: 0.9rem 2rem;
-  background: var(--barro);
-  color: var(--papel);
+  background: var(--cor-fundo-botao-card);
+  border-radius: 8px;
+  color: var(--cor-texto-botao-card);
   font-size: 1rem;
   font-weight: 700;
   border: none;
@@ -680,7 +860,7 @@
   }
 }
 
-// botão secundário — mesmo cantos retos do CTA primário, só que em contorno
+// botão secundário — mesmo tratamento do CTA primário, só que em contorno
 // em vez de preenchido. Ancorado no fim da própria linha do subgrid: se o
 // rótulo de um cartão quebrar em duas linhas, o botão mais curto do cartão
 // vizinho desce e fica com a base rente à dele, em vez de "flutuar" no meio
@@ -692,8 +872,9 @@
   justify-content: center;
   width: 100%;
   padding: 0.9rem 2rem;
-  border: 1.5px solid var(--barro);
-  color: var(--barro);
+  border: 1.5px solid var(--cor-fundo-botao-card);
+  border-radius: 8px;
+  color: var(--cor-fundo-botao-card);
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -701,8 +882,8 @@
   transition: background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
-    background: var(--barro);
-    color: var(--papel);
+    background: var(--cor-fundo-botao-card);
+    color: var(--cor-texto-botao-card);
   }
 
   &:focus-visible {
@@ -726,9 +907,10 @@
   align-items: center;
   justify-content: center;
   padding: 0.9rem 2.5rem;
-  background: var(--barro);
-  border: 1.5px solid var(--barro);
-  color: var(--papel);
+  background: var(--cor-fundo-botao-secao);
+  border: 1.5px solid var(--cor-fundo-botao-secao);
+  border-radius: 8px;
+  color: var(--cor-texto-botao-secao);
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -752,8 +934,9 @@
   align-items: center;
   justify-content: center;
   padding: 0.9rem 2.5rem;
-  border: 1.5px solid var(--barro);
-  color: var(--barro);
+  border: 1.5px solid var(--cor-fundo-botao-secao);
+  border-radius: 8px;
+  color: var(--cor-fundo-botao-secao);
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -761,8 +944,8 @@
   transition: background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
-    background: var(--barro);
-    color: var(--papel);
+    background: var(--cor-fundo-botao-secao);
+    color: var(--cor-texto-botao-secao);
   }
 
   &:focus-visible {

@@ -16,11 +16,9 @@ import {
   formatarDiaAtividade,
   formatarHoraCurta,
   agruparAtividadesPorHorarioInicio,
-} from "@/lib/publico";
-import {
-  MODALIDADES_SUBMISSAO,
   formatarPeriodoSubmissao,
-} from "@/lib/modalidadesSubmissao";
+  dividirParagrafos,
+} from "@/lib/publico";
 import styles from "./page.module.scss";
 
 // TODO: substituir pela URL real assim que confirmada.
@@ -188,10 +186,45 @@ function SeloEmBreve({ children = "Em breve" }) {
   );
 }
 
+// Par de faixas laterais (esquerda/direita) de uma seção — cor/imagem/largura
+// sempre vêm da Hero (ver SecaoHero.jsx no admin), reaproveitadas aqui via
+// `estilo` (mesmo objeto em toda a página) + `corDesktop`/`corMobile`/
+// `tipoDesktop`/`tipoMobile`. "Mostrar ou não" em cada seção (ver
+// TextoSecaoForm.jsx/AgendaForm.jsx no admin) é decidido pelo chamador — só
+// não renderiza o componente — em vez de rastrear scroll: como as seções
+// ficam emendadas sem vão entre si, o efeito visual já é uma faixa contínua
+// nas seções que a mantiverem ligada.
+function FaixaLateral({ estilo, corDesktop, corMobile, tipoDesktop, tipoMobile }) {
+  return (
+    <>
+      <span
+        className={`${styles.faixaLateral} ${styles.faixaLateralEsquerda}`}
+        data-cor-faixa-desktop={corDesktop}
+        data-cor-faixa-mobile={corMobile}
+        data-faixa-tipo-desktop={tipoDesktop}
+        data-faixa-tipo-mobile={tipoMobile}
+        style={estilo}
+        aria-hidden="true"
+      />
+      <span
+        className={`${styles.faixaLateral} ${styles.faixaLateralDireita}`}
+        data-cor-faixa-desktop={corDesktop}
+        data-cor-faixa-mobile={corMobile}
+        data-faixa-tipo-desktop={tipoDesktop}
+        data-faixa-tipo-mobile={tipoMobile}
+        style={estilo}
+        aria-hidden="true"
+      />
+    </>
+  );
+}
+
 export default function PaginaInicialConteudo({
   atividades,
+  modalidades = [],
   realizadores = [],
   corFundoRealizadores = "BARRO",
+  mostrarFaixaRealizadores = true,
   logoSvg,
   logoSvgViewBox,
   logoSvgCores,
@@ -205,9 +238,52 @@ export default function PaginaInicialConteudo({
   faixaHeroTipoDesktop = "COR",
   corFaixaHeroDesktop = "OCRE",
   imagemFaixaHeroDesktop,
+  larguraFaixaHeroDesktop = 96,
   faixaHeroTipoMobile = "COR",
   corFaixaHeroMobile = "OCRE",
   imagemFaixaHeroMobile,
+  larguraFaixaHeroMobile = 40,
+  mostrarFaixaHero = true,
+  tituloApresentacao = "Sobre o evento",
+  corpoApresentacao = "",
+  corFundoApresentacao = "PAPEL",
+  opacidadeFundoApresentacao = 100,
+  corTextoApresentacao = "TINTA",
+  corBuzioApresentacao = "BARRO",
+  corFundoBotaoApresentacao = "BARRO",
+  corTextoBotaoApresentacao = "PAPEL",
+  mostrarFaixaApresentacao = true,
+  tituloModalidades = "Submissão",
+  corpoModalidades = "",
+  corFundoModalidades = "PAPEL",
+  opacidadeFundoModalidades = 100,
+  corTextoModalidades = "TINTA",
+  corBuzioModalidades = "BUZIO",
+  mostrarFaixaModalidades = true,
+  corFundoCardModalidades = "OCRE",
+  opacidadeFundoCardModalidades = 6,
+  corTextoCardModalidades = "TINTA",
+  corTextoSecundarioCardModalidades = "TINTA",
+  corAcentoCardModalidades = "BARRO",
+  corFundoBotaoCardModalidades = "BARRO",
+  corTextoBotaoCardModalidades = "PAPEL",
+  corFundoAgenda = "PAPEL",
+  opacidadeFundoAgenda = 100,
+  corTextoAgenda = "TINTA",
+  corBuzioAgenda = "BUZIO",
+  mostrarFaixaAgenda = true,
+  corFundoCardAgenda = "OCRE",
+  opacidadeFundoCardAgenda = 6,
+  corTextoCardAgenda = "TINTA",
+  corTextoSecundarioCardAgenda = "TINTA",
+  corAcentoCardAgenda = "BARRO",
+  tituloPublicacoes = "Anais e Memória",
+  corpoPublicacoes = "",
+  corFundoPublicacoes = "PAPEL",
+  opacidadeFundoPublicacoes = 100,
+  corTextoPublicacoes = "TINTA",
+  corBuzioPublicacoes = "BUZIO",
+  mostrarFaixaPublicacoes = true,
   temEdicaoAtual = false,
   edicaoSlug,
   dataEvento = "Data a confirmar",
@@ -241,8 +317,17 @@ export default function PaginaInicialConteudo({
     "--opacidade-fundo-hero": `${opacidadeFundoHero}%`,
     ...(imagemFundoHeroDesktop ? { "--imagem-fundo-hero-desktop": `url(${imagemFundoHeroDesktop})` } : {}),
     ...(imagemFundoHeroMobile ? { "--imagem-fundo-hero-mobile": `url(${imagemFundoHeroMobile})` } : {}),
+  };
+
+  // Largura/imagem da faixa lateral são as mesmas em toda a página (vêm da
+  // Hero, ver SecaoHero.jsx no admin) — cada seção que a exibe (FaixaLateral,
+  // abaixo) usa esse mesmo objeto de estilo; "mostrar ou não" em cada seção é
+  // só renderizar ou não o componente, sem JS de rolagem.
+  const estiloFaixaLateral = {
     ...(imagemFaixaHeroDesktop ? { "--imagem-faixa-hero-desktop": `url(${imagemFaixaHeroDesktop})` } : {}),
     ...(imagemFaixaHeroMobile ? { "--imagem-faixa-hero-mobile": `url(${imagemFaixaHeroMobile})` } : {}),
+    "--largura-faixa-hero-mobile-valor": `${larguraFaixaHeroMobile}px`,
+    "--largura-faixa-hero-desktop-valor": `${larguraFaixaHeroDesktop}px`,
   };
 
   return (
@@ -254,15 +339,18 @@ export default function PaginaInicialConteudo({
         data-fundo-tipo={fundoHeroTipo}
         data-cor-texto={corTextoHero}
         data-cor-buzio={corBuzioHero}
-        data-cor-faixa-desktop={corFaixaHeroDesktop}
-        data-cor-faixa-mobile={corFaixaHeroMobile}
-        data-faixa-tipo-desktop={faixaHeroTipoDesktop}
-        data-faixa-tipo-mobile={faixaHeroTipoMobile}
         style={estiloHero}
       >
         {fundoHeroTipo === "IMAGEM" && <div className={styles.heroFundoBlur} aria-hidden="true" />}
-        <span className={`${styles.heroFaixa} ${styles.heroFaixaEsquerda}`} aria-hidden="true" />
-        <span className={`${styles.heroFaixa} ${styles.heroFaixaDireita}`} aria-hidden="true" />
+        {mostrarFaixaHero && (
+          <FaixaLateral
+            estilo={estiloFaixaLateral}
+            corDesktop={corFaixaHeroDesktop}
+            corMobile={corFaixaHeroMobile}
+            tipoDesktop={faixaHeroTipoDesktop}
+            tipoMobile={faixaHeroTipoMobile}
+          />
+        )}
 
         <div className={styles.logoWrapper}>
           <Logo
@@ -341,11 +429,26 @@ export default function PaginaInicialConteudo({
       <motion.section
         id="sobre-evento"
         className={styles.sobreEvento}
+        data-cor-fundo={corFundoApresentacao}
+        data-cor-texto={corTextoApresentacao}
+        data-cor-buzio={corBuzioApresentacao}
+        data-cor-fundo-botao-secao={corFundoBotaoApresentacao}
+        data-cor-texto-botao-secao={corTextoBotaoApresentacao}
+        style={{ "--opacidade-fundo-secao": `${opacidadeFundoApresentacao}%` }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
         variants={containerVariants}
       >
+        {mostrarFaixaApresentacao && (
+          <FaixaLateral
+            estilo={estiloFaixaLateral}
+            corDesktop={corFaixaHeroDesktop}
+            corMobile={corFaixaHeroMobile}
+            tipoDesktop={faixaHeroTipoDesktop}
+            tipoMobile={faixaHeroTipoMobile}
+          />
+        )}
         <Divisor className={styles.sobreEventoDivisor} />
         <TexturaPapel className={styles.sobreEventoTextura} opacidade={0.05} />
         <div className={styles.sobreEventoConteudo}>
@@ -356,28 +459,13 @@ export default function PaginaInicialConteudo({
               className={styles.tituloSecundario}
               variants={itemVariants}
             >
-              Sobre o evento
+              {tituloApresentacao}
             </motion.h2>
-            <motion.p className={styles.secaoTexto} variants={itemVariants}>
-              O evento aborda a educação em perspectiva intercultural,
-              decolonial e antirracista, reunindo diferentes sujeitos e
-              epistemes em debates transdisciplinares, diálogos de saberes,
-              vivências e intercâmbios de experiências. Com foco nas relações
-              étnico-raciais, nos saberes e práticas educativas de povos e
-              comunidades tradicionais, bem como em temas como justiça
-              climática, bem viver, ações afirmativas, decolonização do
-              conhecimento, justiça epistêmica e equidade de gênero,
-              configura-se como um espaço de encontro, diálogo e criação
-              coletiva.
-            </motion.p>
-            <motion.p className={styles.secaoTexto} variants={itemVariants}>
-              Por meio de conferências, conversatórios, oficinas, narrativas
-              multimodais, exposições e atividades culturais, o evento fortalece
-              a cooperação acadêmica Sul-Sul e a construção compartilhada de
-              conhecimentos, contribuindo para a qualificação da educação
-              pública e para o desenvolvimento de práticas pedagógicas
-              comprometidas com a justiça social, racial e climática.
-            </motion.p>
+            {dividirParagrafos(corpoApresentacao).map((paragrafo, indice) => (
+              <motion.p key={indice} className={styles.secaoTexto} variants={itemVariants}>
+                {paragrafo}
+              </motion.p>
+            ))}
             {temEdicaoAtual && (
               <motion.div className={styles.sobreEventoCtas} variants={itemVariants}>
                 <Link href="/inscricao" className={styles.inscricaoCta}>
@@ -399,12 +487,34 @@ export default function PaginaInicialConteudo({
 
       <motion.section
         id="submissao"
-        className={styles.secao}
+        className={`${styles.secao} ${styles.modalidades}`}
+        data-cor-fundo={corFundoModalidades}
+        data-cor-texto={corTextoModalidades}
+        data-cor-buzio={corBuzioModalidades}
+        data-cor-fundo-card={corFundoCardModalidades}
+        data-cor-texto-card={corTextoCardModalidades}
+        data-cor-texto-secundario-card={corTextoSecundarioCardModalidades}
+        data-cor-acento-card={corAcentoCardModalidades}
+        data-cor-fundo-botao-card={corFundoBotaoCardModalidades}
+        data-cor-texto-botao-card={corTextoBotaoCardModalidades}
+        style={{
+          "--opacidade-fundo-secao": `${opacidadeFundoModalidades}%`,
+          "--opacidade-fundo-card": `${opacidadeFundoCardModalidades}%`,
+        }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
         variants={containerVariants}
       >
+        {mostrarFaixaModalidades && (
+          <FaixaLateral
+            estilo={estiloFaixaLateral}
+            corDesktop={corFaixaHeroDesktop}
+            corMobile={corFaixaHeroMobile}
+            tipoDesktop={faixaHeroTipoDesktop}
+            tipoMobile={faixaHeroTipoMobile}
+          />
+        )}
         <Marcador />
         <motion.div className={styles.conteudo} variants={containerVariants}>
           <Eyebrow>Modalidades</Eyebrow>
@@ -412,18 +522,17 @@ export default function PaginaInicialConteudo({
             className={styles.tituloSecundario}
             variants={itemVariants}
           >
-            Submissão
+            {tituloModalidades}
           </motion.h2>
           <motion.p className={styles.secaoTextoGrande} variants={itemVariants}>
-            Compartilhe pesquisas, práticas e experiências nas modalidades desta
-            edição.
+            {corpoModalidades}
           </motion.p>
 
           <motion.div
             className={styles.modalidadesGrade}
             variants={containerVariants}
           >
-            {MODALIDADES_SUBMISSAO.map((modalidade) => (
+            {modalidades.map((modalidade) => (
               <motion.article
                 key={modalidade.slug}
                 className={styles.modalidadeCartao}
@@ -468,12 +577,32 @@ export default function PaginaInicialConteudo({
 
       <motion.section
         id="programacao"
-        className={styles.secao}
+        className={`${styles.secao} ${styles.agenda}`}
+        data-cor-fundo={corFundoAgenda}
+        data-cor-texto={corTextoAgenda}
+        data-cor-buzio={corBuzioAgenda}
+        data-cor-fundo-card={corFundoCardAgenda}
+        data-cor-texto-card={corTextoCardAgenda}
+        data-cor-texto-secundario-card={corTextoSecundarioCardAgenda}
+        data-cor-acento-card={corAcentoCardAgenda}
+        style={{
+          "--opacidade-fundo-secao": `${opacidadeFundoAgenda}%`,
+          "--opacidade-fundo-card": `${opacidadeFundoCardAgenda}%`,
+        }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
         variants={containerVariants}
       >
+        {mostrarFaixaAgenda && (
+          <FaixaLateral
+            estilo={estiloFaixaLateral}
+            corDesktop={corFaixaHeroDesktop}
+            corMobile={corFaixaHeroMobile}
+            tipoDesktop={faixaHeroTipoDesktop}
+            tipoMobile={faixaHeroTipoMobile}
+          />
+        )}
         <Marcador />
         <motion.div className={styles.conteudo} variants={containerVariants}>
           <Eyebrow>Agenda</Eyebrow>
@@ -546,29 +675,51 @@ export default function PaginaInicialConteudo({
 
       <motion.section
         id="anais"
-        className={styles.secao}
+        className={`${styles.secao} ${styles.publicacoes}`}
+        data-cor-fundo={corFundoPublicacoes}
+        data-cor-texto={corTextoPublicacoes}
+        data-cor-buzio={corBuzioPublicacoes}
+        style={{ "--opacidade-fundo-secao": `${opacidadeFundoPublicacoes}%` }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
         variants={containerVariants}
       >
+        {mostrarFaixaPublicacoes && (
+          <FaixaLateral
+            estilo={estiloFaixaLateral}
+            corDesktop={corFaixaHeroDesktop}
+            corMobile={corFaixaHeroMobile}
+            tipoDesktop={faixaHeroTipoDesktop}
+            tipoMobile={faixaHeroTipoMobile}
+          />
+        )}
         <Marcador />
         <motion.div className={styles.conteudo} variants={containerVariants}>
           <Eyebrow>Publicações</Eyebrow>
           <motion.div className={styles.tituloLinha} variants={itemVariants}>
-            <h2 className={styles.tituloSecundario}>Anais e Memória</h2>
+            <h2 className={styles.tituloSecundario}>{tituloPublicacoes}</h2>
             <SeloEmBreve />
           </motion.div>
-          <motion.p className={styles.secaoTexto} variants={itemVariants}>
-            Em breve abriremos a chamada para submissão de trabalhos desta
-            edição. Os anais das edições anteriores serão disponibilizados aqui
-            assim que organizados.
-          </motion.p>
+          {dividirParagrafos(corpoPublicacoes).map((paragrafo, indice) => (
+            <motion.p key={indice} className={styles.secaoTexto} variants={itemVariants}>
+              {paragrafo}
+            </motion.p>
+          ))}
         </motion.div>
       </motion.section>
 
       {realizadores.length > 0 && (
         <section className={styles.realizadores} data-cor={corFundoRealizadores} aria-label="Realização">
+          {mostrarFaixaRealizadores && (
+            <FaixaLateral
+              estilo={estiloFaixaLateral}
+              corDesktop={corFaixaHeroDesktop}
+              corMobile={corFaixaHeroMobile}
+              tipoDesktop={faixaHeroTipoDesktop}
+              tipoMobile={faixaHeroTipoMobile}
+            />
+          )}
           <div className={styles.realizadoresConteudo}>
             <span className={styles.realizadoresLabel}>Realização</span>
             <div className={styles.realizadoresGrade}>

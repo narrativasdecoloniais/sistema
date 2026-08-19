@@ -4,6 +4,7 @@ import CampoLogoSvg from "./CampoLogoSvg";
 import CampoCoresLogo from "./CampoCoresLogo";
 import CampoFaixaHero from "./CampoFaixaHero";
 import CampoFundoHero from "./CampoFundoHero";
+import CampoCheckbox from "./CampoCheckbox";
 import CampoCorSecao, { OPCOES_COR_SECAO, OPCOES_COR_PUBLICA } from "./CampoCorSecao";
 import CabecalhoSecao from "./CabecalhoSecao";
 import { contraste, misturar } from "@/lib/contraste";
@@ -51,9 +52,12 @@ export default function SecaoHero({
   faixaHeroTipoDesktop,
   corFaixaHeroDesktop,
   imagemFaixaHeroDesktop,
+  larguraFaixaHeroDesktop,
   faixaHeroTipoMobile,
   corFaixaHeroMobile,
   imagemFaixaHeroMobile,
+  larguraFaixaHeroMobile,
+  mostrarFaixaHero,
   erro,
   aoMudarLogo,
   aoMudarLogoCores,
@@ -67,9 +71,12 @@ export default function SecaoHero({
   aoMudarFaixaHeroTipoDesktop,
   aoMudarCorFaixaHeroDesktop,
   aoMudarImagemFaixaHeroDesktop,
+  aoMudarLarguraFaixaHeroDesktop,
   aoMudarFaixaHeroTipoMobile,
   aoMudarCorFaixaHeroMobile,
   aoMudarImagemFaixaHeroMobile,
+  aoMudarLarguraFaixaHeroMobile,
+  aoMudarMostrarFaixaHero,
 }) {
   const hexFundo = corPorValor(OPCOES_COR_SECAO, corFundoHero);
   const hexPapel = corPorValor(OPCOES_COR_SECAO, "PAPEL");
@@ -154,9 +161,11 @@ export default function SecaoHero({
           tipo={faixaHeroTipoDesktop}
           cor={corFaixaHeroDesktop}
           imagem={imagemFaixaHeroDesktop}
+          largura={larguraFaixaHeroDesktop}
           aoMudarTipo={aoMudarFaixaHeroTipoDesktop}
           aoMudarCor={aoMudarCorFaixaHeroDesktop}
           aoMudarImagem={aoMudarImagemFaixaHeroDesktop}
+          aoMudarLargura={aoMudarLarguraFaixaHeroDesktop}
         />
         <CampoFaixaHero
           id="faixaHeroMobile"
@@ -164,9 +173,17 @@ export default function SecaoHero({
           tipo={faixaHeroTipoMobile}
           cor={corFaixaHeroMobile}
           imagem={imagemFaixaHeroMobile}
+          largura={larguraFaixaHeroMobile}
           aoMudarTipo={aoMudarFaixaHeroTipoMobile}
           aoMudarCor={aoMudarCorFaixaHeroMobile}
           aoMudarImagem={aoMudarImagemFaixaHeroMobile}
+          aoMudarLargura={aoMudarLarguraFaixaHeroMobile}
+        />
+        <CampoCheckbox
+          id="mostrarFaixaHero"
+          rotulo="Mostrar a faixa lateral nesta seção"
+          checked={mostrarFaixaHero}
+          onChange={aoMudarMostrarFaixaHero}
         />
 
         <div className={styles.linhaPreviewHero}>

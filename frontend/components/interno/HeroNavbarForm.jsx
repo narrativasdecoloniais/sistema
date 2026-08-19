@@ -4,21 +4,20 @@ import { useState } from "react";
 import { z } from "zod";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
-import { edicaoRealizadorSchema, extrairErros } from "@/lib/validacao";
+import { extrairErros } from "@/lib/validacao";
 import SecaoHero from "./SecaoHero";
-import SecaoRealizadores from "./SecaoRealizadores";
+import SecaoNavegacao from "./SecaoNavegacao";
 import styles from "./EdicaoForm.module.scss";
 
 const PALETA_FUNDO = ["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"];
 const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
 const TIPO_FAIXA = ["COR", "IMAGEM", "NENHUMA"];
 const TIPO_FUNDO = ["COR", "IMAGEM"];
+const TIPO_FUNDO_NAV = ["TRANSPARENTE", "COR"];
 
-const paginaSchema = z.object({
+const heroNavbarSchema = z.object({
   logoSvg: z.string().max(300_000).nullable().optional(),
   logoSvgCores: z.record(z.string(), z.string()).nullable().optional(),
-  realizadores: z.array(edicaoRealizadorSchema).optional(),
-  corFundoRealizadores: z.enum(PALETA_FUNDO).optional(),
   corFundoHero: z.enum(PALETA_FUNDO).optional(),
   opacidadeFundoHero: z.number().int().min(0).max(100).optional(),
   fundoHeroTipo: z.enum(TIPO_FUNDO).optional(),
@@ -29,24 +28,26 @@ const paginaSchema = z.object({
   faixaHeroTipoDesktop: z.enum(TIPO_FAIXA).optional(),
   corFaixaHeroDesktop: z.enum(PALETA_PUBLICA).optional(),
   imagemFaixaHeroDesktop: z.string().max(8_000_000).nullable().optional(),
+  larguraFaixaHeroDesktop: z.number().int().positive().optional(),
   faixaHeroTipoMobile: z.enum(TIPO_FAIXA).optional(),
   corFaixaHeroMobile: z.enum(PALETA_PUBLICA).optional(),
   imagemFaixaHeroMobile: z.string().max(8_000_000).nullable().optional(),
+  larguraFaixaHeroMobile: z.number().int().positive().optional(),
+  mostrarFaixaHero: z.boolean().optional(),
+  fundoNavTopoTipo: z.enum(TIPO_FUNDO_NAV).optional(),
+  corFundoNavTopo: z.enum(PALETA_FUNDO).optional(),
+  corTextoNavTopo: z.enum(PALETA_PUBLICA).optional(),
+  corIconeNavTopo: z.enum(PALETA_PUBLICA).optional(),
+  corBordaNavTopo: z.enum(PALETA_PUBLICA).optional(),
+  corFundoNavRolado: z.enum(PALETA_FUNDO).optional(),
+  corTextoNavRolado: z.enum(PALETA_PUBLICA).optional(),
+  corIconeNavRolado: z.enum(PALETA_PUBLICA).optional(),
+  corBordaNavRolado: z.enum(PALETA_PUBLICA).optional(),
+  navMesmoEstilo: z.boolean().optional(),
 });
 
-function realizadorParaPayload(realizador) {
-  const payload = { nome: realizador.nome.trim(), link: realizador.link?.trim() || undefined };
-  if (realizador.id) payload.id = realizador.id;
-  if (realizador.imagem && realizador.imagem.startsWith("data:image/")) payload.imagem = realizador.imagem;
-  return payload;
-}
-
-export default function PaginaEventoForm({ edicaoInicial }) {
+export default function HeroNavbarForm({ edicaoInicial }) {
   const { notificar } = useToast();
-  const [realizadores, setRealizadores] = useState(edicaoInicial.realizadores || []);
-  const [corFundoRealizadores, setCorFundoRealizadores] = useState(
-    edicaoInicial.corFundoRealizadores || "BARRO"
-  );
   const [logoSvg, setLogoSvg] = useState(edicaoInicial.logoSvg || null);
   const [logoSvgViewBox, setLogoSvgViewBox] = useState(edicaoInicial.logoSvgViewBox || null);
   const [logoSvgCores, setLogoSvgCores] = useState(edicaoInicial.logoSvgCores || null);
@@ -66,22 +67,32 @@ export default function PaginaEventoForm({ edicaoInicial }) {
   const [faixaHeroTipoDesktop, setFaixaHeroTipoDesktop] = useState(edicaoInicial.faixaHeroTipoDesktop || "COR");
   const [corFaixaHeroDesktop, setCorFaixaHeroDesktop] = useState(edicaoInicial.corFaixaHeroDesktop || "OCRE");
   const [imagemFaixaHeroDesktop, setImagemFaixaHeroDesktop] = useState(edicaoInicial.imagemFaixaHeroDesktop || null);
+  const [larguraFaixaHeroDesktop, setLarguraFaixaHeroDesktop] = useState(
+    edicaoInicial.larguraFaixaHeroDesktop ?? 96
+  );
   const [faixaHeroTipoMobile, setFaixaHeroTipoMobile] = useState(edicaoInicial.faixaHeroTipoMobile || "COR");
   const [corFaixaHeroMobile, setCorFaixaHeroMobile] = useState(edicaoInicial.corFaixaHeroMobile || "OCRE");
   const [imagemFaixaHeroMobile, setImagemFaixaHeroMobile] = useState(edicaoInicial.imagemFaixaHeroMobile || null);
+  const [larguraFaixaHeroMobile, setLarguraFaixaHeroMobile] = useState(
+    edicaoInicial.larguraFaixaHeroMobile ?? 40
+  );
+  const [mostrarFaixaHero, setMostrarFaixaHero] = useState(edicaoInicial.mostrarFaixaHero ?? true);
+  const [fundoNavTopoTipo, setFundoNavTopoTipo] = useState(edicaoInicial.fundoNavTopoTipo || "TRANSPARENTE");
+  const [corFundoNavTopo, setCorFundoNavTopo] = useState(edicaoInicial.corFundoNavTopo || "PAPEL");
+  const [corTextoNavTopo, setCorTextoNavTopo] = useState(edicaoInicial.corTextoNavTopo || "TINTA");
+  const [corIconeNavTopo, setCorIconeNavTopo] = useState(edicaoInicial.corIconeNavTopo || "TINTA");
+  const [corBordaNavTopo, setCorBordaNavTopo] = useState(edicaoInicial.corBordaNavTopo || "TINTA");
+  const [corFundoNavRolado, setCorFundoNavRolado] = useState(edicaoInicial.corFundoNavRolado || "CERRADO");
+  const [corTextoNavRolado, setCorTextoNavRolado] = useState(edicaoInicial.corTextoNavRolado || "PAPEL");
+  const [corIconeNavRolado, setCorIconeNavRolado] = useState(edicaoInicial.corIconeNavRolado || "BUZIO");
+  const [corBordaNavRolado, setCorBordaNavRolado] = useState(edicaoInicial.corBordaNavRolado || "BUZIO");
+  const [navMesmoEstilo, setNavMesmoEstilo] = useState(edicaoInicial.navMesmoEstilo || false);
   const [erros, setErros] = useState({});
 
-  // `overrides` só precisa trazer os campos que mudaram nesta chamada — os
-  // demais usam o valor atual do estado (fallback via `??`). logoSvg e as
-  // imagens de faixa ficam de fora desse fallback (undefined por padrão, a
-  // não ser que venham explícitas em overrides) pra não reenviar centenas de
-  // KB de imagem a cada edição de um campo não relacionado.
   async function salvar(overrides = {}) {
-    const resultado = paginaSchema.safeParse({
+    const resultado = heroNavbarSchema.safeParse({
       logoSvg: overrides.logoSvg,
       logoSvgCores: overrides.logoSvgCores,
-      realizadores: (overrides.realizadores ?? realizadores).map(realizadorParaPayload),
-      corFundoRealizadores: overrides.corFundoRealizadores ?? corFundoRealizadores,
       corFundoHero: overrides.corFundoHero ?? corFundoHero,
       opacidadeFundoHero: overrides.opacidadeFundoHero ?? opacidadeFundoHero,
       fundoHeroTipo: overrides.fundoHeroTipo ?? fundoHeroTipo,
@@ -92,9 +103,22 @@ export default function PaginaEventoForm({ edicaoInicial }) {
       faixaHeroTipoDesktop: overrides.faixaHeroTipoDesktop ?? faixaHeroTipoDesktop,
       corFaixaHeroDesktop: overrides.corFaixaHeroDesktop ?? corFaixaHeroDesktop,
       imagemFaixaHeroDesktop: overrides.imagemFaixaHeroDesktop,
+      larguraFaixaHeroDesktop: overrides.larguraFaixaHeroDesktop ?? larguraFaixaHeroDesktop,
       faixaHeroTipoMobile: overrides.faixaHeroTipoMobile ?? faixaHeroTipoMobile,
       corFaixaHeroMobile: overrides.corFaixaHeroMobile ?? corFaixaHeroMobile,
       imagemFaixaHeroMobile: overrides.imagemFaixaHeroMobile,
+      larguraFaixaHeroMobile: overrides.larguraFaixaHeroMobile ?? larguraFaixaHeroMobile,
+      mostrarFaixaHero: overrides.mostrarFaixaHero ?? mostrarFaixaHero,
+      fundoNavTopoTipo: overrides.fundoNavTopoTipo ?? fundoNavTopoTipo,
+      corFundoNavTopo: overrides.corFundoNavTopo ?? corFundoNavTopo,
+      corTextoNavTopo: overrides.corTextoNavTopo ?? corTextoNavTopo,
+      corIconeNavTopo: overrides.corIconeNavTopo ?? corIconeNavTopo,
+      corBordaNavTopo: overrides.corBordaNavTopo ?? corBordaNavTopo,
+      corFundoNavRolado: overrides.corFundoNavRolado ?? corFundoNavRolado,
+      corTextoNavRolado: overrides.corTextoNavRolado ?? corTextoNavRolado,
+      corIconeNavRolado: overrides.corIconeNavRolado ?? corIconeNavRolado,
+      corBordaNavRolado: overrides.corBordaNavRolado ?? corBordaNavRolado,
+      navMesmoEstilo: overrides.navMesmoEstilo ?? navMesmoEstilo,
     });
     if (!resultado.success) {
       setErros(extrairErros(resultado));
@@ -106,8 +130,6 @@ export default function PaginaEventoForm({ edicaoInicial }) {
       const resposta = await apiClient.patch(`/edicoes/${edicaoInicial.id}`, {
         numero: edicaoInicial.numero,
         nome: edicaoInicial.nome,
-        corFundoRealizadores: resultado.data.corFundoRealizadores,
-        realizadores: resultado.data.realizadores,
         corFundoHero: resultado.data.corFundoHero,
         opacidadeFundoHero: resultado.data.opacidadeFundoHero,
         fundoHeroTipo: resultado.data.fundoHeroTipo,
@@ -115,8 +137,21 @@ export default function PaginaEventoForm({ edicaoInicial }) {
         corBuzioHero: resultado.data.corBuzioHero,
         faixaHeroTipoDesktop: resultado.data.faixaHeroTipoDesktop,
         corFaixaHeroDesktop: resultado.data.corFaixaHeroDesktop,
+        larguraFaixaHeroDesktop: resultado.data.larguraFaixaHeroDesktop,
         faixaHeroTipoMobile: resultado.data.faixaHeroTipoMobile,
         corFaixaHeroMobile: resultado.data.corFaixaHeroMobile,
+        larguraFaixaHeroMobile: resultado.data.larguraFaixaHeroMobile,
+        mostrarFaixaHero: resultado.data.mostrarFaixaHero,
+        fundoNavTopoTipo: resultado.data.fundoNavTopoTipo,
+        corFundoNavTopo: resultado.data.corFundoNavTopo,
+        corTextoNavTopo: resultado.data.corTextoNavTopo,
+        corIconeNavTopo: resultado.data.corIconeNavTopo,
+        corBordaNavTopo: resultado.data.corBordaNavTopo,
+        corFundoNavRolado: resultado.data.corFundoNavRolado,
+        corTextoNavRolado: resultado.data.corTextoNavRolado,
+        corIconeNavRolado: resultado.data.corIconeNavRolado,
+        corBordaNavRolado: resultado.data.corBordaNavRolado,
+        navMesmoEstilo: resultado.data.navMesmoEstilo,
         ...(resultado.data.logoSvg !== undefined ? { logoSvg: resultado.data.logoSvg } : {}),
         ...(resultado.data.logoSvgCores !== undefined ? { logoSvgCores: resultado.data.logoSvgCores } : {}),
         ...(resultado.data.imagemFaixaHeroDesktop !== undefined
@@ -132,8 +167,6 @@ export default function PaginaEventoForm({ edicaoInicial }) {
           ? { imagemFundoHeroMobile: resultado.data.imagemFundoHeroMobile }
           : {}),
       });
-      setRealizadores(resposta.edicao.realizadores || []);
-      setCorFundoRealizadores(resposta.edicao.corFundoRealizadores);
       setLogoSvg(resposta.edicao.logoSvg || null);
       setLogoSvgViewBox(resposta.edicao.logoSvgViewBox || null);
       setLogoSvgCores(resposta.edicao.logoSvgCores || null);
@@ -147,39 +180,26 @@ export default function PaginaEventoForm({ edicaoInicial }) {
       setFaixaHeroTipoDesktop(resposta.edicao.faixaHeroTipoDesktop);
       setCorFaixaHeroDesktop(resposta.edicao.corFaixaHeroDesktop);
       setImagemFaixaHeroDesktop(resposta.edicao.imagemFaixaHeroDesktop || null);
+      setLarguraFaixaHeroDesktop(resposta.edicao.larguraFaixaHeroDesktop);
       setFaixaHeroTipoMobile(resposta.edicao.faixaHeroTipoMobile);
       setCorFaixaHeroMobile(resposta.edicao.corFaixaHeroMobile);
       setImagemFaixaHeroMobile(resposta.edicao.imagemFaixaHeroMobile || null);
+      setLarguraFaixaHeroMobile(resposta.edicao.larguraFaixaHeroMobile);
+      setMostrarFaixaHero(resposta.edicao.mostrarFaixaHero);
+      setFundoNavTopoTipo(resposta.edicao.fundoNavTopoTipo);
+      setCorFundoNavTopo(resposta.edicao.corFundoNavTopo);
+      setCorTextoNavTopo(resposta.edicao.corTextoNavTopo);
+      setCorIconeNavTopo(resposta.edicao.corIconeNavTopo);
+      setCorBordaNavTopo(resposta.edicao.corBordaNavTopo);
+      setCorFundoNavRolado(resposta.edicao.corFundoNavRolado);
+      setCorTextoNavRolado(resposta.edicao.corTextoNavRolado);
+      setCorIconeNavRolado(resposta.edicao.corIconeNavRolado);
+      setCorBordaNavRolado(resposta.edicao.corBordaNavRolado);
+      setNavMesmoEstilo(resposta.edicao.navMesmoEstilo);
       notificar("Página do evento atualizada com sucesso.");
     } catch (erro) {
       notificar(erro.message, "erro");
     }
-  }
-
-  function aoMudarRealizador(indice, campo, valor) {
-    setRealizadores((atual) => {
-      const novo = [...atual];
-      novo[indice] = { ...novo[indice], [campo]: valor };
-      if (campo === "imagem") salvar({ realizadores: novo });
-      return novo;
-    });
-  }
-
-  function aoAdicionarRealizador() {
-    setRealizadores((atual) => [...atual, { nome: "", imagem: null, link: "" }]);
-  }
-
-  function aoRemoverRealizador(indice) {
-    setRealizadores((atual) => {
-      const novo = atual.filter((_, i) => i !== indice);
-      salvar({ realizadores: novo });
-      return novo;
-    });
-  }
-
-  function aoMudarCorFundo(valor) {
-    setCorFundoRealizadores(valor);
-    salvar({ corFundoRealizadores: valor });
   }
 
   function aoMudarLogo(novoTexto) {
@@ -237,6 +257,11 @@ export default function PaginaEventoForm({ edicaoInicial }) {
     salvar({ imagemFaixaHeroDesktop: novaImagem });
   }
 
+  function aoMudarLarguraFaixaHeroDesktop(valor) {
+    setLarguraFaixaHeroDesktop(valor);
+    salvar({ larguraFaixaHeroDesktop: valor });
+  }
+
   function aoMudarFaixaHeroTipoMobile(valor) {
     setFaixaHeroTipoMobile(valor);
     salvar({ faixaHeroTipoMobile: valor });
@@ -249,6 +274,66 @@ export default function PaginaEventoForm({ edicaoInicial }) {
 
   function aoMudarImagemFaixaHeroMobile(novaImagem) {
     salvar({ imagemFaixaHeroMobile: novaImagem });
+  }
+
+  function aoMudarLarguraFaixaHeroMobile(valor) {
+    setLarguraFaixaHeroMobile(valor);
+    salvar({ larguraFaixaHeroMobile: valor });
+  }
+
+  function aoMudarMostrarFaixaHero(valor) {
+    setMostrarFaixaHero(valor);
+    salvar({ mostrarFaixaHero: valor });
+  }
+
+  function aoMudarFundoNavTopoTipo(valor) {
+    setFundoNavTopoTipo(valor);
+    salvar({ fundoNavTopoTipo: valor });
+  }
+
+  function aoMudarCorFundoNavTopo(valor) {
+    setCorFundoNavTopo(valor);
+    salvar({ corFundoNavTopo: valor });
+  }
+
+  function aoMudarCorTextoNavTopo(valor) {
+    setCorTextoNavTopo(valor);
+    salvar({ corTextoNavTopo: valor });
+  }
+
+  function aoMudarCorIconeNavTopo(valor) {
+    setCorIconeNavTopo(valor);
+    salvar({ corIconeNavTopo: valor });
+  }
+
+  function aoMudarCorBordaNavTopo(valor) {
+    setCorBordaNavTopo(valor);
+    salvar({ corBordaNavTopo: valor });
+  }
+
+  function aoMudarCorFundoNavRolado(valor) {
+    setCorFundoNavRolado(valor);
+    salvar({ corFundoNavRolado: valor });
+  }
+
+  function aoMudarCorTextoNavRolado(valor) {
+    setCorTextoNavRolado(valor);
+    salvar({ corTextoNavRolado: valor });
+  }
+
+  function aoMudarCorIconeNavRolado(valor) {
+    setCorIconeNavRolado(valor);
+    salvar({ corIconeNavRolado: valor });
+  }
+
+  function aoMudarCorBordaNavRolado(valor) {
+    setCorBordaNavRolado(valor);
+    salvar({ corBordaNavRolado: valor });
+  }
+
+  function aoMudarNavMesmoEstilo(valor) {
+    setNavMesmoEstilo(valor);
+    salvar({ navMesmoEstilo: valor });
   }
 
   return (
@@ -267,9 +352,12 @@ export default function PaginaEventoForm({ edicaoInicial }) {
         faixaHeroTipoDesktop={faixaHeroTipoDesktop}
         corFaixaHeroDesktop={corFaixaHeroDesktop}
         imagemFaixaHeroDesktop={imagemFaixaHeroDesktop}
+        larguraFaixaHeroDesktop={larguraFaixaHeroDesktop}
         faixaHeroTipoMobile={faixaHeroTipoMobile}
         corFaixaHeroMobile={corFaixaHeroMobile}
         imagemFaixaHeroMobile={imagemFaixaHeroMobile}
+        larguraFaixaHeroMobile={larguraFaixaHeroMobile}
+        mostrarFaixaHero={mostrarFaixaHero}
         erro={erros.logoSvg}
         aoMudarLogo={aoMudarLogo}
         aoMudarLogoCores={aoMudarLogoCores}
@@ -283,19 +371,34 @@ export default function PaginaEventoForm({ edicaoInicial }) {
         aoMudarFaixaHeroTipoDesktop={aoMudarFaixaHeroTipoDesktop}
         aoMudarCorFaixaHeroDesktop={aoMudarCorFaixaHeroDesktop}
         aoMudarImagemFaixaHeroDesktop={aoMudarImagemFaixaHeroDesktop}
+        aoMudarLarguraFaixaHeroDesktop={aoMudarLarguraFaixaHeroDesktop}
         aoMudarFaixaHeroTipoMobile={aoMudarFaixaHeroTipoMobile}
         aoMudarCorFaixaHeroMobile={aoMudarCorFaixaHeroMobile}
         aoMudarImagemFaixaHeroMobile={aoMudarImagemFaixaHeroMobile}
+        aoMudarLarguraFaixaHeroMobile={aoMudarLarguraFaixaHeroMobile}
+        aoMudarMostrarFaixaHero={aoMudarMostrarFaixaHero}
       />
-      <SecaoRealizadores
-        realizadores={realizadores}
-        corFundo={corFundoRealizadores}
-        erros={erros}
-        aoMudarRealizador={aoMudarRealizador}
-        aoMudarCorFundo={aoMudarCorFundo}
-        aoSalvar={() => salvar({})}
-        aoAdicionarRealizador={aoAdicionarRealizador}
-        aoRemoverRealizador={aoRemoverRealizador}
+      <SecaoNavegacao
+        fundoNavTopoTipo={fundoNavTopoTipo}
+        corFundoNavTopo={corFundoNavTopo}
+        corTextoNavTopo={corTextoNavTopo}
+        corIconeNavTopo={corIconeNavTopo}
+        corBordaNavTopo={corBordaNavTopo}
+        corFundoNavRolado={corFundoNavRolado}
+        corTextoNavRolado={corTextoNavRolado}
+        corIconeNavRolado={corIconeNavRolado}
+        corBordaNavRolado={corBordaNavRolado}
+        navMesmoEstilo={navMesmoEstilo}
+        aoMudarFundoNavTopoTipo={aoMudarFundoNavTopoTipo}
+        aoMudarCorFundoNavTopo={aoMudarCorFundoNavTopo}
+        aoMudarCorTextoNavTopo={aoMudarCorTextoNavTopo}
+        aoMudarCorIconeNavTopo={aoMudarCorIconeNavTopo}
+        aoMudarCorBordaNavTopo={aoMudarCorBordaNavTopo}
+        aoMudarCorFundoNavRolado={aoMudarCorFundoNavRolado}
+        aoMudarCorTextoNavRolado={aoMudarCorTextoNavRolado}
+        aoMudarCorIconeNavRolado={aoMudarCorIconeNavRolado}
+        aoMudarCorBordaNavRolado={aoMudarCorBordaNavRolado}
+        aoMudarNavMesmoEstilo={aoMudarNavMesmoEstilo}
       />
     </div>
   );

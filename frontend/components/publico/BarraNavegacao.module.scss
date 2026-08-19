@@ -6,18 +6,72 @@
   gap: 1.5rem;
   // horizontal soma a largura da faixa lateral fixa (ver .heroFaixa em
   // page.module.scss) com um respiro fixo, pra logo/links/Entrar nunca
-  // ficarem por baixo dela nem colados na borda.
-  padding: 0.85rem calc(var(--largura-faixa-hero, 0px) + 1.5rem);
-  background: transparent;
-  border-bottom: 2px solid transparent;
+  // ficarem por baixo dela nem colados na borda. --largura-faixa-hero-mobile-
+  // valor vem inline de BarraNavegacao.jsx (largura por edição, ver
+  // EdicaoExibidaContext.jsx); no fallback, cai pro --largura-faixa-hero
+  // herdado de layout.module.scss (0px em rotas sem esse ancestral, como
+  // (auth)). Nome próprio (não --largura-faixa-hero) de propósito — reusar o
+  // mesmo nome pra sobrescrever geraria autorreferência nesta regra (CSS
+  // considera `--x: var(--x, ...)` no mesmo elemento inválido).
+  --largura-faixa-hero-resolvida: var(--largura-faixa-hero-mobile-valor, var(--largura-faixa-hero, 0px));
+  padding: 0.85rem calc(var(--largura-faixa-hero-resolvida) + 1.5rem);
   transition: background-color 0.4s ease, border-color 0.4s ease;
+
+  // Cores customizáveis por edição (ver SecaoNavegacao.jsx no admin) — cada
+  // eixo é uma custom property própria, resolvida em JS (BarraNavegacao.jsx)
+  // pra refletir o estado ativo (Topo ou Rolado, conforme o scroll e
+  // navMesmoEstilo) através de um único conjunto de atributos data-cor-*.
+  // Os defaults abaixo reproduzem a aparência original (nav transparente no
+  // topo, texto/ícone --tinta) pra edições sem esses campos configurados.
+  --cor-fundo-nav: transparent;
+  --cor-texto-nav: var(--tinta);
+  --cor-icone-nav: var(--tinta);
+  --cor-borda-nav: var(--tinta);
+  background-color: var(--cor-fundo-nav);
+  border-bottom: 2px solid var(--cor-borda-nav);
+
+  &[data-cor-fundo-nav="TINTA"] { --cor-fundo-nav: var(--tinta); }
+  &[data-cor-fundo-nav="BARRO"] { --cor-fundo-nav: var(--barro); }
+  &[data-cor-fundo-nav="OCRE"] { --cor-fundo-nav: var(--ocre); }
+  &[data-cor-fundo-nav="PAPEL"] { --cor-fundo-nav: var(--papel); }
+  &[data-cor-fundo-nav="CERRADO"] { --cor-fundo-nav: var(--cerrado); }
+
+  &[data-cor-texto-nav="BARRO"] { --cor-texto-nav: var(--barro); }
+  &[data-cor-texto-nav="OCRE"] { --cor-texto-nav: var(--ocre); }
+  &[data-cor-texto-nav="BUZIO"] { --cor-texto-nav: var(--buzio); }
+  &[data-cor-texto-nav="AREIA"] { --cor-texto-nav: var(--areia); }
+  &[data-cor-texto-nav="PAPEL"] { --cor-texto-nav: var(--papel); }
+  &[data-cor-texto-nav="CERRADO"] { --cor-texto-nav: var(--cerrado); }
+
+  &[data-cor-icone-nav="BARRO"] { --cor-icone-nav: var(--barro); }
+  &[data-cor-icone-nav="OCRE"] { --cor-icone-nav: var(--ocre); }
+  &[data-cor-icone-nav="BUZIO"] { --cor-icone-nav: var(--buzio); }
+  &[data-cor-icone-nav="AREIA"] { --cor-icone-nav: var(--areia); }
+  &[data-cor-icone-nav="PAPEL"] { --cor-icone-nav: var(--papel); }
+  &[data-cor-icone-nav="CERRADO"] { --cor-icone-nav: var(--cerrado); }
+
+  &[data-cor-borda-nav="BARRO"] { --cor-borda-nav: var(--barro); }
+  &[data-cor-borda-nav="OCRE"] { --cor-borda-nav: var(--ocre); }
+  &[data-cor-borda-nav="BUZIO"] { --cor-borda-nav: var(--buzio); }
+  &[data-cor-borda-nav="AREIA"] { --cor-borda-nav: var(--areia); }
+  &[data-cor-borda-nav="PAPEL"] { --cor-borda-nav: var(--papel); }
+  &[data-cor-borda-nav="CERRADO"] { --cor-borda-nav: var(--cerrado); }
+
+  // Precisa vir depois dos mapeamentos de cor acima (mesma especificidade,
+  // ganha por ordem no arquivo) pra zerar fundo/borda mesmo que
+  // data-cor-fundo-nav/data-cor-borda-nav também estejam presentes (o valor
+  // armazenado continua existindo, só não é usado enquanto for transparente).
+  &[data-fundo-nav-tipo="TRANSPARENTE"] {
+    --cor-fundo-nav: transparent;
+    --cor-borda-nav: transparent;
+  }
 }
 
-// fundo verde + friso dourado só entram quando há conteúdo por baixo pra
-// justificar (rolou a página) — em rotas sem hero, fica sempre assim.
-.comFundo {
-  background: var(--cerrado);
-  border-bottom-color: var(--buzio);
+// Mesmo breakpoint de .heroFaixa em page.module.scss.
+@media (min-width: 1000px) {
+  .barra {
+    --largura-faixa-hero-resolvida: var(--largura-faixa-hero-desktop-valor, var(--largura-faixa-hero, 0px));
+  }
 }
 
 .sobreposta {
@@ -41,12 +95,8 @@
   display: block;
   width: 18px;
   height: 20px;
-  color: var(--tinta);
+  color: var(--cor-icone-nav);
   transition: color 0.4s ease;
-}
-
-.comFundo .buzioIcone {
-  color: var(--buzio);
 }
 
 // o painel mobile é --papel (não mais um bloco de cor), então o ícone
@@ -94,7 +144,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--tinta);
+  color: var(--cor-icone-nav);
   transition: color 0.4s ease;
 
   &:focus-visible {
@@ -111,14 +161,6 @@
   height: 2px;
   background: currentColor;
   border-radius: 1px;
-}
-
-.comFundo .hamburguer {
-  color: var(--buzio);
-
-  &:focus-visible {
-    outline-color: var(--buzio);
-  }
 }
 
 .menuAberto .hamburguer {
@@ -146,7 +188,7 @@
   a {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--tinta);
+    color: var(--cor-texto-nav);
     text-decoration: none;
     white-space: nowrap;
     transition: color 0.4s ease;
@@ -162,14 +204,6 @@
   }
 }
 
-.comFundo .ancoras a {
-  color: var(--papel);
-
-  &:focus-visible {
-    outline-color: var(--buzio);
-  }
-}
-
 .entrar {
   position: relative;
   flex-shrink: 0;
@@ -178,7 +212,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--tinta);
+  color: var(--cor-texto-nav);
   text-decoration: none;
   transition: color 0.4s ease;
 
@@ -194,14 +228,6 @@
   &:focus-visible {
     outline: 2px solid var(--barro);
     outline-offset: 2px;
-  }
-}
-
-.comFundo .entrar {
-  color: var(--papel);
-
-  &:focus-visible {
-    outline-color: var(--buzio);
   }
 }
 
@@ -259,6 +285,7 @@
   width: 100%;
   padding: 1rem;
   background: var(--barro);
+  border-radius: 8px;
   color: var(--papel);
   font-size: 1.05rem;
   font-weight: 700;

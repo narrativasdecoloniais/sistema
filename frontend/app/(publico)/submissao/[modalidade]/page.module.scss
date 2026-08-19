@@ -175,14 +175,14 @@
   display: flex;
 }
 
-// retangular, cantos retos — não clicável porque ainda não existe fluxo de
-// submissão por trás
+// não clicável porque ainda não existe fluxo de submissão por trás
 .cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.9rem 2rem;
   background: var(--barro);
+  border-radius: 8px;
   color: var(--papel);
   font-size: 1rem;
   font-weight: 700;

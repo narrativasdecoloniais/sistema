@@ -136,6 +136,7 @@
   justify-content: center;
   padding: 0.7rem 1.5rem;
   background: var(--barro);
+  border-radius: 8px;
   color: var(--papel);
   font-size: 0.9rem;
   font-weight: 700;
@@ -163,9 +164,9 @@
   color: var(--texto-suave);
 }
 
-// Pessoas envolvidas: foto em moldura quadrada, cantos retos — coerente com
-// a estética de cartaz/stencil (sem avatares redondos, sem orgânico). Mesmo
-// padrão do cartão de convidados especiais da submissão por Conversatório.
+// Pessoas envolvidas: foto redonda (pedido da cliente) — exceção ao raio
+// máx. de 6px do DESIGN.md, que já libera avatar de usuário totalmente
+// arredondado.
 .convidadosGrade {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -195,6 +196,7 @@
   overflow: hidden;
   background: var(--areia);
   border: 1px solid var(--ocre);
+  border-radius: 50%;
 }
 
 .convidadoImagem {

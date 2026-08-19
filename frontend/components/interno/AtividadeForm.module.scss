@@ -82,20 +82,117 @@
   color: var(--texto);
 }
 
-.cartaoPessoa {
+.grupoPessoas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tituloGrupo {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.linhaPessoa {
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--fundo);
+  overflow: hidden;
+}
+
+.cabecalhoPessoa {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.controlesReordenar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.botaoReordenar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--superficie);
+    color: var(--texto);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.resumoPessoa {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover {
+    background: var(--superficie);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.textoResumo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.1rem;
+}
+
+.nomeResumo {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.descricaoResumo {
+  font-size: 0.8125rem;
+  color: var(--texto-suave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.corpoExpandido {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
   padding: 1rem;
-  border: 1px solid var(--borda);
-  border-radius: 6px;
-  background: var(--fundo);
-}
-
-.rotuloSessao {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--texto-suave);
+  border-top: 1px solid var(--borda);
 }
 
 .botaoRemoverPessoa {

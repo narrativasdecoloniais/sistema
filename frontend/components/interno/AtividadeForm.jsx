@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "primereact/button";
 import CampoTexto from "./CampoTexto";
@@ -9,9 +9,9 @@ import CampoArea from "./CampoArea";
 import CampoSelecao from "./CampoSelecao";
 import CampoCheckbox from "./CampoCheckbox";
 import Campo from "@/components/forms/Campo";
-import CampoFoto from "@/components/forms/CampoFoto";
 import Alerta from "@/components/forms/Alerta";
 import ModalConfirmacao from "./ModalConfirmacao";
+import PessoaEnvolvidaLinha from "./PessoaEnvolvidaLinha";
 import { apiClient } from "@/lib/apiClient";
 import { atividadeSchema, extrairErros } from "@/lib/validacao";
 import { gerarSlug } from "@/lib/slug";
@@ -40,8 +40,13 @@ function estadoInicial(atividadeInicial) {
     vagas: atividadeInicial?.vagas ?? null,
     inicioAtividade: atividadeInicial?.inicioAtividade || "",
     fimAtividade: atividadeInicial?.fimAtividade || "",
+    // localId é só de identidade na UI (chave React, linha expandida) —
+    // pessoa nova ganha um UUID cliente-only; pessoa existente reusa o id
+    // do banco, que já é estável. Nunca é lido pelo backend: o zod (modo
+    // strip por padrão) descarta a chave antes do envio.
     pessoas: (atividadeInicial?.pessoas || []).map((pessoa) => ({
       id: pessoa.id,
+      localId: pessoa.id,
       nome: pessoa.nome || "",
       imagem: pessoa.imagem || null,
       descricao: pessoa.descricao || "",
@@ -77,6 +82,26 @@ function paraPayload(dados, atividadeInicial) {
   };
 }
 
+// Espelha o algoritmo de agruparPessoasPorTipoParticipacao
+// (frontend/lib/publico.js): agrupa na ordem de primeiro aparecimento no
+// array, não na ordem do catálogo de tipos, pra essa listagem ser um
+// preview fiel da ordem que sai na página pública.
+function agruparPessoasPorTipo(pessoas, tiposParticipacao) {
+  const nomesPorId = new Map(tiposParticipacao.map((tipo) => [tipo.id, tipo.nome]));
+  const grupos = new Map();
+
+  pessoas.forEach((pessoa, indiceFlat) => {
+    const chave = pessoa.tipoParticipacaoId || "sem-tipo";
+    const rotulo = pessoa.tipoParticipacaoId
+      ? nomesPorId.get(pessoa.tipoParticipacaoId) || "Tipo removido"
+      : "Outros participantes";
+    if (!grupos.has(chave)) grupos.set(chave, { chave, rotulo, itens: [] });
+    grupos.get(chave).itens.push({ pessoa, indiceFlat });
+  });
+
+  return Array.from(grupos.values());
+}
+
 export default function AtividadeForm({
   edicaoId,
   atividadeInicial,
@@ -95,6 +120,12 @@ export default function AtividadeForm({
   const [salvando, setSalvando] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [pessoaExpandidaId, setPessoaExpandidaId] = useState(null);
+
+  const gruposPessoas = useMemo(
+    () => agruparPessoasPorTipo(dados.pessoas, tiposParticipacao),
+    [dados.pessoas, tiposParticipacao]
+  );
 
   async function aoConfirmarExclusao() {
     setExcluindo(true);
@@ -155,20 +186,58 @@ export default function AtividadeForm({
   }
 
   function aoAdicionarPessoa() {
+    const localId = crypto.randomUUID();
     setDados((atual) => ({
       ...atual,
       pessoas: [
         ...atual.pessoas,
-        { nome: "", imagem: null, descricao: "", breveDescricao: "", tipoParticipacaoId: "" },
+        { localId, nome: "", imagem: null, descricao: "", breveDescricao: "", tipoParticipacaoId: "" },
       ],
     }));
+    // pessoa nova ainda não tem nome — deixa aberta pra não virar uma linha
+    // em branco fechada, com aparência quebrada.
+    setPessoaExpandidaId(localId);
   }
 
   function aoRemoverPessoa(indice) {
+    const localId = dados.pessoas[indice]?.localId;
     setDados((atual) => ({
       ...atual,
       pessoas: atual.pessoas.filter((_, i) => i !== indice),
     }));
+    setPessoaExpandidaId((atual) => (atual === localId ? null : atual));
+  }
+
+  function aoAlternarExpandirPessoa(localId) {
+    setPessoaExpandidaId((atual) => (atual === localId ? null : localId));
+  }
+
+  // Troca de posição, no array flat, a pessoa movida com a vizinha
+  // adjacente dentro do MESMO tipo (preservando a ordem relativa atual do
+  // grupo) — nunca mexe em pessoas de outro tipo, então a ordem das seções
+  // (definida por qual tipo aparece primeiro no array) nunca é afetada por
+  // essa troca.
+  function moverPessoa(localId, direcao) {
+    setDados((atual) => {
+      const { pessoas } = atual;
+      const indiceAtual = pessoas.findIndex((pessoa) => pessoa.localId === localId);
+      if (indiceAtual === -1) return atual;
+
+      const chave = pessoas[indiceAtual].tipoParticipacaoId || "sem-tipo";
+      const indicesGrupo = [];
+      pessoas.forEach((pessoa, indice) => {
+        if ((pessoa.tipoParticipacaoId || "sem-tipo") === chave) indicesGrupo.push(indice);
+      });
+
+      const posicaoGrupo = indicesGrupo.indexOf(indiceAtual);
+      const posicaoAlvo = posicaoGrupo + direcao;
+      if (posicaoAlvo < 0 || posicaoAlvo >= indicesGrupo.length) return atual;
+
+      const indiceAlvo = indicesGrupo[posicaoAlvo];
+      const novasPessoas = [...pessoas];
+      [novasPessoas[indiceAtual], novasPessoas[indiceAlvo]] = [novasPessoas[indiceAlvo], novasPessoas[indiceAtual]];
+      return { ...atual, pessoas: novasPessoas };
+    });
   }
 
   async function aoSubmeter(evento) {
@@ -333,61 +402,25 @@ export default function AtividadeForm({
             participação para poder classificar as pessoas envolvidas (opcional).
           </p>
         )}
-        {dados.pessoas.map((pessoa, indice) => (
-          <div key={pessoa.id || indice} className={styles.cartaoPessoa}>
-            <CampoFoto
-              id={`pessoa-imagem-${indice}`}
-              rotulo="Foto"
-              usuario={{ nome: pessoa.nome }}
-              valor={pessoa.imagem}
-              onChange={(imagem) => aoMudarPessoa(indice, "imagem", imagem)}
-              erro={erros[`pessoas.${indice}.imagem`]}
-            />
-            <CampoTexto
-              id={`pessoa-nome-${indice}`}
-              rotulo="Nome"
-              value={pessoa.nome}
-              onChange={(evento) => aoMudarPessoa(indice, "nome", evento.target.value)}
-              erro={erros[`pessoas.${indice}.nome`]}
-            />
-            <CampoSelecao
-              id={`pessoa-tipo-participacao-${indice}`}
-              rotulo="Tipo de participação (opcional)"
-              value={pessoa.tipoParticipacaoId}
-              onChange={(evento) => aoMudarPessoa(indice, "tipoParticipacaoId", evento.target.value)}
-              erro={erros[`pessoas.${indice}.tipoParticipacaoId`]}
-            >
-              <option value="">Nenhum</option>
-              {tiposParticipacao.map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nome}
-                </option>
-              ))}
-            </CampoSelecao>
-            <CampoTexto
-              id={`pessoa-breve-descricao-${indice}`}
-              rotulo="Breve descrição"
-              value={pessoa.breveDescricao}
-              onChange={(evento) => aoMudarPessoa(indice, "breveDescricao", evento.target.value)}
-              erro={erros[`pessoas.${indice}.breveDescricao`]}
-            />
-            <CampoArea
-              id={`pessoa-descricao-${indice}`}
-              rotulo="Descrição"
-              linhas={3}
-              value={pessoa.descricao}
-              onChange={(evento) => aoMudarPessoa(indice, "descricao", evento.target.value)}
-              erro={erros[`pessoas.${indice}.descricao`]}
-            />
-            <button
-              type="button"
-              className={styles.botaoRemoverPessoa}
-              onClick={() => aoRemoverPessoa(indice)}
-              aria-label="Remover pessoa"
-            >
-              <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
-              Remover pessoa
-            </button>
+        {gruposPessoas.map((grupo) => (
+          <div key={grupo.chave} className={styles.grupoPessoas}>
+            <span className={styles.tituloGrupo}>{grupo.rotulo}</span>
+            {grupo.itens.map(({ pessoa, indiceFlat }, posicaoGrupo) => (
+              <PessoaEnvolvidaLinha
+                key={pessoa.localId}
+                pessoa={pessoa}
+                indiceFlat={indiceFlat}
+                expandida={pessoaExpandidaId === pessoa.localId}
+                podeSubir={posicaoGrupo > 0}
+                podeDescer={posicaoGrupo < grupo.itens.length - 1}
+                tiposParticipacao={tiposParticipacao}
+                erros={erros}
+                aoAlternarExpandir={() => aoAlternarExpandirPessoa(pessoa.localId)}
+                aoMudarCampo={(campo, valor) => aoMudarPessoa(indiceFlat, campo, valor)}
+                aoMover={(direcao) => moverPessoa(pessoa.localId, direcao)}
+                aoRemover={() => aoRemoverPessoa(indiceFlat)}
+              />
+            ))}
           </div>
         ))}
         <Button

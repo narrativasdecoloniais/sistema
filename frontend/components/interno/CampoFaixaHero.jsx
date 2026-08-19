@@ -1,6 +1,7 @@
 import CampoLogo from "./CampoLogo";
 import CampoCorSecao, { OPCOES_COR_PUBLICA } from "./CampoCorSecao";
 import CampoRadioSecao from "./CampoRadioSecao";
+import CampoNumero from "./CampoNumero";
 import stylesCampo from "./CampoPrime.module.scss";
 import styles from "./EdicaoForm.module.scss";
 
@@ -15,7 +16,18 @@ const OPCOES_TIPO_FAIXA = [
 // (ver SecaoHero.jsx: a faixa fica bem mais estreita no mobile, então o
 // gestor pode preferir só cor sólida lá e uma imagem no desktop, ou vice-versa,
 // ou nem mostrar a faixa em algum dos dois).
-export default function CampoFaixaHero({ id, titulo, tipo, cor, imagem, aoMudarTipo, aoMudarCor, aoMudarImagem }) {
+export default function CampoFaixaHero({
+  id,
+  titulo,
+  tipo,
+  cor,
+  imagem,
+  largura,
+  aoMudarTipo,
+  aoMudarCor,
+  aoMudarImagem,
+  aoMudarLargura,
+}) {
   const usaImagem = tipo === "IMAGEM";
   const usaCor = tipo === "COR";
 
@@ -28,6 +40,15 @@ export default function CampoFaixaHero({ id, titulo, tipo, cor, imagem, aoMudarT
         opcoes={OPCOES_TIPO_FAIXA}
         onChange={aoMudarTipo}
       />
+      {tipo !== "NENHUMA" && (
+        <CampoNumero
+          id={`${id}-largura`}
+          rotulo="Largura da faixa (px)"
+          value={largura}
+          onValueChange={(evento) => aoMudarLargura(evento.value)}
+          min={1}
+        />
+      )}
       {usaImagem && (
         <>
           <CampoLogo id={`${id}-imagem`} rotulo="Imagem da faixa" valor={imagem} onChange={aoMudarImagem} />

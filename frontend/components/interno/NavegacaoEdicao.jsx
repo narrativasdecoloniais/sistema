@@ -8,6 +8,12 @@ import {
   Users,
   ClipboardList,
   Globe,
+  Info,
+  LayoutGrid,
+  Layers,
+  CalendarRange,
+  Newspaper,
+  Building2,
   CalendarDays,
   FileText,
   Inbox,
@@ -45,12 +51,54 @@ function montarGrupos(base) {
       titulo: "Pré-evento",
       itens: [
         { href: `${base}/atividades`, rotulo: "Atividades", Icone: ClipboardList, secao: "ATIVIDADES" },
-        { href: `${base}/pagina`, rotulo: "Página do evento", Icone: Globe, secao: "PAGINA_EVENTO" },
+        {
+          rotulo: "Página do evento",
+          Icone: Globe,
+          subitens: [
+            { href: `${base}/pagina/hero`, rotulo: "Hero + Navbar", Icone: Globe, secao: "PAGINA_EVENTO" },
+            {
+              href: `${base}/pagina/apresentacao`,
+              rotulo: "Apresentação",
+              Icone: Info,
+              secao: "PAGINA_APRESENTACAO",
+            },
+            {
+              href: `${base}/pagina/modalidades`,
+              rotulo: "Modalidades",
+              Icone: LayoutGrid,
+              secao: "PAGINA_MODALIDADES",
+            },
+            {
+              href: `${base}/pagina/agenda`,
+              rotulo: "Agenda/Programação",
+              Icone: CalendarRange,
+              secao: "PAGINA_AGENDA",
+            },
+            {
+              href: `${base}/pagina/publicacoes`,
+              rotulo: "Publicações",
+              Icone: Newspaper,
+              secao: "PAGINA_PUBLICACOES",
+            },
+            {
+              href: `${base}/pagina/realizadores`,
+              rotulo: "Realizadores",
+              Icone: Building2,
+              secao: "PAGINA_REALIZADORES",
+            },
+          ],
+        },
         { href: `${base}/programacao`, rotulo: "Programação", Icone: CalendarDays, secao: "PROGRAMACAO" },
         {
           rotulo: "Submissões",
           Icone: FileText,
           subitens: [
+            {
+              href: `${base}/modalidades-submissao`,
+              rotulo: "Modalidades de submissão",
+              Icone: Layers,
+              secao: "SUBMISSOES_MODALIDADES",
+            },
             {
               href: `${base}/submissoes/recebimento`,
               rotulo: "Recebimento",
@@ -148,9 +196,29 @@ export default function NavegacaoEdicao({ idEdicaoAtual, usuario }) {
   const pathname = usePathname();
   const base = `/admin/edicoes/${idEdicaoAtual}`;
   const grupos = filtrarPorPermissao(montarGrupos(base), usuario);
-  const [submissoesAberto, setSubmissoesAberto] = useState(
-    pathname.startsWith(`${base}/submissoes/`)
-  );
+  // Set (não um boolean único) porque agora há mais de um item com
+  // subitens (Submissões, Página do evento) — cada um abre/fecha
+  // independente. Aberto por padrão quando a rota atual já está dentro dele.
+  const [abertos, setAbertos] = useState(() => {
+    const iniciais = new Set();
+    for (const grupo of grupos) {
+      for (const item of grupo.itens) {
+        if (item.subitens?.some((sub) => pathname.startsWith(sub.href))) {
+          iniciais.add(item.rotulo);
+        }
+      }
+    }
+    return iniciais;
+  });
+
+  function alternarAberto(rotulo) {
+    setAbertos((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(rotulo)) novo.delete(rotulo);
+      else novo.add(rotulo);
+      return novo;
+    });
+  }
 
   return (
     <>
@@ -163,8 +231,8 @@ export default function NavegacaoEdicao({ idEdicaoAtual, usuario }) {
                 <button
                   type="button"
                   className={styles.item}
-                  aria-expanded={submissoesAberto}
-                  onClick={() => setSubmissoesAberto((atual) => !atual)}
+                  aria-expanded={abertos.has(item.rotulo)}
+                  onClick={() => alternarAberto(item.rotulo)}
                 >
                   <item.Icone size={18} strokeWidth={1.5} aria-hidden="true" />
                   <span className={styles.rotulo}>{item.rotulo}</span>
@@ -172,10 +240,10 @@ export default function NavegacaoEdicao({ idEdicaoAtual, usuario }) {
                     size={16}
                     strokeWidth={1.5}
                     aria-hidden="true"
-                    className={`${styles.seta} ${submissoesAberto ? styles.setaAberta : ""}`}
+                    className={`${styles.seta} ${abertos.has(item.rotulo) ? styles.setaAberta : ""}`}
                   />
                 </button>
-                {submissoesAberto && (
+                {abertos.has(item.rotulo) && (
                   <div className={styles.subitens}>
                     {item.subitens.map((sub) => (
                       <Link

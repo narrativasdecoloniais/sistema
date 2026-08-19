@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 import DetalheAtividade from "@/components/publico/DetalheAtividade";
 import DefinirEdicaoExibida from "@/components/publico/DefinirEdicaoExibida";
-import { buscarAtividadeDaEdicao, buscarEdicaoAtual, buscarEdicaoPorSlug } from "@/lib/publico";
+import {
+  buscarAtividadeDaEdicao,
+  buscarEdicaoAtual,
+  buscarEdicaoPorSlug,
+  montarPropsNavegacao,
+} from "@/lib/publico";
 
 export async function generateMetadata({ params }) {
   const atividade = await buscarAtividadeDaEdicao(params.slug, params.atividadeSlug);
@@ -20,7 +25,7 @@ export default async function PaginaAtividadeDaEdicao({ params }) {
 
   return (
     <>
-      <DefinirEdicaoExibida numero={edicao?.numero} />
+      <DefinirEdicaoExibida numero={edicao?.numero} navegacao={montarPropsNavegacao(edicao)} />
       <DetalheAtividade atividade={atividade} permiteInscricao={atividade.edicaoId === edicaoAtual?.id} />
     </>
   );

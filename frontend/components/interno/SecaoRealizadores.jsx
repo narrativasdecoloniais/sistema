@@ -3,15 +3,18 @@ import { Button } from "primereact/button";
 import CampoTexto from "./CampoTexto";
 import CampoLogo from "./CampoLogo";
 import CampoCorSecao from "./CampoCorSecao";
+import CampoCheckbox from "./CampoCheckbox";
 import CabecalhoSecao from "./CabecalhoSecao";
 import styles from "./EdicaoForm.module.scss";
 
 export default function SecaoRealizadores({
   realizadores,
   corFundo,
+  mostrarFaixa,
   erros,
   aoMudarRealizador,
   aoMudarCorFundo,
+  aoMudarMostrarFaixa,
   aoSalvar,
   aoAdicionarRealizador,
   aoRemoverRealizador,
@@ -29,6 +32,12 @@ export default function SecaoRealizadores({
           rotulo="Cor de fundo da seção"
           valor={corFundo}
           onChange={aoMudarCorFundo}
+        />
+        <CampoCheckbox
+          id="mostrarFaixaRealizadores"
+          rotulo="Mostrar a faixa lateral (definida no Hero) enquanto esta seção está em tela"
+          checked={mostrarFaixa}
+          onChange={aoMudarMostrarFaixa}
         />
         <div className={styles.listaCartoes}>
           {realizadores.map((realizador, indice) => (

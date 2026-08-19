@@ -12,11 +12,22 @@ export const GRUPOS_SECOES_ADMIN = [
     titulo: "Pré-evento",
     itens: [
       { valor: "ATIVIDADES", rotulo: "Atividades" },
-      { valor: "PAGINA_EVENTO", rotulo: "Página do evento" },
+      {
+        rotulo: "Página do evento",
+        subitens: [
+          { valor: "PAGINA_EVENTO", rotulo: "Hero + Navbar" },
+          { valor: "PAGINA_APRESENTACAO", rotulo: "Apresentação" },
+          { valor: "PAGINA_MODALIDADES", rotulo: "Modalidades" },
+          { valor: "PAGINA_AGENDA", rotulo: "Agenda/Programação" },
+          { valor: "PAGINA_PUBLICACOES", rotulo: "Publicações" },
+          { valor: "PAGINA_REALIZADORES", rotulo: "Realizadores" },
+        ],
+      },
       { valor: "PROGRAMACAO", rotulo: "Programação" },
       {
         rotulo: "Submissões",
         subitens: [
+          { valor: "SUBMISSOES_MODALIDADES", rotulo: "Modalidades de submissão" },
           { valor: "SUBMISSOES_RECEBIMENTO", rotulo: "Recebimento" },
           { valor: "SUBMISSOES_AVALIACAO", rotulo: "Avaliação" },
           { valor: "SUBMISSOES_RESULTADO", rotulo: "Resultado" },
