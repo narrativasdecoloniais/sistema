@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "CorSecao" ADD VALUE 'BUZIO';
+ALTER TYPE "CorSecao" ADD VALUE 'AREIA';

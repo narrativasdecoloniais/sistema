@@ -7,6 +7,7 @@ const router = Router();
 
 router.get("/edicao-atual", publicoController.buscarEdicaoAtual);
 router.get("/edicoes-anteriores", publicoController.listarEdicoesAnteriores);
+router.get("/programas-pos-graduacao", publicoController.listarProgramasPosGraduacao);
 router.get("/edicao-atual/atividades", publicoController.listarAtividades);
 router.get("/edicao-atual/atividades/:slug", publicoController.buscarAtividadePorSlug);
 router.get("/edicao-atual/modalidades-submissao", publicoController.listarModalidadesSubmissao);

@@ -47,6 +47,7 @@ enum SecaoAdmin {
   PAGINA_AGENDA
   PAGINA_PUBLICACOES
   PAGINA_REALIZADORES
+  PAGINA_APOIO
   PROGRAMACAO
   // Cadastro do catálogo de modalidades/áreas de submissão (antes de abrir
   // as inscrições) — distinto dos SUBMISSOES_* abaixo, que são sobre
@@ -65,6 +66,7 @@ enum SecaoAdmin {
   CONFIGURACOES_EVENTO
   TIPOS_ATIVIDADE
   TIPOS_PARTICIPACAO
+  PROGRAMAS_POS_GRADUACAO
 }
 
 enum ModalidadeEdicao {
@@ -82,21 +84,23 @@ enum PapelPessoaArea {
   CONVIDADO
 }
 
-// Paleta curada de fundo para seções da página pública da edição (DESIGN.md)
-// — --areia é proposital ficar de fora (DESIGN.md proíbe usá-la como faixa
-// de seção) e --buzio também (é assinatura, não fundo).
+// Paleta de fundo para seções da página pública da edição (DESIGN.md) —
+// mesma paleta completa de CorPublica (abaixo). Mantida como enum
+// separado porque fundo e texto/ícone são usos semanticamente distintos,
+// mesmo com os mesmos valores hoje.
 enum CorSecao {
   PAPEL
   TINTA
   BARRO
   OCRE
+  BUZIO
+  AREIA
   CERRADO
 }
 
-// Paleta pública completa (inclui --buzio, cor de assinatura, e --areia) —
-// usada em campos de texto/ícone da Hero, onde --buzio precisa estar
-// disponível como opção (é a cor padrão do próprio búzio). CorSecao (acima)
-// fica reservado pra fundo de seção, que não pode usar --buzio nem --areia.
+// Paleta pública completa — usada em campos de texto/ícone da Hero, onde
+// --buzio precisa estar disponível como opção (é a cor padrão do próprio
+// búzio).
 enum CorPublica {
   TINTA
   BARRO
@@ -202,10 +206,17 @@ model Edicao {
   fusoHorario          String?           @default("America/Sao_Paulo")
   notificarAlteracoes  Boolean           @default(true)
   corFundoRealizadores CorSecao          @default(BARRO)
+  // Opacidade (0-100) do fundo de Realizadores — mesmo mecanismo de
+  // opacidadeFundoHero acima (mistura corFundoRealizadores com --papel via
+  // CSS color-mix(), ver .realizadores em page.module.scss).
+  opacidadeFundoRealizadores Int         @default(100)
   // Liga/desliga a faixa lateral (definida em faixaHero*) nesta seção — mesmo
   // mecanismo de mostrarFaixaApresentacao/Modalidades/Agenda/Publicacoes
   // abaixo, ver FaixaLateral em PaginaInicialConteudo.jsx.
   mostrarFaixaRealizadores Boolean       @default(true)
+  corFundoApoiadores CorSecao          @default(BARRO)
+  opacidadeFundoApoiadores Int         @default(100)
+  mostrarFaixaApoiadores Boolean       @default(true)
   // Logo customizada da Hero, enviada pelo gestor em SVG. Guardada como texto
   // (não no GCS) porque precisa ser injetada inline no DOM para reaproveitar
   // o efeito de reveal mascarado (rolo de tinta) — uma URL consumida via
@@ -220,10 +231,8 @@ model Edicao {
   // cada cor depois sem precisar reenviar o arquivo (Logo.jsx aplica esse
   // mapa como custom properties inline).
   logoSvgCores         Json?
-  // Cores da Hero, customizáveis por edição — fundo reusa a paleta de 5
-  // tokens de CorSecao; texto e búzio usam a paleta pública completa
-  // (CorPublica), já que o búzio precisa poder usar sua própria cor de
-  // assinatura (--buzio). PAPEL como default de corFundoHero preserva a
+  // Cores da Hero, customizáveis por edição — fundo usa CorSecao; texto e
+  // búzio usam CorPublica. PAPEL como default de corFundoHero preserva a
   // aparência atual (a Hero hoje não define fundo próprio).
   corFundoHero         CorSecao          @default(PAPEL)
   // Opacidade (0-100) do fundo da Hero — mistura corFundoHero com o --papel
@@ -289,9 +298,9 @@ model Edicao {
   // (.../pagina/apresentacao, /modalidades, /agenda, /publicacoes). Mesmos 3
   // eixos independentes da Hero (corFundo+opacidadeFundo misturados via
   // color-mix, mais corTexto/corBuzio à parte — ver opacidadeFundoHero/
-  // corTextoHero/corBuzioHero acima) — fundo reusa CorSecao (5 tokens),
-  // texto/búzio reusam CorPublica (7 tokens). Agenda não tem título/corpo: o
-  // conteúdo daquela seção já vem da API de atividades, só a aparência muda.
+  // corTextoHero/corBuzioHero acima) — fundo reusa CorSecao, texto/búzio
+  // reusam CorPublica. Agenda não tem título/corpo: o conteúdo daquela seção
+  // já vem da API de atividades, só a aparência muda.
   tituloApresentacao        String?
   corpoApresentacao         String?
   corFundoApresentacao      CorSecao      @default(PAPEL)
@@ -359,6 +368,7 @@ model Edicao {
 
   atividades           Atividade[]
   realizadores         EdicaoRealizador[]
+  apoiadores           EdicaoApoiador[]
   inscricoes           InscricaoEdicao[]
   modalidadesSubmissao ModalidadeSubmissao[]
 
@@ -402,6 +412,21 @@ model TipoAtividade {
   @@map("tipos_atividade")
 }
 
+// Catálogo global (não vinculado a uma edição) dos programas de
+// pós-graduação afiliados ao GPDES/UnB, exibido no rodapé de todas as
+// páginas públicas (ver Footer.jsx) — mesmo espírito de TipoAtividade
+// acima, mas com logo/link opcionais em vez de só um nome.
+model ProgramaPosGraduacao {
+  id        String   @id @default(uuid())
+  nome      String
+  imagem    String?
+  link      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("programas_pos_graduacao")
+}
+
 model AtividadePessoa {
   id                 String            @id @default(uuid())
   atividadeId        String
@@ -441,6 +466,19 @@ model EdicaoRealizador {
   updatedAt DateTime @updatedAt
 
   @@map("edicao_realizadores")
+}
+
+model EdicaoApoiador {
+  id        String   @id @default(uuid())
+  edicaoId  String
+  edicao    Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  nome      String
+  imagem    String
+  link      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("edicao_apoiadores")
 }
 
 // Modalidade de submissão de trabalhos (ex. "Conversatórios", "Narrativas

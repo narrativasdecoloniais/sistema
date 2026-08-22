@@ -6,6 +6,7 @@ const ErroHttp = require("../utils/erroHttp");
 
 const INCLUDE_PADRAO = {
   realizadores: { orderBy: { createdAt: "asc" } },
+  apoiadores: { orderBy: { createdAt: "asc" } },
 };
 
 async function montarCamposRealizador(realizador) {
@@ -20,6 +21,20 @@ async function montarCamposRealizador(realizador) {
 
 async function removerImagemRealizador(realizador) {
   await storageService.removerImagemPublica(realizador.imagem);
+}
+
+async function montarCamposApoiador(apoiador) {
+  const campos = { nome: apoiador.nome, link: apoiador.link || null };
+
+  if (apoiador.imagem && apoiador.imagem.startsWith("data:image/")) {
+    campos.imagem = await storageService.salvarImagemPublica(apoiador.imagem, "edicao-apoiadores");
+  }
+
+  return campos;
+}
+
+async function removerImagemApoiador(apoiador) {
+  await storageService.removerImagemPublica(apoiador.imagem);
 }
 
 // Imagem raster comum de um campo escalar da própria Edicao (não uma lista
@@ -69,6 +84,7 @@ async function criarEdicao(dados) {
 async function atualizarEdicao(id, dados) {
   const {
     realizadores,
+    apoiadores,
     logoSvg,
     logoSvgCores,
     imagemFaixaHeroDesktop,
@@ -111,6 +127,20 @@ async function atualizarEdicao(id, dados) {
       realizadores,
       montarCamposRealizador,
       removerImagemRealizador
+    );
+    if (operacoes.length > 0) {
+      await prisma.$transaction(operacoes);
+    }
+  }
+
+  if (apoiadores !== undefined) {
+    const operacoes = await sincronizarLista(
+      prisma.edicaoApoiador,
+      "edicaoId",
+      id,
+      apoiadores,
+      montarCamposApoiador,
+      removerImagemApoiador
     );
     if (operacoes.length > 0) {
       await prisma.$transaction(operacoes);

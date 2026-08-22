@@ -8,6 +8,7 @@ const edicoesRoutes = require("./routes/edicoes.routes");
 const organizadoresRoutes = require("./routes/organizadores.routes");
 const tiposAtividadeRoutes = require("./routes/tiposAtividade.routes");
 const tiposParticipacaoRoutes = require("./routes/tiposParticipacao.routes");
+const programasPosGraduacaoRoutes = require("./routes/programasPosGraduacao.routes");
 const publicoRoutes = require("./routes/publico.routes");
 const errorHandler = require("./middlewares/errorHandler");
 
@@ -36,6 +37,7 @@ app.use("/edicoes", edicoesRoutes);
 app.use("/organizadores", organizadoresRoutes);
 app.use("/tipos-atividade", tiposAtividadeRoutes);
 app.use("/tipos-participacao", tiposParticipacaoRoutes);
+app.use("/programas-pos-graduacao", programasPosGraduacaoRoutes);
 app.use("/publico", publicoRoutes);
 
 app.use((req, res) => {

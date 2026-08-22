@@ -8,9 +8,10 @@ const tipoFaixaSchema = z.enum(["COR", "IMAGEM", "NENHUMA"], {
 const tipoFundoNavSchema = z.enum(["TRANSPARENTE", "COR"], {
   errorMap: () => ({ message: "Tipo de fundo inválido" }),
 }).optional();
-const corSecaoSchema = z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
-  errorMap: () => ({ message: "Cor inválida" }),
-}).optional();
+// Fundo de seção usa a mesma paleta de cor pública (CorSecao e CorPublica
+// têm os mesmos valores no schema Prisma, mantidos como enums separados por
+// representarem usos distintos — fundo x texto/ícone).
+const corSecaoSchema = corPublicaSchema;
 const opacidadeSchema = z.coerce
   .number({ invalid_type_error: "Informe uma opacidade válida" })
   .int("Informe uma opacidade válida")
@@ -22,6 +23,21 @@ const edicaoRealizadorSchema = z
   .object({
     id: z.string().uuid().optional(),
     nome: z.string().trim().min(2, "Informe o nome do realizador"),
+    imagem: z
+      .string()
+      .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
+      .optional(),
+    link: z.string().trim().url("Link inválido").optional(),
+  })
+  .refine((dados) => dados.id || dados.imagem, {
+    message: "Selecione uma imagem",
+    path: ["imagem"],
+  });
+
+const edicaoApoiadorSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    nome: z.string().trim().min(2, "Informe o nome do apoiador"),
     imagem: z
       .string()
       .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
@@ -85,19 +101,20 @@ const edicaoSchema = z
     cidade: z.string().trim().optional(),
     fusoHorario: z.string().optional(),
     notificarAlteracoes: z.boolean().optional(),
-    corFundoRealizadores: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
-      errorMap: () => ({ message: "Cor inválida" }),
-    }).optional(),
+    corFundoRealizadores: corSecaoSchema,
+    opacidadeFundoRealizadores: opacidadeSchema,
     mostrarFaixaRealizadores: z.boolean().optional(),
     realizadores: z.array(edicaoRealizadorSchema).optional(),
+    corFundoApoiadores: corSecaoSchema,
+    opacidadeFundoApoiadores: opacidadeSchema,
+    mostrarFaixaApoiadores: z.boolean().optional(),
+    apoiadores: z.array(edicaoApoiadorSchema).optional(),
     logoSvg: z.string().max(300_000, "Arquivo SVG muito grande").nullable().optional(),
     logoSvgCores: z
       .record(z.string(), z.string().regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida"))
       .nullable()
       .optional(),
-    corFundoHero: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
-      errorMap: () => ({ message: "Cor inválida" }),
-    }).optional(),
+    corFundoHero: corSecaoSchema,
     opacidadeFundoHero: z.coerce
       .number({ invalid_type_error: "Informe uma opacidade válida" })
       .int("Informe uma opacidade válida")
@@ -136,15 +153,11 @@ const edicaoSchema = z
     // Cores da navbar — dois estados (Topo/Rolado, ver SecaoNavegacao.jsx no
     // admin e BarraNavegacao.jsx no público).
     fundoNavTopoTipo: tipoFundoNavSchema,
-    corFundoNavTopo: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
-      errorMap: () => ({ message: "Cor inválida" }),
-    }).optional(),
+    corFundoNavTopo: corSecaoSchema,
     corTextoNavTopo: corPublicaSchema,
     corIconeNavTopo: corPublicaSchema,
     corBordaNavTopo: corPublicaSchema,
-    corFundoNavRolado: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"], {
-      errorMap: () => ({ message: "Cor inválida" }),
-    }).optional(),
+    corFundoNavRolado: corSecaoSchema,
     corTextoNavRolado: corPublicaSchema,
     corIconeNavRolado: corPublicaSchema,
     corBordaNavRolado: corPublicaSchema,
@@ -200,4 +213,4 @@ const edicaoSchema = z
     path: ["dataFim"],
   });
 
-module.exports = { edicaoSchema, edicaoRealizadorSchema };
+module.exports = { edicaoSchema, edicaoRealizadorSchema, edicaoApoiadorSchema };

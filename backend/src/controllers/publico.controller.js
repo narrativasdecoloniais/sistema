@@ -3,6 +3,7 @@ const ErroHttp = require("../utils/erroHttp");
 const edicoesService = require("../services/edicoes.service");
 const atividadesService = require("../services/atividades.service");
 const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.service");
+const programasPosGraduacaoService = require("../services/programasPosGraduacao.service");
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
@@ -14,6 +15,11 @@ const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
   const atual = await edicoesService.buscarEdicaoAtual();
   const edicoes = atual ? await edicoesService.listarEdicoesAnteriores(atual.numero) : [];
   return res.json({ edicoes });
+});
+
+const listarProgramasPosGraduacao = asyncHandler(async (req, res) => {
+  const programas = await programasPosGraduacaoService.listarProgramasPosGraduacao();
+  return res.json({ programas });
 });
 
 const buscarEdicaoPorSlug = asyncHandler(async (req, res) => {
@@ -77,6 +83,7 @@ const buscarModalidadeSubmissaoPorSlug = asyncHandler(async (req, res) => {
 module.exports = {
   buscarEdicaoAtual,
   listarEdicoesAnteriores,
+  listarProgramasPosGraduacao,
   buscarEdicaoPorSlug,
   listarAtividadesPorEdicaoSlug,
   buscarAtividadePorEdicaoSlug,
