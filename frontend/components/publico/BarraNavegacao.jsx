@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import BuziosSimbolos from "@/components/publico/buzios/BuziosSimbolos";
-import Carimbo from "@/components/graficos/Carimbo";
 import { paraNumeroRomano } from "@/lib/romanos";
 import { useEdicaoExibida } from "./EdicaoExibidaContext";
 import styles from "./BarraNavegacao.module.scss";
@@ -139,48 +138,55 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
         )}
       </AnimatePresence>
 
-      <Link
-        href="/"
-        className={styles.voltarTopo}
-        aria-label="Voltar ao topo"
-        onMouseEnter={() => setBuzioAtivo(true)}
-        onMouseLeave={() => setBuzioAtivo(false)}
-        onFocus={() => setBuzioAtivo(true)}
-        onBlur={() => setBuzioAtivo(false)}
-      >
-        <motion.svg
-          viewBox="0 0 164 182"
-          className={styles.buzioIcone}
-          aria-hidden="true"
-          animate={
-            reduzMovimento
-              ? { rotate: 0, scale: 1 }
-              : buzioAtivo
-                ? { rotate: -10, scale: 1.08 }
-                : { rotate: 0, scale: 1 }
-          }
-          transition={{ type: "spring", stiffness: 320, damping: 18 }}
-        >
-          <use href="#buzio-simbolo-1" width="100%" height="100%" />
-        </motion.svg>
-      </Link>
       {numeroEdicao && (
-        <span className={styles.selo}>
-          <Carimbo className={styles.seloCarimbo} preenchido />
-          <span>{paraNumeroRomano(numeroEdicao)} Edição</span>
-        </span>
+        <Link
+          href="/"
+          className={styles.selo}
+          onMouseEnter={() => setBuzioAtivo(true)}
+          onMouseLeave={() => setBuzioAtivo(false)}
+          onFocus={() => setBuzioAtivo(true)}
+          onBlur={() => setBuzioAtivo(false)}
+        >
+          {paraNumeroRomano(numeroEdicao)} Edição
+        </Link>
       )}
+
+      <motion.svg
+        viewBox="0 0 164 182"
+        className={styles.buzioIcone}
+        aria-hidden="true"
+        animate={
+          reduzMovimento
+            ? { rotate: 0, scale: 1 }
+            : buzioAtivo
+              ? { rotate: -10, scale: 1.08 }
+              : { rotate: 0, scale: 1 }
+        }
+        transition={{ type: "spring", stiffness: 320, damping: 18 }}
+      >
+        <use href="#buzio-simbolo-1" width="100%" height="100%" />
+      </motion.svg>
 
       <ul className={styles.ancoras}>
         {ANCORAS.map((ancora) => (
           <li key={ancora.href}>
-            <Link href={ancora.href}>{ancora.rotulo}</Link>
+            <Link href={ancora.href} className={styles.ancoraBotao}>
+              {ancora.rotulo}
+            </Link>
           </li>
         ))}
       </ul>
+
+      <svg
+        viewBox="0 0 164 182"
+        className={`${styles.buzioIcone} ${styles.buzioSeparador}`}
+        aria-hidden="true"
+      >
+        <use href="#buzio-simbolo-1" width="100%" height="100%" />
+      </svg>
+
       <Link href="/login" className={styles.entrar}>
-        <Carimbo />
-        <span>Entrar</span>
+        Entrar
       </Link>
 
       <button

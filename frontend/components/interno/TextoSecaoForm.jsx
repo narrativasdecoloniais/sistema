@@ -15,7 +15,6 @@ import CabecalhoSecao from "./CabecalhoSecao";
 import { contraste } from "@/lib/contraste";
 import styles from "./EdicaoForm.module.scss";
 
-const PALETA_FUNDO = ["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"];
 const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
 const LIMIAR_CONTRASTE_BOTAO = 4.5;
 
@@ -75,14 +74,14 @@ export default function TextoSecaoForm({
   const schema = z.object({
     [campoTitulo]: z.string().trim().optional(),
     [campoCorpo]: z.string().trim().optional(),
-    [campoCorFundo]: z.enum(PALETA_FUNDO).optional(),
+    [campoCorFundo]: z.enum(PALETA_PUBLICA).optional(),
     [campoOpacidade]: z.number().int().min(0).max(100).optional(),
     [campoCorTexto]: z.enum(PALETA_PUBLICA).optional(),
     [campoCorBuzio]: z.enum(PALETA_PUBLICA).optional(),
     [campoMostrarFaixa]: z.boolean().optional(),
     ...(temCard
       ? {
-          [campoCorFundoCard]: z.enum(PALETA_FUNDO).optional(),
+          [campoCorFundoCard]: z.enum(PALETA_PUBLICA).optional(),
           [campoOpacidadeCard]: z.number().int().min(0).max(100).optional(),
           [campoCorTextoCard]: z.enum(PALETA_PUBLICA).optional(),
           [campoCorTextoSecundarioCard]: z.enum(PALETA_PUBLICA).optional(),

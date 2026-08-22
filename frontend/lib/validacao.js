@@ -131,6 +131,21 @@ export const edicaoRealizadorSchema = z
     path: ["imagem"],
   });
 
+export const edicaoApoiadorSchema = z
+  .object({
+    id: z.string().optional(),
+    nome: z.string().trim().min(2, "Informe o nome do apoiador"),
+    imagem: z
+      .string()
+      .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
+      .optional(),
+    link: z.string().trim().url("Link inválido").optional(),
+  })
+  .refine((dados) => dados.id || dados.imagem, {
+    message: "Selecione uma imagem",
+    path: ["imagem"],
+  });
+
 export const edicaoSchema = z
   .object({
     numero: z.coerce
@@ -183,7 +198,7 @@ export const edicaoSchema = z
     cidade: z.string().trim().optional(),
     fusoHorario: z.string().optional(),
     notificarAlteracoes: z.boolean().optional(),
-    corFundoRealizadores: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"]).optional(),
+    corFundoRealizadores: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "CERRADO"]).optional(),
     realizadores: z.array(edicaoRealizadorSchema).optional(),
   })
   .refine((dados) => !dados.dataInicio || !dados.dataFim || dados.dataFim > dados.dataInicio, {
@@ -226,6 +241,16 @@ export const tipoAtividadeSchema = z.object({
 
 export const tipoParticipacaoSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do tipo de participação"),
+});
+
+export const programaPosGraduacaoSchema = z.object({
+  nome: z.string().trim().min(2, "Informe o nome do programa"),
+  link: z.string().trim().url("Link inválido").optional(),
+  imagem: z
+    .string()
+    .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
+    .nullable()
+    .optional(),
 });
 
 export const atividadePessoaSchema = z.object({

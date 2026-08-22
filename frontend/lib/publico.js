@@ -34,6 +34,11 @@ export async function listarEdicoesAnteriores() {
   return dados?.edicoes || [];
 }
 
+export async function listarProgramasPosGraduacaoPublico() {
+  const dados = await requisitarPublico("/publico/programas-pos-graduacao");
+  return dados?.programas || [];
+}
+
 export async function listarAtividadesPublicas() {
   const dados = await requisitarPublico("/publico/edicao-atual/atividades");
   return dados?.atividades || [];
@@ -74,12 +79,18 @@ export async function buscarModalidadeSubmissaoPublicaPorSlug(slug) {
 // pela home quanto pela página de edição por slug.
 export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
   const realizadores = edicao?.realizadores || [];
+  const apoiadores = edicao?.apoiadores || [];
 
   return {
     atividades,
     realizadores,
     corFundoRealizadores: edicao?.corFundoRealizadores || "BARRO",
+    opacidadeFundoRealizadores: edicao?.opacidadeFundoRealizadores ?? 100,
     mostrarFaixaRealizadores: edicao?.mostrarFaixaRealizadores ?? true,
+    apoiadores,
+    corFundoApoiadores: edicao?.corFundoApoiadores || "BARRO",
+    opacidadeFundoApoiadores: edicao?.opacidadeFundoApoiadores ?? 100,
+    mostrarFaixaApoiadores: edicao?.mostrarFaixaApoiadores ?? true,
     logoSvg: edicao?.logoSvg,
     logoSvgViewBox: edicao?.logoSvgViewBox,
     logoSvgCores: edicao?.logoSvgCores,
@@ -254,7 +265,7 @@ export function formatarHoraCurta(iso) {
   const data = new Date(iso);
   const hora = data.getUTCHours();
   const minuto = data.getUTCMinutes();
-  return minuto === 0 ? `${hora}h` : `${hora}h${String(minuto).padStart(2, "0")}min`;
+  return minuto === 0 ? `${hora}h` : `${hora}h${String(minuto).padStart(2, "0")}`;
 }
 
 export function formatarFaixaHorario(inicioIso, fimIso) {
@@ -280,7 +291,12 @@ export function agruparAtividadesPorHorarioInicio(atividades = []) {
 
   return Array.from(porInicio.entries())
     .sort(([a], [b]) => new Date(a) - new Date(b))
-    .map(([inicioIso, itens]) => ({ inicioIso, atividades: itens }));
+    .map(([inicioIso, itens]) => ({
+      inicioIso,
+      atividades: [...itens].sort((a, b) =>
+        a.tipoAtividade.nome.localeCompare(b.tipoAtividade.nome, "pt-BR")
+      ),
+    }));
 }
 
 // Agrupa pessoas envolvidas numa atividade pelo tipo de participação —

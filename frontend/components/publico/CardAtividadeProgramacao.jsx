@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { formatarFaixaHorario } from "@/lib/publico";
 import styles from "./CardAtividadeProgramacao.module.scss";
 
 export default function CardAtividadeProgramacao({ atividade, temEdicaoAtual, edicaoSlug }) {
@@ -20,9 +19,6 @@ export default function CardAtividadeProgramacao({ atividade, temEdicaoAtual, ed
         <h3 className={styles.nome}>{atividade.tipoAtividade.nome}</h3>
         <span className={styles.tipo}>{atividade.nome}</span>
       </div>
-      <p className={styles.periodo}>
-        {formatarFaixaHorario(atividade.inicioAtividade, atividade.fimAtividade)}
-      </p>
       {meta && <p className={styles.meta}>{meta}</p>}
       {(temEdicaoAtual || edicaoSlug) && (
         <Link

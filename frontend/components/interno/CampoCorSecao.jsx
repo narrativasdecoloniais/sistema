@@ -3,21 +3,10 @@
 import { RadioButton } from "primereact/radiobutton";
 import styles from "./CampoCorSecao.module.scss";
 
-// Paleta curada do DESIGN.md para fundo de seção — --areia fica de fora
-// (o próprio DESIGN.md proíbe usá-la como faixa de seção) e --buzio também
-// (é assinatura, não fundo). O par de cor de texto correspondente a cada
-// fundo é definido no CSS da página pública (page.module.scss), não aqui.
-export const OPCOES_COR_SECAO = [
-  { valor: "PAPEL", rotulo: "Papel", cor: "#FAF6EE" },
-  { valor: "TINTA", rotulo: "Tinta", cor: "#201914" },
-  { valor: "BARRO", rotulo: "Barro", cor: "#9C4A2F" },
-  { valor: "OCRE", rotulo: "Ocre", cor: "#B87C34" },
-  { valor: "CERRADO", rotulo: "Cerrado", cor: "#55603F" },
-];
-
-// Paleta pública completa — usada em campos de texto/ícone (ex. Hero), onde
-// --buzio precisa estar disponível (é a cor padrão do próprio búzio) e
-// --areia também é uma opção válida, ao contrário da paleta de fundo acima.
+// Paleta pública completa (DESIGN.md) — usada tanto para fundo de seção
+// quanto para texto/ícone (ex. Hero). O par de cor de texto correspondente a
+// cada fundo é definido no CSS da página pública (page.module.scss), não
+// aqui.
 export const OPCOES_COR_PUBLICA = [
   { valor: "TINTA", rotulo: "Tinta", cor: "#201914" },
   { valor: "BARRO", rotulo: "Barro", cor: "#9C4A2F" },
@@ -27,6 +16,11 @@ export const OPCOES_COR_PUBLICA = [
   { valor: "PAPEL", rotulo: "Papel", cor: "#FAF6EE" },
   { valor: "CERRADO", rotulo: "Cerrado", cor: "#55603F" },
 ];
+
+// Fundo de seção usa a mesma paleta pública completa (CorSecao e CorPublica
+// têm os mesmos valores no schema Prisma, mantidos como enums separados por
+// representarem usos distintos — fundo x texto/ícone).
+export const OPCOES_COR_SECAO = OPCOES_COR_PUBLICA;
 
 export default function CampoCorSecao({ id, rotulo, valor, onChange, opcoes = OPCOES_COR_SECAO }) {
   return (

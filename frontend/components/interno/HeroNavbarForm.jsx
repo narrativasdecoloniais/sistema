@@ -9,7 +9,6 @@ import SecaoHero from "./SecaoHero";
 import SecaoNavegacao from "./SecaoNavegacao";
 import styles from "./EdicaoForm.module.scss";
 
-const PALETA_FUNDO = ["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"];
 const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
 const TIPO_FAIXA = ["COR", "IMAGEM", "NENHUMA"];
 const TIPO_FUNDO = ["COR", "IMAGEM"];
@@ -18,7 +17,7 @@ const TIPO_FUNDO_NAV = ["TRANSPARENTE", "COR"];
 const heroNavbarSchema = z.object({
   logoSvg: z.string().max(300_000).nullable().optional(),
   logoSvgCores: z.record(z.string(), z.string()).nullable().optional(),
-  corFundoHero: z.enum(PALETA_FUNDO).optional(),
+  corFundoHero: z.enum(PALETA_PUBLICA).optional(),
   opacidadeFundoHero: z.number().int().min(0).max(100).optional(),
   fundoHeroTipo: z.enum(TIPO_FUNDO).optional(),
   imagemFundoHeroDesktop: z.string().max(20_000_000).nullable().optional(),
@@ -35,11 +34,11 @@ const heroNavbarSchema = z.object({
   larguraFaixaHeroMobile: z.number().int().positive().optional(),
   mostrarFaixaHero: z.boolean().optional(),
   fundoNavTopoTipo: z.enum(TIPO_FUNDO_NAV).optional(),
-  corFundoNavTopo: z.enum(PALETA_FUNDO).optional(),
+  corFundoNavTopo: z.enum(PALETA_PUBLICA).optional(),
   corTextoNavTopo: z.enum(PALETA_PUBLICA).optional(),
   corIconeNavTopo: z.enum(PALETA_PUBLICA).optional(),
   corBordaNavTopo: z.enum(PALETA_PUBLICA).optional(),
-  corFundoNavRolado: z.enum(PALETA_FUNDO).optional(),
+  corFundoNavRolado: z.enum(PALETA_PUBLICA).optional(),
   corTextoNavRolado: z.enum(PALETA_PUBLICA).optional(),
   corIconeNavRolado: z.enum(PALETA_PUBLICA).optional(),
   corBordaNavRolado: z.enum(PALETA_PUBLICA).optional(),

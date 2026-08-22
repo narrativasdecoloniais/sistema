@@ -224,7 +224,12 @@ export default function PaginaInicialConteudo({
   modalidades = [],
   realizadores = [],
   corFundoRealizadores = "BARRO",
+  opacidadeFundoRealizadores = 100,
   mostrarFaixaRealizadores = true,
+  apoiadores = [],
+  corFundoApoiadores = "BARRO",
+  opacidadeFundoApoiadores = 100,
+  mostrarFaixaApoiadores = true,
   logoSvg,
   logoSvgViewBox,
   logoSvgCores,
@@ -339,7 +344,7 @@ export default function PaginaInicialConteudo({
         data-fundo-tipo={fundoHeroTipo}
         data-cor-texto={corTextoHero}
         data-cor-buzio={corBuzioHero}
-        style={estiloHero}
+        style={{ ...estiloHero, ...estiloFaixaLateral }}
       >
         {fundoHeroTipo === "IMAGEM" && <div className={styles.heroFundoBlur} aria-hidden="true" />}
         {mostrarFaixaHero && (
@@ -434,7 +439,7 @@ export default function PaginaInicialConteudo({
         data-cor-buzio={corBuzioApresentacao}
         data-cor-fundo-botao-secao={corFundoBotaoApresentacao}
         data-cor-texto-botao-secao={corTextoBotaoApresentacao}
-        style={{ "--opacidade-fundo-secao": `${opacidadeFundoApresentacao}%` }}
+        style={{ "--opacidade-fundo-secao": `${opacidadeFundoApresentacao}%`, ...estiloFaixaLateral }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
@@ -500,6 +505,7 @@ export default function PaginaInicialConteudo({
         style={{
           "--opacidade-fundo-secao": `${opacidadeFundoModalidades}%`,
           "--opacidade-fundo-card": `${opacidadeFundoCardModalidades}%`,
+          ...estiloFaixaLateral,
         }}
         initial="oculto"
         whileInView="visivel"
@@ -588,6 +594,7 @@ export default function PaginaInicialConteudo({
         style={{
           "--opacidade-fundo-secao": `${opacidadeFundoAgenda}%`,
           "--opacidade-fundo-card": `${opacidadeFundoCardAgenda}%`,
+          ...estiloFaixaLateral,
         }}
         initial="oculto"
         whileInView="visivel"
@@ -653,6 +660,7 @@ export default function PaginaInicialConteudo({
                     <LinhaProgramacao
                       key={grupo.inicioIso}
                       hora={formatarHoraCurta(grupo.inicioIso)}
+                      horaFim={formatarHoraCurta(grupo.atividades[0].fimAtividade)}
                     >
                       {grupo.atividades.length === 1 ? (
                         renderizarCartaoProgramacao(grupo.atividades[0])
@@ -679,7 +687,7 @@ export default function PaginaInicialConteudo({
         data-cor-fundo={corFundoPublicacoes}
         data-cor-texto={corTextoPublicacoes}
         data-cor-buzio={corBuzioPublicacoes}
-        style={{ "--opacidade-fundo-secao": `${opacidadeFundoPublicacoes}%` }}
+        style={{ "--opacidade-fundo-secao": `${opacidadeFundoPublicacoes}%`, ...estiloFaixaLateral }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
@@ -709,8 +717,54 @@ export default function PaginaInicialConteudo({
         </motion.div>
       </motion.section>
 
+      {apoiadores.length > 0 && (
+        <section
+          className={styles.apoio}
+          data-cor={corFundoApoiadores}
+          style={{ "--opacidade-fundo-apoiadores": `${opacidadeFundoApoiadores}%`, ...estiloFaixaLateral }}
+          aria-label="Apoio"
+        >
+          {mostrarFaixaApoiadores && (
+            <FaixaLateral
+              estilo={estiloFaixaLateral}
+              corDesktop={corFaixaHeroDesktop}
+              corMobile={corFaixaHeroMobile}
+              tipoDesktop={faixaHeroTipoDesktop}
+              tipoMobile={faixaHeroTipoMobile}
+            />
+          )}
+          <div className={styles.apoioConteudo}>
+            <span className={styles.apoioLabel}>Apoio</span>
+            <div className={styles.apoioGrade}>
+              {apoiadores.map((apoiador) =>
+                apoiador.link ? (
+                  <a
+                    key={apoiador.id}
+                    href={apoiador.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.apoiadorItem}
+                  >
+                    <img src={apoiador.imagem} alt={apoiador.nome} className={styles.apoiadorLogo} />
+                  </a>
+                ) : (
+                  <div key={apoiador.id} className={styles.apoiadorItem}>
+                    <img src={apoiador.imagem} alt={apoiador.nome} className={styles.apoiadorLogo} />
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {realizadores.length > 0 && (
-        <section className={styles.realizadores} data-cor={corFundoRealizadores} aria-label="Realização">
+        <section
+          className={styles.realizadores}
+          data-cor={corFundoRealizadores}
+          style={{ "--opacidade-fundo-realizadores": `${opacidadeFundoRealizadores}%`, ...estiloFaixaLateral }}
+          aria-label="Realização"
+        >
           {mostrarFaixaRealizadores && (
             <FaixaLateral
               estilo={estiloFaixaLateral}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import MarcaRodape from "@/components/graficos/MarcaRodape";
-import { listarEdicoesAnteriores } from "@/lib/publico";
+import { listarEdicoesAnteriores, listarProgramasPosGraduacaoPublico } from "@/lib/publico";
 import { paraNumeroRomano } from "@/lib/romanos";
 import styles from "./Footer.module.scss";
 
@@ -12,6 +12,7 @@ const ANCORAS = [
 
 export default async function Footer() {
   const edicoesAnteriores = await listarEdicoesAnteriores();
+  const programasPosGraduacao = await listarProgramasPosGraduacaoPublico();
 
   return (
     <footer className={styles.footer}>
@@ -62,7 +63,39 @@ export default async function Footer() {
         <p className={styles.creditos}>
           GPDES/UnB — Educação, Saberes e Decolonialidades
         </p>
+        <MarcaRodape tamanho={22} />
       </div>
+
+      {programasPosGraduacao.length > 0 && (
+        <div className={styles.programasPosGraduacao}>
+          <span className={styles.programasPosGraduacaoLabel}>Programas de Pós-Graduação</span>
+          <ul className={styles.programasPosGraduacaoLista}>
+            {programasPosGraduacao.map((programa) => {
+              const conteudo = programa.imagem ? (
+                <img src={programa.imagem} alt={programa.nome} className={styles.programaLogo} />
+              ) : (
+                <span className={styles.programaNome}>{programa.nome}</span>
+              );
+              return (
+                <li key={programa.id}>
+                  {programa.link ? (
+                    <a
+                      href={programa.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.programaItem}
+                    >
+                      {conteudo}
+                    </a>
+                  ) : (
+                    <span className={styles.programaItem}>{conteudo}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </footer>
   );
 }

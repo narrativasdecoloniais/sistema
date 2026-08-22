@@ -50,6 +50,25 @@
   opacity: 0.35;
 }
 
+// Horário de término, empurrado pro fim da coluna pelo flex:1 da linha
+// vertical acima — como .linha estica as colunas pra mesma altura
+// (align-items: stretch), a distância até aqui acompanha automaticamente a
+// altura do card ao lado, sem precisar medir nada via JS.
+.horaFim {
+  margin-bottom: 0.4rem;
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--barro);
+  opacity: 0.6;
+  text-align: center;
+  white-space: nowrap;
+
+  @media (min-width: 640px) {
+    font-size: 0.85rem;
+  }
+}
+
 .conteudo {
   flex: 1;
   min-width: 0;

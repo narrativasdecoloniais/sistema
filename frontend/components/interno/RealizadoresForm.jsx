@@ -8,11 +8,12 @@ import { edicaoRealizadorSchema, extrairErros } from "@/lib/validacao";
 import SecaoRealizadores from "./SecaoRealizadores";
 import styles from "./EdicaoForm.module.scss";
 
-const PALETA_FUNDO = ["PAPEL", "TINTA", "BARRO", "OCRE", "CERRADO"];
+const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
 
 const realizadoresSchema = z.object({
   realizadores: z.array(edicaoRealizadorSchema).optional(),
-  corFundoRealizadores: z.enum(PALETA_FUNDO).optional(),
+  corFundoRealizadores: z.enum(PALETA_PUBLICA).optional(),
+  opacidadeFundoRealizadores: z.number().int().min(0).max(100).optional(),
   mostrarFaixaRealizadores: z.boolean().optional(),
 });
 
@@ -29,6 +30,9 @@ export default function RealizadoresForm({ edicaoInicial }) {
   const [corFundoRealizadores, setCorFundoRealizadores] = useState(
     edicaoInicial.corFundoRealizadores || "BARRO"
   );
+  const [opacidadeFundoRealizadores, setOpacidadeFundoRealizadores] = useState(
+    edicaoInicial.opacidadeFundoRealizadores ?? 100
+  );
   const [mostrarFaixaRealizadores, setMostrarFaixaRealizadores] = useState(
     edicaoInicial.mostrarFaixaRealizadores ?? true
   );
@@ -38,6 +42,7 @@ export default function RealizadoresForm({ edicaoInicial }) {
     const resultado = realizadoresSchema.safeParse({
       realizadores: (overrides.realizadores ?? realizadores).map(realizadorParaPayload),
       corFundoRealizadores: overrides.corFundoRealizadores ?? corFundoRealizadores,
+      opacidadeFundoRealizadores: overrides.opacidadeFundoRealizadores ?? opacidadeFundoRealizadores,
       mostrarFaixaRealizadores: overrides.mostrarFaixaRealizadores ?? mostrarFaixaRealizadores,
     });
     if (!resultado.success) {
@@ -51,11 +56,13 @@ export default function RealizadoresForm({ edicaoInicial }) {
         numero: edicaoInicial.numero,
         nome: edicaoInicial.nome,
         corFundoRealizadores: resultado.data.corFundoRealizadores,
+        opacidadeFundoRealizadores: resultado.data.opacidadeFundoRealizadores,
         mostrarFaixaRealizadores: resultado.data.mostrarFaixaRealizadores,
         realizadores: resultado.data.realizadores,
       });
       setRealizadores(resposta.edicao.realizadores || []);
       setCorFundoRealizadores(resposta.edicao.corFundoRealizadores);
+      setOpacidadeFundoRealizadores(resposta.edicao.opacidadeFundoRealizadores);
       setMostrarFaixaRealizadores(resposta.edicao.mostrarFaixaRealizadores);
       notificar("Página do evento atualizada com sucesso.");
     } catch (erro) {
@@ -89,6 +96,11 @@ export default function RealizadoresForm({ edicaoInicial }) {
     salvar({ corFundoRealizadores: valor });
   }
 
+  function aoMudarOpacidade(valor) {
+    setOpacidadeFundoRealizadores(valor);
+    salvar({ opacidadeFundoRealizadores: valor });
+  }
+
   function aoMudarMostrarFaixa(valor) {
     setMostrarFaixaRealizadores(valor);
     salvar({ mostrarFaixaRealizadores: valor });
@@ -99,10 +111,12 @@ export default function RealizadoresForm({ edicaoInicial }) {
       <SecaoRealizadores
         realizadores={realizadores}
         corFundo={corFundoRealizadores}
+        opacidade={opacidadeFundoRealizadores}
         mostrarFaixa={mostrarFaixaRealizadores}
         erros={erros}
         aoMudarRealizador={aoMudarRealizador}
         aoMudarCorFundo={aoMudarCorFundo}
+        aoMudarOpacidade={aoMudarOpacidade}
         aoMudarMostrarFaixa={aoMudarMostrarFaixa}
         aoSalvar={() => salvar({})}
         aoAdicionarRealizador={aoAdicionarRealizador}
