@@ -101,6 +101,8 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
       data-cor-texto-nav={estiloNav?.corTexto}
       data-cor-icone-nav={estiloNav?.corIcone}
       data-cor-borda-nav={estiloNav?.corBorda}
+      data-cor-fundo-botao-nav={nav?.corFundoBotaoNav}
+      data-cor-texto-botao-nav={nav?.corTextoBotaoNav}
       style={{
         ...(nav
           ? {
@@ -113,6 +115,8 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
           "--cor-texto-nav": estiloNav?.corTexto,
           "--cor-icone-nav": estiloNav?.corIcone,
           "--cor-borda-nav": estiloNav?.corBorda,
+          "--cor-fundo-botao-nav": nav?.corFundoBotaoNav,
+          "--cor-texto-botao-nav": nav?.corTextoBotaoNav,
         }),
       }}
     >

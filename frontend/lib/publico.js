@@ -188,6 +188,8 @@ export function montarPropsNavegacao(edicao) {
       corBorda: edicao?.corBordaNavRolado || "BUZIO",
     },
     navMesmoEstilo: Boolean(edicao?.navMesmoEstilo),
+    corFundoBotaoNav: edicao?.corFundoBotaoNav || "BARRO",
+    corTextoBotaoNav: edicao?.corTextoBotaoNav || "PAPEL",
   };
 }
 

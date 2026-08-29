@@ -938,6 +938,64 @@ export default function PaginaInicialConteudo({
         </motion.div>
       </motion.section>
 
+      {realizadores.length > 0 && (
+        <section
+          className={styles.realizadores}
+          data-cor={corFundoRealizadores}
+          style={{
+            "--opacidade-fundo-realizadores": `${opacidadeFundoRealizadores}%`,
+            ...estiloFaixaLateral,
+            ...estiloCoresPersonalizadas({
+              "--cor-fundo-realizadores-base": corFundoRealizadores,
+            }),
+            ...(ehCorPersonalizada(corFundoRealizadores)
+              ? { color: corTextoLegivel(corFundoRealizadores) }
+              : {}),
+          }}
+          aria-label="Realização"
+        >
+          {mostrarFaixaRealizadores && (
+            <FaixaLateral
+              estilo={estiloFaixaLateral}
+              corDesktop={corFaixaHeroDesktop}
+              corMobile={corFaixaHeroMobile}
+              tipoDesktop={faixaHeroTipoDesktop}
+              tipoMobile={faixaHeroTipoMobile}
+            />
+          )}
+          <div className={styles.realizadoresConteudo}>
+            <span className={styles.realizadoresLabel}>Realização</span>
+            <div className={styles.realizadoresGrade}>
+              {realizadores.map((realizador) =>
+                realizador.link ? (
+                  <a
+                    key={realizador.id}
+                    href={realizador.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.realizadorItem}
+                  >
+                    <img
+                      src={realizador.imagem}
+                      alt={realizador.nome}
+                      className={styles.realizadorLogo}
+                    />
+                  </a>
+                ) : (
+                  <div key={realizador.id} className={styles.realizadorItem}>
+                    <img
+                      src={realizador.imagem}
+                      alt={realizador.nome}
+                      className={styles.realizadorLogo}
+                    />
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {apoiadores.length > 0 && (
         <section
           className={styles.apoio}
@@ -991,64 +1049,6 @@ export default function PaginaInicialConteudo({
                       src={apoiador.imagem}
                       alt={apoiador.nome}
                       className={styles.apoiadorLogo}
-                    />
-                  </div>
-                ),
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {realizadores.length > 0 && (
-        <section
-          className={styles.realizadores}
-          data-cor={corFundoRealizadores}
-          style={{
-            "--opacidade-fundo-realizadores": `${opacidadeFundoRealizadores}%`,
-            ...estiloFaixaLateral,
-            ...estiloCoresPersonalizadas({
-              "--cor-fundo-realizadores-base": corFundoRealizadores,
-            }),
-            ...(ehCorPersonalizada(corFundoRealizadores)
-              ? { color: corTextoLegivel(corFundoRealizadores) }
-              : {}),
-          }}
-          aria-label="Realização"
-        >
-          {mostrarFaixaRealizadores && (
-            <FaixaLateral
-              estilo={estiloFaixaLateral}
-              corDesktop={corFaixaHeroDesktop}
-              corMobile={corFaixaHeroMobile}
-              tipoDesktop={faixaHeroTipoDesktop}
-              tipoMobile={faixaHeroTipoMobile}
-            />
-          )}
-          <div className={styles.realizadoresConteudo}>
-            <span className={styles.realizadoresLabel}>Realização</span>
-            <div className={styles.realizadoresGrade}>
-              {realizadores.map((realizador) =>
-                realizador.link ? (
-                  <a
-                    key={realizador.id}
-                    href={realizador.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.realizadorItem}
-                  >
-                    <img
-                      src={realizador.imagem}
-                      alt={realizador.nome}
-                      className={styles.realizadorLogo}
-                    />
-                  </a>
-                ) : (
-                  <div key={realizador.id} className={styles.realizadorItem}>
-                    <img
-                      src={realizador.imagem}
-                      alt={realizador.nome}
-                      className={styles.realizadorLogo}
                     />
                   </div>
                 ),

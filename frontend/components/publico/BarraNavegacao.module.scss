@@ -30,6 +30,12 @@
   background-color: var(--cor-fundo-nav);
   border-bottom: 2px solid var(--cor-borda-nav);
 
+  // Fundo/texto das abas de âncora (.ancoraBotao, abaixo) — par único,
+  // independente do estado Topo/Rolado (ver corFundoBotaoNav/
+  // corTextoBotaoNav em SecaoNavegacao.jsx no admin).
+  --cor-fundo-botao-nav: var(--barro);
+  --cor-texto-botao-nav: var(--papel);
+
   &[data-cor-fundo-nav="TINTA"] { --cor-fundo-nav: var(--tinta); }
   &[data-cor-fundo-nav="BARRO"] { --cor-fundo-nav: var(--barro); }
   &[data-cor-fundo-nav="OCRE"] { --cor-fundo-nav: var(--ocre); }
@@ -58,6 +64,20 @@
   &[data-cor-borda-nav="AREIA"] { --cor-borda-nav: var(--areia); }
   &[data-cor-borda-nav="PAPEL"] { --cor-borda-nav: var(--papel); }
   &[data-cor-borda-nav="CERRADO"] { --cor-borda-nav: var(--cerrado); }
+
+  &[data-cor-fundo-botao-nav="TINTA"] { --cor-fundo-botao-nav: var(--tinta); }
+  &[data-cor-fundo-botao-nav="OCRE"] { --cor-fundo-botao-nav: var(--ocre); }
+  &[data-cor-fundo-botao-nav="BUZIO"] { --cor-fundo-botao-nav: var(--buzio); }
+  &[data-cor-fundo-botao-nav="AREIA"] { --cor-fundo-botao-nav: var(--areia); }
+  &[data-cor-fundo-botao-nav="PAPEL"] { --cor-fundo-botao-nav: var(--papel); }
+  &[data-cor-fundo-botao-nav="CERRADO"] { --cor-fundo-botao-nav: var(--cerrado); }
+
+  &[data-cor-texto-botao-nav="TINTA"] { --cor-texto-botao-nav: var(--tinta); }
+  &[data-cor-texto-botao-nav="BARRO"] { --cor-texto-botao-nav: var(--barro); }
+  &[data-cor-texto-botao-nav="OCRE"] { --cor-texto-botao-nav: var(--ocre); }
+  &[data-cor-texto-botao-nav="BUZIO"] { --cor-texto-botao-nav: var(--buzio); }
+  &[data-cor-texto-botao-nav="AREIA"] { --cor-texto-botao-nav: var(--areia); }
+  &[data-cor-texto-botao-nav="CERRADO"] { --cor-texto-botao-nav: var(--cerrado); }
 
   // Precisa vir depois dos mapeamentos de cor acima (mesma especificidade,
   // ganha por ordem no arquivo) pra zerar fundo/borda mesmo que
@@ -186,7 +206,7 @@
     flex-shrink: 0;
 
     &:not(:first-child) {
-      border-left: 1px solid color-mix(in srgb, var(--cor-texto-nav) 25%, transparent);
+      border-left: 1px solid color-mix(in srgb, var(--cor-texto-botao-nav) 25%, transparent);
     }
 
     &:first-child .ancoraBotao {
@@ -204,26 +224,28 @@
 // Abas em vez de pílulas soltas — cada item ocupa a altura inteira do nav
 // (herdada do <li> esticado por align-self: stretch na ul) e os vizinhos são
 // separados por uma linha fina (border-left no <li>, acima) em vez de espaço
-// em branco. Fundo é o próprio --cor-texto-nav diluído via color-mix (mesma
-// técnica de opacidade usada nos fundos de seção da página pública), fica
-// discreto sobre qualquer cor de nav.
+// em branco. Fundo/texto são a cor sólida escolhida no admin
+// (corFundoBotaoNav/corTextoBotaoNav — ver --cor-fundo-botao-nav/
+// --cor-texto-botao-nav acima); o hover esmaece automaticamente essa mesma
+// cor via opacity, mesma técnica do CTA primário da Hero (.inscricaoCta em
+// page.module.scss) — não precisa de um segundo tom calculado à parte.
 .ancoraBotao {
   display: flex;
   align-items: center;
   height: 100%;
   padding: 0 1.25rem;
-  background: color-mix(in srgb, var(--cor-texto-nav) 10%, transparent);
+  background: var(--cor-fundo-botao-nav);
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--cor-texto-nav);
+  color: var(--cor-texto-botao-nav);
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 0.4s ease, color 0.4s ease;
+  transition: background-color 0.4s ease, color 0.4s ease, opacity 0.15s ease;
 
   &:hover {
-    background: color-mix(in srgb, var(--cor-texto-nav) 18%, transparent);
+    opacity: 0.85;
   }
 
   &:focus-visible {

@@ -1,0 +1,76 @@
+// Copiado de frontend/app/(publico)/page.module.scss (.faixaLateral e afins)
+// — ver comentário longo lá sobre o mecanismo mobile-first/data-attr. Aqui
+// self-contido: a página-mãe só precisa passar `estilo` (largura/imagem via
+// CSS custom properties) e os quatro data-attrs de cor/tipo.
+.faixaLateral {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: var(--largura-faixa-hero);
+  background: var(--cor-faixa-hero-mobile);
+  pointer-events: none;
+
+  --cor-faixa-hero-mobile: var(--ocre);
+  --largura-faixa-hero: var(--largura-faixa-hero-mobile-valor, clamp(16px, 3vw, 40px));
+
+  &[data-cor-faixa-mobile="TINTA"] { --cor-faixa-hero-mobile: var(--tinta); }
+  &[data-cor-faixa-mobile="BARRO"] { --cor-faixa-hero-mobile: var(--barro); }
+  &[data-cor-faixa-mobile="BUZIO"] { --cor-faixa-hero-mobile: var(--buzio); }
+  &[data-cor-faixa-mobile="AREIA"] { --cor-faixa-hero-mobile: var(--areia); }
+  &[data-cor-faixa-mobile="PAPEL"] { --cor-faixa-hero-mobile: var(--papel); }
+  &[data-cor-faixa-mobile="CERRADO"] { --cor-faixa-hero-mobile: var(--cerrado); }
+
+  // --imagem-faixa-hero-mobile/-desktop são url(...) setados inline pela
+  // página-mãe (valor dinâmico, não dá pra prever em CSS estático).
+  &[data-faixa-tipo-mobile="IMAGEM"] {
+    background-color: transparent;
+    background-image: var(--imagem-faixa-hero-mobile);
+    background-repeat: repeat-y;
+    background-size: 100% auto;
+    background-position: top;
+  }
+
+  &[data-faixa-tipo-mobile="NENHUMA"] {
+    display: none;
+  }
+}
+
+@media (min-width: 1000px) {
+  .faixaLateral {
+    background: var(--cor-faixa-hero-desktop);
+    --cor-faixa-hero-desktop: var(--ocre);
+    --largura-faixa-hero: var(--largura-faixa-hero-desktop-valor, clamp(40px, 6vw, 96px));
+
+    &[data-cor-faixa-desktop="TINTA"] { --cor-faixa-hero-desktop: var(--tinta); }
+    &[data-cor-faixa-desktop="BARRO"] { --cor-faixa-hero-desktop: var(--barro); }
+    &[data-cor-faixa-desktop="BUZIO"] { --cor-faixa-hero-desktop: var(--buzio); }
+    &[data-cor-faixa-desktop="AREIA"] { --cor-faixa-hero-desktop: var(--areia); }
+    &[data-cor-faixa-desktop="PAPEL"] { --cor-faixa-hero-desktop: var(--papel); }
+    &[data-cor-faixa-desktop="CERRADO"] { --cor-faixa-hero-desktop: var(--cerrado); }
+  }
+
+  .faixaLateral[data-faixa-tipo-desktop="IMAGEM"] {
+    background-color: transparent;
+    background-image: var(--imagem-faixa-hero-desktop);
+    background-repeat: repeat-y;
+    background-size: 100% auto;
+    background-position: top;
+  }
+
+  .faixaLateral:not([data-faixa-tipo-desktop="NENHUMA"]) {
+    display: block;
+  }
+
+  .faixaLateral[data-faixa-tipo-desktop="NENHUMA"] {
+    display: none;
+  }
+}
+
+.faixaLateralEsquerda {
+  left: 0;
+}
+
+.faixaLateralDireita {
+  right: 0;
+}

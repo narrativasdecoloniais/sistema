@@ -330,6 +330,11 @@ export const atividadeSchema = z
     fimAtividade: z.coerce.date({
       errorMap: () => ({ message: "Informe uma data de término da atividade válida" }),
     }),
+    corFundoAtividade: corSchema,
+    opacidadeFundoAtividade: z.number().int().min(0).max(100).optional(),
+    corTextoAtividade: corSchema,
+    corBuzioAtividade: corSchema,
+    mostrarFaixaAtividade: z.boolean().optional(),
   })
   .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
     message: "O fim da atividade deve ser posterior ao início",

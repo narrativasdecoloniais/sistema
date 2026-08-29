@@ -1,15 +1,94 @@
+// Fundo/texto/búzio customizáveis por atividade (ver AtividadeForm.jsx no
+// admin, seção "Aparência") — mesmo padrão de 3 eixos independentes das
+// dobras da home (ver .secao/.sobreEvento em
+// frontend/app/(publico)/page.module.scss): --cor-fundo-secao-base (opaca)
+// misturada com --papel via --opacidade-fundo-secao, mais
+// --cor-texto-secao/--cor-buzio-secao à parte. Defaults (papel 100%, tinta,
+// barro) reproduzem a aparência original desta página.
 .pagina {
+  position: relative;
+  overflow: hidden;
   width: 100%;
+  display: flex;
+  justify-content: center;
+  // padding-inline soma a largura da faixa lateral (mesmo cálculo de .secao
+  // em page.module.scss) pra o conteúdo não ficar por baixo dela.
+  --largura-faixa-hero-resolvida: var(--largura-faixa-hero-mobile-valor, var(--largura-faixa-hero, 0px));
+  padding: calc(3rem + 70px) calc(var(--largura-faixa-hero-resolvida) + 2rem) 5rem;
+
+  --cor-fundo-secao-base: var(--papel);
+  --opacidade-fundo-secao: 100%;
+  --cor-texto-secao: var(--tinta);
+  --cor-buzio-secao: var(--barro);
+  background-color: color-mix(in srgb, var(--cor-fundo-secao-base) var(--opacidade-fundo-secao), var(--papel));
+
+  &[data-cor-fundo="TINTA"] { --cor-fundo-secao-base: var(--tinta); }
+  &[data-cor-fundo="BARRO"] { --cor-fundo-secao-base: var(--barro); }
+  &[data-cor-fundo="OCRE"] { --cor-fundo-secao-base: var(--ocre); }
+  &[data-cor-fundo="BUZIO"] { --cor-fundo-secao-base: var(--buzio); }
+  &[data-cor-fundo="AREIA"] { --cor-fundo-secao-base: var(--areia); }
+  &[data-cor-fundo="CERRADO"] { --cor-fundo-secao-base: var(--cerrado); }
+
+  &[data-cor-texto="BARRO"] { --cor-texto-secao: var(--barro); }
+  &[data-cor-texto="OCRE"] { --cor-texto-secao: var(--ocre); }
+  &[data-cor-texto="BUZIO"] { --cor-texto-secao: var(--buzio); }
+  &[data-cor-texto="AREIA"] { --cor-texto-secao: var(--areia); }
+  &[data-cor-texto="PAPEL"] { --cor-texto-secao: var(--papel); }
+  &[data-cor-texto="CERRADO"] { --cor-texto-secao: var(--cerrado); }
+
+  &[data-cor-buzio="TINTA"] { --cor-buzio-secao: var(--tinta); }
+  &[data-cor-buzio="OCRE"] { --cor-buzio-secao: var(--ocre); }
+  &[data-cor-buzio="BUZIO"] { --cor-buzio-secao: var(--buzio); }
+  &[data-cor-buzio="AREIA"] { --cor-buzio-secao: var(--areia); }
+  &[data-cor-buzio="PAPEL"] { --cor-buzio-secao: var(--papel); }
+  &[data-cor-buzio="CERRADO"] { --cor-buzio-secao: var(--cerrado); }
+
+  @media (min-width: 1000px) {
+    --largura-faixa-hero-resolvida: var(--largura-faixa-hero-desktop-valor, var(--largura-faixa-hero, 0px));
+  }
+
+  @media (max-width: 700px) {
+    padding: calc(2rem + 70px) calc(var(--largura-faixa-hero-resolvida) + 1.5rem) 3.5rem;
+  }
+}
+
+// Coluna do marcador (100px) + conteúdo (1fr), mesmo padrão de
+// .sobreEventoConteudo em page.module.scss.
+.paginaConteudo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 960px;
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  column-gap: 2rem;
+  align-items: start;
+
+  // eyebrow/título/subtítulo/corpo de texto seguem a mesma cor de texto da
+  // seção — mesma simplificação já aceita nas dobras da home (eyebrow não
+  // tem eixo de cor próprio).
+  .eyebrow,
+  .titulo,
+  .subtitulo,
+  .subtituloSecao,
+  .secaoTexto p,
+  .convidadoNome,
+  .convidadoDescricao {
+    color: var(--cor-texto-secao);
+  }
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+    row-gap: 1rem;
+  }
+}
+
+.paginaCorpo {
+  min-width: 0;
   max-width: 760px;
-  margin: 0 auto;
-  padding: calc(3rem + 70px) 2rem 5rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
-
-  @media (max-width: 700px) {
-    padding: calc(2rem + 70px) 1.5rem 3.5rem;
-  }
 }
 
 .cabecalho {

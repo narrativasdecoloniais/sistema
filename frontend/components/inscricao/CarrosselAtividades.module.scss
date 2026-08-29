@@ -53,10 +53,10 @@
 .controle {
   min-width: 44px;
   min-height: 44px;
-  background: none;
-  border: 1.5px solid var(--ocre);
+  background: var(--barro);
+  border: 1.5px solid var(--barro);
   border-radius: 8px;
-  color: var(--barro);
+  color: var(--papel);
   font-size: 1.3rem;
   line-height: 1;
   cursor: pointer;

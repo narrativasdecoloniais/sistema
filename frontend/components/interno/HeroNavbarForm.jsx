@@ -43,6 +43,8 @@ const heroNavbarSchema = z.object({
   corIconeNavRolado: corSchema,
   corBordaNavRolado: corSchema,
   navMesmoEstilo: z.boolean().optional(),
+  corFundoBotaoNav: corSchema,
+  corTextoBotaoNav: corSchema,
 });
 
 export default function HeroNavbarForm({ edicaoInicial }) {
@@ -86,6 +88,8 @@ export default function HeroNavbarForm({ edicaoInicial }) {
   const [corIconeNavRolado, setCorIconeNavRolado] = useState(edicaoInicial.corIconeNavRolado || "BUZIO");
   const [corBordaNavRolado, setCorBordaNavRolado] = useState(edicaoInicial.corBordaNavRolado || "BUZIO");
   const [navMesmoEstilo, setNavMesmoEstilo] = useState(edicaoInicial.navMesmoEstilo || false);
+  const [corFundoBotaoNav, setCorFundoBotaoNav] = useState(edicaoInicial.corFundoBotaoNav || "BARRO");
+  const [corTextoBotaoNav, setCorTextoBotaoNav] = useState(edicaoInicial.corTextoBotaoNav || "PAPEL");
   const [erros, setErros] = useState({});
 
   async function salvar(overrides = {}) {
@@ -118,6 +122,8 @@ export default function HeroNavbarForm({ edicaoInicial }) {
       corIconeNavRolado: overrides.corIconeNavRolado ?? corIconeNavRolado,
       corBordaNavRolado: overrides.corBordaNavRolado ?? corBordaNavRolado,
       navMesmoEstilo: overrides.navMesmoEstilo ?? navMesmoEstilo,
+      corFundoBotaoNav: overrides.corFundoBotaoNav ?? corFundoBotaoNav,
+      corTextoBotaoNav: overrides.corTextoBotaoNav ?? corTextoBotaoNav,
     });
     if (!resultado.success) {
       setErros(extrairErros(resultado));
@@ -151,6 +157,8 @@ export default function HeroNavbarForm({ edicaoInicial }) {
         corIconeNavRolado: resultado.data.corIconeNavRolado,
         corBordaNavRolado: resultado.data.corBordaNavRolado,
         navMesmoEstilo: resultado.data.navMesmoEstilo,
+        corFundoBotaoNav: resultado.data.corFundoBotaoNav,
+        corTextoBotaoNav: resultado.data.corTextoBotaoNav,
         ...(resultado.data.logoSvg !== undefined ? { logoSvg: resultado.data.logoSvg } : {}),
         ...(resultado.data.logoSvgCores !== undefined ? { logoSvgCores: resultado.data.logoSvgCores } : {}),
         ...(resultado.data.imagemFaixaHeroDesktop !== undefined
@@ -195,6 +203,8 @@ export default function HeroNavbarForm({ edicaoInicial }) {
       setCorIconeNavRolado(resposta.edicao.corIconeNavRolado);
       setCorBordaNavRolado(resposta.edicao.corBordaNavRolado);
       setNavMesmoEstilo(resposta.edicao.navMesmoEstilo);
+      setCorFundoBotaoNav(resposta.edicao.corFundoBotaoNav);
+      setCorTextoBotaoNav(resposta.edicao.corTextoBotaoNav);
       notificar("Página do evento atualizada com sucesso.");
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -335,6 +345,16 @@ export default function HeroNavbarForm({ edicaoInicial }) {
     salvar({ navMesmoEstilo: valor });
   }
 
+  function aoMudarCorFundoBotaoNav(valor) {
+    setCorFundoBotaoNav(valor);
+    salvar({ corFundoBotaoNav: valor });
+  }
+
+  function aoMudarCorTextoBotaoNav(valor) {
+    setCorTextoBotaoNav(valor);
+    salvar({ corTextoBotaoNav: valor });
+  }
+
   return (
     <div className={styles.formulario}>
       <SecaoHero
@@ -388,6 +408,8 @@ export default function HeroNavbarForm({ edicaoInicial }) {
         corIconeNavRolado={corIconeNavRolado}
         corBordaNavRolado={corBordaNavRolado}
         navMesmoEstilo={navMesmoEstilo}
+        corFundoBotaoNav={corFundoBotaoNav}
+        corTextoBotaoNav={corTextoBotaoNav}
         aoMudarFundoNavTopoTipo={aoMudarFundoNavTopoTipo}
         aoMudarCorFundoNavTopo={aoMudarCorFundoNavTopo}
         aoMudarCorTextoNavTopo={aoMudarCorTextoNavTopo}
@@ -398,6 +420,8 @@ export default function HeroNavbarForm({ edicaoInicial }) {
         aoMudarCorIconeNavRolado={aoMudarCorIconeNavRolado}
         aoMudarCorBordaNavRolado={aoMudarCorBordaNavRolado}
         aoMudarNavMesmoEstilo={aoMudarNavMesmoEstilo}
+        aoMudarCorFundoBotaoNav={aoMudarCorFundoBotaoNav}
+        aoMudarCorTextoBotaoNav={aoMudarCorTextoBotaoNav}
       />
     </div>
   );

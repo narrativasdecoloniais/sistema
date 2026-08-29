@@ -1,0 +1,53 @@
+.marcador {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+
+  @media (max-width: 700px) {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.marcadorBuzios {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+// A cor vem sempre de --cor-buzio-secao, uma custom property que a
+// página-mãe define no ancestral que envolve o Marcador (mesmo nome usado
+// em frontend/app/(publico)/page.module.scss) — herdada via cascata CSS
+// normal, sem precisar que a página conheça esta classe. Fallback --buzio
+// cobre o caso de a página-mãe não definir a variável.
+.marcadorBuzio {
+  position: absolute;
+  display: block;
+  color: var(--cor-buzio-secao, var(--buzio));
+}
+
+.marcadorBuzioA {
+  top: 12px;
+  left: 0;
+  width: 24px;
+  height: 26.6px;
+}
+
+.marcadorBuzioB {
+  top: 30px;
+  left: 36px;
+  width: 19.5px;
+  height: 26px;
+}
+
+.marcadorBuzioC {
+  top: 0;
+  left: 33px;
+  width: 21px;
+  height: 27px;
+}

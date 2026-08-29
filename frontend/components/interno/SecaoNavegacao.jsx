@@ -33,6 +33,8 @@ export default function SecaoNavegacao({
   corIconeNavRolado,
   corBordaNavRolado,
   navMesmoEstilo,
+  corFundoBotaoNav,
+  corTextoBotaoNav,
   aoMudarFundoNavTopoTipo,
   aoMudarCorFundoNavTopo,
   aoMudarCorTextoNavTopo,
@@ -43,6 +45,8 @@ export default function SecaoNavegacao({
   aoMudarCorIconeNavRolado,
   aoMudarCorBordaNavRolado,
   aoMudarNavMesmoEstilo,
+  aoMudarCorFundoBotaoNav,
+  aoMudarCorTextoBotaoNav,
 }) {
   const hexFundoTopo = fundoNavTopoTipo === "COR" ? resolverCorHex(corFundoNavTopo, OPCOES_COR_SECAO) : null;
   const hexTextoTopo = resolverCorHex(corTextoNavTopo, OPCOES_COR_PUBLICA);
@@ -56,6 +60,10 @@ export default function SecaoNavegacao({
 
   const avisosTopo = avisosDeContraste(hexFundoTopo, hexTextoTopo, hexIconeTopo);
   const avisosRolado = navMesmoEstilo ? { texto: null, icone: null } : avisosDeContraste(hexFundoRolado, hexTextoRolado, hexIconeRolado);
+
+  const hexFundoBotao = resolverCorHex(corFundoBotaoNav, OPCOES_COR_SECAO);
+  const hexTextoBotao = resolverCorHex(corTextoBotaoNav, OPCOES_COR_PUBLICA);
+  const avisoBotao = avisosDeContraste(hexFundoBotao, hexTextoBotao, null).texto;
 
   return (
     <div className={styles.secao}>
@@ -154,6 +162,33 @@ export default function SecaoNavegacao({
             )}
           </>
         )}
+
+        <CampoCorSecao
+          id="corFundoBotaoNav"
+          rotulo="Cor de fundo — abas (Submissão/Programação/Anais)"
+          valor={corFundoBotaoNav}
+          onChange={aoMudarCorFundoBotaoNav}
+        />
+        <CampoCorSecao
+          id="corTextoBotaoNav"
+          rotulo="Cor do texto — abas"
+          valor={corTextoBotaoNav}
+          opcoes={OPCOES_COR_PUBLICA}
+          onChange={aoMudarCorTextoBotaoNav}
+        />
+
+        {avisoBotao !== null && (
+          <p className={styles.avisoContraste}>
+            Contraste baixo entre fundo e texto das abas ({avisoBotao.toFixed(1)}:1 — mínimo recomendado {LIMIAR_CONTRASTE_TEXTO}:1). Pode ficar difícil de ler.
+          </p>
+        )}
+
+        <span
+          className={styles.previewNavBotao}
+          style={{ background: hexFundoBotao, color: hexTextoBotao }}
+        >
+          Programação
+        </span>
 
         <div className={styles.linhaPreviewNav}>
           <div className={styles.blocoPreviewNav}>
