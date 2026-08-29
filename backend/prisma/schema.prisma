@@ -342,15 +342,21 @@ model Edicao {
   opacidadeFundoPublicacoes Int           @default(100)
   corTextoPublicacoes       String    @default("TINTA")
   corBuzioPublicacoes       String    @default("BUZIO")
+  // Seção "Localização" (mapa + lista de pontos de interesse) — sem búzio
+  // porque essa seção não usa o marcador Búzio (ver PaginaInicialConteudo.jsx).
+  corFundoLocalizacao       String      @default("PAPEL")
+  opacidadeFundoLocalizacao Int           @default(100)
+  corTextoLocalizacao       String    @default("TINTA")
   // Faixa lateral (cor/imagem/largura definidas nos campos faixaHero* acima)
   // é renderizada por cada seção que a mantiver ligada (ver FaixaLateral em
-  // PaginaInicialConteudo.jsx) — esses 4 campos só dizem se aquela seção
+  // PaginaInicialConteudo.jsx) — esses 5 campos só dizem se aquela seção
   // específica participa ou não. Default true preserva o comportamento atual
   // (faixa contínua em todas as seções).
   mostrarFaixaApresentacao Boolean       @default(true)
   mostrarFaixaModalidades  Boolean       @default(true)
   mostrarFaixaAgenda       Boolean       @default(true)
   mostrarFaixaPublicacoes  Boolean       @default(true)
+  mostrarFaixaLocalizacao  Boolean       @default(true)
   // Mensagem de contribuição voluntária (ex. pedido de doação via PIX) na
   // etapa final da inscrição pública — não é uma dobra da home, por isso
   // sem cor/opacidade/faixa como as acima. Só aparece no público quando
@@ -503,6 +509,7 @@ model EdicaoPontoInteresse {
   edicao    Edicao             @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
   tipo      TipoPontoInteresse
   nome      String
+  imagem    String?
   endereco  String?
   latitude  Float
   longitude Float

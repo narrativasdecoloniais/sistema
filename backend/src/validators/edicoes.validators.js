@@ -64,6 +64,11 @@ const edicaoPontoInteresseSchema = z.object({
     errorMap: () => ({ message: "Tipo de ponto inválido" }),
   }),
   nome: z.string().trim().min(2, "Informe o nome do ponto"),
+  imagem: z
+    .string()
+    .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
+    .nullable()
+    .optional(),
   endereco: z.string().trim().optional(),
   latitude: z.coerce
     .number({ invalid_type_error: "Informe uma latitude válida" })
@@ -230,12 +235,16 @@ const edicaoSchema = z
     opacidadeFundoPublicacoes: opacidadeSchema,
     corTextoPublicacoes: corPublicaSchema,
     corBuzioPublicacoes: corPublicaSchema,
+    corFundoLocalizacao: corSecaoSchema,
+    opacidadeFundoLocalizacao: opacidadeSchema,
+    corTextoLocalizacao: corPublicaSchema,
     // Liga/desliga a faixa lateral fixa (definida em faixaHero*) enquanto
     // cada seção está em tela — ver PaginaInicialConteudo.jsx.
     mostrarFaixaApresentacao: z.boolean().optional(),
     mostrarFaixaModalidades: z.boolean().optional(),
     mostrarFaixaAgenda: z.boolean().optional(),
     mostrarFaixaPublicacoes: z.boolean().optional(),
+    mostrarFaixaLocalizacao: z.boolean().optional(),
     // Mensagem de contribuição voluntária na confirmação da inscrição
     // pública (ver ContribuicaoForm.jsx no admin e CardContribuicao.jsx no
     // público) — só aparece quando corpoContribuicao está preenchido. Link

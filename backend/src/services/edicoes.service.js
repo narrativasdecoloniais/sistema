@@ -40,7 +40,7 @@ async function removerImagemApoiador(apoiador) {
 }
 
 async function montarCamposPontoInteresse(ponto) {
-  return {
+  const campos = {
     tipo: ponto.tipo,
     nome: ponto.nome,
     endereco: ponto.endereco || null,
@@ -48,6 +48,18 @@ async function montarCamposPontoInteresse(ponto) {
     longitude: ponto.longitude,
     link: ponto.link || null,
   };
+
+  if (ponto.imagem === null) {
+    campos.imagem = null;
+  } else if (ponto.imagem && ponto.imagem.startsWith("data:image/")) {
+    campos.imagem = await storageService.salvarImagemPublica(ponto.imagem, "edicao-pontos-interesse");
+  }
+
+  return campos;
+}
+
+async function removerImagemPontoInteresse(ponto) {
+  await storageService.removerImagemPublica(ponto.imagem);
 }
 
 // Imagem raster comum de um campo escalar da própria Edicao (não uma lista
@@ -178,7 +190,8 @@ async function atualizarEdicao(id, dados) {
       "edicaoId",
       id,
       pontosInteresse,
-      montarCamposPontoInteresse
+      montarCamposPontoInteresse,
+      removerImagemPontoInteresse
     );
     if (operacoes.length > 0) {
       await prisma.$transaction(operacoes);
