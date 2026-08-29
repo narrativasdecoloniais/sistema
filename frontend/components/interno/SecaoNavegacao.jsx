@@ -4,14 +4,11 @@ import CampoCorSecao, { OPCOES_COR_SECAO, OPCOES_COR_PUBLICA } from "./CampoCorS
 import CampoCheckbox from "./CampoCheckbox";
 import CabecalhoSecao from "./CabecalhoSecao";
 import { contraste } from "@/lib/contraste";
+import { resolverCorHex } from "@/lib/cores";
 import styles from "./EdicaoForm.module.scss";
 
 const LIMIAR_CONTRASTE_TEXTO = 4.5;
 const LIMIAR_CONTRASTE_ICONE = 3;
-
-function corPorValor(opcoes, valor) {
-  return opcoes.find((opcao) => opcao.valor === valor)?.cor;
-}
 
 // Avisos de contraste de um estado (Topo/Rolado) — null quando não há fundo
 // fixo pra comparar (Topo transparente, sem cor sólida definida).
@@ -47,15 +44,15 @@ export default function SecaoNavegacao({
   aoMudarCorBordaNavRolado,
   aoMudarNavMesmoEstilo,
 }) {
-  const hexFundoTopo = fundoNavTopoTipo === "COR" ? corPorValor(OPCOES_COR_SECAO, corFundoNavTopo) : null;
-  const hexTextoTopo = corPorValor(OPCOES_COR_PUBLICA, corTextoNavTopo);
-  const hexIconeTopo = corPorValor(OPCOES_COR_PUBLICA, corIconeNavTopo);
-  const hexBordaTopo = corPorValor(OPCOES_COR_PUBLICA, corBordaNavTopo);
+  const hexFundoTopo = fundoNavTopoTipo === "COR" ? resolverCorHex(corFundoNavTopo, OPCOES_COR_SECAO) : null;
+  const hexTextoTopo = resolverCorHex(corTextoNavTopo, OPCOES_COR_PUBLICA);
+  const hexIconeTopo = resolverCorHex(corIconeNavTopo, OPCOES_COR_PUBLICA);
+  const hexBordaTopo = resolverCorHex(corBordaNavTopo, OPCOES_COR_PUBLICA);
 
-  const hexFundoRolado = corPorValor(OPCOES_COR_SECAO, corFundoNavRolado);
-  const hexTextoRolado = corPorValor(OPCOES_COR_PUBLICA, corTextoNavRolado);
-  const hexIconeRolado = corPorValor(OPCOES_COR_PUBLICA, corIconeNavRolado);
-  const hexBordaRolado = corPorValor(OPCOES_COR_PUBLICA, corBordaNavRolado);
+  const hexFundoRolado = resolverCorHex(corFundoNavRolado, OPCOES_COR_SECAO);
+  const hexTextoRolado = resolverCorHex(corTextoNavRolado, OPCOES_COR_PUBLICA);
+  const hexIconeRolado = resolverCorHex(corIconeNavRolado, OPCOES_COR_PUBLICA);
+  const hexBordaRolado = resolverCorHex(corBordaNavRolado, OPCOES_COR_PUBLICA);
 
   const avisosTopo = avisosDeContraste(hexFundoTopo, hexTextoTopo, hexIconeTopo);
   const avisosRolado = navMesmoEstilo ? { texto: null, icone: null } : avisosDeContraste(hexFundoRolado, hexTextoRolado, hexIconeRolado);

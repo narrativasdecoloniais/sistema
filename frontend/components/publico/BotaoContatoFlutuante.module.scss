@@ -1,0 +1,111 @@
+// z-index 200: acima da navbar (40) e do wrapper do layout público (100),
+// abaixo do toast (2000) e do modal de detalhes de atividade (3000).
+.raiz {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+
+  @media (max-width: 700px) {
+    right: 1rem;
+    bottom: 1rem;
+  }
+}
+
+// Raio totalmente arredondado — exceção documentada em DESIGN.md pra
+// botões de ação circulares (mesmo precedente do botão "criar edição" no
+// admin, EdicaoControles.module.scss).
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--barro);
+  color: var(--papel);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(32, 25, 20, 0.15);
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
+}
+
+// Mesmo tratamento "comprovante" de CardInscricaoConfirmada/CardContribuicao
+// (borda ocre, raio 6px, sombra sutil, fundo papel).
+.popover {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: min(280px, calc(100vw - 3rem));
+  padding: 1rem;
+  background: var(--papel);
+  border: 1.5px solid var(--ocre);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(32, 25, 20, 0.07);
+}
+
+.rotulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.valor {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  background: var(--areia);
+  border: 1px solid var(--ocre);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+// Mesmo padrão "borda sem preenchimento" já usado em CardContribuicao
+// (.botaoCopiar) e AtividadeSelecionavel (.detalhes).
+.botaoCopiar {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0.4rem 0.8rem;
+  background: none;
+  border: 1.5px solid var(--ocre);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--barro);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--barro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}

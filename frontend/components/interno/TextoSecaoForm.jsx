@@ -13,14 +13,10 @@ import CampoOpacidade from "./CampoOpacidade";
 import CampoCheckbox from "./CampoCheckbox";
 import CabecalhoSecao from "./CabecalhoSecao";
 import { contraste } from "@/lib/contraste";
+import { corSchema, resolverCorHex } from "@/lib/cores";
 import styles from "./EdicaoForm.module.scss";
 
-const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
 const LIMIAR_CONTRASTE_BOTAO = 4.5;
-
-function corPorValor(valor) {
-  return OPCOES_COR_PUBLICA.find((opcao) => opcao.valor === valor)?.cor;
-}
 
 // Componentes de ícone não podem ser passados de Server pra Client Component
 // via prop (não são serializáveis) — por isso o mapa mora aqui dentro,
@@ -74,24 +70,24 @@ export default function TextoSecaoForm({
   const schema = z.object({
     [campoTitulo]: z.string().trim().optional(),
     [campoCorpo]: z.string().trim().optional(),
-    [campoCorFundo]: z.enum(PALETA_PUBLICA).optional(),
+    [campoCorFundo]: corSchema,
     [campoOpacidade]: z.number().int().min(0).max(100).optional(),
-    [campoCorTexto]: z.enum(PALETA_PUBLICA).optional(),
-    [campoCorBuzio]: z.enum(PALETA_PUBLICA).optional(),
+    [campoCorTexto]: corSchema,
+    [campoCorBuzio]: corSchema,
     [campoMostrarFaixa]: z.boolean().optional(),
     ...(temCard
       ? {
-          [campoCorFundoCard]: z.enum(PALETA_PUBLICA).optional(),
+          [campoCorFundoCard]: corSchema,
           [campoOpacidadeCard]: z.number().int().min(0).max(100).optional(),
-          [campoCorTextoCard]: z.enum(PALETA_PUBLICA).optional(),
-          [campoCorTextoSecundarioCard]: z.enum(PALETA_PUBLICA).optional(),
-          [campoCorAcentoCard]: z.enum(PALETA_PUBLICA).optional(),
+          [campoCorTextoCard]: corSchema,
+          [campoCorTextoSecundarioCard]: corSchema,
+          [campoCorAcentoCard]: corSchema,
         }
       : {}),
     ...(temBotao
       ? {
-          [campoCorFundoBotaoCard]: z.enum(PALETA_PUBLICA).optional(),
-          [campoCorTextoBotaoCard]: z.enum(PALETA_PUBLICA).optional(),
+          [campoCorFundoBotaoCard]: corSchema,
+          [campoCorTextoBotaoCard]: corSchema,
         }
       : {}),
   });
@@ -241,7 +237,10 @@ export default function TextoSecaoForm({
 
   const contrasteBotao =
     temBotao && corFundoBotaoCard && corTextoBotaoCard
-      ? contraste(corPorValor(corFundoBotaoCard), corPorValor(corTextoBotaoCard))
+      ? contraste(
+          resolverCorHex(corFundoBotaoCard, OPCOES_COR_PUBLICA),
+          resolverCorHex(corTextoBotaoCard, OPCOES_COR_PUBLICA)
+        )
       : null;
 
   return (

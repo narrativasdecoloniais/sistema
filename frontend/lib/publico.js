@@ -80,6 +80,7 @@ export async function buscarModalidadeSubmissaoPublicaPorSlug(slug) {
 export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
   const realizadores = edicao?.realizadores || [];
   const apoiadores = edicao?.apoiadores || [];
+  const pontosInteresse = edicao?.pontosInteresse || [];
 
   return {
     atividades,
@@ -91,6 +92,7 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
     corFundoApoiadores: edicao?.corFundoApoiadores || "BARRO",
     opacidadeFundoApoiadores: edicao?.opacidadeFundoApoiadores ?? 100,
     mostrarFaixaApoiadores: edicao?.mostrarFaixaApoiadores ?? true,
+    pontosInteresse,
     logoSvg: edicao?.logoSvg,
     logoSvgViewBox: edicao?.logoSvgViewBox,
     logoSvgCores: edicao?.logoSvgCores,

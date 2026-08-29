@@ -29,7 +29,7 @@ export default function CardAtividadeProgramacao({ atividade, temEdicaoAtual, ed
           }
           className={styles.detalhes}
         >
-          Ver detalhes →
+          Ver detalhes <span aria-hidden="true">→</span>
         </Link>
       )}
     </article>

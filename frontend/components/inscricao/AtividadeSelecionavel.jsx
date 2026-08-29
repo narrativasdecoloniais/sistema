@@ -56,7 +56,7 @@ export default function AtividadeSelecionavel({ atividade, selecionada, onChange
             <p className={styles.aviso}>Conflita com outra atividade selecionada.</p>
           )}
           <button type="button" className={styles.detalhes} onClick={aoAbrirDetalhes}>
-            Ver detalhes
+            Ver detalhes <span aria-hidden="true">→</span>
           </button>
         </div>
       </label>

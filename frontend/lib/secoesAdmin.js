@@ -22,6 +22,8 @@ export const GRUPOS_SECOES_ADMIN = [
           { valor: "PAGINA_PUBLICACOES", rotulo: "Publicações" },
           { valor: "PAGINA_REALIZADORES", rotulo: "Realizadores" },
           { valor: "PAGINA_APOIO", rotulo: "Apoio" },
+          { valor: "PAGINA_CONTRIBUICAO", rotulo: "Contribuição" },
+          { valor: "PAGINA_LOCALIZACAO", rotulo: "Localização" },
         ],
       },
       { valor: "PROGRAMACAO", rotulo: "Programação" },

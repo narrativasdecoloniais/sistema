@@ -5,11 +5,11 @@ import { z } from "zod";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { extrairErros } from "@/lib/validacao";
+import { corSchema } from "@/lib/cores";
 import SecaoHero from "./SecaoHero";
 import SecaoNavegacao from "./SecaoNavegacao";
 import styles from "./EdicaoForm.module.scss";
 
-const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
 const TIPO_FAIXA = ["COR", "IMAGEM", "NENHUMA"];
 const TIPO_FUNDO = ["COR", "IMAGEM"];
 const TIPO_FUNDO_NAV = ["TRANSPARENTE", "COR"];
@@ -17,31 +17,31 @@ const TIPO_FUNDO_NAV = ["TRANSPARENTE", "COR"];
 const heroNavbarSchema = z.object({
   logoSvg: z.string().max(300_000).nullable().optional(),
   logoSvgCores: z.record(z.string(), z.string()).nullable().optional(),
-  corFundoHero: z.enum(PALETA_PUBLICA).optional(),
+  corFundoHero: corSchema,
   opacidadeFundoHero: z.number().int().min(0).max(100).optional(),
   fundoHeroTipo: z.enum(TIPO_FUNDO).optional(),
   imagemFundoHeroDesktop: z.string().max(20_000_000).nullable().optional(),
   imagemFundoHeroMobile: z.string().max(20_000_000).nullable().optional(),
-  corTextoHero: z.enum(PALETA_PUBLICA).optional(),
-  corBuzioHero: z.enum(PALETA_PUBLICA).optional(),
+  corTextoHero: corSchema,
+  corBuzioHero: corSchema,
   faixaHeroTipoDesktop: z.enum(TIPO_FAIXA).optional(),
-  corFaixaHeroDesktop: z.enum(PALETA_PUBLICA).optional(),
+  corFaixaHeroDesktop: corSchema,
   imagemFaixaHeroDesktop: z.string().max(8_000_000).nullable().optional(),
   larguraFaixaHeroDesktop: z.number().int().positive().optional(),
   faixaHeroTipoMobile: z.enum(TIPO_FAIXA).optional(),
-  corFaixaHeroMobile: z.enum(PALETA_PUBLICA).optional(),
+  corFaixaHeroMobile: corSchema,
   imagemFaixaHeroMobile: z.string().max(8_000_000).nullable().optional(),
   larguraFaixaHeroMobile: z.number().int().positive().optional(),
   mostrarFaixaHero: z.boolean().optional(),
   fundoNavTopoTipo: z.enum(TIPO_FUNDO_NAV).optional(),
-  corFundoNavTopo: z.enum(PALETA_PUBLICA).optional(),
-  corTextoNavTopo: z.enum(PALETA_PUBLICA).optional(),
-  corIconeNavTopo: z.enum(PALETA_PUBLICA).optional(),
-  corBordaNavTopo: z.enum(PALETA_PUBLICA).optional(),
-  corFundoNavRolado: z.enum(PALETA_PUBLICA).optional(),
-  corTextoNavRolado: z.enum(PALETA_PUBLICA).optional(),
-  corIconeNavRolado: z.enum(PALETA_PUBLICA).optional(),
-  corBordaNavRolado: z.enum(PALETA_PUBLICA).optional(),
+  corFundoNavTopo: corSchema,
+  corTextoNavTopo: corSchema,
+  corIconeNavTopo: corSchema,
+  corBordaNavTopo: corSchema,
+  corFundoNavRolado: corSchema,
+  corTextoNavRolado: corSchema,
+  corIconeNavRolado: corSchema,
+  corBordaNavRolado: corSchema,
   navMesmoEstilo: z.boolean().optional(),
 });
 

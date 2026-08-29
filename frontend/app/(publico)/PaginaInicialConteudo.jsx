@@ -2,15 +2,24 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "motion/react";
 import Logo, { LOGO_DURACAO_ENTRADA } from "@/components/publico/Logo";
 import Carimbo from "@/components/graficos/Carimbo";
 import Divisor from "@/components/graficos/Divisor";
 import TexturaPapel from "@/components/graficos/TexturaPapel";
-import NavegacaoDias, { idAbaDia, idPainelDia } from "@/components/inscricao/NavegacaoDias";
-import CarrosselAtividades from "@/components/inscricao/CarrosselAtividades";
+import NavegacaoDias, {
+  idAbaDia,
+  idPainelDia,
+} from "@/components/inscricao/NavegacaoDias";
+import AtividadesPorTipo from "@/components/inscricao/AtividadesPorTipo";
 import LinhaProgramacao from "@/components/publico/LinhaProgramacao";
 import CardAtividadeProgramacao from "@/components/publico/CardAtividadeProgramacao";
+
+// Carrega o script do Google Maps via window/document — precisa ficar fora do SSR.
+const MapaLocalizacao = dynamic(() => import("@/components/publico/MapaLocalizacao"), {
+  ssr: false,
+});
 import { agruparAtividadesPorDia } from "@/lib/inscricao";
 import {
   formatarDiaAtividade,
@@ -19,10 +28,22 @@ import {
   formatarPeriodoSubmissao,
   dividirParagrafos,
 } from "@/lib/publico";
+import {
+  estiloCoresPersonalizadas,
+  ehCorPersonalizada,
+  corTextoLegivel,
+} from "@/lib/cores";
 import styles from "./page.module.scss";
 
 // TODO: substituir pela URL real assim que confirmada.
 const URL_GPDES = "#";
+
+const ROTULOS_TIPO_PONTO = {
+  LOCAL_EVENTO: "Local do evento",
+  HOSPEDAGEM: "Hospedagem",
+  RESTAURANTE: "Restaurante",
+  OUTRO: "Outro",
+};
 
 const containerVariants = {
   oculto: {},
@@ -194,7 +215,13 @@ function SeloEmBreve({ children = "Em breve" }) {
 // não renderiza o componente — em vez de rastrear scroll: como as seções
 // ficam emendadas sem vão entre si, o efeito visual já é uma faixa contínua
 // nas seções que a mantiverem ligada.
-function FaixaLateral({ estilo, corDesktop, corMobile, tipoDesktop, tipoMobile }) {
+function FaixaLateral({
+  estilo,
+  corDesktop,
+  corMobile,
+  tipoDesktop,
+  tipoMobile,
+}) {
   return (
     <>
       <span
@@ -230,6 +257,7 @@ export default function PaginaInicialConteudo({
   corFundoApoiadores = "BARRO",
   opacidadeFundoApoiadores = 100,
   mostrarFaixaApoiadores = true,
+  pontosInteresse = [],
   logoSvg,
   logoSvgViewBox,
   logoSvgCores,
@@ -293,19 +321,24 @@ export default function PaginaInicialConteudo({
   edicaoSlug,
   dataEvento = "Data a confirmar",
   localEvento,
-  realizacaoEvento = "Realização: GPDES/UnB",
 }) {
   const reduzMovimento = useReducedMotion();
 
   const idDiasProgramacao = useId();
-  const diasProgramacao = useMemo(() => agruparAtividadesPorDia(atividades), [atividades]);
-  const [diaProgramacaoSelecionado, setDiaProgramacaoSelecionado] = useState(null);
+  const diasProgramacao = useMemo(
+    () => agruparAtividadesPorDia(atividades),
+    [atividades],
+  );
+  const [diaProgramacaoSelecionado, setDiaProgramacaoSelecionado] =
+    useState(null);
   const chaveDiaProgramacaoAtiva =
-    diaProgramacaoSelecionado && diasProgramacao.some((dia) => dia.chave === diaProgramacaoSelecionado)
+    diaProgramacaoSelecionado &&
+    diasProgramacao.some((dia) => dia.chave === diaProgramacaoSelecionado)
       ? diaProgramacaoSelecionado
       : (diasProgramacao[0]?.chave ?? null);
   const diaProgramacaoAtual =
-    diasProgramacao.find((dia) => dia.chave === chaveDiaProgramacaoAtiva) ?? null;
+    diasProgramacao.find((dia) => dia.chave === chaveDiaProgramacaoAtiva) ??
+    null;
 
   function renderizarCartaoProgramacao(atividade) {
     return (
@@ -320,8 +353,21 @@ export default function PaginaInicialConteudo({
 
   const estiloHero = {
     "--opacidade-fundo-hero": `${opacidadeFundoHero}%`,
-    ...(imagemFundoHeroDesktop ? { "--imagem-fundo-hero-desktop": `url(${imagemFundoHeroDesktop})` } : {}),
-    ...(imagemFundoHeroMobile ? { "--imagem-fundo-hero-mobile": `url(${imagemFundoHeroMobile})` } : {}),
+    ...(imagemFundoHeroDesktop
+      ? { "--imagem-fundo-hero-desktop": `url(${imagemFundoHeroDesktop})` }
+      : {}),
+    ...(imagemFundoHeroMobile
+      ? { "--imagem-fundo-hero-mobile": `url(${imagemFundoHeroMobile})` }
+      : {}),
+    // Tokens da paleta curada continuam resolvidos pelos seletores de
+    // atributo data-cor-* (ver page.module.scss) — isso só cobre cor
+    // personalizada (hex arbitrário não é enumerável em SCSS), sobrescrevendo
+    // a mesma custom property via style inline (sempre vence a cascata).
+    ...estiloCoresPersonalizadas({
+      "--cor-fundo-hero-base": corFundoHero,
+      "--cor-texto-hero": corTextoHero,
+      "--cor-buzio-hero": corBuzioHero,
+    }),
   };
 
   // Largura/imagem da faixa lateral são as mesmas em toda a página (vêm da
@@ -329,10 +375,18 @@ export default function PaginaInicialConteudo({
   // abaixo) usa esse mesmo objeto de estilo; "mostrar ou não" em cada seção é
   // só renderizar ou não o componente, sem JS de rolagem.
   const estiloFaixaLateral = {
-    ...(imagemFaixaHeroDesktop ? { "--imagem-faixa-hero-desktop": `url(${imagemFaixaHeroDesktop})` } : {}),
-    ...(imagemFaixaHeroMobile ? { "--imagem-faixa-hero-mobile": `url(${imagemFaixaHeroMobile})` } : {}),
+    ...(imagemFaixaHeroDesktop
+      ? { "--imagem-faixa-hero-desktop": `url(${imagemFaixaHeroDesktop})` }
+      : {}),
+    ...(imagemFaixaHeroMobile
+      ? { "--imagem-faixa-hero-mobile": `url(${imagemFaixaHeroMobile})` }
+      : {}),
     "--largura-faixa-hero-mobile-valor": `${larguraFaixaHeroMobile}px`,
     "--largura-faixa-hero-desktop-valor": `${larguraFaixaHeroDesktop}px`,
+    ...estiloCoresPersonalizadas({
+      "--cor-faixa-hero-desktop": corFaixaHeroDesktop,
+      "--cor-faixa-hero-mobile": corFaixaHeroMobile,
+    }),
   };
 
   return (
@@ -346,7 +400,9 @@ export default function PaginaInicialConteudo({
         data-cor-buzio={corBuzioHero}
         style={{ ...estiloHero, ...estiloFaixaLateral }}
       >
-        {fundoHeroTipo === "IMAGEM" && <div className={styles.heroFundoBlur} aria-hidden="true" />}
+        {fundoHeroTipo === "IMAGEM" && (
+          <div className={styles.heroFundoBlur} aria-hidden="true" />
+        )}
         {mostrarFaixaHero && (
           <FaixaLateral
             estilo={estiloFaixaLateral}
@@ -386,9 +442,12 @@ export default function PaginaInicialConteudo({
         >
           <span className={styles.legendaPrincipal}>{dataEvento}</span>
           {localEvento && (
-            <span className={`${styles.legendaPrincipal} ${styles.legendaLocal}`}>{localEvento}</span>
+            <span
+              className={`${styles.legendaPrincipal} ${styles.legendaLocal}`}
+            >
+              {localEvento}
+            </span>
           )}
-          <span className={styles.legendaSecundaria}>{realizacaoEvento}</span>
         </motion.p>
 
         <motion.a
@@ -406,7 +465,9 @@ export default function PaginaInicialConteudo({
                 }
           }
         >
-          <span className={`${styles.conviteTexto} stencil`}>Deslize para ver mais</span>
+          <span className={`${styles.conviteTexto} stencil`}>
+            Deslize para ver mais
+          </span>
           <motion.span
             className={styles.conviteBuzio}
             animate={
@@ -439,7 +500,17 @@ export default function PaginaInicialConteudo({
         data-cor-buzio={corBuzioApresentacao}
         data-cor-fundo-botao-secao={corFundoBotaoApresentacao}
         data-cor-texto-botao-secao={corTextoBotaoApresentacao}
-        style={{ "--opacidade-fundo-secao": `${opacidadeFundoApresentacao}%`, ...estiloFaixaLateral }}
+        style={{
+          "--opacidade-fundo-secao": `${opacidadeFundoApresentacao}%`,
+          ...estiloFaixaLateral,
+          ...estiloCoresPersonalizadas({
+            "--cor-fundo-secao-base": corFundoApresentacao,
+            "--cor-texto-secao": corTextoApresentacao,
+            "--cor-buzio-secao": corBuzioApresentacao,
+            "--cor-fundo-botao-secao": corFundoBotaoApresentacao,
+            "--cor-texto-botao-secao": corTextoBotaoApresentacao,
+          }),
+        }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
@@ -467,12 +538,19 @@ export default function PaginaInicialConteudo({
               {tituloApresentacao}
             </motion.h2>
             {dividirParagrafos(corpoApresentacao).map((paragrafo, indice) => (
-              <motion.p key={indice} className={styles.secaoTexto} variants={itemVariants}>
+              <motion.p
+                key={indice}
+                className={styles.secaoTexto}
+                variants={itemVariants}
+              >
                 {paragrafo}
               </motion.p>
             ))}
             {temEdicaoAtual && (
-              <motion.div className={styles.sobreEventoCtas} variants={itemVariants}>
+              <motion.div
+                className={styles.sobreEventoCtas}
+                variants={itemVariants}
+              >
                 <Link href="/inscricao" className={styles.inscricaoCta}>
                   Inscreva-se →
                 </Link>
@@ -506,6 +584,17 @@ export default function PaginaInicialConteudo({
           "--opacidade-fundo-secao": `${opacidadeFundoModalidades}%`,
           "--opacidade-fundo-card": `${opacidadeFundoCardModalidades}%`,
           ...estiloFaixaLateral,
+          ...estiloCoresPersonalizadas({
+            "--cor-fundo-secao-base": corFundoModalidades,
+            "--cor-texto-secao": corTextoModalidades,
+            "--cor-buzio-secao": corBuzioModalidades,
+            "--cor-fundo-card-base": corFundoCardModalidades,
+            "--cor-texto-card": corTextoCardModalidades,
+            "--cor-texto-secundario-card": corTextoSecundarioCardModalidades,
+            "--cor-acento-card": corAcentoCardModalidades,
+            "--cor-fundo-botao-card": corFundoBotaoCardModalidades,
+            "--cor-texto-botao-card": corTextoBotaoCardModalidades,
+          }),
         }}
         initial="oculto"
         whileInView="visivel"
@@ -595,6 +684,15 @@ export default function PaginaInicialConteudo({
           "--opacidade-fundo-secao": `${opacidadeFundoAgenda}%`,
           "--opacidade-fundo-card": `${opacidadeFundoCardAgenda}%`,
           ...estiloFaixaLateral,
+          ...estiloCoresPersonalizadas({
+            "--cor-fundo-secao-base": corFundoAgenda,
+            "--cor-texto-secao": corTextoAgenda,
+            "--cor-buzio-secao": corBuzioAgenda,
+            "--cor-fundo-card-base": corFundoCardAgenda,
+            "--cor-texto-card": corTextoCardAgenda,
+            "--cor-texto-secundario-card": corTextoSecundarioCardAgenda,
+            "--cor-acento-card": corAcentoCardAgenda,
+          }),
         }}
         initial="oculto"
         whileInView="visivel"
@@ -629,7 +727,10 @@ export default function PaginaInicialConteudo({
               aparecerão aqui assim que publicadas.
             </motion.p>
           ) : (
-            <motion.div className={styles.programacaoBloco} variants={itemVariants}>
+            <motion.div
+              className={styles.programacaoBloco}
+              variants={itemVariants}
+            >
               {diasProgramacao.length > 1 ? (
                 <NavegacaoDias
                   dias={diasProgramacao}
@@ -640,7 +741,10 @@ export default function PaginaInicialConteudo({
               ) : (
                 diaProgramacaoAtual && (
                   <p className={styles.programacaoDiaUnico}>
-                    {formatarDiaAtividade(diaProgramacaoAtual.inicioIso).completo}
+                    {
+                      formatarDiaAtividade(diaProgramacaoAtual.inicioIso)
+                        .completo
+                    }
                   </p>
                 )
               )}
@@ -651,26 +755,39 @@ export default function PaginaInicialConteudo({
                   {...(diasProgramacao.length > 1
                     ? {
                         role: "tabpanel",
-                        id: idPainelDia(idDiasProgramacao, diaProgramacaoAtual.chave),
-                        "aria-labelledby": idAbaDia(idDiasProgramacao, diaProgramacaoAtual.chave),
+                        id: idPainelDia(
+                          idDiasProgramacao,
+                          diaProgramacaoAtual.chave,
+                        ),
+                        "aria-labelledby": idAbaDia(
+                          idDiasProgramacao,
+                          diaProgramacaoAtual.chave,
+                        ),
                       }
                     : {})}
                 >
-                  {agruparAtividadesPorHorarioInicio(diaProgramacaoAtual.atividades).map((grupo) => (
+                  {agruparAtividadesPorHorarioInicio(
+                    diaProgramacaoAtual.atividades,
+                  ).map((grupo) => (
                     <LinhaProgramacao
                       key={grupo.inicioIso}
                       hora={formatarHoraCurta(grupo.inicioIso)}
-                      horaFim={formatarHoraCurta(grupo.atividades[0].fimAtividade)}
+                      horaFim={formatarHoraCurta(
+                        grupo.atividades[0].fimAtividade,
+                      )}
                     >
                       {grupo.atividades.length === 1 ? (
                         renderizarCartaoProgramacao(grupo.atividades[0])
                       ) : (
-                        <CarrosselAtividades
-                          rotulo={`${grupo.atividades.length} atividades às ${formatarHoraCurta(grupo.inicioIso)}`}
-                          estiloSlide={{ "--largura-slide": "78%", "--largura-slide-desktop": "55%" }}
-                        >
-                          {grupo.atividades.map(renderizarCartaoProgramacao)}
-                        </CarrosselAtividades>
+                        <AtividadesPorTipo
+                          grupo={grupo.atividades}
+                          renderizarCartao={renderizarCartaoProgramacao}
+                          restricaoEscolhaUnica={false}
+                          estiloSlide={{
+                            "--largura-slide": "78%",
+                            "--largura-slide-desktop": "55%",
+                          }}
+                        />
                       )}
                     </LinhaProgramacao>
                   ))}
@@ -681,13 +798,62 @@ export default function PaginaInicialConteudo({
         </motion.div>
       </motion.section>
 
+      {pontosInteresse.length > 0 && (
+        <section
+          className={styles.localizacao}
+          style={estiloFaixaLateral}
+          aria-label="Localização"
+        >
+          <FaixaLateral
+            estilo={estiloFaixaLateral}
+            corDesktop={corFaixaHeroDesktop}
+            corMobile={corFaixaHeroMobile}
+            tipoDesktop={faixaHeroTipoDesktop}
+            tipoMobile={faixaHeroTipoMobile}
+          />
+          <div className={styles.localizacaoConteudo}>
+            <span className={styles.localizacaoLabel}>Localização</span>
+            <MapaLocalizacao pontos={pontosInteresse} />
+            <ul className={styles.localizacaoLista}>
+              {pontosInteresse.map((ponto) => (
+                <li key={ponto.id} className={styles.localizacaoItem}>
+                  <span className={styles.localizacaoTipo}>
+                    {ROTULOS_TIPO_PONTO[ponto.tipo] || ponto.tipo}
+                  </span>
+                  <span className={styles.localizacaoNome}>
+                    {ponto.link ? (
+                      <a href={ponto.link} target="_blank" rel="noopener noreferrer">
+                        {ponto.nome}
+                      </a>
+                    ) : (
+                      ponto.nome
+                    )}
+                  </span>
+                  {ponto.endereco && (
+                    <span className={styles.localizacaoEndereco}>{ponto.endereco}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
       <motion.section
         id="anais"
         className={`${styles.secao} ${styles.publicacoes}`}
         data-cor-fundo={corFundoPublicacoes}
         data-cor-texto={corTextoPublicacoes}
         data-cor-buzio={corBuzioPublicacoes}
-        style={{ "--opacidade-fundo-secao": `${opacidadeFundoPublicacoes}%`, ...estiloFaixaLateral }}
+        style={{
+          "--opacidade-fundo-secao": `${opacidadeFundoPublicacoes}%`,
+          ...estiloFaixaLateral,
+          ...estiloCoresPersonalizadas({
+            "--cor-fundo-secao-base": corFundoPublicacoes,
+            "--cor-texto-secao": corTextoPublicacoes,
+            "--cor-buzio-secao": corBuzioPublicacoes,
+          }),
+        }}
         initial="oculto"
         whileInView="visivel"
         viewport={{ once: true, margin: "-80px" }}
@@ -710,7 +876,11 @@ export default function PaginaInicialConteudo({
             <SeloEmBreve />
           </motion.div>
           {dividirParagrafos(corpoPublicacoes).map((paragrafo, indice) => (
-            <motion.p key={indice} className={styles.secaoTexto} variants={itemVariants}>
+            <motion.p
+              key={indice}
+              className={styles.secaoTexto}
+              variants={itemVariants}
+            >
               {paragrafo}
             </motion.p>
           ))}
@@ -721,7 +891,20 @@ export default function PaginaInicialConteudo({
         <section
           className={styles.apoio}
           data-cor={corFundoApoiadores}
-          style={{ "--opacidade-fundo-apoiadores": `${opacidadeFundoApoiadores}%`, ...estiloFaixaLateral }}
+          style={{
+            "--opacidade-fundo-apoiadores": `${opacidadeFundoApoiadores}%`,
+            ...estiloFaixaLateral,
+            ...estiloCoresPersonalizadas({
+              "--cor-fundo-apoiadores-base": corFundoApoiadores,
+            }),
+            // Apoio não tem campo de texto próprio — a cor de texto some
+            // dos tokens da paleta curada direto no CSS (ver .apoio em
+            // page.module.scss); pra fundo personalizado não há par
+            // pré-calculado, então escolhe tinta/papel pela luminância.
+            ...(ehCorPersonalizada(corFundoApoiadores)
+              ? { color: corTextoLegivel(corFundoApoiadores) }
+              : {}),
+          }}
           aria-label="Apoio"
         >
           {mostrarFaixaApoiadores && (
@@ -745,13 +928,21 @@ export default function PaginaInicialConteudo({
                     rel="noopener noreferrer"
                     className={styles.apoiadorItem}
                   >
-                    <img src={apoiador.imagem} alt={apoiador.nome} className={styles.apoiadorLogo} />
+                    <img
+                      src={apoiador.imagem}
+                      alt={apoiador.nome}
+                      className={styles.apoiadorLogo}
+                    />
                   </a>
                 ) : (
                   <div key={apoiador.id} className={styles.apoiadorItem}>
-                    <img src={apoiador.imagem} alt={apoiador.nome} className={styles.apoiadorLogo} />
+                    <img
+                      src={apoiador.imagem}
+                      alt={apoiador.nome}
+                      className={styles.apoiadorLogo}
+                    />
                   </div>
-                )
+                ),
               )}
             </div>
           </div>
@@ -762,7 +953,16 @@ export default function PaginaInicialConteudo({
         <section
           className={styles.realizadores}
           data-cor={corFundoRealizadores}
-          style={{ "--opacidade-fundo-realizadores": `${opacidadeFundoRealizadores}%`, ...estiloFaixaLateral }}
+          style={{
+            "--opacidade-fundo-realizadores": `${opacidadeFundoRealizadores}%`,
+            ...estiloFaixaLateral,
+            ...estiloCoresPersonalizadas({
+              "--cor-fundo-realizadores-base": corFundoRealizadores,
+            }),
+            ...(ehCorPersonalizada(corFundoRealizadores)
+              ? { color: corTextoLegivel(corFundoRealizadores) }
+              : {}),
+          }}
           aria-label="Realização"
         >
           {mostrarFaixaRealizadores && (
@@ -786,13 +986,21 @@ export default function PaginaInicialConteudo({
                     rel="noopener noreferrer"
                     className={styles.realizadorItem}
                   >
-                    <img src={realizador.imagem} alt={realizador.nome} className={styles.realizadorLogo} />
+                    <img
+                      src={realizador.imagem}
+                      alt={realizador.nome}
+                      className={styles.realizadorLogo}
+                    />
                   </a>
                 ) : (
                   <div key={realizador.id} className={styles.realizadorItem}>
-                    <img src={realizador.imagem} alt={realizador.nome} className={styles.realizadorLogo} />
+                    <img
+                      src={realizador.imagem}
+                      alt={realizador.nome}
+                      className={styles.realizadorLogo}
+                    />
                   </div>
-                )
+                ),
               )}
             </div>
           </div>

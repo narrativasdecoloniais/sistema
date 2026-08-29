@@ -60,6 +60,16 @@
   color: color-mix(in srgb, var(--papel) 70%, transparent);
 }
 
+.contatoLink {
+  font-size: 0.9rem;
+  color: var(--papel);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .linhaCreditos {
   max-width: 960px;
   margin: 0 auto;

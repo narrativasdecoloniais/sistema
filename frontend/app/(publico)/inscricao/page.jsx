@@ -10,9 +10,10 @@ import Checkbox from "@/components/forms/Checkbox";
 import { useToast } from "@/components/publico/ToastProvider";
 import EtapasInscricao from "@/components/inscricao/EtapasInscricao";
 import CardInscricaoConfirmada from "@/components/inscricao/CardInscricaoConfirmada";
+import CardContribuicao from "@/components/inscricao/CardContribuicao";
 import AtividadeSelecionavel from "@/components/inscricao/AtividadeSelecionavel";
 import NavegacaoDias, { idAbaDia, idPainelDia } from "@/components/inscricao/NavegacaoDias";
-import CarrosselAtividades from "@/components/inscricao/CarrosselAtividades";
+import AtividadesPorTipo from "@/components/inscricao/AtividadesPorTipo";
 import LinhaAtividade from "@/components/inscricao/LinhaAtividade";
 import {
   inscricaoCpfSchema,
@@ -139,15 +140,9 @@ function InscricaoConteudo() {
       setModoAdicionar(true);
       setInscricaoAtual(dados.inscricaoAtual);
       setAtividadesDisponiveis(dados.atividades);
-
-      if (dados.atividades.length === 0) {
-        setResultado(dados.inscricaoAtual);
-        setEmailEnviado(false);
-        setEtapa("concluido");
-        return;
-      }
-
-      setEtapa("atividades");
+      setResultado(dados.inscricaoAtual);
+      setEmailEnviado(false);
+      setEtapa("concluido");
       return;
     }
 
@@ -572,6 +567,7 @@ function InscricaoConteudo() {
             <CardInscricaoConfirmada
               edicao={edicao}
               inscricoesAtividade={inscricaoAtual.inscricoesAtividade}
+              nomeParticipante={nomeUsuario}
               onCancelar={aoCancelarAtividade}
             />
           )}
@@ -625,11 +621,11 @@ function InscricaoConteudo() {
                     {grupo.length === 1 ? (
                       renderizarCartao(grupo[0])
                     ) : (
-                      <CarrosselAtividades
-                        rotulo={`${grupo.length} atividades no mesmo horário — só é possível escolher uma.`}
-                      >
-                        {grupo.map(renderizarCartao)}
-                      </CarrosselAtividades>
+                      <AtividadesPorTipo
+                        grupo={grupo}
+                        renderizarCartao={renderizarCartao}
+                        selecionadas={selecionadas}
+                      />
                     )}
                   </LinhaAtividade>
                 );
@@ -639,41 +635,39 @@ function InscricaoConteudo() {
 
           <button
             type="button"
-            className={styles.cta}
-            disabled={carregando || selecionadas.size === 0}
+            className={styles.ctaContorno}
+            disabled={carregando}
             onClick={() => aoFinalizar()}
           >
-            {carregando ? "Aguarde..." : "Confirmar atividades selecionadas"}
-          </button>
-          <button type="button" className={styles.link} disabled={carregando} onClick={() => aoFinalizar([])}>
-            Escolher depois
+            {carregando ? "Aguarde..." : "Continuar"}
           </button>
         </div>
       )}
 
       {etapa === "concluido" && resultado && (
         <div className={styles.bloco}>
-          <p className={styles.instrucao}>
-            {nomeUsuario}, sua inscrição está confirmada.
-          </p>
+          <p className={styles.instrucao}>Sua inscrição está confirmada.</p>
 
           <CardInscricaoConfirmada
             titulo="Inscrição confirmada"
             edicao={edicao}
             inscricoesAtividade={resultado.inscricoesAtividade}
+            nomeParticipante={nomeUsuario}
             onCancelar={aoCancelarAtividade}
-          />
+          >
+            {atividadesDisponiveis.length > 0 && (
+              <button
+                type="button"
+                className={styles.cta}
+                disabled={carregando}
+                onClick={aoQuererMaisAtividades}
+              >
+                {carregando ? "Aguarde..." : "Inscrever-se em outras atividades"}
+              </button>
+            )}
+          </CardInscricaoConfirmada>
 
-          {atividadesDisponiveis.length > 0 && (
-            <button
-              type="button"
-              className={styles.cta}
-              disabled={carregando}
-              onClick={aoQuererMaisAtividades}
-            >
-              {carregando ? "Aguarde..." : "Inscrever-se em outras atividades"}
-            </button>
-          )}
+          <CardContribuicao edicao={edicao} />
 
           <p className={styles.instrucao}>
             {emailEnviado

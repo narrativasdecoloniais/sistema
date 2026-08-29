@@ -5,14 +5,13 @@ import { z } from "zod";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { edicaoApoiadorSchema, extrairErros } from "@/lib/validacao";
+import { corSchema } from "@/lib/cores";
 import SecaoApoio from "./SecaoApoio";
 import styles from "./EdicaoForm.module.scss";
 
-const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
-
 const apoioSchema = z.object({
   apoiadores: z.array(edicaoApoiadorSchema).optional(),
-  corFundoApoiadores: z.enum(PALETA_PUBLICA).optional(),
+  corFundoApoiadores: corSchema,
   opacidadeFundoApoiadores: z.number().int().min(0).max(100).optional(),
   mostrarFaixaApoiadores: z.boolean().optional(),
 });

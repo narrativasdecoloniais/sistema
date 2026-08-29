@@ -5,14 +5,13 @@ import { z } from "zod";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { edicaoRealizadorSchema, extrairErros } from "@/lib/validacao";
+import { corSchema } from "@/lib/cores";
 import SecaoRealizadores from "./SecaoRealizadores";
 import styles from "./EdicaoForm.module.scss";
 
-const PALETA_PUBLICA = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
-
 const realizadoresSchema = z.object({
   realizadores: z.array(edicaoRealizadorSchema).optional(),
-  corFundoRealizadores: z.enum(PALETA_PUBLICA).optional(),
+  corFundoRealizadores: corSchema,
   opacidadeFundoRealizadores: z.number().int().min(0).max(100).optional(),
   mostrarFaixaRealizadores: z.boolean().optional(),
 });

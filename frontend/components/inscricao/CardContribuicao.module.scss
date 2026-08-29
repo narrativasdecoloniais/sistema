@@ -1,0 +1,145 @@
+// Mesmo tratamento "comprovante" de CardInscricaoConfirmada.module.scss —
+// borda ocre, raio contido (DESIGN.md, máx. 6px), fundo papel.
+.cartao {
+  padding: 1.5rem;
+  background: var(--papel);
+  border: 1.5px solid var(--ocre);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(32, 25, 20, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.titulo {
+  margin: 0 0 0.2rem;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta);
+  font-size: 1.05rem;
+}
+
+// corpoContribuicao já chega sanitizado do backend (ver
+// sanitizarCorpoContribuicao.js) — permite só p/br/strong/em/a/ul/ol/li,
+// daí os seletores de tag abaixo mirarem o HTML injetado via
+// dangerouslySetInnerHTML em CardContribuicao.jsx.
+.corpo {
+  font-size: 0.92rem;
+  color: var(--tinta);
+  line-height: 1.65;
+
+  p {
+    margin: 0 0 0.75em;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  a {
+    color: var(--barro);
+    font-weight: 600;
+  }
+
+  ul,
+  ol {
+    margin: 0 0 0.75em;
+    padding-left: 1.25em;
+  }
+}
+
+// Mesmo padrão "borda sem preenchimento" aplicado em AtividadeSelecionavel
+// (.detalhes) e CardAtividadeProgramacao (.detalhes) nesta sessão.
+.acao {
+  align-self: flex-start;
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.9rem;
+  background: none;
+  border: 1.5px solid var(--ocre);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--barro);
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--barro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.blocoCopiar {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rotuloCopiar {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.linhaCopiar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.valorCopiar {
+  padding: 0.5rem 0.75rem;
+  background: var(--areia);
+  border: 1px solid var(--ocre);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+
+.qrCode {
+  align-self: flex-start;
+  width: 160px;
+  height: 160px;
+  margin-top: 0.2rem;
+  padding: 0.5rem;
+  background: var(--papel);
+  border: 1px solid var(--ocre);
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.botaoCopiar {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1.5px solid var(--ocre);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--barro);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--barro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}

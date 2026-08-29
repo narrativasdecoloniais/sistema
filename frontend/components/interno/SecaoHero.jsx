@@ -8,14 +8,11 @@ import CampoCheckbox from "./CampoCheckbox";
 import CampoCorSecao, { OPCOES_COR_SECAO, OPCOES_COR_PUBLICA } from "./CampoCorSecao";
 import CabecalhoSecao from "./CabecalhoSecao";
 import { contraste, misturar } from "@/lib/contraste";
+import { resolverCorHex } from "@/lib/cores";
 import styles from "./EdicaoForm.module.scss";
 
 const LIMIAR_CONTRASTE_TEXTO = 4.5;
 const LIMIAR_CONTRASTE_BUZIO = 3;
-
-function corPorValor(opcoes, valor) {
-  return opcoes.find((opcao) => opcao.valor === valor)?.cor;
-}
 
 function estiloFaixa(tipo, hexCor, imagem) {
   if (tipo === "NENHUMA") {
@@ -78,12 +75,12 @@ export default function SecaoHero({
   aoMudarLarguraFaixaHeroMobile,
   aoMudarMostrarFaixaHero,
 }) {
-  const hexFundo = corPorValor(OPCOES_COR_SECAO, corFundoHero);
-  const hexPapel = corPorValor(OPCOES_COR_SECAO, "PAPEL");
-  const hexTexto = corPorValor(OPCOES_COR_PUBLICA, corTextoHero);
-  const hexBuzio = corPorValor(OPCOES_COR_PUBLICA, corBuzioHero);
-  const hexFaixaDesktop = corPorValor(OPCOES_COR_PUBLICA, corFaixaHeroDesktop);
-  const hexFaixaMobile = corPorValor(OPCOES_COR_PUBLICA, corFaixaHeroMobile);
+  const hexFundo = resolverCorHex(corFundoHero, OPCOES_COR_SECAO);
+  const hexPapel = resolverCorHex("PAPEL", OPCOES_COR_SECAO);
+  const hexTexto = resolverCorHex(corTextoHero, OPCOES_COR_PUBLICA);
+  const hexBuzio = resolverCorHex(corBuzioHero, OPCOES_COR_PUBLICA);
+  const hexFaixaDesktop = resolverCorHex(corFaixaHeroDesktop, OPCOES_COR_PUBLICA);
+  const hexFaixaMobile = resolverCorHex(corFaixaHeroMobile, OPCOES_COR_PUBLICA);
 
   // Cor de fundo "de verdade" depois de misturar com --papel na opacidade
   // escolhida (ver .hero em page.module.scss, que faz o mesmo via CSS

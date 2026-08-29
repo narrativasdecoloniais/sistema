@@ -171,9 +171,9 @@
   max-width: 220px;
 }
 
-// Mesmo padrão de "Pessoas envolvidas" de
-// app/(publico)/atividades/[slug]/page.module.scss: foto em moldura
-// quadrada, cantos retos — coerente com a estética de cartaz/stencil.
+// Mesmo padrão de "Pessoas envolvidas" de DetalheAtividade.module.scss:
+// foto redonda (pedido da cliente) — exceção ao raio máx. de 6px do
+// DESIGN.md, que já libera avatar de usuário totalmente arredondado.
 .pessoaCartao {
   display: flex;
   flex-direction: column;
@@ -195,6 +195,7 @@
   overflow: hidden;
   background: var(--areia);
   border: 1px solid var(--ocre);
+  border-radius: 50%;
 }
 
 .pessoaImagem {

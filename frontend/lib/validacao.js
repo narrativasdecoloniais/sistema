@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apenasDigitos, cpfValido } from "@/lib/cpf";
+import { corSchema } from "@/lib/cores";
 
 export const senhaForte = z
   .string()
@@ -146,6 +147,24 @@ export const edicaoApoiadorSchema = z
     path: ["imagem"],
   });
 
+export const edicaoPontoInteresseSchema = z.object({
+  id: z.string().optional(),
+  tipo: z.enum(["LOCAL_EVENTO", "HOSPEDAGEM", "RESTAURANTE", "OUTRO"], {
+    errorMap: () => ({ message: "Tipo de ponto inválido" }),
+  }),
+  nome: z.string().trim().min(2, "Informe o nome do ponto"),
+  endereco: z.string().trim().optional(),
+  latitude: z
+    .number({ invalid_type_error: "Informe a latitude" })
+    .min(-90, "Latitude inválida")
+    .max(90, "Latitude inválida"),
+  longitude: z
+    .number({ invalid_type_error: "Informe a longitude" })
+    .min(-180, "Longitude inválida")
+    .max(180, "Longitude inválida"),
+  link: z.string().trim().url("Link inválido").optional(),
+});
+
 export const edicaoSchema = z
   .object({
     numero: z.coerce
@@ -181,6 +200,7 @@ export const edicaoSchema = z
       .optional(),
     instagram: z.string().trim().optional(),
     facebook: z.string().trim().optional(),
+    emailContato: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
     linksExtras: z
       .array(
         z.object({
@@ -198,7 +218,7 @@ export const edicaoSchema = z
     cidade: z.string().trim().optional(),
     fusoHorario: z.string().optional(),
     notificarAlteracoes: z.boolean().optional(),
-    corFundoRealizadores: z.enum(["PAPEL", "TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "CERRADO"]).optional(),
+    corFundoRealizadores: corSchema,
     realizadores: z.array(edicaoRealizadorSchema).optional(),
   })
   .refine((dados) => !dados.dataInicio || !dados.dataFim || dados.dataFim > dados.dataInicio, {

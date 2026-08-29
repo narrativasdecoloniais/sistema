@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import BuziosSimbolos from "@/components/publico/buzios/BuziosSimbolos";
 import { paraNumeroRomano } from "@/lib/romanos";
+import { estiloCoresPersonalizadas } from "@/lib/cores";
 import { useEdicaoExibida } from "./EdicaoExibidaContext";
 import styles from "./BarraNavegacao.module.scss";
 
@@ -100,14 +101,20 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
       data-cor-texto-nav={estiloNav?.corTexto}
       data-cor-icone-nav={estiloNav?.corIcone}
       data-cor-borda-nav={estiloNav?.corBorda}
-      style={
-        nav
+      style={{
+        ...(nav
           ? {
               "--largura-faixa-hero-mobile-valor": `${nav.larguraFaixaMobile}px`,
               "--largura-faixa-hero-desktop-valor": `${nav.larguraFaixaDesktop}px`,
             }
-          : undefined
-      }
+          : {}),
+        ...estiloCoresPersonalizadas({
+          "--cor-fundo-nav": estiloNav?.corFundo,
+          "--cor-texto-nav": estiloNav?.corTexto,
+          "--cor-icone-nav": estiloNav?.corIcone,
+          "--cor-borda-nav": estiloNav?.corBorda,
+        }),
+      }}
     >
       <BuziosSimbolos />
 

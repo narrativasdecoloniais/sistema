@@ -40,6 +40,14 @@ export default function SecaoDivulgacao({
           onBlur={aoSalvar}
           erro={erros.facebook}
         />
+        <CampoTexto
+          id="emailContato"
+          rotulo="E-mail de contato"
+          value={edicao.emailContato}
+          onChange={(evento) => aoMudar("emailContato", evento.target.value)}
+          onBlur={aoSalvar}
+          erro={erros.emailContato}
+        />
         <CampoArea
           id="descricao"
           rotulo="Descrição"

@@ -532,6 +532,78 @@
   }
 }
 
+// ---- seção "Localização" (mapa + lista de pontos de interesse) ----
+// Sem customização de cor/opacidade/faixa (diferente de Apoio/Realizadores
+// acima) — seção nova, mantida simples de propósito; ver DESIGN.md/CLAUDE.md.
+
+.localizacao {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  --largura-faixa-hero-resolvida: var(--largura-faixa-hero-mobile-valor, var(--largura-faixa-hero, 0px));
+  padding: 2.5rem calc(var(--largura-faixa-hero-resolvida) + 2rem);
+  background: var(--papel);
+  color: var(--tinta);
+  border-top: 1px solid var(--ocre);
+  border-bottom: 1px solid var(--ocre);
+}
+
+.localizacaoConteudo {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.localizacaoLabel {
+  color: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.localizacaoLista {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.localizacaoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.localizacaoTipo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.localizacaoNome {
+  font-weight: 600;
+
+  a {
+    color: inherit;
+  }
+}
+
+.localizacaoEndereco {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
 // ---- seção "sobre o evento" (faixa verde-cerrado, abertura antes de Inscrições) ----
 
 // Fundo/texto/búzio customizáveis por edição (ver TextoSecaoForm.jsx no

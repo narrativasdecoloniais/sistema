@@ -10,7 +10,7 @@ const ANCORAS = [
   { href: "/#anais", rotulo: "Anais" },
 ];
 
-export default async function Footer() {
+export default async function Footer({ edicao }) {
   const edicoesAnteriores = await listarEdicoesAnteriores();
   const programasPosGraduacao = await listarProgramasPosGraduacaoPublico();
 
@@ -54,7 +54,13 @@ export default async function Footer() {
         <div className={styles.coluna}>
           <h2 className={styles.tituloColuna}>Institucional</h2>
           <p className={styles.emBreve}>Política de privacidade — em breve</p>
-          <p className={styles.emBreve}>Contato — em breve</p>
+          {edicao?.emailContato ? (
+            <a href={`mailto:${edicao.emailContato}`} className={styles.contatoLink}>
+              {edicao.emailContato}
+            </a>
+          ) : (
+            <p className={styles.emBreve}>Contato — em breve</p>
+          )}
         </div>
       </div>
 

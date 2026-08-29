@@ -65,3 +65,42 @@
   outline: 2px solid var(--acento);
   outline-offset: 2px;
 }
+
+.raizPersonalizada {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.seletorPersonalizado {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.raizPersonalizada[data-selecionada="true"] .seletorPersonalizado {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px var(--superficie), 0 0 0 4px var(--acento);
+}

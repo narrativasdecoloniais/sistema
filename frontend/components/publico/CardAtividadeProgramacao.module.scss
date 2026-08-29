@@ -79,9 +79,13 @@
 .detalhes {
   align-self: flex-start;
   margin-top: auto;
-  padding-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.7rem;
   background: none;
-  border: none;
+  border: 1.5px solid color-mix(in srgb, var(--cor-acento-card) 55%, transparent);
+  border-radius: 8px;
   font-size: 0.75rem;
   font-weight: 700;
   font-family: inherit;
@@ -93,7 +97,7 @@
   }
 
   &:hover {
-    text-decoration: underline;
+    border-color: var(--cor-acento-card);
   }
 
   &:focus-visible {

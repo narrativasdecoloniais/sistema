@@ -6,7 +6,7 @@ function hexParaRgb(hex) {
   return [0, 2, 4].map((i) => parseInt(valor.slice(i, i + 2), 16));
 }
 
-function luminanciaRelativa(hex) {
+export function luminanciaRelativa(hex) {
   const [r, g, b] = hexParaRgb(hex).map((c) => c / 255);
   const [rl, gl, bl] = [r, g, b].map((c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
   return 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;

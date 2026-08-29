@@ -1,0 +1,71 @@
+// position: relative — âncora pro AnimatePresence mode="popLayout" em
+// AtividadesPorTipo.jsx, que tira o bloco em saída do fluxo via
+// position:absolute; sem isso ele se posicionaria relativo ao ancestral
+// posicionado mais próximo, que pode não ser este container.
+.bloco {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.instrucao {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1.5px solid var(--ocre);
+  border-radius: 999px;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.9rem;
+  color: var(--tinta);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.chipAtivo {
+  background: var(--barro);
+  border-color: var(--barro);
+  color: var(--papel);
+}
+
+.contagem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tinta) 12%, transparent);
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+
+  .chipAtivo & {
+    background: color-mix(in srgb, var(--papel) 25%, transparent);
+  }
+}

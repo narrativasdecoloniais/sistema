@@ -5,6 +5,7 @@
   padding: 1.25rem;
   background: color-mix(in srgb, var(--ocre) 6%, var(--papel));
   border: 1.5px solid transparent;
+  border-radius: 6px;
   cursor: pointer;
   transition: border-color 0.15s ease;
 
@@ -112,21 +113,26 @@
 .detalhes {
   align-self: flex-start;
   margin-top: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
   background: none;
-  border: none;
-  padding: 0;
+  border: 1.5px solid var(--ocre);
+  border-radius: 8px;
   font-size: 0.8rem;
+  font-weight: 600;
   font-family: inherit;
   color: var(--barro);
   text-decoration: none;
   cursor: pointer;
 
   &:hover {
-    text-decoration: underline;
+    border-color: var(--barro);
   }
 
   &:focus-visible {
     outline: 2px solid var(--barro);
-    outline-offset: 3px;
+    outline-offset: 2px;
   }
 }
