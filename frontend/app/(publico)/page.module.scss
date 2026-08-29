@@ -602,6 +602,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  cursor: pointer;
+
+  &:hover .localizacaoNome,
+  &:focus-visible .localizacaoNome {
+    text-decoration: underline;
+  }
 }
 
 .localizacaoImagem {
@@ -631,6 +637,23 @@
 .localizacaoEndereco {
   font-size: 0.9rem;
   color: var(--texto-suave);
+}
+
+.localizacaoAbrirMaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--barro);
+  text-decoration: none;
+  width: fit-content;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
 }
 
 // ---- seção "sobre o evento" (faixa verde-cerrado, abertura antes de Inscrições) ----

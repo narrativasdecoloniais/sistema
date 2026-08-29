@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "motion/react";
@@ -44,6 +44,12 @@ const ROTULOS_TIPO_PONTO = {
   RESTAURANTE: "Restaurante",
   OUTRO: "Outro",
 };
+
+// Formato oficial de URL cross-platform do Google Maps: abre o app no
+// celular e o site no desktop, centralizado nas coordenadas do ponto.
+function urlGoogleMaps(ponto) {
+  return `https://www.google.com/maps/search/?api=1&query=${ponto.latitude}%2C${ponto.longitude}`;
+}
 
 const containerVariants = {
   oculto: {},
@@ -327,6 +333,7 @@ export default function PaginaInicialConteudo({
   localEvento,
 }) {
   const reduzMovimento = useReducedMotion();
+  const mapaLocalizacaoRef = useRef(null);
 
   const idDiasProgramacao = useId();
   const diasProgramacao = useMemo(
@@ -828,10 +835,22 @@ export default function PaginaInicialConteudo({
           )}
           <div className={styles.localizacaoConteudo}>
             <span className={styles.localizacaoLabel}>Localização</span>
-            <MapaLocalizacao pontos={pontosInteresse} />
+            <MapaLocalizacao ref={mapaLocalizacaoRef} pontos={pontosInteresse} />
             <ul className={styles.localizacaoLista}>
               {pontosInteresse.map((ponto) => (
-                <li key={ponto.id} className={styles.localizacaoItem}>
+                <li
+                  key={ponto.id}
+                  className={styles.localizacaoItem}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => mapaLocalizacaoRef.current?.focarPonto(ponto.id)}
+                  onKeyDown={(evento) => {
+                    if (evento.key === "Enter" || evento.key === " ") {
+                      evento.preventDefault();
+                      mapaLocalizacaoRef.current?.focarPonto(ponto.id);
+                    }
+                  }}
+                >
                   {ponto.imagem && (
                     <img src={ponto.imagem} alt="" className={styles.localizacaoImagem} />
                   )}
@@ -850,6 +869,20 @@ export default function PaginaInicialConteudo({
                   {ponto.endereco && (
                     <span className={styles.localizacaoEndereco}>{ponto.endereco}</span>
                   )}
+                  <a
+                    href={urlGoogleMaps(ponto)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.localizacaoAbrirMaps}
+                    onClick={(evento) => evento.stopPropagation()}
+                  >
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Abrir no Maps
+                  </a>
                 </li>
               ))}
             </ul>
