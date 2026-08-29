@@ -8,16 +8,3 @@
     height: 280px;
   }
 }
-
-// Injetado como HTML cru dentro do InfoWindow do Google Maps (fora da árvore
-// React deste componente) — o nome de classe continua funcionando porque o
-// CSS Module só gera um seletor com hash único, sem exigir ancestralidade DOM.
-.imagemPopup {
-  display: block;
-  width: 100%;
-  max-width: 200px;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 0.4rem;
-}

@@ -65,7 +65,13 @@ export default function MapaLocalizacao({ pontos = [] }) {
 
           const linhas = [];
           if (ponto.imagem) {
-            linhas.push(`<img src="${ponto.imagem}" alt="" class="${styles.imagemPopup}" />`);
+            // Estilo inline (em vez da classe do CSS Module) porque este HTML
+            // é injetado cru no InfoWindow do Google Maps — sem isso, a
+            // imagem renderiza no tamanho natural do arquivo e obriga a
+            // rolar o popup pra ver nome/endereço abaixo dela.
+            linhas.push(
+              `<img src="${ponto.imagem}" alt="" style="display:block;width:160px;height:110px;object-fit:cover;border-radius:4px;margin-bottom:6px;" />`
+            );
           }
           linhas.push(`<strong>${ponto.nome}</strong>`);
           if (ponto.endereco) linhas.push(ponto.endereco);
