@@ -283,6 +283,14 @@ model Edicao {
   corIconeNavRolado    String            @default("BUZIO")
   corBordaNavRolado    String            @default("BUZIO")
   navMesmoEstilo       Boolean           @default(false)
+  // Cor das abas de âncora (.ancoraBotao — Submissão/Programação/Anais, ver
+  // BarraNavegacao.jsx). Par único (não Topo/Rolado, diferente das cores
+  // acima) — mesmo mecanismo de corFundoBotaoApresentacao/
+  // corFundoBotaoCardModalidades. O hover é automático (opacity reduzido em
+  // cima da própria cor escolhida, ver .ancoraBotao em
+  // BarraNavegacao.module.scss), sem campo próprio no banco.
+  corFundoBotaoNav     String            @default("BARRO")
+  corTextoBotaoNav     String            @default("PAPEL")
   // Demais dobras da página pública, cada uma com sua própria rota no admin
   // (.../pagina/apresentacao, /modalidades, /agenda, /publicacoes). Mesmos 3
   // eixos independentes da Hero (corFundo+opacidadeFundo misturados via
@@ -403,6 +411,17 @@ model Atividade {
   vagas           Int?
   inicioAtividade DateTime
   fimAtividade    DateTime
+  // Aparência da página pública da atividade — mesmos 3 eixos independentes
+  // das dobras de Edicao (ex. corFundoLocalizacao/opacidadeFundoLocalizacao/
+  // corTextoLocalizacao), mas por atividade em vez de por edição. A faixa
+  // lateral (cor/imagem/largura) continua definida uma única vez na Edicao
+  // (campos faixaHero* acima) — mostrarFaixaAtividade só liga/desliga o
+  // mesmo mecanismo de mostrarFaixaLocalizacao/Apresentacao/etc.
+  corFundoAtividade       String  @default("PAPEL")
+  opacidadeFundoAtividade Int     @default(100)
+  corTextoAtividade       String  @default("TINTA")
+  corBuzioAtividade       String  @default("BARRO")
+  mostrarFaixaAtividade   Boolean @default(true)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

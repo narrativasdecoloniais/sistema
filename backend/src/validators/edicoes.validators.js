@@ -196,6 +196,8 @@ const edicaoSchema = z
     corIconeNavRolado: corPublicaSchema,
     corBordaNavRolado: corPublicaSchema,
     navMesmoEstilo: z.boolean().optional(),
+    corFundoBotaoNav: corSecaoSchema,
+    corTextoBotaoNav: corPublicaSchema,
     // Demais dobras da página pública (ver SecaoAdmin no schema Prisma e
     // TextoSecaoForm.jsx/AgendaForm.jsx no admin) — sem limite de caracteres
     // em título/corpo, mesmo padrão adotado pra Atividade.descricao.

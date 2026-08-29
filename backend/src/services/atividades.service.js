@@ -63,10 +63,29 @@ async function buscarPorId(edicaoId, id) {
   });
 }
 
+// Só a busca pública por slug precisa da edição-mãe — pra herdar os campos
+// de faixa lateral (cor/imagem/largura, sempre definidos uma única vez na
+// Edicao, nunca duplicados em Atividade, ver mostrarFaixaAtividade no
+// schema). Fica de fora de INCLUDE_PADRAO pra não engordar as consultas do
+// admin (listarAtividades/buscarPorId), que não precisam desses campos.
 async function buscarPorSlug(edicaoId, slug) {
   return prisma.atividade.findFirst({
     where: { edicaoId, slug },
-    include: INCLUDE_PADRAO,
+    include: {
+      ...INCLUDE_PADRAO,
+      edicao: {
+        select: {
+          faixaHeroTipoDesktop: true,
+          corFaixaHeroDesktop: true,
+          imagemFaixaHeroDesktop: true,
+          larguraFaixaHeroDesktop: true,
+          faixaHeroTipoMobile: true,
+          corFaixaHeroMobile: true,
+          imagemFaixaHeroMobile: true,
+          larguraFaixaHeroMobile: true,
+        },
+      },
+    },
   });
 }
 

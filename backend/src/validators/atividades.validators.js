@@ -1,5 +1,23 @@
 const { z } = require("zod");
 
+// Mesma paleta/regex de edicoes.validators.js — duplicado aqui de propósito
+// (não há um módulo compartilhado de cores no backend, ver PALETA_PUBLICA em
+// frontend/lib/cores.js, que também é duplicada em vez de centralizada).
+const CORES_PUBLICAS = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
+const CORES_HEX_REGEX = /^#[0-9a-fA-F]{6}$/;
+const corPublicaSchema = z
+  .union([z.enum(CORES_PUBLICAS), z.string().regex(CORES_HEX_REGEX)], {
+    errorMap: () => ({ message: "Cor inválida" }),
+  })
+  .optional();
+const corSecaoSchema = corPublicaSchema;
+const opacidadeSchema = z.coerce
+  .number({ invalid_type_error: "Informe uma opacidade válida" })
+  .int("Informe uma opacidade válida")
+  .min(0, "A opacidade deve estar entre 0 e 100")
+  .max(100, "A opacidade deve estar entre 0 e 100")
+  .optional();
+
 const atividadePessoaSchema = z.object({
   id: z.string().uuid().optional(),
   nome: z.string().trim().min(2, "Informe o nome da pessoa"),
@@ -48,6 +66,11 @@ const atividadeSchema = z
     fimAtividade: z.coerce.date({
       errorMap: () => ({ message: "Informe uma data de término da atividade válida" }),
     }),
+    corFundoAtividade: corSecaoSchema,
+    opacidadeFundoAtividade: opacidadeSchema,
+    corTextoAtividade: corPublicaSchema,
+    corBuzioAtividade: corPublicaSchema,
+    mostrarFaixaAtividade: z.boolean().optional(),
   })
   .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
     message: "O fim da atividade deve ser posterior ao início",
