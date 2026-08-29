@@ -536,6 +536,9 @@
 // Sem customização de cor/opacidade/faixa (diferente de Apoio/Realizadores
 // acima) — seção nova, mantida simples de propósito; ver DESIGN.md/CLAUDE.md.
 
+// Fundo/texto customizáveis por edição (ver SecaoLocalizacao.jsx no admin) —
+// mesmo mecanismo de .sobreEvento/.publicacoes acima, sem eixo de búzio
+// porque esta seção não usa o marcador Búzio.
 .localizacao {
   position: relative;
   overflow: hidden;
@@ -544,10 +547,28 @@
   justify-content: center;
   --largura-faixa-hero-resolvida: var(--largura-faixa-hero-mobile-valor, var(--largura-faixa-hero, 0px));
   padding: 2.5rem calc(var(--largura-faixa-hero-resolvida) + 2rem);
-  background: var(--papel);
-  color: var(--tinta);
   border-top: 1px solid var(--ocre);
   border-bottom: 1px solid var(--ocre);
+
+  --cor-fundo-secao-base: var(--papel);
+  --opacidade-fundo-secao: 100%;
+  --cor-texto-secao: var(--tinta);
+  background-color: color-mix(in srgb, var(--cor-fundo-secao-base) var(--opacidade-fundo-secao), var(--papel));
+  color: var(--cor-texto-secao);
+
+  &[data-cor-fundo="TINTA"] { --cor-fundo-secao-base: var(--tinta); }
+  &[data-cor-fundo="BARRO"] { --cor-fundo-secao-base: var(--barro); }
+  &[data-cor-fundo="OCRE"] { --cor-fundo-secao-base: var(--ocre); }
+  &[data-cor-fundo="BUZIO"] { --cor-fundo-secao-base: var(--buzio); }
+  &[data-cor-fundo="AREIA"] { --cor-fundo-secao-base: var(--areia); }
+  &[data-cor-fundo="CERRADO"] { --cor-fundo-secao-base: var(--cerrado); }
+
+  &[data-cor-texto="BARRO"] { --cor-texto-secao: var(--barro); }
+  &[data-cor-texto="OCRE"] { --cor-texto-secao: var(--ocre); }
+  &[data-cor-texto="BUZIO"] { --cor-texto-secao: var(--buzio); }
+  &[data-cor-texto="AREIA"] { --cor-texto-secao: var(--areia); }
+  &[data-cor-texto="PAPEL"] { --cor-texto-secao: var(--papel); }
+  &[data-cor-texto="CERRADO"] { --cor-texto-secao: var(--cerrado); }
 }
 
 .localizacaoConteudo {
@@ -581,6 +602,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+.localizacaoImagem {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 0.3rem;
 }
 
 .localizacaoTipo {

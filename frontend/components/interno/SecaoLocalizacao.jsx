@@ -3,6 +3,10 @@ import { Button } from "primereact/button";
 import CampoTexto from "./CampoTexto";
 import CampoNumero from "./CampoNumero";
 import CampoSelecao from "./CampoSelecao";
+import CampoLogo from "./CampoLogo";
+import CampoCorSecao, { OPCOES_COR_PUBLICA } from "./CampoCorSecao";
+import CampoOpacidade from "./CampoOpacidade";
+import CampoCheckbox from "./CampoCheckbox";
 import CabecalhoSecao from "./CabecalhoSecao";
 import styles from "./EdicaoForm.module.scss";
 
@@ -15,8 +19,16 @@ const OPCOES_TIPO = [
 
 export default function SecaoLocalizacao({
   pontos,
+  corFundo,
+  opacidade,
+  corTexto,
+  mostrarFaixa,
   erros,
   aoMudarPonto,
+  aoMudarCorFundo,
+  aoMudarOpacidade,
+  aoMudarCorTexto,
+  aoMudarMostrarFaixa,
   aoSalvar,
   aoAdicionarPonto,
   aoPedirRemocao,
@@ -29,6 +41,31 @@ export default function SecaoLocalizacao({
         descricao="Pontos exibidos num mapa na página pública do evento: local do evento, opções de hospedagem, restaurantes etc. Pra pegar as coordenadas, clique com o botão direito no local desejado no Google Maps e copie a latitude/longitude mostradas."
       />
       <div className={styles.camposSecao}>
+        <CampoCorSecao
+          id="corFundoLocalizacao"
+          rotulo="Cor de fundo da seção"
+          valor={corFundo}
+          onChange={aoMudarCorFundo}
+        />
+        <CampoOpacidade
+          id="opacidadeFundoLocalizacao"
+          rotulo="Opacidade do fundo"
+          valor={opacidade}
+          onChange={aoMudarOpacidade}
+        />
+        <CampoCorSecao
+          id="corTextoLocalizacao"
+          rotulo="Cor do texto"
+          valor={corTexto}
+          opcoes={OPCOES_COR_PUBLICA}
+          onChange={aoMudarCorTexto}
+        />
+        <CampoCheckbox
+          id="mostrarFaixaLocalizacao"
+          rotulo="Mostrar a faixa lateral (definida no Hero) enquanto esta seção está em tela"
+          checked={mostrarFaixa}
+          onChange={aoMudarMostrarFaixa}
+        />
         <div className={styles.listaCartoes}>
           {pontos.map((ponto, indice) => (
             <div key={ponto.id || indice} className={styles.cartaoRealizador}>
@@ -55,6 +92,14 @@ export default function SecaoLocalizacao({
                 onChange={(evento) => aoMudarPonto(indice, "nome", evento.target.value)}
                 onBlur={aoSalvar}
                 erro={erros[`pontosInteresse.${indice}.nome`]}
+              />
+              <CampoLogo
+                id={`ponto-imagem-${indice}`}
+                rotulo="Foto (opcional)"
+                valor={ponto.imagem}
+                onChange={(imagem) => aoMudarPonto(indice, "imagem", imagem)}
+                erro={erros[`pontosInteresse.${indice}.imagem`]}
+                textoItem="foto"
               />
               <CampoTexto
                 id={`ponto-endereco-${indice}`}

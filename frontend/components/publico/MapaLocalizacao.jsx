@@ -63,7 +63,11 @@ export default function MapaLocalizacao({ pontos = [] }) {
             },
           });
 
-          const linhas = [`<strong>${ponto.nome}</strong>`];
+          const linhas = [];
+          if (ponto.imagem) {
+            linhas.push(`<img src="${ponto.imagem}" alt="" class="${styles.imagemPopup}" />`);
+          }
+          linhas.push(`<strong>${ponto.nome}</strong>`);
           if (ponto.endereco) linhas.push(ponto.endereco);
           if (ponto.link) {
             linhas.push(

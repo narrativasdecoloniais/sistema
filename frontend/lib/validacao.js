@@ -153,6 +153,11 @@ export const edicaoPontoInteresseSchema = z.object({
     errorMap: () => ({ message: "Tipo de ponto inválido" }),
   }),
   nome: z.string().trim().min(2, "Informe o nome do ponto"),
+  imagem: z
+    .string()
+    .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
+    .nullable()
+    .optional(),
   endereco: z.string().trim().optional(),
   latitude: z
     .number({ invalid_type_error: "Informe a latitude" })

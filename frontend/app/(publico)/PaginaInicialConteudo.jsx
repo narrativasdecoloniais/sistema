@@ -317,6 +317,10 @@ export default function PaginaInicialConteudo({
   corTextoPublicacoes = "TINTA",
   corBuzioPublicacoes = "BUZIO",
   mostrarFaixaPublicacoes = true,
+  corFundoLocalizacao = "PAPEL",
+  opacidadeFundoLocalizacao = 100,
+  corTextoLocalizacao = "TINTA",
+  mostrarFaixaLocalizacao = true,
   temEdicaoAtual = false,
   edicaoSlug,
   dataEvento = "Data a confirmar",
@@ -801,22 +805,36 @@ export default function PaginaInicialConteudo({
       {pontosInteresse.length > 0 && (
         <section
           className={styles.localizacao}
-          style={estiloFaixaLateral}
+          data-cor-fundo={corFundoLocalizacao}
+          data-cor-texto={corTextoLocalizacao}
+          style={{
+            "--opacidade-fundo-secao": `${opacidadeFundoLocalizacao}%`,
+            ...estiloFaixaLateral,
+            ...estiloCoresPersonalizadas({
+              "--cor-fundo-secao-base": corFundoLocalizacao,
+              "--cor-texto-secao": corTextoLocalizacao,
+            }),
+          }}
           aria-label="Localização"
         >
-          <FaixaLateral
-            estilo={estiloFaixaLateral}
-            corDesktop={corFaixaHeroDesktop}
-            corMobile={corFaixaHeroMobile}
-            tipoDesktop={faixaHeroTipoDesktop}
-            tipoMobile={faixaHeroTipoMobile}
-          />
+          {mostrarFaixaLocalizacao && (
+            <FaixaLateral
+              estilo={estiloFaixaLateral}
+              corDesktop={corFaixaHeroDesktop}
+              corMobile={corFaixaHeroMobile}
+              tipoDesktop={faixaHeroTipoDesktop}
+              tipoMobile={faixaHeroTipoMobile}
+            />
+          )}
           <div className={styles.localizacaoConteudo}>
             <span className={styles.localizacaoLabel}>Localização</span>
             <MapaLocalizacao pontos={pontosInteresse} />
             <ul className={styles.localizacaoLista}>
               {pontosInteresse.map((ponto) => (
                 <li key={ponto.id} className={styles.localizacaoItem}>
+                  {ponto.imagem && (
+                    <img src={ponto.imagem} alt="" className={styles.localizacaoImagem} />
+                  )}
                   <span className={styles.localizacaoTipo}>
                     {ROTULOS_TIPO_PONTO[ponto.tipo] || ponto.tipo}
                   </span>
