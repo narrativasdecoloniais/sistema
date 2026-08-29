@@ -1,16 +1,25 @@
 const { z } = require("zod");
 
 const CORES_PUBLICAS = ["TINTA", "BARRO", "OCRE", "BUZIO", "AREIA", "PAPEL", "CERRADO"];
-const corPublicaSchema = z.enum(CORES_PUBLICAS, { errorMap: () => ({ message: "Cor inválida" }) }).optional();
+const CORES_HEX_REGEX = /^#[0-9a-fA-F]{6}$/;
+// Além dos tokens da paleta curada, aceita um hex literal — cor
+// personalizada escolhida livremente no seletor "Personalizada" do admin
+// (ver CampoCorSecao.jsx no frontend).
+const corPublicaSchema = z
+  .union([z.enum(CORES_PUBLICAS), z.string().regex(CORES_HEX_REGEX)], {
+    errorMap: () => ({ message: "Cor inválida" }),
+  })
+  .optional();
 const tipoFaixaSchema = z.enum(["COR", "IMAGEM", "NENHUMA"], {
   errorMap: () => ({ message: "Tipo de faixa inválido" }),
 }).optional();
 const tipoFundoNavSchema = z.enum(["TRANSPARENTE", "COR"], {
   errorMap: () => ({ message: "Tipo de fundo inválido" }),
 }).optional();
-// Fundo de seção usa a mesma paleta de cor pública (CorSecao e CorPublica
-// têm os mesmos valores no schema Prisma, mantidos como enums separados por
-// representarem usos distintos — fundo x texto/ícone).
+// Fundo de seção usa a mesma paleta de cor pública — nome mantido separado
+// só por refletir o uso distinto (fundo x texto/ícone) dos campos que o
+// consomem, hoje ambos String no schema Prisma (ver corFundoHero/CorSecao
+// no comentário de schema.prisma).
 const corSecaoSchema = corPublicaSchema;
 const opacidadeSchema = z.coerce
   .number({ invalid_type_error: "Informe uma opacidade válida" })
@@ -49,6 +58,24 @@ const edicaoApoiadorSchema = z
     path: ["imagem"],
   });
 
+const edicaoPontoInteresseSchema = z.object({
+  id: z.string().uuid().optional(),
+  tipo: z.enum(["LOCAL_EVENTO", "HOSPEDAGEM", "RESTAURANTE", "OUTRO"], {
+    errorMap: () => ({ message: "Tipo de ponto inválido" }),
+  }),
+  nome: z.string().trim().min(2, "Informe o nome do ponto"),
+  endereco: z.string().trim().optional(),
+  latitude: z.coerce
+    .number({ invalid_type_error: "Informe uma latitude válida" })
+    .min(-90, "Latitude inválida")
+    .max(90, "Latitude inválida"),
+  longitude: z.coerce
+    .number({ invalid_type_error: "Informe uma longitude válida" })
+    .min(-180, "Longitude inválida")
+    .max(180, "Longitude inválida"),
+  link: z.string().trim().url("Link inválido").optional(),
+});
+
 const edicaoSchema = z
   .object({
     numero: z.coerce
@@ -84,6 +111,7 @@ const edicaoSchema = z
       .optional(),
     instagram: z.string().trim().optional(),
     facebook: z.string().trim().optional(),
+    emailContato: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
     linksExtras: z
       .array(
         z.object({
@@ -109,9 +137,10 @@ const edicaoSchema = z
     opacidadeFundoApoiadores: opacidadeSchema,
     mostrarFaixaApoiadores: z.boolean().optional(),
     apoiadores: z.array(edicaoApoiadorSchema).optional(),
+    pontosInteresse: z.array(edicaoPontoInteresseSchema).optional(),
     logoSvg: z.string().max(300_000, "Arquivo SVG muito grande").nullable().optional(),
     logoSvgCores: z
-      .record(z.string(), z.string().regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida"))
+      .record(z.string(), z.string().regex(CORES_HEX_REGEX, "Cor inválida"))
       .nullable()
       .optional(),
     corFundoHero: corSecaoSchema,
@@ -207,10 +236,36 @@ const edicaoSchema = z
     mostrarFaixaModalidades: z.boolean().optional(),
     mostrarFaixaAgenda: z.boolean().optional(),
     mostrarFaixaPublicacoes: z.boolean().optional(),
+    // Mensagem de contribuição voluntária na confirmação da inscrição
+    // pública (ver ContribuicaoForm.jsx no admin e CardContribuicao.jsx no
+    // público) — só aparece quando corpoContribuicao está preenchido. Link
+    // usa .or(z.literal("")) porque o form sempre reenvia o estado local
+    // inteiro a cada salvar(), então o campo pode chegar vazio quando a
+    // ação escolhida é Nenhuma/Copiar.
+    tituloContribuicao: z.string().trim().optional(),
+    corpoContribuicao: z.string().trim().optional(),
+    tipoAcaoContribuicao: z
+      .enum(["NENHUMA", "LINK", "COPIAR"], {
+        errorMap: () => ({ message: "Tipo de ação inválido" }),
+      })
+      .optional(),
+    linkContribuicaoUrl: z.string().trim().url("Link inválido").optional().or(z.literal("")),
+    linkContribuicaoRotulo: z.string().trim().optional(),
+    copiaContribuicaoValor: z.string().trim().optional(),
+    copiaContribuicaoRotulo: z.string().trim().optional(),
+    qrCodeContribuicao: z.string().max(8_000_000, "Imagem muito grande").nullable().optional(),
   })
   .refine((dados) => !dados.dataInicio || !dados.dataFim || dados.dataFim > dados.dataInicio, {
     message: "A data de término deve ser posterior à data de início",
     path: ["dataFim"],
-  });
+  })
+  .refine((dados) => dados.tipoAcaoContribuicao !== "LINK" || Boolean(dados.linkContribuicaoUrl?.trim()), {
+    message: "Informe a URL do link",
+    path: ["linkContribuicaoUrl"],
+  })
+  .refine(
+    (dados) => dados.tipoAcaoContribuicao !== "COPIAR" || Boolean(dados.copiaContribuicaoValor?.trim()),
+    { message: "Informe o valor a ser copiado", path: ["copiaContribuicaoValor"] }
+  );
 
-module.exports = { edicaoSchema, edicaoRealizadorSchema, edicaoApoiadorSchema };
+module.exports = { edicaoSchema, edicaoRealizadorSchema, edicaoApoiadorSchema, edicaoPontoInteresseSchema };

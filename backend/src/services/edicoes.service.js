@@ -2,11 +2,13 @@ const prisma = require("../config/prisma");
 const sincronizarLista = require("../utils/sincronizarLista");
 const storageService = require("./storage.service");
 const sanitizarSvgLogo = require("../utils/sanitizarSvgLogo");
+const sanitizarCorpoContribuicao = require("../utils/sanitizarCorpoContribuicao");
 const ErroHttp = require("../utils/erroHttp");
 
 const INCLUDE_PADRAO = {
   realizadores: { orderBy: { createdAt: "asc" } },
   apoiadores: { orderBy: { createdAt: "asc" } },
+  pontosInteresse: { orderBy: { createdAt: "asc" } },
 };
 
 async function montarCamposRealizador(realizador) {
@@ -35,6 +37,17 @@ async function montarCamposApoiador(apoiador) {
 
 async function removerImagemApoiador(apoiador) {
   await storageService.removerImagemPublica(apoiador.imagem);
+}
+
+async function montarCamposPontoInteresse(ponto) {
+  return {
+    tipo: ponto.tipo,
+    nome: ponto.nome,
+    endereco: ponto.endereco || null,
+    latitude: ponto.latitude,
+    longitude: ponto.longitude,
+    link: ponto.link || null,
+  };
 }
 
 // Imagem raster comum de um campo escalar da própria Edicao (não uma lista
@@ -85,14 +98,25 @@ async function atualizarEdicao(id, dados) {
   const {
     realizadores,
     apoiadores,
+    pontosInteresse,
     logoSvg,
     logoSvgCores,
     imagemFaixaHeroDesktop,
     imagemFaixaHeroMobile,
     imagemFundoHeroDesktop,
     imagemFundoHeroMobile,
+    corpoContribuicao,
+    qrCodeContribuicao,
     ...camposEdicao
   } = dados;
+
+  if (corpoContribuicao !== undefined) {
+    try {
+      camposEdicao.corpoContribuicao = sanitizarCorpoContribuicao(corpoContribuicao);
+    } catch (erro) {
+      throw new ErroHttp(400, erro.message || "Texto de contribuição inválido.");
+    }
+  }
 
   if (logoSvg === null) {
     camposEdicao.logoSvg = null;
@@ -118,6 +142,7 @@ async function atualizarEdicao(id, dados) {
   await processarImagemEscalar(id, "imagemFaixaHeroMobile", imagemFaixaHeroMobile, "edicoes-faixa-hero", camposEdicao);
   await processarImagemEscalar(id, "imagemFundoHeroDesktop", imagemFundoHeroDesktop, "edicoes-fundo-hero", camposEdicao);
   await processarImagemEscalar(id, "imagemFundoHeroMobile", imagemFundoHeroMobile, "edicoes-fundo-hero", camposEdicao);
+  await processarImagemEscalar(id, "qrCodeContribuicao", qrCodeContribuicao, "edicoes-contribuicao", camposEdicao);
 
   if (realizadores !== undefined) {
     const operacoes = await sincronizarLista(
@@ -141,6 +166,19 @@ async function atualizarEdicao(id, dados) {
       apoiadores,
       montarCamposApoiador,
       removerImagemApoiador
+    );
+    if (operacoes.length > 0) {
+      await prisma.$transaction(operacoes);
+    }
+  }
+
+  if (pontosInteresse !== undefined) {
+    const operacoes = await sincronizarLista(
+      prisma.edicaoPontoInteresse,
+      "edicaoId",
+      id,
+      pontosInteresse,
+      montarCamposPontoInteresse
     );
     if (operacoes.length > 0) {
       await prisma.$transaction(operacoes);

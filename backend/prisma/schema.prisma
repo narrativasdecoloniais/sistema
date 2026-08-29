@@ -48,6 +48,8 @@ enum SecaoAdmin {
   PAGINA_PUBLICACOES
   PAGINA_REALIZADORES
   PAGINA_APOIO
+  PAGINA_CONTRIBUICAO
+  PAGINA_LOCALIZACAO
   PROGRAMACAO
   // Cadastro do catálogo de modalidades/áreas de submissão (antes de abrir
   // as inscrições) — distinto dos SUBMISSOES_* abaixo, que são sobre
@@ -69,6 +71,12 @@ enum SecaoAdmin {
   PROGRAMAS_POS_GRADUACAO
 }
 
+enum TipoAcaoContribuicao {
+  NENHUMA
+  LINK
+  COPIAR
+}
+
 enum ModalidadeEdicao {
   ONLINE
   PRESENCIAL
@@ -82,33 +90,6 @@ enum ModalidadeEdicao {
 enum PapelPessoaArea {
   COORDENACAO
   CONVIDADO
-}
-
-// Paleta de fundo para seções da página pública da edição (DESIGN.md) —
-// mesma paleta completa de CorPublica (abaixo). Mantida como enum
-// separado porque fundo e texto/ícone são usos semanticamente distintos,
-// mesmo com os mesmos valores hoje.
-enum CorSecao {
-  PAPEL
-  TINTA
-  BARRO
-  OCRE
-  BUZIO
-  AREIA
-  CERRADO
-}
-
-// Paleta pública completa — usada em campos de texto/ícone da Hero, onde
-// --buzio precisa estar disponível como opção (é a cor padrão do próprio
-// búzio).
-enum CorPublica {
-  TINTA
-  BARRO
-  OCRE
-  BUZIO
-  AREIA
-  PAPEL
-  CERRADO
 }
 
 // Faixa lateral da Hero: cor sólida (corFaixaHero*), imagem enviada pelo
@@ -197,6 +178,9 @@ model Edicao {
   cargaHorariaTotal    Int?
   instagram            String?
   facebook             String?
+  // E-mail de contato da organização — botão flutuante nas páginas públicas
+  // (BotaoContatoFlutuante.jsx) e rodapé (Footer.jsx).
+  emailContato         String?
   linksExtras          Json?
   modalidade           ModalidadeEdicao?
   local                String?
@@ -205,7 +189,12 @@ model Edicao {
   cidade               String?
   fusoHorario          String?           @default("America/Sao_Paulo")
   notificarAlteracoes  Boolean           @default(true)
-  corFundoRealizadores CorSecao          @default(BARRO)
+  // Cor de fundo/texto/ícone/búzio/borda em toda a página pública da edição:
+  // String livre, não enum — aceita um token da paleta curada (ex. "BARRO")
+  // ou um hex literal (ex. "#3366CC") escolhido livremente no seletor
+  // "Personalizada" do admin (ver CampoCorSecao.jsx/lib/cores.js no
+  // frontend, corSchema em edicoes.validators.js no backend).
+  corFundoRealizadores String            @default("BARRO")
   // Opacidade (0-100) do fundo de Realizadores — mesmo mecanismo de
   // opacidadeFundoHero acima (mistura corFundoRealizadores com --papel via
   // CSS color-mix(), ver .realizadores em page.module.scss).
@@ -214,7 +203,7 @@ model Edicao {
   // mecanismo de mostrarFaixaApresentacao/Modalidades/Agenda/Publicacoes
   // abaixo, ver FaixaLateral em PaginaInicialConteudo.jsx.
   mostrarFaixaRealizadores Boolean       @default(true)
-  corFundoApoiadores CorSecao          @default(BARRO)
+  corFundoApoiadores String            @default("BARRO")
   opacidadeFundoApoiadores Int         @default(100)
   mostrarFaixaApoiadores Boolean       @default(true)
   // Logo customizada da Hero, enviada pelo gestor em SVG. Guardada como texto
@@ -231,10 +220,10 @@ model Edicao {
   // cada cor depois sem precisar reenviar o arquivo (Logo.jsx aplica esse
   // mapa como custom properties inline).
   logoSvgCores         Json?
-  // Cores da Hero, customizáveis por edição — fundo usa CorSecao; texto e
-  // búzio usam CorPublica. PAPEL como default de corFundoHero preserva a
-  // aparência atual (a Hero hoje não define fundo próprio).
-  corFundoHero         CorSecao          @default(PAPEL)
+  // Cores da Hero, customizáveis por edição. PAPEL como default de
+  // corFundoHero preserva a aparência atual (a Hero hoje não define fundo
+  // próprio).
+  corFundoHero         String            @default("PAPEL")
   // Opacidade (0-100) do fundo da Hero — mistura corFundoHero com o --papel
   // por trás via CSS color-mix() (ver .hero em page.module.scss). 100 =
   // opaco, aparência atual. Só se aplica quando fundoHeroTipo = COR.
@@ -248,8 +237,8 @@ model Edicao {
   fundoHeroTipo          TipoFaixaHero   @default(COR)
   imagemFundoHeroDesktop String?
   imagemFundoHeroMobile  String?
-  corTextoHero         CorPublica        @default(TINTA)
-  corBuzioHero         CorPublica        @default(BUZIO)
+  corTextoHero         String            @default("TINTA")
+  corBuzioHero         String            @default("BUZIO")
   // Faixas decorativas encostadas nas laterais da Hero (ver page.module.scss,
   // .heroFaixa) — cor independente do fundo/texto/búzio. Configuráveis
   // separadamente pra desktop e mobile (o gestor pode, por exemplo, usar uma
@@ -260,7 +249,7 @@ model Edicao {
   // da logo, então não precisa ser inline: repete verticalmente via CSS
   // background-repeat).
   faixaHeroTipoDesktop TipoFaixaHero     @default(COR)
-  corFaixaHeroDesktop  CorPublica        @default(OCRE)
+  corFaixaHeroDesktop  String            @default("OCRE")
   imagemFaixaHeroDesktop String?
   // Largura em px — substitui o clamp() fluido que era fixo em código
   // (layout.module.scss) por um valor fixo escolhido pelo gestor. Também
@@ -268,7 +257,7 @@ model Edicao {
   // EdicaoExibidaContext.jsx) pra não ficar por baixo da faixa.
   larguraFaixaHeroDesktop Int             @default(96)
   faixaHeroTipoMobile  TipoFaixaHero     @default(COR)
-  corFaixaHeroMobile   CorPublica        @default(OCRE)
+  corFaixaHeroMobile   String            @default("OCRE")
   imagemFaixaHeroMobile String?
   larguraFaixaHeroMobile  Int             @default(40)
   // Liga/desliga a faixa lateral só na Hero — os campos acima continuam
@@ -285,75 +274,74 @@ model Edicao {
   // BarraNavegacao.module.scss. navMesmoEstilo, quando true, faz o estado
   // Rolado usar as cores do Topo (ver BarraNavegacao.jsx).
   fundoNavTopoTipo     TipoFundoNav      @default(TRANSPARENTE)
-  corFundoNavTopo      CorSecao          @default(PAPEL)
-  corTextoNavTopo      CorPublica        @default(TINTA)
-  corIconeNavTopo      CorPublica        @default(TINTA)
-  corBordaNavTopo      CorPublica        @default(TINTA)
-  corFundoNavRolado    CorSecao          @default(CERRADO)
-  corTextoNavRolado    CorPublica        @default(PAPEL)
-  corIconeNavRolado    CorPublica        @default(BUZIO)
-  corBordaNavRolado    CorPublica        @default(BUZIO)
+  corFundoNavTopo      String            @default("PAPEL")
+  corTextoNavTopo      String            @default("TINTA")
+  corIconeNavTopo      String            @default("TINTA")
+  corBordaNavTopo      String            @default("TINTA")
+  corFundoNavRolado    String            @default("CERRADO")
+  corTextoNavRolado    String            @default("PAPEL")
+  corIconeNavRolado    String            @default("BUZIO")
+  corBordaNavRolado    String            @default("BUZIO")
   navMesmoEstilo       Boolean           @default(false)
   // Demais dobras da página pública, cada uma com sua própria rota no admin
   // (.../pagina/apresentacao, /modalidades, /agenda, /publicacoes). Mesmos 3
   // eixos independentes da Hero (corFundo+opacidadeFundo misturados via
   // color-mix, mais corTexto/corBuzio à parte — ver opacidadeFundoHero/
-  // corTextoHero/corBuzioHero acima) — fundo reusa CorSecao, texto/búzio
-  // reusam CorPublica. Agenda não tem título/corpo: o conteúdo daquela seção
-  // já vem da API de atividades, só a aparência muda.
+  // corTextoHero/corBuzioHero acima). Agenda não tem título/corpo: o
+  // conteúdo daquela seção já vem da API de atividades, só a aparência muda.
   tituloApresentacao        String?
   corpoApresentacao         String?
-  corFundoApresentacao      CorSecao      @default(PAPEL)
+  corFundoApresentacao      String        @default("PAPEL")
   opacidadeFundoApresentacao Int          @default(100)
-  corTextoApresentacao      CorPublica    @default(TINTA)
-  corBuzioApresentacao      CorPublica    @default(BARRO)
+  corTextoApresentacao      String        @default("TINTA")
+  corBuzioApresentacao      String        @default("BARRO")
   // Botões "Inscreva-se"/"Conheça o GPDES" desta seção (.inscricaoCta/
   // .gpdesCta) — par único de cor compartilhado pelos dois, igual ao botão
   // de Modalidades (corFundoBotaoCard*/corTextoBotaoCard* abaixo): o
   // secundário vira uma versão em contorno da mesma cor do primário, em
   // vez de cada botão ter seu próprio eixo. Sem "Card" no nome porque,
   // diferente de Modalidades, esses botões não ficam dentro de um card.
-  corFundoBotaoApresentacao CorPublica    @default(BARRO)
-  corTextoBotaoApresentacao CorPublica    @default(PAPEL)
+  corFundoBotaoApresentacao String        @default("BARRO")
+  corTextoBotaoApresentacao String        @default("PAPEL")
   tituloModalidades         String?
   corpoModalidades          String?
-  corFundoModalidades       CorSecao      @default(PAPEL)
+  corFundoModalidades       String        @default("PAPEL")
   opacidadeFundoModalidades Int           @default(100)
-  corTextoModalidades       CorPublica    @default(TINTA)
-  corBuzioModalidades       CorPublica    @default(BUZIO)
+  corTextoModalidades       String        @default("TINTA")
+  corBuzioModalidades       String        @default("BUZIO")
   // Cor dos cards dentro de Modalidades/Agenda (.modalidadeCartao/
   // CardAtividadeProgramacao) — eixo à parte da seção em volta. Defaults
   // reproduzem a aparência hardcoded de hoje (fundo color-mix(ocre 6%,
   // papel); título/resumo tinta; subtítulo/tipo agora explícito em vez de
-  // herdar --texto-suave, que não é uma opção da paleta CorPublica; prazo/
+  // herdar --texto-suave, que não é uma opção da paleta curada; prazo/
   // meta barro; botão fundo barro + texto papel — antes o botão reusava a
   // mesma cor do prazo, o que deixava o botão invisível sempre que o
   // gestor escolhesse uma cor de destaque clara). Botão só existe em
   // Modalidades (.modalidadeCtaPrimario/.modalidadeLink) — o link de
   // Agenda (.detalhes) não tem preenchimento, então não corre o mesmo
   // risco e não ganha cor própria. Publicações não tem cards.
-  corFundoCardModalidades           CorSecao   @default(OCRE)
+  corFundoCardModalidades           String   @default("OCRE")
   opacidadeFundoCardModalidades     Int        @default(6)
-  corTextoCardModalidades           CorPublica @default(TINTA)
-  corTextoSecundarioCardModalidades CorPublica @default(TINTA)
-  corAcentoCardModalidades          CorPublica @default(BARRO)
-  corFundoBotaoCardModalidades      CorPublica @default(BARRO)
-  corTextoBotaoCardModalidades      CorPublica @default(PAPEL)
-  corFundoAgenda            CorSecao      @default(PAPEL)
+  corTextoCardModalidades           String @default("TINTA")
+  corTextoSecundarioCardModalidades String @default("TINTA")
+  corAcentoCardModalidades          String @default("BARRO")
+  corFundoBotaoCardModalidades      String @default("BARRO")
+  corTextoBotaoCardModalidades      String @default("PAPEL")
+  corFundoAgenda            String      @default("PAPEL")
   opacidadeFundoAgenda      Int           @default(100)
-  corTextoAgenda            CorPublica    @default(TINTA)
-  corBuzioAgenda            CorPublica    @default(BUZIO)
-  corFundoCardAgenda        CorSecao      @default(OCRE)
+  corTextoAgenda            String    @default("TINTA")
+  corBuzioAgenda            String    @default("BUZIO")
+  corFundoCardAgenda        String      @default("OCRE")
   opacidadeFundoCardAgenda  Int           @default(6)
-  corTextoCardAgenda        CorPublica    @default(TINTA)
-  corTextoSecundarioCardAgenda CorPublica @default(TINTA)
-  corAcentoCardAgenda       CorPublica    @default(BARRO)
+  corTextoCardAgenda        String    @default("TINTA")
+  corTextoSecundarioCardAgenda String @default("TINTA")
+  corAcentoCardAgenda       String    @default("BARRO")
   tituloPublicacoes         String?
   corpoPublicacoes          String?
-  corFundoPublicacoes       CorSecao      @default(PAPEL)
+  corFundoPublicacoes       String      @default("PAPEL")
   opacidadeFundoPublicacoes Int           @default(100)
-  corTextoPublicacoes       CorPublica    @default(TINTA)
-  corBuzioPublicacoes       CorPublica    @default(BUZIO)
+  corTextoPublicacoes       String    @default("TINTA")
+  corBuzioPublicacoes       String    @default("BUZIO")
   // Faixa lateral (cor/imagem/largura definidas nos campos faixaHero* acima)
   // é renderizada por cada seção que a mantiver ligada (ver FaixaLateral em
   // PaginaInicialConteudo.jsx) — esses 4 campos só dizem se aquela seção
@@ -363,12 +351,30 @@ model Edicao {
   mostrarFaixaModalidades  Boolean       @default(true)
   mostrarFaixaAgenda       Boolean       @default(true)
   mostrarFaixaPublicacoes  Boolean       @default(true)
+  // Mensagem de contribuição voluntária (ex. pedido de doação via PIX) na
+  // etapa final da inscrição pública — não é uma dobra da home, por isso
+  // sem cor/opacidade/faixa como as acima. Só aparece no público quando
+  // corpoContribuicao estiver preenchido; a ação extra (link ou valor pra
+  // copiar) é mutuamente exclusiva, controlada por tipoAcaoContribuicao.
+  tituloContribuicao       String?
+  corpoContribuicao        String?
+  tipoAcaoContribuicao     TipoAcaoContribuicao @default(NENHUMA)
+  linkContribuicaoUrl      String?
+  linkContribuicaoRotulo   String?
+  copiaContribuicaoValor   String?
+  copiaContribuicaoRotulo  String?
+  // QR code opcional pra acompanhar a chave PIX (tipoAcaoContribuicao ==
+  // COPIAR) — mesmo tratamento de imagem raster escalar das faixas/fundo da
+  // Hero (upload vira URL do GCS via processarImagemEscalar em
+  // edicoes.service.js).
+  qrCodeContribuicao       String?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
   atividades           Atividade[]
   realizadores         EdicaoRealizador[]
   apoiadores           EdicaoApoiador[]
+  pontosInteresse      EdicaoPontoInteresse[]
   inscricoes           InscricaoEdicao[]
   modalidadesSubmissao ModalidadeSubmissao[]
 
@@ -479,6 +485,32 @@ model EdicaoApoiador {
   updatedAt DateTime @updatedAt
 
   @@map("edicao_apoiadores")
+}
+
+enum TipoPontoInteresse {
+  LOCAL_EVENTO
+  HOSPEDAGEM
+  RESTAURANTE
+  OUTRO
+}
+
+// Pontos plotados no mapa da dobra "Localização" da página pública —
+// local do evento, hospedagens, restaurantes etc. indicados pelo gestor.
+// Coordenadas são coladas manualmente (sem geocodificação automática).
+model EdicaoPontoInteresse {
+  id        String             @id @default(uuid())
+  edicaoId  String
+  edicao    Edicao             @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipo      TipoPontoInteresse
+  nome      String
+  endereco  String?
+  latitude  Float
+  longitude Float
+  link      String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@map("edicao_pontos_interesse")
 }
 
 // Modalidade de submissão de trabalhos (ex. "Conversatórios", "Narrativas
