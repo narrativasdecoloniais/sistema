@@ -69,11 +69,9 @@ enum SecaoAdmin {
   CONFIGURACOES_EVENTO
   TIPOS_ATIVIDADE
   TIPOS_PARTICIPACAO
-  PROGRAMAS_POS_GRADUACAO
   TIPOS_PONTO_INTERESSE
-  COMISSOES
   PAGINA_COMISSOES
-  TIPOS_COMISSAO
+  GRUPOS_CONTEUDO
 }
 
 enum TipoAcaoContribuicao {
@@ -417,7 +415,7 @@ model Edicao {
   pontosInteresse      EdicaoPontoInteresse[]
   inscricoes           InscricaoEdicao[]
   modalidadesSubmissao ModalidadeSubmissao[]
-  comissoes            Comissao[]
+  gruposConteudo       GrupoConteudo[]
 
   @@map("edicoes")
 }
@@ -449,42 +447,54 @@ model Atividade {
   @@map("atividades")
 }
 
-model Comissao {
-  id             String       @id @default(uuid())
-  edicaoId       String
-  edicao         Edicao       @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  tipoComissaoId String
-  tipoComissao   TipoComissao @relation(fields: [tipoComissaoId], references: [id])
-  ordem          Int          @default(0)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+// Motor genérico de conteúdo da dobra pública "Comissões e Programas" —
+// substitui os antigos TipoComissao/Comissao/ComissaoMembro e
+// ProgramaPosGraduacao (catálogo global), unificando os dois num único
+// esquema de 3 níveis configurável pelo gestor: Grupo (ex. "Comissão
+// Organizadora", "Programas de Pós-Graduação") -> Lista (ex. "1.1 Geral",
+// "1.2 Executiva") -> Item (nome + imagem/link opcionais, cobre tanto um
+// integrante de comissão quanto um programa com logo e link). Sempre por
+// edição — Programas deixou de ser compartilhado entre edições.
+model GrupoConteudo {
+  id        String   @id @default(uuid())
+  edicaoId  String
+  edicao    Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  nome      String
+  ordem     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  membros ComissaoMembro[]
+  listas ListaConteudo[]
 
-  @@map("comissoes")
+  @@map("grupos_conteudo")
 }
 
-model ComissaoMembro {
-  id         String   @id @default(uuid())
-  comissaoId String
-  comissao   Comissao @relation(fields: [comissaoId], references: [id], onDelete: Cascade)
-  nome       String
-  ordem      Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+model ListaConteudo {
+  id              String        @id @default(uuid())
+  grupoConteudoId String
+  grupoConteudo   GrupoConteudo @relation(fields: [grupoConteudoId], references: [id], onDelete: Cascade)
+  nome            String
+  ordem           Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  @@map("comissao_membros")
+  itens ItemConteudo[]
+
+  @@map("listas_conteudo")
 }
 
-model TipoComissao {
-  id        String     @id @default(uuid())
-  nome      String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+model ItemConteudo {
+  id              String        @id @default(uuid())
+  listaConteudoId String
+  listaConteudo   ListaConteudo @relation(fields: [listaConteudoId], references: [id], onDelete: Cascade)
+  nome            String
+  imagem          String?
+  link            String?
+  ordem           Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  comissoes Comissao[]
-
-  @@map("tipos_comissao")
+  @@map("itens_conteudo")
 }
 
 model TipoAtividade {
@@ -496,21 +506,6 @@ model TipoAtividade {
   atividades Atividade[]
 
   @@map("tipos_atividade")
-}
-
-// Catálogo global (não vinculado a uma edição) dos programas de
-// pós-graduação afiliados ao GPDES/UnB, exibido no rodapé de todas as
-// páginas públicas (ver Footer.jsx) — mesmo espírito de TipoAtividade
-// acima, mas com logo/link opcionais em vez de só um nome.
-model ProgramaPosGraduacao {
-  id        String   @id @default(uuid())
-  nome      String
-  imagem    String?
-  link      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("programas_pos_graduacao")
 }
 
 model AtividadePessoa {

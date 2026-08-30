@@ -3,8 +3,7 @@ const ErroHttp = require("../utils/erroHttp");
 const edicoesService = require("../services/edicoes.service");
 const atividadesService = require("../services/atividades.service");
 const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.service");
-const comissoesService = require("../services/comissoes.service");
-const programasPosGraduacaoService = require("../services/programasPosGraduacao.service");
+const gruposConteudoService = require("../services/gruposConteudo.service");
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
@@ -16,11 +15,6 @@ const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
   const atual = await edicoesService.buscarEdicaoAtual();
   const edicoes = atual ? await edicoesService.listarEdicoesAnteriores(atual.numero) : [];
   return res.json({ edicoes });
-});
-
-const listarProgramasPosGraduacao = asyncHandler(async (req, res) => {
-  const programas = await programasPosGraduacaoService.listarProgramasPosGraduacao();
-  return res.json({ programas });
 });
 
 const buscarEdicaoPorSlug = asyncHandler(async (req, res) => {
@@ -81,18 +75,17 @@ const buscarModalidadeSubmissaoPorSlug = asyncHandler(async (req, res) => {
   return res.json({ modalidade });
 });
 
-const listarComissoes = asyncHandler(async (req, res) => {
+const listarGruposConteudo = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
 
-  const comissoes = await comissoesService.listarComissoes(edicao.id);
-  return res.json({ comissoes });
+  const grupos = await gruposConteudoService.listarGrupos(edicao.id);
+  return res.json({ grupos });
 });
 
 module.exports = {
   buscarEdicaoAtual,
   listarEdicoesAnteriores,
-  listarProgramasPosGraduacao,
   buscarEdicaoPorSlug,
   listarAtividadesPorEdicaoSlug,
   buscarAtividadePorEdicaoSlug,
@@ -100,5 +93,5 @@ module.exports = {
   buscarAtividadePorSlug,
   listarModalidadesSubmissao,
   buscarModalidadeSubmissaoPorSlug,
-  listarComissoes,
+  listarGruposConteudo,
 };

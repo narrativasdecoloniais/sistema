@@ -1,0 +1,32 @@
+-- AlterEnum
+BEGIN;
+CREATE TYPE "SecaoAdmin_new" AS ENUM ('ATIVIDADES', 'PAGINA_EVENTO', 'PAGINA_APRESENTACAO', 'PAGINA_MODALIDADES', 'PAGINA_AGENDA', 'PAGINA_PUBLICACOES', 'PAGINA_REALIZADORES', 'PAGINA_APOIO', 'PAGINA_CONTRIBUICAO', 'PAGINA_LOCALIZACAO', 'PAGINA_ATIVIDADES', 'PROGRAMACAO', 'SUBMISSOES_MODALIDADES', 'SUBMISSOES_RECEBIMENTO', 'SUBMISSOES_AVALIACAO', 'SUBMISSOES_RESULTADO', 'SUBMISSOES_APRESENTACAO', 'SUBMISSOES_PUBLICACAO', 'INSCRICOES_GERAIS', 'INSCRICOES_ATIVIDADES', 'CREDENCIAMENTO', 'CERTIFICADOS', 'PARTICIPANTES', 'CONFIGURACOES_EVENTO', 'TIPOS_ATIVIDADE', 'TIPOS_PARTICIPACAO', 'TIPOS_PONTO_INTERESSE', 'PAGINA_COMISSOES', 'GRUPOS_CONTEUDO');
+ALTER TABLE "usuarios" ALTER COLUMN "secoesPermitidas" DROP DEFAULT;
+ALTER TABLE "usuarios" ALTER COLUMN "secoesPermitidas" TYPE "SecaoAdmin_new"[] USING ("secoesPermitidas"::text::"SecaoAdmin_new"[]);
+ALTER TYPE "SecaoAdmin" RENAME TO "SecaoAdmin_old";
+ALTER TYPE "SecaoAdmin_new" RENAME TO "SecaoAdmin";
+DROP TYPE "SecaoAdmin_old";
+ALTER TABLE "usuarios" ALTER COLUMN "secoesPermitidas" SET DEFAULT ARRAY[]::"SecaoAdmin"[];
+COMMIT;
+
+-- DropForeignKey
+ALTER TABLE "comissao_membros" DROP CONSTRAINT "comissao_membros_comissaoId_fkey";
+
+-- DropForeignKey
+ALTER TABLE "comissoes" DROP CONSTRAINT "comissoes_edicaoId_fkey";
+
+-- DropForeignKey
+ALTER TABLE "comissoes" DROP CONSTRAINT "comissoes_tipoComissaoId_fkey";
+
+-- DropTable
+DROP TABLE "comissao_membros";
+
+-- DropTable
+DROP TABLE "comissoes";
+
+-- DropTable
+DROP TABLE "programas_pos_graduacao";
+
+-- DropTable
+DROP TABLE "tipos_comissao";
+
