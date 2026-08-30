@@ -50,6 +50,7 @@ enum SecaoAdmin {
   PAGINA_APOIO
   PAGINA_CONTRIBUICAO
   PAGINA_LOCALIZACAO
+  PAGINA_ATIVIDADES
   PROGRAMACAO
   // Cadastro do catálogo de modalidades/áreas de submissão (antes de abrir
   // as inscrições) — distinto dos SUBMISSOES_* abaixo, que são sobre
@@ -69,6 +70,10 @@ enum SecaoAdmin {
   TIPOS_ATIVIDADE
   TIPOS_PARTICIPACAO
   PROGRAMAS_POS_GRADUACAO
+  TIPOS_PONTO_INTERESSE
+  COMISSOES
+  PAGINA_COMISSOES
+  TIPOS_COMISSAO
 }
 
 enum TipoAcaoContribuicao {
@@ -355,9 +360,18 @@ model Edicao {
   corFundoLocalizacao       String      @default("PAPEL")
   opacidadeFundoLocalizacao Int           @default(100)
   corTextoLocalizacao       String    @default("TINTA")
+  // Seção "Comissões" (lista de cartões, um por comissão, ver Comissao
+  // abaixo) — mesmo bloco de 7 campos de Publicações, com búzio (dobra de
+  // texto simples, sem cards com eixo de cor próprio).
+  tituloComissoes         String?
+  corpoComissoes          String?
+  corFundoComissoes       String   @default("PAPEL")
+  opacidadeFundoComissoes Int      @default(100)
+  corTextoComissoes       String   @default("TINTA")
+  corBuzioComissoes       String   @default("BUZIO")
   // Faixa lateral (cor/imagem/largura definidas nos campos faixaHero* acima)
   // é renderizada por cada seção que a mantiver ligada (ver FaixaLateral em
-  // PaginaInicialConteudo.jsx) — esses 5 campos só dizem se aquela seção
+  // PaginaInicialConteudo.jsx) — esses 6 campos só dizem se aquela seção
   // específica participa ou não. Default true preserva o comportamento atual
   // (faixa contínua em todas as seções).
   mostrarFaixaApresentacao Boolean       @default(true)
@@ -365,6 +379,18 @@ model Edicao {
   mostrarFaixaAgenda       Boolean       @default(true)
   mostrarFaixaPublicacoes  Boolean       @default(true)
   mostrarFaixaLocalizacao  Boolean       @default(true)
+  mostrarFaixaComissoes    Boolean       @default(true)
+  // Aparência compartilhada por TODAS as páginas de detalhe de atividade
+  // (.../atividades/[slug]) — não por atividade individual (uma tentativa
+  // anterior de personalização por atividade foi revertida). Mesmos 3 eixos
+  // independentes das demais dobras (corFundo+opacidadeFundo via color-mix,
+  // corTexto/corBuzio à parte) — ver DetalheAtividade.jsx no público e
+  // AparenciaAtividadesForm.jsx no admin (.../pagina/atividades).
+  corFundoAtividades       String        @default("PAPEL")
+  opacidadeFundoAtividades Int           @default(100)
+  corTextoAtividades       String        @default("TINTA")
+  corBuzioAtividades       String        @default("BARRO")
+  mostrarFaixaAtividades   Boolean       @default(true)
   // Mensagem de contribuição voluntária (ex. pedido de doação via PIX) na
   // etapa final da inscrição pública — não é uma dobra da home, por isso
   // sem cor/opacidade/faixa como as acima. Só aparece no público quando
@@ -391,6 +417,7 @@ model Edicao {
   pontosInteresse      EdicaoPontoInteresse[]
   inscricoes           InscricaoEdicao[]
   modalidadesSubmissao ModalidadeSubmissao[]
+  comissoes            Comissao[]
 
   @@map("edicoes")
 }
@@ -411,17 +438,7 @@ model Atividade {
   vagas           Int?
   inicioAtividade DateTime
   fimAtividade    DateTime
-  // Aparência da página pública da atividade — mesmos 3 eixos independentes
-  // das dobras de Edicao (ex. corFundoLocalizacao/opacidadeFundoLocalizacao/
-  // corTextoLocalizacao), mas por atividade em vez de por edição. A faixa
-  // lateral (cor/imagem/largura) continua definida uma única vez na Edicao
-  // (campos faixaHero* acima) — mostrarFaixaAtividade só liga/desliga o
-  // mesmo mecanismo de mostrarFaixaLocalizacao/Apresentacao/etc.
-  corFundoAtividade       String  @default("PAPEL")
-  opacidadeFundoAtividade Int     @default(100)
-  corTextoAtividade       String  @default("TINTA")
-  corBuzioAtividade       String  @default("BARRO")
-  mostrarFaixaAtividade   Boolean @default(true)
+  atividadeContinua Boolean   @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -430,6 +447,44 @@ model Atividade {
 
   @@unique([edicaoId, slug])
   @@map("atividades")
+}
+
+model Comissao {
+  id             String       @id @default(uuid())
+  edicaoId       String
+  edicao         Edicao       @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipoComissaoId String
+  tipoComissao   TipoComissao @relation(fields: [tipoComissaoId], references: [id])
+  ordem          Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  membros ComissaoMembro[]
+
+  @@map("comissoes")
+}
+
+model ComissaoMembro {
+  id         String   @id @default(uuid())
+  comissaoId String
+  comissao   Comissao @relation(fields: [comissaoId], references: [id], onDelete: Cascade)
+  nome       String
+  ordem      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("comissao_membros")
+}
+
+model TipoComissao {
+  id        String     @id @default(uuid())
+  nome      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  comissoes Comissao[]
+
+  @@map("tipos_comissao")
 }
 
 model TipoAtividade {
@@ -512,11 +567,19 @@ model EdicaoApoiador {
   @@map("edicao_apoiadores")
 }
 
-enum TipoPontoInteresse {
-  LOCAL_EVENTO
-  HOSPEDAGEM
-  RESTAURANTE
-  OUTRO
+// Catálogo global de tipos de ponto de referência (ex.: "Local do evento",
+// "Hospedagem"), compartilhado entre todas as edições — mesmo espírito de
+// TipoAtividade. Cor livre (hex), usada nos marcadores do mapa público.
+model TipoPontoInteresse {
+  id        String                 @id @default(uuid())
+  nome      String                 @unique
+  cor       String
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  pontos EdicaoPontoInteresse[]
+
+  @@map("tipos_ponto_interesse")
 }
 
 // Pontos plotados no mapa da dobra "Localização" da página pública —
@@ -526,7 +589,8 @@ model EdicaoPontoInteresse {
   id        String             @id @default(uuid())
   edicaoId  String
   edicao    Edicao             @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  tipo      TipoPontoInteresse
+  tipoId    String
+  tipo      TipoPontoInteresse @relation(fields: [tipoId], references: [id])
   nome      String
   imagem    String?
   endereco  String?

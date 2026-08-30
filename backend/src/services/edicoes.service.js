@@ -8,7 +8,7 @@ const ErroHttp = require("../utils/erroHttp");
 const INCLUDE_PADRAO = {
   realizadores: { orderBy: { createdAt: "asc" } },
   apoiadores: { orderBy: { createdAt: "asc" } },
-  pontosInteresse: { orderBy: { createdAt: "asc" } },
+  pontosInteresse: { orderBy: { createdAt: "asc" }, include: { tipo: true } },
 };
 
 async function montarCamposRealizador(realizador) {
@@ -41,7 +41,7 @@ async function removerImagemApoiador(apoiador) {
 
 async function montarCamposPontoInteresse(ponto) {
   const campos = {
-    tipo: ponto.tipo,
+    tipoId: ponto.tipoId,
     nome: ponto.nome,
     endereco: ponto.endereco || null,
     latitude: ponto.latitude,

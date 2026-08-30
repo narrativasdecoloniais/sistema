@@ -60,9 +60,7 @@ const edicaoApoiadorSchema = z
 
 const edicaoPontoInteresseSchema = z.object({
   id: z.string().uuid().optional(),
-  tipo: z.enum(["LOCAL_EVENTO", "HOSPEDAGEM", "RESTAURANTE", "OUTRO"], {
-    errorMap: () => ({ message: "Tipo de ponto inválido" }),
-  }),
+  tipoId: z.string().uuid("Tipo de ponto inválido"),
   nome: z.string().trim().min(2, "Informe o nome do ponto"),
   imagem: z
     .string()
@@ -237,6 +235,12 @@ const edicaoSchema = z
     opacidadeFundoPublicacoes: opacidadeSchema,
     corTextoPublicacoes: corPublicaSchema,
     corBuzioPublicacoes: corPublicaSchema,
+    tituloComissoes: z.string().trim().optional(),
+    corpoComissoes: z.string().trim().optional(),
+    corFundoComissoes: corSecaoSchema,
+    opacidadeFundoComissoes: opacidadeSchema,
+    corTextoComissoes: corPublicaSchema,
+    corBuzioComissoes: corPublicaSchema,
     corFundoLocalizacao: corSecaoSchema,
     opacidadeFundoLocalizacao: opacidadeSchema,
     corTextoLocalizacao: corPublicaSchema,
@@ -246,7 +250,15 @@ const edicaoSchema = z
     mostrarFaixaModalidades: z.boolean().optional(),
     mostrarFaixaAgenda: z.boolean().optional(),
     mostrarFaixaPublicacoes: z.boolean().optional(),
+    mostrarFaixaComissoes: z.boolean().optional(),
     mostrarFaixaLocalizacao: z.boolean().optional(),
+    // Aparência compartilhada por todas as páginas de detalhe de atividade
+    // (ver comentário em schema.prisma, model Edicao).
+    corFundoAtividades: corSecaoSchema,
+    opacidadeFundoAtividades: opacidadeSchema,
+    corTextoAtividades: corPublicaSchema,
+    corBuzioAtividades: corPublicaSchema,
+    mostrarFaixaAtividades: z.boolean().optional(),
     // Mensagem de contribuição voluntária na confirmação da inscrição
     // pública (ver ContribuicaoForm.jsx no admin e CardContribuicao.jsx no
     // público) — só aparece quando corpoContribuicao está preenchido. Link

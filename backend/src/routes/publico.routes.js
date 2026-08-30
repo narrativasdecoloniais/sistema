@@ -15,6 +15,7 @@ router.get(
   "/edicao-atual/modalidades-submissao/:slug",
   publicoController.buscarModalidadeSubmissaoPorSlug
 );
+router.get("/edicao-atual/comissoes", publicoController.listarComissoes);
 router.get("/edicoes/:slug", publicoController.buscarEdicaoPorSlug);
 router.get("/edicoes/:slug/atividades", publicoController.listarAtividadesPorEdicaoSlug);
 router.get(

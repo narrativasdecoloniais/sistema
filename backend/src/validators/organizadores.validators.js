@@ -22,6 +22,7 @@ const SECOES_ADMIN = [
   "CONFIGURACOES_EVENTO",
   "TIPOS_ATIVIDADE",
   "TIPOS_PARTICIPACAO",
+  "TIPOS_PONTO_INTERESSE",
 ];
 
 const permissoesSchema = z.object({

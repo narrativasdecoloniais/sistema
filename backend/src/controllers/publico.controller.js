@@ -3,6 +3,7 @@ const ErroHttp = require("../utils/erroHttp");
 const edicoesService = require("../services/edicoes.service");
 const atividadesService = require("../services/atividades.service");
 const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.service");
+const comissoesService = require("../services/comissoes.service");
 const programasPosGraduacaoService = require("../services/programasPosGraduacao.service");
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
@@ -80,6 +81,14 @@ const buscarModalidadeSubmissaoPorSlug = asyncHandler(async (req, res) => {
   return res.json({ modalidade });
 });
 
+const listarComissoes = asyncHandler(async (req, res) => {
+  const edicao = await edicoesService.buscarEdicaoAtual();
+  if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
+
+  const comissoes = await comissoesService.listarComissoes(edicao.id);
+  return res.json({ comissoes });
+});
+
 module.exports = {
   buscarEdicaoAtual,
   listarEdicoesAnteriores,
@@ -91,4 +100,5 @@ module.exports = {
   buscarAtividadePorSlug,
   listarModalidadesSubmissao,
   buscarModalidadeSubmissaoPorSlug,
+  listarComissoes,
 };

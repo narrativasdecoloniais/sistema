@@ -8,6 +8,8 @@ const edicoesRoutes = require("./routes/edicoes.routes");
 const organizadoresRoutes = require("./routes/organizadores.routes");
 const tiposAtividadeRoutes = require("./routes/tiposAtividade.routes");
 const tiposParticipacaoRoutes = require("./routes/tiposParticipacao.routes");
+const tiposPontoInteresseRoutes = require("./routes/tiposPontoInteresse.routes");
+const tiposComissaoRoutes = require("./routes/tiposComissao.routes");
 const programasPosGraduacaoRoutes = require("./routes/programasPosGraduacao.routes");
 const publicoRoutes = require("./routes/publico.routes");
 const errorHandler = require("./middlewares/errorHandler");
@@ -37,6 +39,8 @@ app.use("/edicoes", edicoesRoutes);
 app.use("/organizadores", organizadoresRoutes);
 app.use("/tipos-atividade", tiposAtividadeRoutes);
 app.use("/tipos-participacao", tiposParticipacaoRoutes);
+app.use("/tipos-ponto-interesse", tiposPontoInteresseRoutes);
+app.use("/tipos-comissao", tiposComissaoRoutes);
 app.use("/programas-pos-graduacao", programasPosGraduacaoRoutes);
 app.use("/publico", publicoRoutes);
 

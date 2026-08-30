@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const edicoesController = require("../controllers/edicoes.controller");
 const atividadesRoutes = require("./atividades.routes");
+const comissoesRoutes = require("./comissoes.routes");
 const inscricoesEdicaoRoutes = require("./inscricoesEdicao.routes");
 const inscricoesAtividadeRoutes = require("./inscricoesAtividade.routes");
 const modalidadesSubmissaoRoutes = require("./modalidadesSubmissao.routes");
@@ -23,6 +24,7 @@ router.patch("/:id", autorizarSecao("CONFIGURACOES_EVENTO", "PAGINA_EVENTO"), ed
 router.delete("/:id", autorizar("ADMIN"), edicoesController.excluir);
 
 router.use("/:edicaoId/atividades", atividadesRoutes);
+router.use("/:edicaoId/comissoes", comissoesRoutes);
 router.use("/:edicaoId/inscricoes-gerais", inscricoesEdicaoRoutes);
 router.use("/:edicaoId/inscricoes-atividades", inscricoesAtividadeRoutes);
 router.use("/:edicaoId/modalidades-submissao", modalidadesSubmissaoRoutes);
