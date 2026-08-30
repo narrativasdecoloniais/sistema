@@ -322,7 +322,8 @@ export default function PaginaInicialConteudo({
   corTextoLocalizacao = "TINTA",
   mostrarFaixaLocalizacao = true,
   comissoes = [],
-  tituloComissoes = "Comissões",
+  programasPosGraduacao = [],
+  tituloComissoes = "Comissões e Programas",
   corpoComissoes = "",
   corFundoComissoes = "PAPEL",
   opacidadeFundoComissoes = 100,
@@ -975,7 +976,7 @@ export default function PaginaInicialConteudo({
         </motion.div>
       </motion.section>
 
-      {comissoes.length > 0 && (
+      {(comissoes.length > 0 || programasPosGraduacao.length > 0) && (
         <motion.section
           className={`${styles.secao} ${styles.comissoes}`}
           data-cor-fundo={corFundoComissoes}
@@ -1015,30 +1016,70 @@ export default function PaginaInicialConteudo({
                 {paragrafo}
               </motion.p>
             ))}
-            <motion.ul className={styles.comissoesGrade} variants={containerVariants}>
-              {comissoes.map((comissao) => (
-                <motion.li key={comissao.id} variants={itemVariants}>
-                  <button
-                    type="button"
-                    className={styles.comissaoCartao}
-                    onClick={() => setComissaoAberta(comissao)}
-                  >
-                    <span className={styles.comissaoTexto}>
-                      <span className={styles.comissaoEyebrow}>Comissão</span>
-                      <span className={styles.comissaoTitulo}>{comissao.tipoComissao.nome}</span>
-                      <span className={styles.comissaoResumo}>
-                        {comissao.membros.length === 1
-                          ? "1 membro"
-                          : `${comissao.membros.length} membros`}
+            {comissoes.length > 0 && (
+              <motion.ul className={styles.comissoesGrade} variants={containerVariants}>
+                {comissoes.map((comissao) => (
+                  <motion.li key={comissao.id} variants={itemVariants}>
+                    <button
+                      type="button"
+                      className={styles.comissaoCartao}
+                      onClick={() => setComissaoAberta(comissao)}
+                    >
+                      <span className={styles.comissaoTexto}>
+                        <span className={styles.comissaoEyebrow}>Comissão</span>
+                        <span className={styles.comissaoTitulo}>{comissao.tipoComissao.nome}</span>
+                        <span className={styles.comissaoResumo}>
+                          {comissao.membros.length === 1
+                            ? "1 membro"
+                            : `${comissao.membros.length} membros`}
+                        </span>
                       </span>
-                    </span>
-                    <span className={styles.comissaoSeta} aria-hidden="true">
-                      →
-                    </span>
-                  </button>
-                </motion.li>
-              ))}
-            </motion.ul>
+                      <span className={styles.comissaoSeta} aria-hidden="true">
+                        →
+                      </span>
+                    </button>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            )}
+            {programasPosGraduacao.length > 0 && (
+              <>
+                <motion.p className={styles.secaoTexto} variants={itemVariants}>
+                  Programas de Pós-Graduação
+                </motion.p>
+                <motion.ul className={styles.comissoesGrade} variants={containerVariants}>
+                  {programasPosGraduacao.map((programa) => {
+                    const miolo = (
+                      <span className={styles.comissaoTexto}>
+                        <span className={styles.comissaoEyebrow}>Programa</span>
+                        <span className={styles.comissaoTitulo}>{programa.nome}</span>
+                      </span>
+                    );
+                    return (
+                      <motion.li key={programa.id} variants={itemVariants}>
+                        {programa.link ? (
+                          <a
+                            href={programa.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.comissaoCartao}
+                          >
+                            {miolo}
+                            <span className={styles.comissaoSeta} aria-hidden="true">
+                              →
+                            </span>
+                          </a>
+                        ) : (
+                          <div className={`${styles.comissaoCartao} ${styles.comissaoCartaoEstatico}`}>
+                            {miolo}
+                          </div>
+                        )}
+                      </motion.li>
+                    );
+                  })}
+                </motion.ul>
+              </>
+            )}
           </motion.div>
         </motion.section>
       )}

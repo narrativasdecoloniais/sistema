@@ -16,8 +16,9 @@ const TITULO_PUBLICACOES_PADRAO = "Anais e Memória";
 const CORPO_PUBLICACOES_PADRAO =
   "Em breve abriremos a chamada para submissão de trabalhos desta edição. Os anais das edições anteriores serão disponibilizados aqui assim que organizados.";
 
-const TITULO_COMISSOES_PADRAO = "Comissões";
-const CORPO_COMISSOES_PADRAO = "Conheça as comissões organizadoras desta edição.";
+const TITULO_COMISSOES_PADRAO = "Comissões e Programas";
+const CORPO_COMISSOES_PADRAO =
+  "Conheça as comissões organizadoras desta edição e os programas de pós-graduação parceiros.";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 

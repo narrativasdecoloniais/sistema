@@ -6,6 +6,7 @@ import {
   listarAtividadesPorEdicaoSlug,
   listarModalidadesSubmissaoPublicas,
   listarComissoesPublicas,
+  listarProgramasPosGraduacaoPublico,
   montarPropsPaginaEdicao,
   montarPropsNavegacao,
 } from "@/lib/publico";
@@ -21,11 +22,15 @@ export default async function PaginaEdicao({ params }) {
   const ehEdicaoAtual = edicao.id === edicaoAtual?.id;
   // Modalidades/Comissões só existem pra "edição atual" hoje (ver
   // /publico/edicao-atual/modalidades-submissao e /comissoes) — pra uma
-  // edição passada, fica vazio mesmo (nada pra buscar).
-  const [atividades, modalidades, comissoes] = await Promise.all([
+  // edição passada, fica vazio mesmo (nada pra buscar). Programas de
+  // pós-graduação já são um catálogo global (não vinculado a edição), por
+  // isso busca sempre, igual o Footer fazia antes de a listagem migrar
+  // pra dentro desta dobra.
+  const [atividades, modalidades, comissoes, programasPosGraduacao] = await Promise.all([
     listarAtividadesPorEdicaoSlug(params.slug),
     ehEdicaoAtual ? listarModalidadesSubmissaoPublicas() : Promise.resolve([]),
     ehEdicaoAtual ? listarComissoesPublicas() : Promise.resolve([]),
+    listarProgramasPosGraduacaoPublico(),
   ]);
 
   return (
@@ -35,6 +40,7 @@ export default async function PaginaEdicao({ params }) {
         {...montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual)}
         modalidades={modalidades}
         comissoes={comissoes}
+        programasPosGraduacao={programasPosGraduacao}
       />
     </>
   );

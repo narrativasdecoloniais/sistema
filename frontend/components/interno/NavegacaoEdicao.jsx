@@ -90,7 +90,7 @@ function montarGrupos(base) {
             },
             {
               href: `${base}/pagina/comissoes`,
-              rotulo: "Comissões",
+              rotulo: "Comissões e Programas",
               Icone: Users2,
               secao: "PAGINA_COMISSOES",
             },

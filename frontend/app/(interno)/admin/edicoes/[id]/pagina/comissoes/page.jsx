@@ -16,8 +16,8 @@ export default async function PaginaComissoesEstilo({ params }) {
     <TextoSecaoForm
       edicaoInicial={edicao}
       campo="Comissoes"
-      titulo="Comissões"
-      descricao="Título e texto da seção 'Comissões' na página pública."
+      titulo="Comissões e Programas"
+      descricao="Título e texto da seção 'Comissões e Programas' na página pública — que lista as comissões desta edição e, logo abaixo, os Programas de Pós-Graduação (cadastrados em Configurações → Programas de Pós-Graduação)."
     />
   );
 }
