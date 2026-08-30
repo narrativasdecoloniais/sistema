@@ -38,11 +38,6 @@ export async function listarEdicoesAnteriores() {
   return dados?.edicoes || [];
 }
 
-export async function listarProgramasPosGraduacaoPublico() {
-  const dados = await requisitarPublico("/publico/programas-pos-graduacao");
-  return dados?.programas || [];
-}
-
 export async function listarAtividadesPublicas() {
   const dados = await requisitarPublico("/publico/edicao-atual/atividades");
   return dados?.atividades || [];
@@ -78,9 +73,9 @@ export async function buscarModalidadeSubmissaoPublicaPorSlug(slug) {
   return dados?.modalidade || null;
 }
 
-export async function listarComissoesPublicas() {
-  const dados = await requisitarPublico("/publico/edicao-atual/comissoes");
-  return dados?.comissoes || [];
+export async function listarGruposConteudoPublicos() {
+  const dados = await requisitarPublico("/publico/edicao-atual/grupos-conteudo");
+  return dados?.grupos || [];
 }
 
 // Monta as props de PaginaInicialConteudo a partir de uma edição (atual ou

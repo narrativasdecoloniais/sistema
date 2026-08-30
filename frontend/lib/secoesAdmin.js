@@ -12,7 +12,7 @@ export const GRUPOS_SECOES_ADMIN = [
     titulo: "Pré-evento",
     itens: [
       { valor: "ATIVIDADES", rotulo: "Atividades" },
-      { valor: "COMISSOES", rotulo: "Comissões" },
+      { valor: "GRUPOS_CONTEUDO", rotulo: "Comissões e Programas" },
       {
         rotulo: "Página do evento",
         subitens: [
@@ -64,7 +64,6 @@ export const GRUPOS_SECOES_ADMIN = [
       { valor: "TIPOS_ATIVIDADE", rotulo: "Tipos de atividade" },
       { valor: "TIPOS_PARTICIPACAO", rotulo: "Tipos de participação" },
       { valor: "TIPOS_PONTO_INTERESSE", rotulo: "Tipos de ponto de referência" },
-      { valor: "TIPOS_COMISSAO", rotulo: "Tipos de comissão" },
     ],
   },
 ];

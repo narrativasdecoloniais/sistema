@@ -2,16 +2,16 @@
 
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
-import styles from "./ModalComissao.module.scss";
+import styles from "./ModalListaConteudo.module.scss";
 
 const SELETOR_FOCAVEIS =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 // Mesmo padrão de acessibilidade de components/inscricao/ModalDetalhesAtividade.jsx
 // (focus trap, ESC fecha, clique no fundo fecha, trava scroll do body, devolve
-// foco ao fechar), mas sem fetch assíncrono: a comissão já chega completa via
-// prop (tipoComissao + membros), a lista pública já inclui tudo.
-export default function ModalComissao({ comissao, aoFechar }) {
+// foco ao fechar), sem fetch assíncrono: a lista já chega completa via prop
+// (com seus itens), a lista pública já inclui tudo.
+export default function ModalListaConteudo({ grupoNome, lista, aoFechar }) {
   const painelRef = useRef(null);
   const idTitulo = useId();
 
@@ -59,6 +59,23 @@ export default function ModalComissao({ comissao, aoFechar }) {
     }
   }
 
+  function renderizarItem(item) {
+    const conteudo = (
+      <>
+        {item.imagem && <img src={item.imagem} alt="" className={styles.itemLogo} />}
+        <span>{item.nome}</span>
+      </>
+    );
+
+    return item.link ? (
+      <a href={item.link} target="_blank" rel="noopener noreferrer" className={styles.itemLink}>
+        {conteudo}
+      </a>
+    ) : (
+      <span className={styles.itemLinha}>{conteudo}</span>
+    );
+  }
+
   return createPortal(
     <div className={styles.fundo} onClick={aoClicarFundo}>
       <div
@@ -70,9 +87,9 @@ export default function ModalComissao({ comissao, aoFechar }) {
       >
         <div className={styles.cabecalho}>
           <div className={styles.tituloBloco}>
-            <span className={styles.eyebrow}>Comissão</span>
+            <span className={styles.eyebrow}>{grupoNome}</span>
             <h2 id={idTitulo} className={`${styles.titulo} stencil`}>
-              {comissao.tipoComissao.nome}
+              {lista.nome}
             </h2>
           </div>
           <button type="button" className={styles.fechar} onClick={aoFechar} aria-label="Fechar">
@@ -81,11 +98,11 @@ export default function ModalComissao({ comissao, aoFechar }) {
         </div>
 
         <div className={styles.conteudo}>
-          <h3 className={styles.subtitulo}>Integrantes</h3>
-          <ul className={styles.membrosLista}>
-            {comissao.membros.map((membro) => (
-              <li key={membro.id} className={styles.membrosItem}>
-                {membro.nome}
+          <h3 className={styles.subtitulo}>Itens</h3>
+          <ul className={styles.itensLista}>
+            {lista.itens.map((item) => (
+              <li key={item.id} className={styles.itensListaItem}>
+                {renderizarItem(item)}
               </li>
             ))}
           </ul>

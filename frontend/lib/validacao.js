@@ -267,32 +267,30 @@ export const tipoPontoInteresseSchema = z.object({
   cor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida"),
 });
 
-export const tipoComissaoSchema = z.object({
-  nome: z.string().trim().min(2, "Informe o nome do tipo de comissão"),
-});
-
-export const comissaoMembroSchema = z.object({
+export const itemConteudoSchema = z.object({
   id: z.string().optional(),
-  nome: z.string().trim().min(2, "Informe o nome do integrante"),
-});
-
-export const comissaoSchema = z.object({
-  tipoComissaoId: z.string().min(1, "Selecione um tipo de comissão"),
-  membros: z.array(comissaoMembroSchema).optional(),
-});
-
-export const tipoParticipacaoSchema = z.object({
-  nome: z.string().trim().min(2, "Informe o nome do tipo de participação"),
-});
-
-export const programaPosGraduacaoSchema = z.object({
-  nome: z.string().trim().min(2, "Informe o nome do programa"),
-  link: z.string().trim().url("Link inválido").optional(),
+  nome: z.string().trim().min(1, "Informe o nome do item"),
   imagem: z
     .string()
     .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
     .nullable()
     .optional(),
+  link: z.string().trim().url("Link inválido").optional().or(z.literal("")),
+});
+
+export const listaConteudoSchema = z.object({
+  id: z.string().optional(),
+  nome: z.string().trim().min(1, "Informe o nome da lista"),
+  itens: z.array(itemConteudoSchema).optional(),
+});
+
+export const grupoConteudoSchema = z.object({
+  nome: z.string().trim().min(1, "Informe o nome do grupo"),
+  listas: z.array(listaConteudoSchema).optional(),
+});
+
+export const tipoParticipacaoSchema = z.object({
+  nome: z.string().trim().min(2, "Informe o nome do tipo de participação"),
 });
 
 export const atividadePessoaSchema = z.object({

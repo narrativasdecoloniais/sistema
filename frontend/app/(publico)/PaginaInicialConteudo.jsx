@@ -15,7 +15,7 @@ import NavegacaoDias, {
 import AtividadesPorTipo from "@/components/inscricao/AtividadesPorTipo";
 import LinhaProgramacao from "@/components/publico/LinhaProgramacao";
 import CardAtividadeProgramacao from "@/components/publico/CardAtividadeProgramacao";
-import ModalComissao from "@/components/publico/ModalComissao";
+import ModalListaConteudo from "@/components/publico/ModalListaConteudo";
 
 // Carrega o script do Google Maps via window/document — precisa ficar fora do SSR.
 const MapaLocalizacao = dynamic(() => import("@/components/publico/MapaLocalizacao"), {
@@ -321,8 +321,7 @@ export default function PaginaInicialConteudo({
   opacidadeFundoLocalizacao = 100,
   corTextoLocalizacao = "TINTA",
   mostrarFaixaLocalizacao = true,
-  comissoes = [],
-  programasPosGraduacao = [],
+  grupos = [],
   tituloComissoes = "Comissões e Programas",
   corpoComissoes = "",
   corFundoComissoes = "PAPEL",
@@ -337,7 +336,7 @@ export default function PaginaInicialConteudo({
 }) {
   const reduzMovimento = useReducedMotion();
   const mapaLocalizacaoRef = useRef(null);
-  const [comissaoAberta, setComissaoAberta] = useState(null);
+  const [listaAberta, setListaAberta] = useState(null);
 
   const idDiasProgramacao = useId();
   const diasProgramacao = useMemo(
@@ -976,9 +975,9 @@ export default function PaginaInicialConteudo({
         </motion.div>
       </motion.section>
 
-      {(comissoes.length > 0 || programasPosGraduacao.length > 0) && (
+      {grupos.length > 0 && (
         <motion.section
-          className={`${styles.secao} ${styles.comissoes}`}
+          className={`${styles.secao} ${styles.gruposConteudo}`}
           data-cor-fundo={corFundoComissoes}
           data-cor-texto={corTextoComissoes}
           data-cor-buzio={corBuzioComissoes}
@@ -1007,7 +1006,6 @@ export default function PaginaInicialConteudo({
           )}
           <Marcador />
           <motion.div className={styles.conteudo} variants={containerVariants}>
-            <Eyebrow>Comissões</Eyebrow>
             <motion.h2 className={styles.tituloSecundario} variants={itemVariants}>
               {tituloComissoes}
             </motion.h2>
@@ -1016,76 +1014,45 @@ export default function PaginaInicialConteudo({
                 {paragrafo}
               </motion.p>
             ))}
-            {comissoes.length > 0 && (
-              <motion.ul className={styles.comissoesGrade} variants={containerVariants}>
-                {comissoes.map((comissao) => (
-                  <motion.li key={comissao.id} variants={itemVariants}>
-                    <button
-                      type="button"
-                      className={styles.comissaoCartao}
-                      onClick={() => setComissaoAberta(comissao)}
-                    >
-                      <span className={styles.comissaoTexto}>
-                        <span className={styles.comissaoEyebrow}>Comissão</span>
-                        <span className={styles.comissaoTitulo}>{comissao.tipoComissao.nome}</span>
-                        <span className={styles.comissaoResumo}>
-                          {comissao.membros.length === 1
-                            ? "1 membro"
-                            : `${comissao.membros.length} membros`}
-                        </span>
-                      </span>
-                      <span className={styles.comissaoSeta} aria-hidden="true">
-                        →
-                      </span>
-                    </button>
-                  </motion.li>
-                ))}
-              </motion.ul>
-            )}
-            {programasPosGraduacao.length > 0 && (
-              <>
+            {grupos.map((grupo) => (
+              <Fragment key={grupo.id}>
                 <motion.p className={styles.secaoTexto} variants={itemVariants}>
-                  Programas de Pós-Graduação
+                  {grupo.nome}
                 </motion.p>
-                <motion.ul className={styles.comissoesGrade} variants={containerVariants}>
-                  {programasPosGraduacao.map((programa) => {
-                    const miolo = (
-                      <span className={styles.comissaoTexto}>
-                        <span className={styles.comissaoEyebrow}>Programa</span>
-                        <span className={styles.comissaoTitulo}>{programa.nome}</span>
-                      </span>
-                    );
-                    return (
-                      <motion.li key={programa.id} variants={itemVariants}>
-                        {programa.link ? (
-                          <a
-                            href={programa.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.comissaoCartao}
-                          >
-                            {miolo}
-                            <span className={styles.comissaoSeta} aria-hidden="true">
-                              →
-                            </span>
-                          </a>
-                        ) : (
-                          <div className={`${styles.comissaoCartao} ${styles.comissaoCartaoEstatico}`}>
-                            {miolo}
-                          </div>
-                        )}
-                      </motion.li>
-                    );
-                  })}
+                <motion.ul className={styles.listasGrade} variants={containerVariants}>
+                  {grupo.listas.map((lista) => (
+                    <motion.li key={lista.id} variants={itemVariants}>
+                      <button
+                        type="button"
+                        className={styles.listaCartao}
+                        onClick={() => setListaAberta({ grupoNome: grupo.nome, lista })}
+                      >
+                        <span className={styles.listaTexto}>
+                          <span className={styles.listaEyebrow}>{grupo.nome}</span>
+                          <span className={styles.listaTitulo}>{lista.nome}</span>
+                          <span className={styles.listaResumo}>
+                            {lista.itens.length === 1 ? "1 item" : `${lista.itens.length} itens`}
+                          </span>
+                        </span>
+                        <span className={styles.listaSeta} aria-hidden="true">
+                          →
+                        </span>
+                      </button>
+                    </motion.li>
+                  ))}
                 </motion.ul>
-              </>
-            )}
+              </Fragment>
+            ))}
           </motion.div>
         </motion.section>
       )}
 
-      {comissaoAberta && (
-        <ModalComissao comissao={comissaoAberta} aoFechar={() => setComissaoAberta(null)} />
+      {listaAberta && (
+        <ModalListaConteudo
+          grupoNome={listaAberta.grupoNome}
+          lista={listaAberta.lista}
+          aoFechar={() => setListaAberta(null)}
+        />
       )}
 
       {realizadores.length > 0 && (

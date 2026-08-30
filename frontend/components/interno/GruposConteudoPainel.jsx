@@ -6,58 +6,55 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
-import ComissaoForm from "./ComissaoForm";
+import GrupoConteudoForm from "./GrupoConteudoForm";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
-import styles from "./ComissoesPainel.module.scss";
+import styles from "./AtividadesPainel.module.scss";
 
-export default function ComissoesPainel({ edicaoId, comissoesIniciais, tiposComissao }) {
+export default function GruposConteudoPainel({ edicaoId, gruposIniciais }) {
   const router = useRouter();
   const { notificar } = useToast();
 
-  const [comissoes, setComissoes] = useState(comissoesIniciais);
-  const [comissaoEmEdicao, setComissaoEmEdicao] = useState(null);
+  const [grupos, setGrupos] = useState(gruposIniciais);
+  const [grupoEmEdicao, setGrupoEmEdicao] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmandoId, setConfirmandoId] = useState(null);
 
   function abrirCriacao() {
-    setComissaoEmEdicao(null);
+    setGrupoEmEdicao(null);
     setModalAberto(true);
   }
 
-  function abrirEdicao(comissao) {
-    setComissaoEmEdicao(comissao);
+  function abrirEdicao(grupo) {
+    setGrupoEmEdicao(grupo);
     setModalAberto(true);
   }
 
   function fecharModal() {
     setModalAberto(false);
-    setComissaoEmEdicao(null);
+    setGrupoEmEdicao(null);
   }
 
-  function aoSalvar(comissaoSalva) {
-    setComissoes((atual) => {
-      const jaExiste = atual.some((item) => item.id === comissaoSalva.id);
+  function aoSalvar(grupoSalvo) {
+    setGrupos((atual) => {
+      const jaExiste = atual.some((item) => item.id === grupoSalvo.id);
       if (jaExiste) {
-        return atual.map((item) => (item.id === comissaoSalva.id ? comissaoSalva : item));
+        return atual.map((item) => (item.id === grupoSalvo.id ? grupoSalvo : item));
       }
-      return [...atual, comissaoSalva];
+      return [...atual, grupoSalvo];
     });
     fecharModal();
     router.refresh();
   }
 
-  async function excluirComissao(id) {
+  async function excluirGrupo(id) {
     setProcessandoId(id);
 
     try {
-      await apiClient.delete(`/edicoes/${edicaoId}/comissoes/${id}`);
-      setComissoes((atual) => atual.filter((item) => item.id !== id));
-      notificar("Comissão excluída com sucesso.");
-      // Sem efeito quando chamado a partir da exclusão pela linha da tabela
-      // (nenhum modal de edição aberto); fecha o formulário quando a
-      // exclusão veio de dentro dele (ComissaoForm).
+      await apiClient.delete(`/edicoes/${edicaoId}/grupos-conteudo/${id}`);
+      setGrupos((atual) => atual.filter((item) => item.id !== id));
+      notificar("Grupo excluído com sucesso.");
       fecharModal();
       router.refresh();
     } catch (erro) {
@@ -72,23 +69,23 @@ export default function ComissoesPainel({ edicaoId, comissoesIniciais, tiposComi
     <div className={styles.pagina}>
       <div className={styles.cabecalho}>
         <div>
-          <h1 className={styles.titulo}>Comissões</h1>
+          <h1 className={styles.titulo}>Comissões e Programas</h1>
           <p className={styles.descricao}>
-            Cadastre as comissões organizadoras desta edição, exibidas na página pública logo
-            após a seção Anais.
+            Cadastre os grupos (ex.: uma comissão ou "Programas de Pós-Graduação") e, dentro de
+            cada um, as listas e os itens exibidos na página pública.
           </p>
         </div>
         <Botao type="button" onClick={abrirCriacao}>
           <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
-          Nova comissão
+          Novo grupo
         </Botao>
       </div>
 
-      {comissoes.length === 0 ? (
+      {grupos.length === 0 ? (
         <div className={styles.vazio}>
-          <p>Nenhuma comissão cadastrada ainda.</p>
+          <p>Nenhum grupo cadastrado ainda.</p>
           <p className={styles.vazioApoio}>
-            Crie a primeira comissão para exibir a seção na página pública.
+            Crie o primeiro grupo para exibir a seção "Comissões e Programas" na página pública.
           </p>
         </div>
       ) : (
@@ -96,31 +93,31 @@ export default function ComissoesPainel({ edicaoId, comissoesIniciais, tiposComi
           <table className={styles.tabela}>
             <thead>
               <tr>
-                <th>Tipo</th>
-                <th>Integrantes</th>
+                <th>Nome</th>
+                <th>Listas</th>
                 <th className={styles.colunaAcoes}>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {comissoes.map((comissao) => (
-                <tr key={comissao.id}>
-                  <td data-rotulo="Tipo">{comissao.tipoComissao?.nome}</td>
-                  <td data-rotulo="Integrantes">{comissao.membros?.length || 0}</td>
+              {grupos.map((grupo) => (
+                <tr key={grupo.id}>
+                  <td data-rotulo="Nome">{grupo.nome}</td>
+                  <td data-rotulo="Listas">{grupo.listas?.length || 0}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
                     <div className={styles.acoesLinha}>
                       <button
                         type="button"
                         className={styles.botaoIcone}
-                        aria-label={`Editar comissão de ${comissao.tipoComissao?.nome}`}
-                        onClick={() => abrirEdicao(comissao)}
+                        aria-label={`Editar ${grupo.nome}`}
+                        onClick={() => abrirEdicao(grupo)}
                       >
                         <Pencil size={16} strokeWidth={1.5} aria-hidden="true" />
                       </button>
                       <button
                         type="button"
                         className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
-                        aria-label={`Excluir comissão de ${comissao.tipoComissao?.nome}`}
-                        onClick={() => setConfirmandoId(comissao.id)}
+                        aria-label={`Excluir ${grupo.nome}`}
+                        onClick={() => setConfirmandoId(grupo.id)}
                       >
                         <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
                       </button>
@@ -134,27 +131,23 @@ export default function ComissoesPainel({ edicaoId, comissoesIniciais, tiposComi
       )}
 
       {modalAberto && (
-        <Modal
-          titulo={comissaoEmEdicao ? "Editar comissão" : "Nova comissão"}
-          onFechar={fecharModal}
-        >
-          <ComissaoForm
+        <Modal titulo={grupoEmEdicao ? "Editar grupo" : "Novo grupo"} onFechar={fecharModal}>
+          <GrupoConteudoForm
             edicaoId={edicaoId}
-            comissaoInicial={comissaoEmEdicao}
-            tiposComissao={tiposComissao}
+            grupoInicial={grupoEmEdicao}
             aoSalvar={aoSalvar}
             aoCancelar={fecharModal}
-            aoExcluir={excluirComissao}
+            aoExcluir={excluirGrupo}
           />
         </Modal>
       )}
 
       {confirmandoId && (
         <ModalConfirmacao
-          titulo="Excluir comissão"
-          mensagem={`Tem certeza que deseja excluir a comissão "${comissoes.find((comissao) => comissao.id === confirmandoId)?.tipoComissao?.nome}"? Essa ação não pode ser desfeita.`}
+          titulo="Excluir grupo"
+          mensagem={`Tem certeza que deseja excluir "${grupos.find((grupo) => grupo.id === confirmandoId)?.nome}"? Essa ação também remove todas as listas e itens cadastrados nele e não pode ser desfeita.`}
           confirmando={processandoId === confirmandoId}
-          onConfirmar={() => excluirComissao(confirmandoId)}
+          onConfirmar={() => excluirGrupo(confirmandoId)}
           onCancelar={() => setConfirmandoId(null)}
         />
       )}

@@ -29,7 +29,6 @@ import {
   Award,
   Settings,
   Tags,
-  GraduationCap,
   Contact,
   UserCheck,
   CalendarCheck,
@@ -58,7 +57,12 @@ function montarGrupos(base) {
       titulo: "Pré-evento",
       itens: [
         { href: `${base}/atividades`, rotulo: "Atividades", Icone: ClipboardList, secao: "ATIVIDADES" },
-        { href: `${base}/comissoes`, rotulo: "Comissões", Icone: Landmark, secao: "COMISSOES" },
+        {
+          href: `${base}/grupos-conteudo`,
+          rotulo: "Comissões e Programas",
+          Icone: Landmark,
+          secao: "GRUPOS_CONTEUDO",
+        },
         {
           rotulo: "Página do evento",
           Icone: Globe,
@@ -211,18 +215,6 @@ function montarGrupos(base) {
           rotulo: "Tipos de ponto de referência",
           Icone: MapPin,
           secao: "TIPOS_PONTO_INTERESSE",
-        },
-        {
-          href: `${base}/tipos-comissao`,
-          rotulo: "Tipos de comissão",
-          Icone: Tags,
-          secao: "TIPOS_COMISSAO",
-        },
-        {
-          href: `${base}/pos-graduacao`,
-          rotulo: "Programas de Pós-Graduação",
-          Icone: GraduationCap,
-          secao: "PROGRAMAS_POS_GRADUACAO",
         },
       ],
     },

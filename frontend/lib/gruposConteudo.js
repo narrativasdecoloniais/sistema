@@ -15,7 +15,7 @@ async function requisitarComCookies(caminho) {
   return resposta.json();
 }
 
-export async function listarTiposComissao() {
-  const dados = await requisitarComCookies("/tipos-comissao");
-  return dados?.tiposComissao || [];
+export async function listarGrupos(edicaoId) {
+  const dados = await requisitarComCookies(`/edicoes/${edicaoId}/grupos-conteudo`);
+  return dados?.grupos || [];
 }

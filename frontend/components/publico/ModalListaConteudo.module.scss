@@ -1,7 +1,7 @@
 @use "../../styles/tokens-publico" as pub;
 
-// Renderizado via portal em document.body (ver ModalComissao.jsx), fora da
-// .wrapper de app/(publico)/layout.module.scss onde os tokens públicos
+// Renderizado via portal em document.body (ver ModalListaConteudo.jsx), fora
+// da .wrapper de app/(publico)/layout.module.scss onde os tokens públicos
 // normalmente são declarados — sem isso, todo var(--papel)/var(--barro)/etc.
 // aqui dentro cairia no valor inicial. Mesmo z-index de
 // ModalDetalhesAtividade.module.scss: só um modal fica aberto por vez neste
@@ -118,19 +118,42 @@
   font-size: 1rem;
 }
 
-.membrosLista {
+.itensLista {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.membrosItem {
-  padding: 0.6rem 0;
+.itensListaItem {
   border-bottom: 1px solid var(--areia);
-  font-size: 0.9rem;
-  color: var(--tinta);
 
   &:last-child {
     border-bottom: none;
   }
+}
+
+.itemLinha,
+.itemLink {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+  color: var(--tinta);
+}
+
+.itemLink {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.itemLogo {
+  max-width: 32px;
+  max-height: 32px;
+  width: auto;
+  height: auto;
+  flex-shrink: 0;
 }

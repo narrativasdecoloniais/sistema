@@ -817,7 +817,7 @@
 .modalidades,
 .agenda,
 .publicacoes,
-.comissoes {
+.gruposConteudo {
   --cor-fundo-secao-base: var(--papel);
   --opacidade-fundo-secao: 100%;
   --cor-texto-secao: var(--tinta);
@@ -1300,14 +1300,17 @@
   }
 }
 
-// ---- section Comissões (lista em coluna, um cartão full-width por comissão) ----
+// ---- section Comissões e Programas (motor genérico Grupo > Lista > Item) ----
 //
 // Adaptado de .areaCartao/.areaTexto/.areaEyebrow/.areaTitulo/.areaSeta em
 // app/(publico)/submissao/[modalidade]/page.module.scss: mesmo cartão em
 // linha (eyebrow + título + seta), em coluna única (cada item ocupa a
 // largura toda) e com border-radius — desvio deliberado pedido para esta
-// seção; o card de referência de Submissão não tem raio nenhum.
-.comissoesGrade {
+// seção; o card de referência de Submissão não tem raio nenhum. Cada card
+// representa uma ListaConteudo (eyebrow = nome do GrupoConteudo, título =
+// nome da lista) — clicar sempre abre um modal com os itens dela
+// (ModalListaConteudo), então o card é sempre um <button>, nunca um link.
+.listasGrade {
   // .conteudo é flex com align-items:flex-start (ver acima) — sem
   // align-self:stretch + width:100%, a lista encolheria pro conteúdo mais
   // largo dela mesma em vez de ocupar as 70ch da coluna de texto (mesmo
@@ -1322,7 +1325,7 @@
   list-style: none;
 }
 
-.comissaoCartao {
+.listaCartao {
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -1331,7 +1334,7 @@
   border: 1px solid var(--areia);
   border-left: 3px solid var(--barro);
   border-radius: 6px;
-  // Sem isso, o preenchimento sólido de .comissaoSeta no hover ultrapassa o
+  // Sem isso, o preenchimento sólido de .listaSeta no hover ultrapassa o
   // raio do cartão (o quadrado da seta fica "vazando" no canto direito
   // arredondado) — overflow: hidden faz o filho respeitar o border-radius
   // do pai.
@@ -1339,7 +1342,6 @@
   background: var(--papel);
   font: inherit;
   text-align: left;
-  text-decoration: none;
   cursor: pointer;
   box-shadow: inset 0 0 0 0 var(--barro);
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
@@ -1348,7 +1350,7 @@
     background: var(--areia);
   }
 
-  &:hover .comissaoSeta {
+  &:hover .listaSeta {
     background: var(--barro);
     color: var(--papel);
   }
@@ -1359,7 +1361,7 @@
   }
 }
 
-.comissaoTexto {
+.listaTexto {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1369,7 +1371,7 @@
   flex: 1 1 auto;
 }
 
-.comissaoEyebrow {
+.listaEyebrow {
   font-family: var(--font-archivo), sans-serif;
   font-size: 10px;
   font-weight: 700;
@@ -1378,20 +1380,20 @@
   color: var(--barro);
 }
 
-.comissaoTitulo {
+.listaTitulo {
   font-size: 0.92rem;
   font-weight: 600;
   color: var(--tinta);
   line-height: 1.45;
 }
 
-.comissaoResumo {
+.listaResumo {
   font-size: 0.85rem;
   color: var(--texto-suave);
   line-height: 1.5;
 }
 
-.comissaoSeta {
+.listaSeta {
   flex: none;
   display: flex;
   align-items: center;
@@ -1402,20 +1404,4 @@
   color: var(--barro);
   font-size: 1.1rem;
   transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-// Listagem de Programas de Pós-Graduação — antes vivia no rodapé
-// (Footer.jsx/Footer.module.scss), migrada pra dentro desta dobra e
-// reaproveitando o mesmo cartão de .comissaoCartao (eyebrow "Programa" +
-// nome + seta), pedido explicitamente igual ao de Comissões. Programa sem
-// link não tem pra onde ir ao clicar — .comissaoCartaoEstatico anula o
-// cursor/hover do cartão base só nesse caso (mesma especificidade de
-// `.comissaoCartao:hover`, então a ordem de declaração abaixo dele é quem
-// decide, e as duas classes sempre chegam juntas no elemento).
-.comissaoCartaoEstatico {
-  cursor: default;
-
-  &:hover {
-    background: var(--papel);
-  }
 }
