@@ -4,20 +4,6 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import styles from "./MapaLocalizacao.module.scss";
 
-const CORES_POR_TIPO = {
-  LOCAL_EVENTO: "#9c4a2f", // --barro
-  HOSPEDAGEM: "#b87c34", // --ocre
-  RESTAURANTE: "#55603f", // --cerrado
-  OUTRO: "#201914", // --tinta
-};
-
-const ROTULOS_TIPO_PONTO = {
-  LOCAL_EVENTO: "Local do evento",
-  HOSPEDAGEM: "Hospedagem",
-  RESTAURANTE: "Restaurante",
-  OUTRO: "Outro",
-};
-
 // setOptions só pode ser chamado uma vez, antes de qualquer importLibrary
 // (API funcional nova — a classe Loader foi removida a partir da v2).
 let opcoesConfiguradas = false;
@@ -43,8 +29,8 @@ function escaparHtml(texto) {
 // circular de link no canto e nome/endereço abaixo). Estilo sempre inline
 // porque uma classe do CSS Module não é garantida a se aplicar aqui.
 function montarConteudoPonto(ponto) {
-  const corTipo = CORES_POR_TIPO[ponto.tipo] || CORES_POR_TIPO.OUTRO;
-  const rotuloTipo = ROTULOS_TIPO_PONTO[ponto.tipo] || ponto.tipo;
+  const corTipo = ponto.tipo.cor;
+  const rotuloTipo = ponto.tipo.nome;
   const nome = escaparHtml(ponto.nome);
   const endereco = ponto.endereco ? escaparHtml(ponto.endereco) : "";
 
@@ -131,7 +117,7 @@ const MapaLocalizacao = forwardRef(function MapaLocalizacao({ pontos = [] }, ref
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
               scale: 8,
-              fillColor: CORES_POR_TIPO[ponto.tipo] || CORES_POR_TIPO.OUTRO,
+              fillColor: ponto.tipo.cor,
               fillOpacity: 1,
               strokeColor: "#faf6ee",
               strokeWeight: 2,

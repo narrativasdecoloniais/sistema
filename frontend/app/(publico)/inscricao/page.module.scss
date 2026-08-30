@@ -61,6 +61,30 @@
   gap: 1rem;
 }
 
+// Rótulo que abre o bloco de atividades contínuas (sempre o primeiro grupo
+// do dia, ver agruparAtividadesSimultaneas em lib/inscricao.js) — separação
+// por tipografia/espaço, sem divisor ou caixa colorida (DESIGN.md, seção 5).
+.rotuloContinuas {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+// Reabre a leitura por horário depois do bloco de contínuas — mesmo
+// registro do rótulo acima, só com a cor voltando ao texto suave (volta ao
+// padrão da lista, não é mais um destaque).
+.rotuloPorHorario {
+  margin: 0.5rem 0 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
 // Rótulo do dia quando só existe um (NavegacaoDias, com abas, só aparece a
 // partir de dois dias) — sem o dia em algum lugar, a lista de atividades
 // fica sem nenhuma referência de data, só hora.

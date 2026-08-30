@@ -1,9 +1,15 @@
 // z-index 200: acima da navbar (40) e do wrapper do layout público (100),
 // abaixo do toast (2000) e do modal de detalhes de atividade (3000).
+//
+// bottom maior que o padrão (em vez de 1.5rem/1rem) pra abrir espaço acima
+// do botão do VLibras (VLibrasWidget.jsx), que fica na posição padrão dele
+// — encostado no canto inferior direito. Sem relação direta no código entre
+// os dois componentes, só empilhamento visual; recalibrar se o widget do
+// VLibras mudar de tamanho/posição.
 .raiz {
   position: fixed;
   right: 1.5rem;
-  bottom: 1.5rem;
+  bottom: 6rem;
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -12,7 +18,7 @@
 
   @media (max-width: 700px) {
     right: 1rem;
-    bottom: 1rem;
+    bottom: 5rem;
   }
 }
 

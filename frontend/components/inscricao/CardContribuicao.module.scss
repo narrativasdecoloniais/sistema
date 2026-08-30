@@ -98,21 +98,17 @@
   gap: 0.6rem;
 }
 
+// Valor bruto do payload Pix — mantido no DOM (aoCopiar em CardContribuicao.jsx
+// usa a variável, não o texto renderizado), só escondido visualmente porque o
+// código copia-e-cola não tem valor de leitura pra quem inscreve.
 .valorCopiar {
-  padding: 0.5rem 0.75rem;
-  background: var(--areia);
-  border: 1px solid var(--ocre);
-  border-radius: 6px;
-  font-family: monospace;
-  font-size: 0.85rem;
-  color: var(--tinta);
-  overflow-wrap: anywhere;
+  display: none;
 }
 
 .qrCode {
-  align-self: flex-start;
-  width: 160px;
-  height: 160px;
+  align-self: stretch;
+  width: 100%;
+  height: auto;
   margin-top: 0.2rem;
   padding: 0.5rem;
   background: var(--papel);
@@ -141,5 +137,9 @@
   &:focus-visible {
     outline: 2px solid var(--barro);
     outline-offset: 2px;
+  }
+
+  @media (max-width: 700px) {
+    width: 100%;
   }
 }

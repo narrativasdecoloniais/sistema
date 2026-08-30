@@ -8,8 +8,6 @@ import CampoNumero from "./CampoNumero";
 import CampoArea from "./CampoArea";
 import CampoSelecao from "./CampoSelecao";
 import CampoCheckbox from "./CampoCheckbox";
-import CampoCorSecao from "./CampoCorSecao";
-import CampoOpacidade from "./CampoOpacidade";
 import Campo from "@/components/forms/Campo";
 import Alerta from "@/components/forms/Alerta";
 import ModalConfirmacao from "./ModalConfirmacao";
@@ -37,16 +35,12 @@ function estadoInicial(atividadeInicial) {
     descricao: atividadeInicial?.descricao || "",
     cargaHoraria: atividadeInicial?.cargaHoraria ?? null,
     local: atividadeInicial?.local || "",
+    atividadeContinua: atividadeInicial?.atividadeContinua || false,
     exigeInscricao: atividadeInicial?.exigeInscricao ?? true,
     semLimiteVagas: atividadeInicial?.semLimiteVagas || false,
     vagas: atividadeInicial?.vagas ?? null,
     inicioAtividade: atividadeInicial?.inicioAtividade || "",
     fimAtividade: atividadeInicial?.fimAtividade || "",
-    corFundoAtividade: atividadeInicial?.corFundoAtividade || "PAPEL",
-    opacidadeFundoAtividade: atividadeInicial?.opacidadeFundoAtividade ?? 100,
-    corTextoAtividade: atividadeInicial?.corTextoAtividade || "TINTA",
-    corBuzioAtividade: atividadeInicial?.corBuzioAtividade || "BARRO",
-    mostrarFaixaAtividade: atividadeInicial?.mostrarFaixaAtividade ?? true,
     // localId é só de identidade na UI (chave React, linha expandida) —
     // pessoa nova ganha um UUID cliente-only; pessoa existente reusa o id
     // do banco, que já é estável. Nunca é lido pelo backend: o zod (modo
@@ -376,6 +370,12 @@ export default function AtividadeForm({
         />
       </div>
       <CampoCheckbox
+        id="atividade-continua"
+        rotulo="Atividade contínua"
+        checked={dados.atividadeContinua}
+        onChange={(valor) => atualizarCampo("atividadeContinua", valor)}
+      />
+      <CampoCheckbox
         id="exige-inscricao"
         rotulo="Exige inscrição"
         checked={dados.exigeInscricao}
@@ -435,40 +435,6 @@ export default function AtividadeForm({
           label="Adicionar pessoa"
           onClick={aoAdicionarPessoa}
           pt={{ root: { className: styles.botaoSecundario } }}
-        />
-      </div>
-
-      <div className={styles.secaoPessoas}>
-        <span className={styles.rotuloLista}>Aparência</span>
-        <CampoCorSecao
-          id="corFundoAtividade"
-          rotulo="Cor de fundo"
-          valor={dados.corFundoAtividade}
-          onChange={(valor) => atualizarCampo("corFundoAtividade", valor)}
-        />
-        <CampoOpacidade
-          id="opacidadeFundoAtividade"
-          rotulo="Opacidade do fundo"
-          valor={dados.opacidadeFundoAtividade}
-          onChange={(valor) => atualizarCampo("opacidadeFundoAtividade", valor)}
-        />
-        <CampoCorSecao
-          id="corTextoAtividade"
-          rotulo="Cor do texto"
-          valor={dados.corTextoAtividade}
-          onChange={(valor) => atualizarCampo("corTextoAtividade", valor)}
-        />
-        <CampoCorSecao
-          id="corBuzioAtividade"
-          rotulo="Cor do búzio"
-          valor={dados.corBuzioAtividade}
-          onChange={(valor) => atualizarCampo("corBuzioAtividade", valor)}
-        />
-        <CampoCheckbox
-          id="mostrar-faixa-atividade"
-          rotulo="Mostrar a faixa lateral (definida na página do evento)"
-          checked={dados.mostrarFaixaAtividade}
-          onChange={(valor) => atualizarCampo("mostrarFaixaAtividade", valor)}
         />
       </div>
 

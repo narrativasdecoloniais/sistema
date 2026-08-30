@@ -17,6 +17,7 @@ import {
   HandHeart,
   HandCoins,
   MapPin,
+  Palette,
   CalendarDays,
   FileText,
   Inbox,
@@ -33,6 +34,8 @@ import {
   UserCheck,
   CalendarCheck,
   ChevronDown,
+  Landmark,
+  Users2,
 } from "lucide-react";
 import { temPermissaoSecao } from "@/lib/permissoes";
 import styles from "./NavegacaoEdicao.module.scss";
@@ -55,6 +58,7 @@ function montarGrupos(base) {
       titulo: "Pré-evento",
       itens: [
         { href: `${base}/atividades`, rotulo: "Atividades", Icone: ClipboardList, secao: "ATIVIDADES" },
+        { href: `${base}/comissoes`, rotulo: "Comissões", Icone: Landmark, secao: "COMISSOES" },
         {
           rotulo: "Página do evento",
           Icone: Globe,
@@ -85,6 +89,12 @@ function montarGrupos(base) {
               secao: "PAGINA_PUBLICACOES",
             },
             {
+              href: `${base}/pagina/comissoes`,
+              rotulo: "Comissões",
+              Icone: Users2,
+              secao: "PAGINA_COMISSOES",
+            },
+            {
               href: `${base}/pagina/realizadores`,
               rotulo: "Realizadores",
               Icone: Building2,
@@ -107,6 +117,12 @@ function montarGrupos(base) {
               rotulo: "Localização",
               Icone: MapPin,
               secao: "PAGINA_LOCALIZACAO",
+            },
+            {
+              href: `${base}/pagina/atividades`,
+              rotulo: "Atividades",
+              Icone: Palette,
+              secao: "PAGINA_ATIVIDADES",
             },
           ],
         },
@@ -189,6 +205,18 @@ function montarGrupos(base) {
           rotulo: "Tipos de participação",
           Icone: Contact,
           secao: "TIPOS_PARTICIPACAO",
+        },
+        {
+          href: `${base}/tipos-ponto-interesse`,
+          rotulo: "Tipos de ponto de referência",
+          Icone: MapPin,
+          secao: "TIPOS_PONTO_INTERESSE",
+        },
+        {
+          href: `${base}/tipos-comissao`,
+          rotulo: "Tipos de comissão",
+          Icone: Tags,
+          secao: "TIPOS_COMISSAO",
         },
         {
           href: `${base}/pos-graduacao`,

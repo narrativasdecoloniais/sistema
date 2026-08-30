@@ -5,16 +5,13 @@ import IconeEnvelope from "@/components/graficos/IconeEnvelope";
 import { useToast } from "./ToastProvider";
 import styles from "./BotaoContatoFlutuante.module.scss";
 
-// Botão flutuante fixo (canto inferior direito) em todas as páginas
-// públicas (renderizado por app/(publico)/layout.jsx) — revela o e-mail de
-// contato da edição num popover leve (não é modal: sem backdrop, sem
-// focus-trap, página continua interativa por trás). Fecha ao clicar fora,
-// Esc ou clicar no botão de novo — mesmo padrão de MenuConta.jsx (admin).
-//
-// Nota pra quando o VLibras for integrado (DESIGN.md prevê compatibilidade
-// com o widget, ainda não implementado neste projeto): ele costuma ocupar o
-// mesmo canto inferior direito — conferir sobreposição de z-index/posição
-// antes de adicionar o script.
+// Botão flutuante fixo (canto inferior direito, empilhado acima do widget
+// do VLibras — ver comentário de bottom em BotaoContatoFlutuante.module.scss)
+// em todas as páginas públicas (renderizado por app/(publico)/layout.jsx) —
+// revela o e-mail de contato da edição num popover leve (não é modal: sem
+// backdrop, sem focus-trap, página continua interativa por trás). Fecha ao
+// clicar fora, Esc ou clicar no botão de novo — mesmo padrão de
+// MenuConta.jsx (admin).
 export default function BotaoContatoFlutuante({ email }) {
   const [aberto, setAberto] = useState(false);
   const raizRef = useRef(null);

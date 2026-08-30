@@ -19,7 +19,7 @@ const localizacaoSchema = z.object({
 
 function pontoParaPayload(ponto) {
   const payload = {
-    tipo: ponto.tipo,
+    tipoId: ponto.tipoId,
     nome: ponto.nome.trim(),
     endereco: ponto.endereco?.trim() || undefined,
     latitude: ponto.latitude,
@@ -33,7 +33,7 @@ function pontoParaPayload(ponto) {
   return payload;
 }
 
-export default function LocalizacaoForm({ edicaoInicial }) {
+export default function LocalizacaoForm({ edicaoInicial, tiposPontoInteresse = [] }) {
   const { notificar } = useToast();
   const [pontosInteresse, setPontosInteresse] = useState(edicaoInicial.pontosInteresse || []);
   const [corFundo, setCorFundo] = useState(edicaoInicial.corFundoLocalizacao || "PAPEL");
@@ -107,7 +107,15 @@ export default function LocalizacaoForm({ edicaoInicial }) {
   function aoAdicionarPonto() {
     setPontosInteresse((atual) => [
       ...atual,
-      { tipo: "LOCAL_EVENTO", nome: "", imagem: null, endereco: "", latitude: null, longitude: null, link: "" },
+      {
+        tipoId: tiposPontoInteresse[0]?.id || "",
+        nome: "",
+        imagem: null,
+        endereco: "",
+        latitude: null,
+        longitude: null,
+        link: "",
+      },
     ]);
   }
 
@@ -124,6 +132,7 @@ export default function LocalizacaoForm({ edicaoInicial }) {
     <div className={styles.formulario}>
       <SecaoLocalizacao
         pontos={pontosInteresse}
+        tipos={tiposPontoInteresse}
         corFundo={corFundo}
         opacidade={opacidade}
         corTexto={corTexto}

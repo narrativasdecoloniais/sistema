@@ -1,6 +1,9 @@
 import Link from "next/link";
 import MarcaRodape from "@/components/graficos/MarcaRodape";
-import { listarEdicoesAnteriores, listarProgramasPosGraduacaoPublico } from "@/lib/publico";
+import {
+  listarEdicoesAnteriores,
+  listarProgramasPosGraduacaoPublico,
+} from "@/lib/publico";
 import { paraNumeroRomano } from "@/lib/romanos";
 import styles from "./Footer.module.scss";
 
@@ -45,7 +48,7 @@ export default async function Footer({ edicao }) {
                   <li key={edicao.id} className={styles.semLink}>
                     {paraNumeroRomano(edicao.numero)} edição — {edicao.nome}
                   </li>
-                )
+                ),
               )}
             </ul>
           )}
@@ -55,7 +58,10 @@ export default async function Footer({ edicao }) {
           <h2 className={styles.tituloColuna}>Institucional</h2>
           <p className={styles.emBreve}>Política de privacidade — em breve</p>
           {edicao?.emailContato ? (
-            <a href={`mailto:${edicao.emailContato}`} className={styles.contatoLink}>
+            <a
+              href={`mailto:${edicao.emailContato}`}
+              className={styles.contatoLink}
+            >
               {edicao.emailContato}
             </a>
           ) : (
@@ -67,18 +73,24 @@ export default async function Footer({ edicao }) {
       <div className={styles.linhaCreditos}>
         <MarcaRodape tamanho={22} />
         <p className={styles.creditos}>
-          GPDES/UnB — Educação, Saberes e Decolonialidades
+          Grupo de Pesquisa Educação, Saberes e Decolonialidades — GPDES/UnB
         </p>
         <MarcaRodape tamanho={22} />
       </div>
 
       {programasPosGraduacao.length > 0 && (
         <div className={styles.programasPosGraduacao}>
-          <span className={styles.programasPosGraduacaoLabel}>Programas de Pós-Graduação</span>
+          <span className={styles.programasPosGraduacaoLabel}>
+            Programas de Pós-Graduação
+          </span>
           <ul className={styles.programasPosGraduacaoLista}>
             {programasPosGraduacao.map((programa) => {
               const conteudo = programa.imagem ? (
-                <img src={programa.imagem} alt={programa.nome} className={styles.programaLogo} />
+                <img
+                  src={programa.imagem}
+                  alt={programa.nome}
+                  className={styles.programaLogo}
+                />
               ) : (
                 <span className={styles.programaNome}>{programa.nome}</span>
               );

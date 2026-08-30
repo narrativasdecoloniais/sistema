@@ -1,0 +1,83 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.campoCor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.seletorCor {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.valorCor {
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.botaoPrimario,
+.botaoSecundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.botaoPrimario {
+  background: var(--acento);
+  color: var(--fundo);
+}
+
+.botaoSecundario {
+  background: transparent;
+  color: var(--acento);
+  border: 1px solid var(--acento);
+}

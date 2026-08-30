@@ -19,17 +19,18 @@ export default function DetalheAtividade({ atividade, permiteInscricao }) {
     .filter(Boolean)
     .join(" · ");
 
-  const corFundo = atividade.corFundoAtividade || "PAPEL";
-  const opacidadeFundo = atividade.opacidadeFundoAtividade ?? 100;
-  const corTexto = atividade.corTextoAtividade || "TINTA";
-  const corBuzio = atividade.corBuzioAtividade || "BARRO";
-  const mostrarFaixa = atividade.mostrarFaixaAtividade ?? true;
-
-  // Faixa lateral (cor/imagem/largura) é sempre definida na edição-mãe, não
-  // por atividade — mesmo mecanismo de mostrarFaixaLocalizacao/Apresentacao
-  // etc. na home (ver PaginaInicialConteudo.jsx). `atividade.edicao` só vem
-  // preenchido nas rotas públicas (buscarPorSlug), não no admin.
+  // Aparência (cor de fundo/texto/búzio + faixa lateral) é compartilhada por
+  // TODAS as páginas de atividade, definida uma única vez na edição-mãe (ver
+  // Página do evento > Atividades) — nunca por atividade individual.
+  // `atividade.edicao` só vem preenchido nas rotas públicas (buscarPorSlug),
+  // não no admin.
   const edicao = atividade.edicao || {};
+  const corFundo = edicao.corFundoAtividades || "PAPEL";
+  const opacidadeFundo = edicao.opacidadeFundoAtividades ?? 100;
+  const corTexto = edicao.corTextoAtividades || "TINTA";
+  const corBuzio = edicao.corBuzioAtividades || "BARRO";
+  const mostrarFaixa = edicao.mostrarFaixaAtividades ?? true;
+
   const faixaHeroTipoDesktop = edicao.faixaHeroTipoDesktop || "COR";
   const corFaixaHeroDesktop = edicao.corFaixaHeroDesktop || "OCRE";
   const imagemFaixaHeroDesktop = edicao.imagemFaixaHeroDesktop;
@@ -54,9 +55,21 @@ export default function DetalheAtividade({ atividade, permiteInscricao }) {
     }),
   };
 
+  // Zera a largura por eixo quando a seção não exibe a faixa (mostrarFaixa)
+  // ou quando o Hero não tem faixa configurada pro breakpoint em questão
+  // (tipo "NENHUMA") — sem isso o padding continuava reservando o espaço da
+  // faixa mesmo com ela escondida (ver mesmo ajuste em PaginaInicialConteudo.jsx).
   const estiloPagina = {
     "--opacidade-fundo-secao": `${opacidadeFundo}%`,
     ...estiloFaixaLateral,
+    "--largura-faixa-hero-mobile-valor":
+      mostrarFaixa && faixaHeroTipoMobile !== "NENHUMA"
+        ? estiloFaixaLateral["--largura-faixa-hero-mobile-valor"]
+        : "0px",
+    "--largura-faixa-hero-desktop-valor":
+      mostrarFaixa && faixaHeroTipoDesktop !== "NENHUMA"
+        ? estiloFaixaLateral["--largura-faixa-hero-desktop-valor"]
+        : "0px",
     ...estiloCoresPersonalizadas({
       "--cor-fundo-secao-base": corFundo,
       "--cor-texto-secao": corTexto,

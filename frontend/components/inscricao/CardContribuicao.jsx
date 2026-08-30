@@ -57,7 +57,7 @@ export default function CardContribuicao({ edicao }) {
           <div className={styles.linhaCopiar}>
             <code className={styles.valorCopiar}>{copiaContribuicaoValor}</code>
             <button type="button" className={styles.botaoCopiar} onClick={aoCopiar}>
-              Copiar
+              Clique para copiar a chave Pix
             </button>
           </div>
           {qrCodeContribuicao && (

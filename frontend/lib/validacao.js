@@ -149,9 +149,7 @@ export const edicaoApoiadorSchema = z
 
 export const edicaoPontoInteresseSchema = z.object({
   id: z.string().optional(),
-  tipo: z.enum(["LOCAL_EVENTO", "HOSPEDAGEM", "RESTAURANTE", "OUTRO"], {
-    errorMap: () => ({ message: "Tipo de ponto inválido" }),
-  }),
+  tipoId: z.string().min(1, "Selecione o tipo"),
   nome: z.string().trim().min(2, "Informe o nome do ponto"),
   imagem: z
     .string()
@@ -264,6 +262,25 @@ export const tipoAtividadeSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do tipo de atividade"),
 });
 
+export const tipoPontoInteresseSchema = z.object({
+  nome: z.string().trim().min(2, "Informe o nome do tipo de ponto de referência"),
+  cor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida"),
+});
+
+export const tipoComissaoSchema = z.object({
+  nome: z.string().trim().min(2, "Informe o nome do tipo de comissão"),
+});
+
+export const comissaoMembroSchema = z.object({
+  id: z.string().optional(),
+  nome: z.string().trim().min(2, "Informe o nome do integrante"),
+});
+
+export const comissaoSchema = z.object({
+  tipoComissaoId: z.string().min(1, "Selecione um tipo de comissão"),
+  membros: z.array(comissaoMembroSchema).optional(),
+});
+
 export const tipoParticipacaoSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do tipo de participação"),
 });
@@ -330,11 +347,7 @@ export const atividadeSchema = z
     fimAtividade: z.coerce.date({
       errorMap: () => ({ message: "Informe uma data de término da atividade válida" }),
     }),
-    corFundoAtividade: corSchema,
-    opacidadeFundoAtividade: z.number().int().min(0).max(100).optional(),
-    corTextoAtividade: corSchema,
-    corBuzioAtividade: corSchema,
-    mostrarFaixaAtividade: z.boolean().optional(),
+    atividadeContinua: z.boolean().optional().default(false),
   })
   .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
     message: "O fim da atividade deve ser posterior ao início",

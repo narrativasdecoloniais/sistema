@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useId, useMemo, useState } from "react";
+import { Fragment, Suspense, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Campo from "@/components/forms/Campo";
@@ -602,7 +602,7 @@ function InscricaoConteudo() {
                   }
                 : {})}
             >
-              {diaAtual.grupos.map((grupo) => {
+              {diaAtual.grupos.map((grupo, indice, todosGrupos) => {
                 const horaExterna =
                   grupo.length === 1
                     ? formatarHoraAtividade(grupo[0].inicioAtividade)
@@ -617,17 +617,23 @@ function InscricaoConteudo() {
                       )}`;
 
                 return (
-                  <LinhaAtividade key={grupo[0].id} hora={horaExterna}>
-                    {grupo.length === 1 ? (
-                      renderizarCartao(grupo[0])
-                    ) : (
-                      <AtividadesPorTipo
-                        grupo={grupo}
-                        renderizarCartao={renderizarCartao}
-                        selecionadas={selecionadas}
-                      />
+                  <Fragment key={grupo[0].id}>
+                    {indice === 0 && grupo[0].atividadeContinua && (
+                      <p className={styles.rotuloContinuas}>Atividades contínuas</p>
                     )}
-                  </LinhaAtividade>
+                    {indice > 0 &&
+                      !grupo[0].atividadeContinua &&
+                      todosGrupos[indice - 1][0].atividadeContinua && (
+                        <p className={styles.rotuloPorHorario}>Atividades por horário</p>
+                      )}
+                    <LinhaAtividade hora={horaExterna}>
+                      {grupo.length === 1 ? (
+                        renderizarCartao(grupo[0])
+                      ) : (
+                        <AtividadesPorTipo grupo={grupo} renderizarCartao={renderizarCartao} />
+                      )}
+                    </LinhaAtividade>
+                  </Fragment>
                 );
               })}
             </div>

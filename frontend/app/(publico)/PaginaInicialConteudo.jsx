@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "motion/react";
@@ -15,6 +15,7 @@ import NavegacaoDias, {
 import AtividadesPorTipo from "@/components/inscricao/AtividadesPorTipo";
 import LinhaProgramacao from "@/components/publico/LinhaProgramacao";
 import CardAtividadeProgramacao from "@/components/publico/CardAtividadeProgramacao";
+import ModalComissao from "@/components/publico/ModalComissao";
 
 // Carrega o script do Google Maps via window/document — precisa ficar fora do SSR.
 const MapaLocalizacao = dynamic(() => import("@/components/publico/MapaLocalizacao"), {
@@ -37,13 +38,6 @@ import styles from "./page.module.scss";
 
 // TODO: substituir pela URL real assim que confirmada.
 const URL_GPDES = "#";
-
-const ROTULOS_TIPO_PONTO = {
-  LOCAL_EVENTO: "Local do evento",
-  HOSPEDAGEM: "Hospedagem",
-  RESTAURANTE: "Restaurante",
-  OUTRO: "Outro",
-};
 
 // Formato oficial de URL cross-platform do Google Maps: abre o app no
 // celular e o site no desktop, centralizado nas coordenadas do ponto.
@@ -327,6 +321,14 @@ export default function PaginaInicialConteudo({
   opacidadeFundoLocalizacao = 100,
   corTextoLocalizacao = "TINTA",
   mostrarFaixaLocalizacao = true,
+  comissoes = [],
+  tituloComissoes = "Comissões",
+  corpoComissoes = "",
+  corFundoComissoes = "PAPEL",
+  opacidadeFundoComissoes = 100,
+  corTextoComissoes = "TINTA",
+  corBuzioComissoes = "BUZIO",
+  mostrarFaixaComissoes = true,
   temEdicaoAtual = false,
   edicaoSlug,
   dataEvento = "Data a confirmar",
@@ -334,6 +336,7 @@ export default function PaginaInicialConteudo({
 }) {
   const reduzMovimento = useReducedMotion();
   const mapaLocalizacaoRef = useRef(null);
+  const [comissaoAberta, setComissaoAberta] = useState(null);
 
   const idDiasProgramacao = useId();
   const diasProgramacao = useMemo(
@@ -400,6 +403,27 @@ export default function PaginaInicialConteudo({
     }),
   };
 
+  // O padding lateral de cada seção soma a largura da faixa (ver .secao/.hero
+  // em page.module.scss) pra o conteúdo não ficar por baixo dela — mas isso só
+  // faz sentido quando a seção realmente exibe a faixa (mostrarFaixaX) E o
+  // Hero tem um tipo de faixa configurado pro breakpoint em questão (não
+  // "NENHUMA"). Sem essa zeragem por eixo, uma seção com a faixa desligada
+  // (ou um breakpoint sem faixa, ex. tipoMobile="NENHUMA") ainda reservava o
+  // espaço dela, comprimindo o conteúdo à toa.
+  function estiloFaixaSecao(mostrar) {
+    return {
+      ...estiloFaixaLateral,
+      "--largura-faixa-hero-mobile-valor":
+        mostrar && faixaHeroTipoMobile !== "NENHUMA"
+          ? estiloFaixaLateral["--largura-faixa-hero-mobile-valor"]
+          : "0px",
+      "--largura-faixa-hero-desktop-valor":
+        mostrar && faixaHeroTipoDesktop !== "NENHUMA"
+          ? estiloFaixaLateral["--largura-faixa-hero-desktop-valor"]
+          : "0px",
+    };
+  }
+
   return (
     <>
       <header
@@ -409,7 +433,7 @@ export default function PaginaInicialConteudo({
         data-fundo-tipo={fundoHeroTipo}
         data-cor-texto={corTextoHero}
         data-cor-buzio={corBuzioHero}
-        style={{ ...estiloHero, ...estiloFaixaLateral }}
+        style={{ ...estiloHero, ...estiloFaixaSecao(mostrarFaixaHero) }}
       >
         {fundoHeroTipo === "IMAGEM" && (
           <div className={styles.heroFundoBlur} aria-hidden="true" />
@@ -513,7 +537,7 @@ export default function PaginaInicialConteudo({
         data-cor-texto-botao-secao={corTextoBotaoApresentacao}
         style={{
           "--opacidade-fundo-secao": `${opacidadeFundoApresentacao}%`,
-          ...estiloFaixaLateral,
+          ...estiloFaixaSecao(mostrarFaixaApresentacao),
           ...estiloCoresPersonalizadas({
             "--cor-fundo-secao-base": corFundoApresentacao,
             "--cor-texto-secao": corTextoApresentacao,
@@ -594,7 +618,7 @@ export default function PaginaInicialConteudo({
         style={{
           "--opacidade-fundo-secao": `${opacidadeFundoModalidades}%`,
           "--opacidade-fundo-card": `${opacidadeFundoCardModalidades}%`,
-          ...estiloFaixaLateral,
+          ...estiloFaixaSecao(mostrarFaixaModalidades),
           ...estiloCoresPersonalizadas({
             "--cor-fundo-secao-base": corFundoModalidades,
             "--cor-texto-secao": corTextoModalidades,
@@ -694,7 +718,7 @@ export default function PaginaInicialConteudo({
         style={{
           "--opacidade-fundo-secao": `${opacidadeFundoAgenda}%`,
           "--opacidade-fundo-card": `${opacidadeFundoCardAgenda}%`,
-          ...estiloFaixaLateral,
+          ...estiloFaixaSecao(mostrarFaixaAgenda),
           ...estiloCoresPersonalizadas({
             "--cor-fundo-secao-base": corFundoAgenda,
             "--cor-texto-secao": corTextoAgenda,
@@ -779,28 +803,43 @@ export default function PaginaInicialConteudo({
                 >
                   {agruparAtividadesPorHorarioInicio(
                     diaProgramacaoAtual.atividades,
-                  ).map((grupo) => (
-                    <LinhaProgramacao
-                      key={grupo.inicioIso}
-                      hora={formatarHoraCurta(grupo.inicioIso)}
-                      horaFim={formatarHoraCurta(
-                        grupo.atividades[0].fimAtividade,
+                  ).map((grupo, indice, todosGrupos) => (
+                    <Fragment key={grupo.atividades[0].id}>
+                      {indice === 0 && grupo.atividades[0].atividadeContinua && (
+                        <p className={styles.rotuloContinuas}>
+                          <Carimbo />
+                          <span>Atividades contínuas</span>
+                        </p>
                       )}
-                    >
-                      {grupo.atividades.length === 1 ? (
-                        renderizarCartaoProgramacao(grupo.atividades[0])
-                      ) : (
-                        <AtividadesPorTipo
-                          grupo={grupo.atividades}
-                          renderizarCartao={renderizarCartaoProgramacao}
-                          restricaoEscolhaUnica={false}
-                          estiloSlide={{
-                            "--largura-slide": "78%",
-                            "--largura-slide-desktop": "55%",
-                          }}
-                        />
-                      )}
-                    </LinhaProgramacao>
+                      {indice > 0 &&
+                        !grupo.atividades[0].atividadeContinua &&
+                        todosGrupos[indice - 1].atividades[0].atividadeContinua && (
+                          <p className={styles.rotuloPorHorario}>
+                            <Carimbo />
+                            <span>Atividades por horário</span>
+                          </p>
+                        )}
+                      <LinhaProgramacao
+                        hora={formatarHoraCurta(grupo.inicioIso)}
+                        horaFim={formatarHoraCurta(
+                          grupo.atividades[0].fimAtividade,
+                        )}
+                      >
+                        {grupo.atividades.length === 1 ? (
+                          renderizarCartaoProgramacao(grupo.atividades[0])
+                        ) : (
+                          <AtividadesPorTipo
+                            grupo={grupo.atividades}
+                            renderizarCartao={renderizarCartaoProgramacao}
+                            restricaoEscolhaUnica={false}
+                            estiloSlide={{
+                              "--largura-slide": "78%",
+                              "--largura-slide-desktop": "55%",
+                            }}
+                          />
+                        )}
+                      </LinhaProgramacao>
+                    </Fragment>
                   ))}
                 </div>
               )}
@@ -816,7 +855,7 @@ export default function PaginaInicialConteudo({
           data-cor-texto={corTextoLocalizacao}
           style={{
             "--opacidade-fundo-secao": `${opacidadeFundoLocalizacao}%`,
-            ...estiloFaixaLateral,
+            ...estiloFaixaSecao(mostrarFaixaLocalizacao),
             ...estiloCoresPersonalizadas({
               "--cor-fundo-secao-base": corFundoLocalizacao,
               "--cor-texto-secao": corTextoLocalizacao,
@@ -854,9 +893,7 @@ export default function PaginaInicialConteudo({
                   {ponto.imagem && (
                     <img src={ponto.imagem} alt="" className={styles.localizacaoImagem} />
                   )}
-                  <span className={styles.localizacaoTipo}>
-                    {ROTULOS_TIPO_PONTO[ponto.tipo] || ponto.tipo}
-                  </span>
+                  <span className={styles.localizacaoTipo}>{ponto.tipo.nome}</span>
                   <span className={styles.localizacaoNome}>
                     {ponto.link ? (
                       <a href={ponto.link} target="_blank" rel="noopener noreferrer">
@@ -898,7 +935,7 @@ export default function PaginaInicialConteudo({
         data-cor-buzio={corBuzioPublicacoes}
         style={{
           "--opacidade-fundo-secao": `${opacidadeFundoPublicacoes}%`,
-          ...estiloFaixaLateral,
+          ...estiloFaixaSecao(mostrarFaixaPublicacoes),
           ...estiloCoresPersonalizadas({
             "--cor-fundo-secao-base": corFundoPublicacoes,
             "--cor-texto-secao": corTextoPublicacoes,
@@ -938,13 +975,85 @@ export default function PaginaInicialConteudo({
         </motion.div>
       </motion.section>
 
+      {comissoes.length > 0 && (
+        <motion.section
+          className={`${styles.secao} ${styles.comissoes}`}
+          data-cor-fundo={corFundoComissoes}
+          data-cor-texto={corTextoComissoes}
+          data-cor-buzio={corBuzioComissoes}
+          style={{
+            "--opacidade-fundo-secao": `${opacidadeFundoComissoes}%`,
+            ...estiloFaixaSecao(mostrarFaixaComissoes),
+            ...estiloCoresPersonalizadas({
+              "--cor-fundo-secao-base": corFundoComissoes,
+              "--cor-texto-secao": corTextoComissoes,
+              "--cor-buzio-secao": corBuzioComissoes,
+            }),
+          }}
+          initial="oculto"
+          whileInView="visivel"
+          viewport={{ once: true, margin: "-80px" }}
+          variants={containerVariants}
+        >
+          {mostrarFaixaComissoes && (
+            <FaixaLateral
+              estilo={estiloFaixaLateral}
+              corDesktop={corFaixaHeroDesktop}
+              corMobile={corFaixaHeroMobile}
+              tipoDesktop={faixaHeroTipoDesktop}
+              tipoMobile={faixaHeroTipoMobile}
+            />
+          )}
+          <Marcador />
+          <motion.div className={styles.conteudo} variants={containerVariants}>
+            <Eyebrow>Comissões</Eyebrow>
+            <motion.h2 className={styles.tituloSecundario} variants={itemVariants}>
+              {tituloComissoes}
+            </motion.h2>
+            {dividirParagrafos(corpoComissoes).map((paragrafo, indice) => (
+              <motion.p key={indice} className={styles.secaoTexto} variants={itemVariants}>
+                {paragrafo}
+              </motion.p>
+            ))}
+            <motion.ul className={styles.comissoesGrade} variants={containerVariants}>
+              {comissoes.map((comissao) => (
+                <motion.li key={comissao.id} variants={itemVariants}>
+                  <button
+                    type="button"
+                    className={styles.comissaoCartao}
+                    onClick={() => setComissaoAberta(comissao)}
+                  >
+                    <span className={styles.comissaoTexto}>
+                      <span className={styles.comissaoEyebrow}>Comissão</span>
+                      <span className={styles.comissaoTitulo}>{comissao.tipoComissao.nome}</span>
+                      <span className={styles.comissaoResumo}>
+                        {comissao.membros.length === 1
+                          ? "1 membro"
+                          : `${comissao.membros.length} membros`}
+                      </span>
+                    </span>
+                    <span className={styles.comissaoSeta} aria-hidden="true">
+                      →
+                    </span>
+                  </button>
+                </motion.li>
+              ))}
+            </motion.ul>
+          </motion.div>
+        </motion.section>
+      )}
+
+      {comissaoAberta && (
+        <ModalComissao comissao={comissaoAberta} aoFechar={() => setComissaoAberta(null)} />
+      )}
+
       {realizadores.length > 0 && (
         <section
           className={styles.realizadores}
           data-cor={corFundoRealizadores}
           style={{
             "--opacidade-fundo-realizadores": `${opacidadeFundoRealizadores}%`,
-            ...estiloFaixaLateral,
+            ...estiloFaixaSecao(mostrarFaixaRealizadores),
             ...estiloCoresPersonalizadas({
               "--cor-fundo-realizadores-base": corFundoRealizadores,
             }),
@@ -1002,7 +1111,7 @@ export default function PaginaInicialConteudo({
           data-cor={corFundoApoiadores}
           style={{
             "--opacidade-fundo-apoiadores": `${opacidadeFundoApoiadores}%`,
-            ...estiloFaixaLateral,
+            ...estiloFaixaSecao(mostrarFaixaApoiadores),
             ...estiloCoresPersonalizadas({
               "--cor-fundo-apoiadores-base": corFundoApoiadores,
             }),

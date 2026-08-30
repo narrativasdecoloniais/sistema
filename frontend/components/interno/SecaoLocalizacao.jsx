@@ -10,15 +10,9 @@ import CampoCheckbox from "./CampoCheckbox";
 import CabecalhoSecao from "./CabecalhoSecao";
 import styles from "./EdicaoForm.module.scss";
 
-const OPCOES_TIPO = [
-  { valor: "LOCAL_EVENTO", rotulo: "Local do evento" },
-  { valor: "HOSPEDAGEM", rotulo: "Hospedagem" },
-  { valor: "RESTAURANTE", rotulo: "Restaurante" },
-  { valor: "OUTRO", rotulo: "Outro" },
-];
-
 export default function SecaoLocalizacao({
   pontos,
+  tipos,
   corFundo,
   opacidade,
   corTexto,
@@ -72,16 +66,16 @@ export default function SecaoLocalizacao({
               <CampoSelecao
                 id={`ponto-tipo-${indice}`}
                 rotulo="Tipo"
-                value={ponto.tipo}
+                value={ponto.tipoId}
                 onChange={(evento) => {
-                  aoMudarPonto(indice, "tipo", evento.target.value);
+                  aoMudarPonto(indice, "tipoId", evento.target.value);
                   aoSalvar();
                 }}
-                erro={erros[`pontosInteresse.${indice}.tipo`]}
+                erro={erros[`pontosInteresse.${indice}.tipoId`]}
               >
-                {OPCOES_TIPO.map((opcao) => (
-                  <option key={opcao.valor} value={opcao.valor}>
-                    {opcao.rotulo}
+                {tipos.map((tipo) => (
+                  <option key={tipo.id} value={tipo.id}>
+                    {tipo.nome}
                   </option>
                 ))}
               </CampoSelecao>
@@ -155,12 +149,19 @@ export default function SecaoLocalizacao({
             </div>
           ))}
         </div>
-        <Button
-          type="button"
-          label="Adicionar ponto de interesse"
-          onClick={aoAdicionarPonto}
-          pt={{ root: { className: styles.botaoSecundario } }}
-        />
+        {tipos.length === 0 ? (
+          <p className={styles.avisoContraste}>
+            Cadastre um tipo em Configurações → Tipos de ponto de referência antes de adicionar um
+            ponto.
+          </p>
+        ) : (
+          <Button
+            type="button"
+            label="Adicionar ponto de interesse"
+            onClick={aoAdicionarPonto}
+            pt={{ root: { className: styles.botaoSecundario } }}
+          />
+        )}
       </div>
     </div>
   );

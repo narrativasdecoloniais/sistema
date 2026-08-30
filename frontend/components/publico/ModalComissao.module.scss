@@ -1,0 +1,136 @@
+@use "../../styles/tokens-publico" as pub;
+
+// Renderizado via portal em document.body (ver ModalComissao.jsx), fora da
+// .wrapper de app/(publico)/layout.module.scss onde os tokens públicos
+// normalmente são declarados — sem isso, todo var(--papel)/var(--barro)/etc.
+// aqui dentro cairia no valor inicial. Mesmo z-index de
+// ModalDetalhesAtividade.module.scss: só um modal fica aberto por vez neste
+// fluxo, então não há conflito de empilhamento.
+.fundo {
+  @include pub.tokens;
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 25, 20, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 3000;
+
+  @media (max-width: 700px) {
+    padding: 0;
+  }
+}
+
+.painel {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--papel);
+  border: 1px solid var(--ocre);
+  border-radius: 6px;
+
+  @media (max-width: 700px) {
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 0.75rem;
+
+  @media (max-width: 700px) {
+    position: sticky;
+    top: 0;
+    background: var(--papel);
+    z-index: 1;
+  }
+}
+
+.tituloBloco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta);
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  line-height: 1.25;
+}
+
+// glyph de texto, não ícone de biblioteca — proibido no público (DESIGN.md)
+.fechar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--tinta);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.conteudo {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.subtitulo {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  font-size: 1rem;
+}
+
+.membrosLista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.membrosItem {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--areia);
+  font-size: 0.9rem;
+  color: var(--tinta);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}

@@ -16,6 +16,9 @@ const TITULO_PUBLICACOES_PADRAO = "Anais e Memória";
 const CORPO_PUBLICACOES_PADRAO =
   "Em breve abriremos a chamada para submissão de trabalhos desta edição. Os anais das edições anteriores serão disponibilizados aqui assim que organizados.";
 
+const TITULO_COMISSOES_PADRAO = "Comissões";
+const CORPO_COMISSOES_PADRAO = "Conheça as comissões organizadoras desta edição.";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 async function requisitarPublico(caminho) {
@@ -72,6 +75,11 @@ export async function listarModalidadesSubmissaoPublicas() {
 export async function buscarModalidadeSubmissaoPublicaPorSlug(slug) {
   const dados = await requisitarPublico(`/publico/edicao-atual/modalidades-submissao/${slug}`);
   return dados?.modalidade || null;
+}
+
+export async function listarComissoesPublicas() {
+  const dados = await requisitarPublico("/publico/edicao-atual/comissoes");
+  return dados?.comissoes || [];
 }
 
 // Monta as props de PaginaInicialConteudo a partir de uma edição (atual ou
@@ -156,6 +164,13 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
     opacidadeFundoLocalizacao: edicao?.opacidadeFundoLocalizacao ?? 100,
     corTextoLocalizacao: edicao?.corTextoLocalizacao || "TINTA",
     mostrarFaixaLocalizacao: edicao?.mostrarFaixaLocalizacao ?? true,
+    tituloComissoes: edicao?.tituloComissoes || TITULO_COMISSOES_PADRAO,
+    corpoComissoes: edicao?.corpoComissoes || CORPO_COMISSOES_PADRAO,
+    corFundoComissoes: edicao?.corFundoComissoes || "PAPEL",
+    opacidadeFundoComissoes: edicao?.opacidadeFundoComissoes ?? 100,
+    corTextoComissoes: edicao?.corTextoComissoes || "TINTA",
+    corBuzioComissoes: edicao?.corBuzioComissoes || "BUZIO",
+    mostrarFaixaComissoes: edicao?.mostrarFaixaComissoes ?? true,
     temEdicaoAtual: Boolean(ehEdicaoAtual),
     edicaoSlug: edicao?.slug,
     dataEvento: formatarPeriodoEdicao(edicao?.dataInicio, edicao?.dataFim),
@@ -169,11 +184,25 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
 // ver EdicaoExibidaContext.jsx pra como isso chega em BarraNavegacao.jsx.
 // larguraFaixa* também vai aqui (não é "cor", mas a navbar precisa do mesmo
 // valor que a Hero usa pra faixa lateral, pra ajustar o próprio padding e
-// não ficar por baixo dela — ver .heroFaixa em page.module.scss).
+// não ficar por baixo dela — ver .heroFaixa em page.module.scss). Zera por
+// eixo quando a Hero não exibe faixa (mostrarFaixaHero) ou não tem faixa
+// configurada pro breakpoint (tipo "NENHUMA") — mesmo ajuste de
+// PaginaInicialConteudo.jsx/DetalheAtividade.jsx, senão a navbar reservava o
+// espaço à toa.
 export function montarPropsNavegacao(edicao) {
+  const mostrarFaixaHero = edicao?.mostrarFaixaHero ?? true;
+  const faixaHeroTipoMobile = edicao?.faixaHeroTipoMobile || "COR";
+  const faixaHeroTipoDesktop = edicao?.faixaHeroTipoDesktop || "COR";
+
   return {
-    larguraFaixaDesktop: edicao?.larguraFaixaHeroDesktop ?? 96,
-    larguraFaixaMobile: edicao?.larguraFaixaHeroMobile ?? 40,
+    larguraFaixaDesktop:
+      mostrarFaixaHero && faixaHeroTipoDesktop !== "NENHUMA"
+        ? (edicao?.larguraFaixaHeroDesktop ?? 96)
+        : 0,
+    larguraFaixaMobile:
+      mostrarFaixaHero && faixaHeroTipoMobile !== "NENHUMA"
+        ? (edicao?.larguraFaixaHeroMobile ?? 40)
+        : 0,
     topo: {
       fundoTipo: edicao?.fundoNavTopoTipo || "TRANSPARENTE",
       corFundo: edicao?.corFundoNavTopo || "PAPEL",
@@ -287,7 +316,7 @@ export function formatarFaixaHorario(inicioIso, fimIso) {
 // timeline da seção "Programação" da home pública: cada horário distinto
 // vira uma linha; quando mais de uma atividade começa no mesmo horário,
 // a linha vira um carrossel.
-export function agruparAtividadesPorHorarioInicio(atividades = []) {
+function agruparPorInicioIdentico(atividades) {
   const porInicio = new Map();
 
   for (const atividade of atividades) {
@@ -305,6 +334,17 @@ export function agruparAtividadesPorHorarioInicio(atividades = []) {
         a.tipoAtividade.nome.localeCompare(b.tipoAtividade.nome, "pt-BR")
       ),
     }));
+}
+
+// Atividades contínuas vêm primeiro na programação do dia, cada uma com
+// sua própria linha de horário — só depois entram as demais, agrupadas como
+// sempre. Cada partição é agrupada com a mesma lógica de horário idêntico,
+// então duas contínuas no mesmo horário+tipo ainda caem no mesmo
+// carrossel entre si.
+export function agruparAtividadesPorHorarioInicio(atividades = []) {
+  const continuas = atividades.filter((atividade) => atividade.atividadeContinua);
+  const normais = atividades.filter((atividade) => !atividade.atividadeContinua);
+  return [...agruparPorInicioIdentico(continuas), ...agruparPorInicioIdentico(normais)];
 }
 
 // Agrupa pessoas envolvidas numa atividade pelo tipo de participação —

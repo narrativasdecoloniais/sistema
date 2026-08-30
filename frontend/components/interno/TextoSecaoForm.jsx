@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { z } from "zod";
-import { Info, LayoutGrid, Newspaper, IdCard, MousePointerClick } from "lucide-react";
+import { Info, LayoutGrid, Newspaper, Landmark, IdCard, MousePointerClick } from "lucide-react";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { extrairErros } from "@/lib/validacao";
@@ -25,6 +25,7 @@ const ICONES = {
   Apresentacao: Info,
   Modalidades: LayoutGrid,
   Publicacoes: Newspaper,
+  Comissoes: Landmark,
 };
 
 // Reaproveitado pelas 3 dobras da página pública que só precisam de

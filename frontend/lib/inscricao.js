@@ -112,7 +112,7 @@ export function agruparAtividadesPorDia(atividades = []) {
 // grupo: A 9h-12h, B 9h30-10h, C 11h-11h30 — C não sobrepõe B, mas sobrepõe
 // A e precisa ficar no mesmo grupo). Reaproveita haSobreposicao pra nunca
 // descolar da definição de conflito usada no resto do fluxo.
-export function agruparAtividadesSimultaneas(atividades = []) {
+function agruparPorSobreposicao(atividades) {
   const ordenadas = [...atividades].sort(
     (a, b) => new Date(a.inicioAtividade) - new Date(b.inicioAtividade)
   );
@@ -136,4 +136,14 @@ export function agruparAtividadesSimultaneas(atividades = []) {
 
   if (grupoAtual.length > 0) grupos.push(grupoAtual);
   return grupos;
+}
+
+// Atividades contínuas vêm primeiro na programação do dia, cada uma com
+// sua própria linha de horário — só depois entram as demais. Cada partição
+// é agrupada com a mesma lógica de sobreposição, então duas contínuas
+// simultâneas ainda caem no mesmo grupo (carrossel) entre si.
+export function agruparAtividadesSimultaneas(atividades = []) {
+  const continuas = atividades.filter((atividade) => atividade.atividadeContinua);
+  const normais = atividades.filter((atividade) => !atividade.atividadeContinua);
+  return [...agruparPorSobreposicao(continuas), ...agruparPorSobreposicao(normais)];
 }

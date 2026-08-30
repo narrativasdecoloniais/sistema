@@ -12,6 +12,7 @@ export const GRUPOS_SECOES_ADMIN = [
     titulo: "Pré-evento",
     itens: [
       { valor: "ATIVIDADES", rotulo: "Atividades" },
+      { valor: "COMISSOES", rotulo: "Comissões" },
       {
         rotulo: "Página do evento",
         subitens: [
@@ -20,6 +21,7 @@ export const GRUPOS_SECOES_ADMIN = [
           { valor: "PAGINA_MODALIDADES", rotulo: "Modalidades" },
           { valor: "PAGINA_AGENDA", rotulo: "Agenda/Programação" },
           { valor: "PAGINA_PUBLICACOES", rotulo: "Publicações" },
+          { valor: "PAGINA_COMISSOES", rotulo: "Comissões" },
           { valor: "PAGINA_REALIZADORES", rotulo: "Realizadores" },
           { valor: "PAGINA_APOIO", rotulo: "Apoio" },
           { valor: "PAGINA_CONTRIBUICAO", rotulo: "Contribuição" },
@@ -61,6 +63,8 @@ export const GRUPOS_SECOES_ADMIN = [
       { valor: "CONFIGURACOES_EVENTO", rotulo: "Evento" },
       { valor: "TIPOS_ATIVIDADE", rotulo: "Tipos de atividade" },
       { valor: "TIPOS_PARTICIPACAO", rotulo: "Tipos de participação" },
+      { valor: "TIPOS_PONTO_INTERESSE", rotulo: "Tipos de ponto de referência" },
+      { valor: "TIPOS_COMISSAO", rotulo: "Tipos de comissão" },
     ],
   },
 ];

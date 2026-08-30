@@ -267,14 +267,14 @@
 // pequeno que todo o bloco tinha antes.
 .legendaPrincipal {
   display: block;
-  font-size: 0.95rem;
+  font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   opacity: 0.95;
 
   @media (max-width: 700px) {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
   }
 }
 
@@ -284,6 +284,7 @@
 .legendaLocal {
   text-transform: none;
   letter-spacing: normal;
+  font-size: 0.98rem;
 }
 
 .legendaSecundaria {
@@ -424,8 +425,8 @@
 }
 
 .realizadorLogo {
-  max-width: 270px;
-  max-height: 300px;
+  max-width: 209px;
+  max-height: 232px;
   width: auto;
   height: auto;
 
@@ -521,8 +522,8 @@
 }
 
 .apoiadorLogo {
-  max-width: 270px;
-  max-height: 300px;
+  max-width: 209px;
+  max-height: 232px;
   width: auto;
   height: auto;
 
@@ -815,7 +816,8 @@
 // instância é independente, sem conflito — não precisa duplicar por seção).
 .modalidades,
 .agenda,
-.publicacoes {
+.publicacoes,
+.comissoes {
   --cor-fundo-secao-base: var(--papel);
   --opacidade-fundo-secao: 100%;
   --cor-texto-secao: var(--tinta);
@@ -1252,4 +1254,151 @@
 
 .programacaoTimeline {
   margin-top: 1rem;
+}
+
+// Rótulo que abre o bloco de atividades contínuas (sempre o primeiro grupo
+// do dia, ver agruparAtividadesPorHorarioInicio em lib/publico.js) — mesmo
+// selo usado em .seloEmBreve, reaproveitado aqui como marcador de subseção
+// em vez de introduzir um divisor novo (ver DESIGN.md, seção 5: separação
+// por espaço/tipografia, não por linhas ou caixas coloridas).
+.rotuloContinuas {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 1.25rem;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--barro);
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// Reabre a leitura por horário depois do bloco de contínuas, no mesmo
+// registro e cor do selo acima (.rotuloContinuas) — os dois são o mesmo tipo
+// de marcador de subseção, só o texto muda.
+.rotuloPorHorario {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 1.5rem 0 1.25rem;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--barro);
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ---- section Comissões (lista em coluna, um cartão full-width por comissão) ----
+//
+// Adaptado de .areaCartao/.areaTexto/.areaEyebrow/.areaTitulo/.areaSeta em
+// app/(publico)/submissao/[modalidade]/page.module.scss: mesmo cartão em
+// linha (eyebrow + título + seta), em coluna única (cada item ocupa a
+// largura toda) e com border-radius — desvio deliberado pedido para esta
+// seção; o card de referência de Submissão não tem raio nenhum.
+.comissoesGrade {
+  // .conteudo é flex com align-items:flex-start (ver acima) — sem
+  // align-self:stretch + width:100%, a lista encolheria pro conteúdo mais
+  // largo dela mesma em vez de ocupar as 70ch da coluna de texto (mesmo
+  // ajuste de .modalidadesGrade acima).
+  align-self: stretch;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comissaoCartao {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--areia);
+  border-left: 3px solid var(--barro);
+  border-radius: 6px;
+  // Sem isso, o preenchimento sólido de .comissaoSeta no hover ultrapassa o
+  // raio do cartão (o quadrado da seta fica "vazando" no canto direito
+  // arredondado) — overflow: hidden faz o filho respeitar o border-radius
+  // do pai.
+  overflow: hidden;
+  background: var(--papel);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 0 var(--barro);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    background: var(--areia);
+  }
+
+  &:hover .comissaoSeta {
+    background: var(--barro);
+    color: var(--papel);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: -2px;
+  }
+}
+
+.comissaoTexto {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.9rem 1.2rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.comissaoEyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.comissaoTitulo {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--tinta);
+  line-height: 1.45;
+}
+
+.comissaoResumo {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.comissaoSeta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  background: transparent;
+  border-left: 1px solid var(--areia);
+  color: var(--barro);
+  font-size: 1.1rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }

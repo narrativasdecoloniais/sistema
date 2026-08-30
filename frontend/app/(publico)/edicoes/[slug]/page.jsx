@@ -5,6 +5,7 @@ import {
   buscarEdicaoPorSlug,
   listarAtividadesPorEdicaoSlug,
   listarModalidadesSubmissaoPublicas,
+  listarComissoesPublicas,
   montarPropsPaginaEdicao,
   montarPropsNavegacao,
 } from "@/lib/publico";
@@ -18,12 +19,13 @@ export default async function PaginaEdicao({ params }) {
   if (!edicao) notFound();
 
   const ehEdicaoAtual = edicao.id === edicaoAtual?.id;
-  // Modalidades de submissão só existem pra "edição atual" hoje (ver
-  // /publico/edicao-atual/modalidades-submissao) — pra uma edição passada,
-  // fica vazio mesmo (nada pra buscar).
-  const [atividades, modalidades] = await Promise.all([
+  // Modalidades/Comissões só existem pra "edição atual" hoje (ver
+  // /publico/edicao-atual/modalidades-submissao e /comissoes) — pra uma
+  // edição passada, fica vazio mesmo (nada pra buscar).
+  const [atividades, modalidades, comissoes] = await Promise.all([
     listarAtividadesPorEdicaoSlug(params.slug),
     ehEdicaoAtual ? listarModalidadesSubmissaoPublicas() : Promise.resolve([]),
+    ehEdicaoAtual ? listarComissoesPublicas() : Promise.resolve([]),
   ]);
 
   return (
@@ -32,6 +34,7 @@ export default async function PaginaEdicao({ params }) {
       <PaginaInicialConteudo
         {...montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual)}
         modalidades={modalidades}
+        comissoes={comissoes}
       />
     </>
   );
