@@ -16,8 +16,15 @@ export default function CardAtividadeProgramacao({ atividade, temEdicaoAtual, ed
   return (
     <article className={styles.cartao}>
       <div className={styles.cabecalho}>
-        {atividade.paraConvidados && (
-          <span className={styles.badgeConvidados}>Para convidados</span>
+        {(atividade.paraConvidados || atividade.paraCriancasConvidadas) && (
+          <div className={styles.badges}>
+            {atividade.paraConvidados && (
+              <span className={styles.badgeConvidados}>Para convidados</span>
+            )}
+            {atividade.paraCriancasConvidadas && (
+              <span className={styles.badgeConvidados}>Para crianças convidadas</span>
+            )}
+          </div>
         )}
         <h3 className={styles.nome}>{atividade.tipoAtividade.nome}</h3>
         <span className={styles.tipo}>{atividade.nome}</span>

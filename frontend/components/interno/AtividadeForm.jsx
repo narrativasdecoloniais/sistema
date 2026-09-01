@@ -37,6 +37,7 @@ function estadoInicial(atividadeInicial) {
     local: atividadeInicial?.local || "",
     atividadeContinua: atividadeInicial?.atividadeContinua || false,
     paraConvidados: atividadeInicial?.paraConvidados || false,
+    paraCriancasConvidadas: atividadeInicial?.paraCriancasConvidadas || false,
     exigeInscricao: atividadeInicial?.exigeInscricao ?? true,
     semLimiteVagas: atividadeInicial?.semLimiteVagas || false,
     vagas: atividadeInicial?.vagas ?? null,
@@ -381,6 +382,12 @@ export default function AtividadeForm({
         rotulo="Atividade para convidados"
         checked={dados.paraConvidados}
         onChange={(valor) => atualizarCampo("paraConvidados", valor)}
+      />
+      <CampoCheckbox
+        id="para-criancas-convidadas"
+        rotulo="Atividade para crianças convidadas"
+        checked={dados.paraCriancasConvidadas}
+        onChange={(valor) => atualizarCampo("paraCriancasConvidadas", valor)}
       />
       <CampoCheckbox
         id="exige-inscricao"

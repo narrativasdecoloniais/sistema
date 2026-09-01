@@ -45,6 +45,12 @@
   }
 }
 
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
 // Pill discreta, mesmo tratamento de borda em color-mix do link .detalhes
 // abaixo (55% de opacidade da cor de destaque) — só que preenchida e sem
 // interação, pra não competir visualmente com o CTA "Ver detalhes".
