@@ -29,3 +29,20 @@ a {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+// Níveis do widget de acessibilidade do site público
+// (components/publico/AcessibilidadeWidget.jsx) — escala o `font-size` da
+// raiz pra todo `rem` da página crescer junto, sem precisar tocar cada
+// componente. Classe aplicada em <html> (fora do escopo de qualquer CSS
+// Module), por isso vive aqui e não em (publico)/layout.module.scss.
+html.acessibilidade-fonte-1 {
+  font-size: 112.5%;
+}
+
+html.acessibilidade-fonte-2 {
+  font-size: 125%;
+}
+
+html.acessibilidade-fonte-3 {
+  font-size: 137.5%;
+}

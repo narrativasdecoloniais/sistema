@@ -1,0 +1,169 @@
+// Abas por GrupoConteudo (mesmo padrão de tablist com roving tabindex de
+// components/inscricao/NavegacaoDias.module.scss) + acordeão por
+// ListaConteudo (adaptado do antigo .listaCartao de page.module.scss); os
+// itens revelados reaproveitam o layout de linha do extinto
+// ModalListaConteudo.module.scss.
+//
+// Cores customizáveis pelo admin (ver bloco ".modalidades, .agenda,
+// .gruposConteudo" em page.module.scss) — --cor-fundo-card-base/
+// --opacidade-fundo-card/--cor-texto-card/--cor-texto-secundario-card/
+// --cor-acento-card chegam por herança de custom property, vindas de
+// .gruposConteudo no DOM (mesmo mecanismo de CardAtividadeProgramacao.module.scss
+// dentro de .agenda). Hairlines estruturais (bordas finas, linha de base do
+// tablist) ficam fixas em --areia/--ocre — só o que carrega identidade
+// visual (fundo do item, texto, destaque) vira eixo customizável.
+.bloco {
+  // .conteudo do card pai é flex com align-items:flex-start — sem isso o
+  // bloco encolheria pro conteúdo mais largo em vez de ocupar as 70ch da
+  // coluna de texto (mesmo ajuste que .listasGrade tinha).
+  align-self: stretch;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.abas {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  border-bottom: 1.5px solid var(--ocre);
+}
+
+.aba {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--cor-texto-secundario-card);
+  transition: color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    color: var(--cor-acento-card);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cor-acento-card);
+    outline-offset: 2px;
+  }
+}
+
+.abaAtiva {
+  color: var(--cor-acento-card);
+  border-bottom-color: var(--cor-acento-card);
+}
+
+.painel {
+  padding-top: 1rem;
+}
+
+.listasAcordeao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listaItem {
+  border: 1px solid var(--areia);
+  border-left: 3px solid var(--cor-acento-card);
+  border-radius: 6px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cor-fundo-card-base) var(--opacidade-fundo-card), var(--papel));
+}
+
+.listaCabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.9rem 1.2rem;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--cor-texto-card);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--cor-acento-card) 8%, var(--papel));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cor-acento-card);
+    outline-offset: -2px;
+  }
+}
+
+.listaTitulo {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.listaSeta {
+  flex: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--cor-acento-card);
+}
+
+.itensLista {
+  margin: 0;
+  padding: 0 1.2rem 0.9rem;
+  list-style: none;
+  border-top: 1px solid var(--areia);
+}
+
+.itensListaItem {
+  border-bottom: 1px solid var(--areia);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.itemLinha,
+.itemLink {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+  color: var(--cor-texto-card);
+}
+
+.itemLink {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.itemLogo {
+  max-width: 32px;
+  max-height: 32px;
+  width: auto;
+  height: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+  .abas {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

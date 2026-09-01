@@ -1,8 +1,7 @@
 @use "../../styles/tokens-publico" as pub;
 
-// Mesmo padrão de ModalListaConteudo.module.scss — renderizado via portal em
-// document.body, fora da .wrapper onde os tokens públicos normalmente são
-// declarados.
+// Renderizado via portal em document.body, fora da .wrapper onde os tokens
+// públicos normalmente são declarados.
 .fundo {
   @include pub.tokens;
   position: fixed;

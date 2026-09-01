@@ -857,15 +857,20 @@
   }
 }
 
-// Cor dos CARDS dentro de Modalidades/Agenda (.modalidadeCartao abaixo e
-// CardAtividadeProgramacao.module.scss — este último herda as custom
-// properties por estar dentro de .agenda no DOM, mesmo sendo um arquivo
-// .module.scss diferente) — eixo à parte do fundo/texto/búzio da seção em
-// volta. Publicações não tem cards, por isso fica de fora deste bloco.
-// Defaults reproduzem a fórmula hardcoded de antes (color-mix(ocre 6%,
-// papel) + texto tinta + destaque barro).
+// Cor dos CARDS dentro de Modalidades/Agenda/Comissões (.modalidadeCartao
+// abaixo, CardAtividadeProgramacao.module.scss e
+// GruposConteudoAbas.module.scss — os dois últimos herdam as custom
+// properties por estarem dentro de .agenda/.gruposConteudo no DOM, mesmo
+// sendo arquivos .module.scss diferentes) — eixo à parte do fundo/texto/
+// búzio da seção em volta. Publicações não tem cards, por isso fica de fora
+// deste bloco. Defaults de Modalidades/Agenda reproduzem a fórmula
+// hardcoded de antes (color-mix(ocre 6%, papel) + texto tinta + destaque
+// barro); Comissões usa opacidade 100% (fundo papel liso, sem tingir) porque
+// era esse o visual hardcoded das abas/acordeão antes deste eixo existir —
+// default vem do campo Prisma (opacidadeFundoCardComissoes), não daqui.
 .modalidades,
-.agenda {
+.agenda,
+.gruposConteudo {
   --cor-fundo-card-base: var(--ocre);
   --opacidade-fundo-card: 6%;
   --cor-texto-card: var(--tinta);
@@ -1318,108 +1323,25 @@
   }
 }
 
-// ---- section Comissões e Programas (motor genérico Grupo > Lista > Item) ----
-//
-// Adaptado de .areaCartao/.areaTexto/.areaEyebrow/.areaTitulo/.areaSeta em
-// app/(publico)/submissao/[modalidade]/page.module.scss: mesmo cartão em
-// linha (eyebrow + título + seta), em coluna única (cada item ocupa a
-// largura toda) e com border-radius — desvio deliberado pedido para esta
-// seção; o card de referência de Submissão não tem raio nenhum. Cada card
-// representa uma ListaConteudo (eyebrow = nome do GrupoConteudo, título =
-// nome da lista) — clicar sempre abre um modal com os itens dela
-// (ModalListaConteudo), então o card é sempre um <button>, nunca um link.
-.listasGrade {
-  // .conteudo é flex com align-items:flex-start (ver acima) — sem
-  // align-self:stretch + width:100%, a lista encolheria pro conteúdo mais
-  // largo dela mesma em vez de ocupar as 70ch da coluna de texto (mesmo
-  // ajuste de .modalidadesGrade acima).
-  align-self: stretch;
+// Section "Comissões e Programas" (motor genérico Grupo > Lista > Item)
+// virou abas (por Grupo) + acordeão (por Lista) — ver
+// components/publico/GruposConteudoAbas.module.scss. Renderizado como irmão
+// de .conteudo (não filho) porque .conteudo trava em max-width:70ch pra
+// leitura de texto corrido — as abas/acordeão precisam da largura cheia da
+// coluna 2 do grid de .secao.
+.gruposConteudoBloco {
+  grid-column: 2;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  list-style: none;
-}
+  // .secao não tem row-gap no desktop (nunca precisou, nenhum outro uso tem
+  // 2 linhas) — repõe o mesmo espaçamento vertical do gap de .conteudo.
+  margin-top: 0.85rem;
 
-.listaCartao {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  width: 100%;
-  padding: 0;
-  border: 1px solid var(--areia);
-  border-left: 3px solid var(--barro);
-  border-radius: 6px;
-  // Sem isso, o preenchimento sólido de .listaSeta no hover ultrapassa o
-  // raio do cartão (o quadrado da seta fica "vazando" no canto direito
-  // arredondado) — overflow: hidden faz o filho respeitar o border-radius
-  // do pai.
-  overflow: hidden;
-  background: var(--papel);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  box-shadow: inset 0 0 0 0 var(--barro);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
-
-  &:hover {
-    background: var(--areia);
+  @media (max-width: 700px) {
+    // .secao vira grid-template-columns:1fr no mobile — sem redefinir aqui,
+    // "grid-column: 2" criaria uma coluna implícita extra e empurraria o
+    // bloco pra fora da tela. row-gap:1rem do próprio grid (ver .secao
+    // acima) já espaça as linhas, então zera a margem daqui pra não somar.
+    grid-column: 1;
+    margin-top: 0;
   }
-
-  &:hover .listaSeta {
-    background: var(--barro);
-    color: var(--papel);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--barro);
-    outline-offset: -2px;
-  }
-}
-
-.listaTexto {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.9rem 1.2rem;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.listaEyebrow {
-  font-family: var(--font-archivo), sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--barro);
-}
-
-.listaTitulo {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--tinta);
-  line-height: 1.45;
-}
-
-.listaResumo {
-  font-size: 0.85rem;
-  color: var(--texto-suave);
-  line-height: 1.5;
-}
-
-.listaSeta {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.25rem;
-  background: transparent;
-  border-left: 1px solid var(--areia);
-  color: var(--barro);
-  font-size: 1.1rem;
-  transition: background-color 0.15s ease, color 0.15s ease;
 }

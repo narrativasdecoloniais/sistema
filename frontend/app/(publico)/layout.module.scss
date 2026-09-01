@@ -16,6 +16,27 @@
   @media (min-width: 1000px) {
     --largura-faixa-hero: clamp(40px, 6vw, 96px);
   }
+
+  // Modo alto contraste do widget de acessibilidade (AcessibilidadeWidget.jsx)
+  // — atributo fica em <html> (setado por JS + script inline anti-flash, ver
+  // layout.jsx), não em .wrapper, então o seletor sobe até lá com :global.
+  // Reescreve só a camada de tokens de base; a camada semântica (--cor-*)
+  // em _tokens-publico.scss referencia essas variáveis e herda o ajuste.
+  // --areia vira cinza claro (não branco puro) pra preservar a distinção
+  // visual entre página (--papel) e cartão/superfície (--areia) — a maioria
+  // dos cartões já tem borda própria, mas não custa manter os dois planos
+  // diferenciáveis também por cor.
+  :global(html[data-alto-contraste="true"]) & {
+    --tinta: #000000;
+    --barro: #7a1f00;
+    --ocre: #6b4400;
+    --areia: #f0f0f0;
+    --papel: #ffffff;
+    --cerrado: #1f2b0f;
+    --buzio: #7a4b00;
+    --texto-suave: #1a1a1a;
+    --cor-erro: #8a0000;
+  }
 }
 
 .conteudo {

@@ -15,7 +15,7 @@ import NavegacaoDias, {
 import AtividadesPorTipo from "@/components/inscricao/AtividadesPorTipo";
 import LinhaProgramacao from "@/components/publico/LinhaProgramacao";
 import CardAtividadeProgramacao from "@/components/publico/CardAtividadeProgramacao";
-import ModalListaConteudo from "@/components/publico/ModalListaConteudo";
+import GruposConteudoAbas from "@/components/publico/GruposConteudoAbas";
 
 // Carrega o script do Google Maps via window/document — precisa ficar fora do SSR.
 const MapaLocalizacao = dynamic(
@@ -332,6 +332,11 @@ export default function PaginaInicialConteudo({
   opacidadeFundoComissoes = 100,
   corTextoComissoes = "TINTA",
   corBuzioComissoes = "BUZIO",
+  corFundoCardComissoes = "PAPEL",
+  opacidadeFundoCardComissoes = 100,
+  corTextoCardComissoes = "TINTA",
+  corTextoSecundarioCardComissoes = "TINTA",
+  corAcentoCardComissoes = "BARRO",
   mostrarFaixaComissoes = true,
   temEdicaoAtual = false,
   edicaoSlug,
@@ -340,7 +345,6 @@ export default function PaginaInicialConteudo({
 }) {
   const reduzMovimento = useReducedMotion();
   const mapaLocalizacaoRef = useRef(null);
-  const [listaAberta, setListaAberta] = useState(null);
 
   const idDiasProgramacao = useId();
   const diasProgramacao = useMemo(
@@ -1023,13 +1027,22 @@ export default function PaginaInicialConteudo({
           data-cor-fundo={corFundoComissoes}
           data-cor-texto={corTextoComissoes}
           data-cor-buzio={corBuzioComissoes}
+          data-cor-fundo-card={corFundoCardComissoes}
+          data-cor-texto-card={corTextoCardComissoes}
+          data-cor-texto-secundario-card={corTextoSecundarioCardComissoes}
+          data-cor-acento-card={corAcentoCardComissoes}
           style={{
             "--opacidade-fundo-secao": `${opacidadeFundoComissoes}%`,
+            "--opacidade-fundo-card": `${opacidadeFundoCardComissoes}%`,
             ...estiloFaixaSecao(mostrarFaixaComissoes),
             ...estiloCoresPersonalizadas({
               "--cor-fundo-secao-base": corFundoComissoes,
               "--cor-texto-secao": corTextoComissoes,
               "--cor-buzio-secao": corBuzioComissoes,
+              "--cor-fundo-card-base": corFundoCardComissoes,
+              "--cor-texto-card": corTextoCardComissoes,
+              "--cor-texto-secundario-card": corTextoSecundarioCardComissoes,
+              "--cor-acento-card": corAcentoCardComissoes,
             }),
           }}
           initial="oculto"
@@ -1048,6 +1061,7 @@ export default function PaginaInicialConteudo({
           )}
           <Marcador />
           <motion.div className={styles.conteudo} variants={containerVariants}>
+            <Eyebrow>Organizadores</Eyebrow>
             <motion.h2
               className={styles.tituloSecundario}
               variants={itemVariants}
@@ -1063,56 +1077,14 @@ export default function PaginaInicialConteudo({
                 {paragrafo}
               </motion.p>
             ))}
-            {grupos.map((grupo) => (
-              <Fragment key={grupo.id}>
-                <motion.p className={styles.secaoTexto} variants={itemVariants}>
-                  {grupo.nome}
-                </motion.p>
-                <motion.ul
-                  className={styles.listasGrade}
-                  variants={containerVariants}
-                >
-                  {grupo.listas.map((lista) => (
-                    <motion.li key={lista.id} variants={itemVariants}>
-                      <button
-                        type="button"
-                        className={styles.listaCartao}
-                        onClick={() =>
-                          setListaAberta({ grupoNome: grupo.nome, lista })
-                        }
-                      >
-                        <span className={styles.listaTexto}>
-                          <span className={styles.listaEyebrow}>
-                            {grupo.nome}
-                          </span>
-                          <span className={styles.listaTitulo}>
-                            {lista.nome}
-                          </span>
-                          <span className={styles.listaResumo}>
-                            {lista.itens.length === 1
-                              ? "1 item"
-                              : `${lista.itens.length} itens`}
-                          </span>
-                        </span>
-                        <span className={styles.listaSeta} aria-hidden="true">
-                          →
-                        </span>
-                      </button>
-                    </motion.li>
-                  ))}
-                </motion.ul>
-              </Fragment>
-            ))}
+          </motion.div>
+          <motion.div
+            className={styles.gruposConteudoBloco}
+            variants={itemVariants}
+          >
+            <GruposConteudoAbas grupos={grupos} />
           </motion.div>
         </motion.section>
-      )}
-
-      {listaAberta && (
-        <ModalListaConteudo
-          grupoNome={listaAberta.grupoNome}
-          lista={listaAberta.lista}
-          aoFechar={() => setListaAberta(null)}
-        />
       )}
 
       {realizadores.length > 0 && (

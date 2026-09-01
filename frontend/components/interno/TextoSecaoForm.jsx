@@ -48,6 +48,15 @@ export default function TextoSecaoForm({
   descricao,
   temCard = false,
   temBotao = false,
+  tituloCard = "Cards de modalidade",
+  descricaoCard = "Cores dos cards exibidos dentro desta seção.",
+  rotulosCard = {
+    fundo: "Cor de fundo dos cards",
+    opacidade: "Opacidade do fundo dos cards",
+    texto: "Cor do texto (título e resumo)",
+    textoSecundario: "Cor do texto secundário (subtítulo)",
+    acento: "Cor de destaque (prazo)",
+  },
 }) {
   const Icone = ICONES[campo];
   const { notificar } = useToast();
@@ -305,39 +314,39 @@ export default function TextoSecaoForm({
         <div className={styles.secao}>
           <CabecalhoSecao
             Icone={IdCard}
-            titulo="Cards de modalidade"
-            descricao="Cores dos cards exibidos dentro desta seção."
+            titulo={tituloCard}
+            descricao={descricaoCard}
           />
           <div className={styles.camposSecao}>
             <CampoCorSecao
               id={campoCorFundoCard}
-              rotulo="Cor de fundo dos cards"
+              rotulo={rotulosCard.fundo}
               valor={corFundoCard}
               onChange={aoMudarCorFundoCard}
             />
             <CampoOpacidade
               id={campoOpacidadeCard}
-              rotulo="Opacidade do fundo dos cards"
+              rotulo={rotulosCard.opacidade}
               valor={opacidadeCard}
               onChange={aoMudarOpacidadeCard}
             />
             <CampoCorSecao
               id={campoCorTextoCard}
-              rotulo="Cor do texto (título e resumo)"
+              rotulo={rotulosCard.texto}
               valor={corTextoCard}
               opcoes={OPCOES_COR_PUBLICA}
               onChange={aoMudarCorTextoCard}
             />
             <CampoCorSecao
               id={campoCorTextoSecundarioCard}
-              rotulo="Cor do texto secundário (subtítulo)"
+              rotulo={rotulosCard.textoSecundario}
               valor={corTextoSecundarioCard}
               opcoes={OPCOES_COR_PUBLICA}
               onChange={aoMudarCorTextoSecundarioCard}
             />
             <CampoCorSecao
               id={campoCorAcentoCard}
-              rotulo="Cor de destaque (prazo)"
+              rotulo={rotulosCard.acento}
               valor={corAcentoCard}
               opcoes={OPCOES_COR_PUBLICA}
               onChange={aoMudarCorAcentoCard}

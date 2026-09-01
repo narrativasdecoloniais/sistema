@@ -5,11 +5,16 @@
 // do botão do VLibras (VLibrasWidget.jsx), que fica na posição padrão dele
 // — encostado no canto inferior direito. Sem relação direta no código entre
 // os dois componentes, só empilhamento visual; recalibrar se o widget do
-// VLibras mudar de tamanho/posição.
+// VLibras mudar de tamanho/posição ou se esta folga apertar demais contra
+// ele (reduzida de 6rem/5rem pra 4.5rem/3.75rem a pedido do usuário, sem
+// checagem visual — se colidir com o botão do VLibras, subir de volta).
+// AcessibilidadeWidget.jsx empilha mais um nível acima deste (ver bottom em
+// AcessibilidadeWidget.module.scss) — recalibrar lá também se este bottom
+// mudar.
 .raiz {
   position: fixed;
   right: 1.5rem;
-  bottom: 6rem;
+  bottom: 4.5rem;
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -18,7 +23,7 @@
 
   @media (max-width: 700px) {
     right: 1rem;
-    bottom: 5rem;
+    bottom: 3.75rem;
   }
 }
 

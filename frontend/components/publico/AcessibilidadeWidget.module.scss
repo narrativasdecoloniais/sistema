@@ -1,0 +1,163 @@
+// Empilhado no canto inferior direito, acima de BotaoContatoFlutuante (que
+// por sua vez fica acima do VLibrasWidget — ver comentário de bottom lá).
+// bottom = bottom do botão de contato + altura do botão (52px = 3.25rem) +
+// gap (0.75rem, mesmo valor usado para empilhar botão+popover dentro de
+// cada widget). Mesma camada (200): acima da navbar (40) e do wrapper do
+// layout público (100), abaixo do toast (2000) e do modal de detalhes de
+// atividade (3000).
+.raiz {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 8.5rem;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+
+  @media (max-width: 700px) {
+    right: 1rem;
+    bottom: 7.75rem;
+  }
+}
+
+// Mesma exceção de raio totalmente arredondado documentada em
+// BotaoContatoFlutuante.module.scss.
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--barro);
+  color: var(--papel);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(32, 25, 20, 0.15);
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
+}
+
+// Mesmo tratamento "comprovante" de BotaoContatoFlutuante/CardContribuicao.
+.popover {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: min(260px, calc(100vw - 3rem));
+  padding: 1rem;
+  background: var(--papel);
+  border: 1.5px solid var(--ocre);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(32, 25, 20, 0.07);
+}
+
+.rotulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.controle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.controleRotulo {
+  font-size: 0.85rem;
+  color: var(--tinta);
+
+  strong {
+    color: var(--barro);
+  }
+}
+
+.stepper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+// Alvo de toque ≥44px (DESIGN.md) — largura maior que altura porque o
+// rótulo "A−"/"A+" pede mais espaço horizontal que um ícone quadrado.
+.stepperBotao {
+  flex: 1 1 0;
+  min-height: 44px;
+  background: none;
+  border: 1.5px solid var(--ocre);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--barro);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--barro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.alternador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--tinta);
+  cursor: pointer;
+  text-align: left;
+}
+
+.chave {
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--areia);
+  border: 1.5px solid var(--ocre);
+  transition: background 0.15s ease;
+
+  &[data-ativo="true"] {
+    background: var(--barro);
+    border-color: var(--barro);
+  }
+}
+
+.chaveBolinha {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--papel);
+  transition: transform 0.15s ease;
+
+  [data-ativo="true"] > & {
+    transform: translateX(16px);
+  }
+}

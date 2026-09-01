@@ -18,6 +18,16 @@ export default async function PaginaComissoesEstilo({ params }) {
       campo="Comissoes"
       titulo="Comissões e Programas"
       descricao="Título e texto da seção 'Comissões e Programas' na página pública — que lista as comissões desta edição e, logo abaixo, os Programas de Pós-Graduação (cadastrados em Configurações → Programas de Pós-Graduação)."
+      temCard
+      tituloCard="Cores das abas e listas"
+      descricaoCard="Cor das abas (uma por Grupo) e da lista que abre dentro de cada uma."
+      rotulosCard={{
+        fundo: "Cor de fundo dos itens da lista",
+        opacidade: "Opacidade do fundo dos itens",
+        texto: "Cor do texto",
+        textoSecundario: "Cor das abas inativas",
+        acento: "Cor de destaque (aba ativa e ícone de abrir/fechar)",
+      }}
     />
   );
 }
