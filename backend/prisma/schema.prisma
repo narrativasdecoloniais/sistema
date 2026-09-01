@@ -355,14 +355,22 @@ model Edicao {
   opacidadeFundoLocalizacao         Int                  @default(100)
   corTextoLocalizacao               String               @default("TINTA")
   // Seção "Comissões" (lista de cartões, um por comissão, ver Comissao
-  // abaixo) — mesmo bloco de 7 campos de Publicações, com búzio (dobra de
-  // texto simples, sem cards com eixo de cor próprio).
+  // abaixo) — mesmo bloco de 7 campos de Publicações, com búzio, mais o
+  // eixo de cor de card (abas + acordeão de GruposConteudoAbas.jsx, mesmo
+  // padrão de corFundoCardModalidades/corFundoCardAgenda acima — defaults
+  // reproduzem o visual hardcoded anterior: papel 100%, texto tinta,
+  // destaque barro).
   tituloComissoes                   String?
   corpoComissoes                    String?
   corFundoComissoes                 String               @default("PAPEL")
   opacidadeFundoComissoes           Int                  @default(100)
   corTextoComissoes                 String               @default("TINTA")
   corBuzioComissoes                 String               @default("BUZIO")
+  corFundoCardComissoes             String               @default("PAPEL")
+  opacidadeFundoCardComissoes       Int                  @default(100)
+  corTextoCardComissoes             String               @default("TINTA")
+  corTextoSecundarioCardComissoes   String               @default("TINTA")
+  corAcentoCardComissoes            String               @default("BARRO")
   // Faixa lateral (cor/imagem/largura definidas nos campos faixaHero* acima)
   // é renderizada por cada seção que a mantiver ligada (ver FaixaLateral em
   // PaginaInicialConteudo.jsx) — esses 6 campos só dizem se aquela seção
