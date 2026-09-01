@@ -190,6 +190,17 @@ export const edicaoSchema = z
         errorMap: () => ({ message: "Informe uma data de término válida" }),
       })
       .optional(),
+    inicioInscricoes: z
+      .coerce.date({
+        errorMap: () => ({ message: "Informe uma data de início de inscrições válida" }),
+      })
+      .optional(),
+    fimInscricoes: z
+      .coerce.date({
+        errorMap: () => ({ message: "Informe uma data de término de inscrições válida" }),
+      })
+      .optional(),
+    inscricoesEncerradasManualmente: z.boolean().optional(),
     slug: z
       .string()
       .trim()
@@ -227,7 +238,15 @@ export const edicaoSchema = z
   .refine((dados) => !dados.dataInicio || !dados.dataFim || dados.dataFim > dados.dataInicio, {
     message: "A data de término deve ser posterior à data de início",
     path: ["dataFim"],
-  });
+  })
+  .refine(
+    (dados) =>
+      !dados.inicioInscricoes || !dados.fimInscricoes || dados.fimInscricoes > dados.inicioInscricoes,
+    {
+      message: "O fim das inscrições deve ser posterior ao início",
+      path: ["fimInscricoes"],
+    }
+  );
 
 export const permissoesSecoesSchema = z.object({
   acessoCompleto: z.boolean().default(false),
@@ -346,6 +365,7 @@ export const atividadeSchema = z
       errorMap: () => ({ message: "Informe uma data de término da atividade válida" }),
     }),
     atividadeContinua: z.boolean().optional().default(false),
+    paraConvidados: z.boolean().optional().default(false),
   })
   .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
     message: "O fim da atividade deve ser posterior ao início",

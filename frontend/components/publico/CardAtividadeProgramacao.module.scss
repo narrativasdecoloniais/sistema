@@ -45,6 +45,27 @@
   }
 }
 
+// Pill discreta, mesmo tratamento de borda em color-mix do link .detalhes
+// abaixo (55% de opacidade da cor de destaque) — só que preenchida e sem
+// interação, pra não competir visualmente com o CTA "Ver detalhes".
+.badgeConvidados {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--cor-acento-card) 55%, transparent);
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cor-acento-card);
+
+  @media (min-width: 640px) {
+    font-size: 0.68rem;
+  }
+}
+
 .tipo {
   width: 100%;
   font-size: 0.7rem;

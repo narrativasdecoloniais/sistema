@@ -1,0 +1,18 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dica {
+  margin: -0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--acento);
+}
+
+.acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}

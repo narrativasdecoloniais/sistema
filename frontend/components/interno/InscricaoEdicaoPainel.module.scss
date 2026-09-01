@@ -1,0 +1,160 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 900px;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  color: var(--texto);
+  margin: 0;
+}
+
+.vazio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.aviso {
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--acento);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 0.9rem;
+
+  p {
+    margin: 0;
+  }
+}
+
+.confirmarGeral {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+
+  p {
+    margin: 0;
+    color: var(--texto);
+    font-size: 0.9375rem;
+  }
+}
+
+.cancelarGeral {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.secaoAtividades {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.tabelaWrapper {
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+  }
+
+  th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--texto-suave);
+    border-bottom: 1px solid var(--borda);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--borda);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  td {
+    color: var(--texto);
+  }
+}
+
+.colunaAcoes {
+  white-space: nowrap;
+}
+
+.conflito {
+  font-size: 0.8125rem;
+  color: var(--texto-suave);
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .tabela {
+    thead {
+      display: none;
+    }
+
+    tbody tr {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 0;
+      white-space: normal;
+      text-align: right;
+
+      &::before {
+        content: attr(data-rotulo);
+        font-weight: 600;
+        color: var(--texto-suave);
+        text-align: left;
+      }
+    }
+
+    .colunaAcoes {
+      justify-content: flex-end;
+
+      &::before {
+        content: none;
+      }
+    }
+  }
+}

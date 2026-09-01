@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import MenuConta from "./MenuConta";
 import EdicaoControles from "./EdicaoControles";
 import NavegacaoEdicao from "./NavegacaoEdicao";
+import NavegacaoParticipante from "./NavegacaoParticipante";
 import BuziosSimbolos from "@/components/publico/buzios/BuziosSimbolos";
 import { extrairContextoEdicao } from "@/lib/rotaEdicao";
 import styles from "./Sidebar.module.scss";
@@ -13,7 +14,9 @@ export default function Sidebar({ usuario }) {
   const pathname = usePathname();
   const [menuAberto, setMenuAberto] = useState(false);
   const { id: idEdicaoAtual } = extrairContextoEdicao(pathname);
-  const mostrarFerramentas = pathname.startsWith("/admin") && Boolean(idEdicaoAtual);
+  const emAdmin = pathname.startsWith("/admin") && Boolean(idEdicaoAtual);
+  const emParticipante = pathname.startsWith("/participante");
+  const mostrarFerramentas = emAdmin || emParticipante;
 
   useEffect(() => {
     setMenuAberto(false);
@@ -54,7 +57,11 @@ export default function Sidebar({ usuario }) {
       </div>
       {mostrarFerramentas && (
         <nav id="menu-interno" className={styles.nav}>
-          <NavegacaoEdicao idEdicaoAtual={idEdicaoAtual} usuario={usuario} />
+          {emAdmin ? (
+            <NavegacaoEdicao idEdicaoAtual={idEdicaoAtual} usuario={usuario} />
+          ) : (
+            <NavegacaoParticipante />
+          )}
         </nav>
       )}
     </aside>

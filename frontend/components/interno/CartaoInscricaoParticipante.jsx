@@ -1,0 +1,179 @@
+"use client";
+
+import { Printer } from "lucide-react";
+import { formatarPeriodoAtividade, formatarPeriodoEdicao } from "@/lib/publico";
+import { paraNumeroRomano } from "@/lib/romanos";
+import styles from "./CartaoInscricaoParticipante.module.scss";
+
+function escaparHtml(valor) {
+  return String(valor ?? "").replace(/[&<>"']/g, (caractere) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[caractere])
+  );
+}
+
+// Comprovante da área do participante — mesma lógica de impressão (popup +
+// HTML standalone) de components/inscricao/CardInscricaoConfirmada.jsx, só
+// que a casca em tela usa os tokens da pele interna, e o cancelamento por
+// atividade abre o ModalConfirmacao do painel (não uma confirmação inline).
+export default function CartaoInscricaoParticipante({
+  edicao,
+  inscricoesAtividade = [],
+  nomeParticipante,
+  onCancelarAtividade,
+}) {
+  const confirmadas = inscricoesAtividade.filter((item) => item.status === "CONFIRMADA");
+  const listaEspera = inscricoesAtividade.filter((item) => item.status === "LISTA_ESPERA");
+
+  function aoImprimir() {
+    const janela = window.open("", "_blank", "width=720,height=900");
+    if (!janela) return;
+
+    const linhasAtividades =
+      inscricoesAtividade.length === 0
+        ? '<p class="vazio">Nenhuma atividade específica selecionada.</p>'
+        : `<table class="atividades"><tbody>${inscricoesAtividade
+            .map(
+              (item) => `
+              <tr>
+                <td>
+                  <strong>${escaparHtml(item.atividade.nome)}</strong><br/>
+                  <span class="periodoAtividade">${escaparHtml(
+                    formatarPeriodoAtividade(item.atividade.inicioAtividade, item.atividade.fimAtividade)
+                  )}</span>
+                </td>
+                <td class="status">${item.status === "LISTA_ESPERA" ? "Lista de espera" : "Confirmada"}</td>
+              </tr>`
+            )
+            .join("")}</tbody></table>`;
+
+    const html = `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Comprovante de inscrição</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #201914;
+    margin: 0;
+    padding: 3rem 2.5rem;
+  }
+  .comprovante { max-width: 620px; margin: 0 auto; }
+  .cabecalho { text-align: center; border-bottom: 2px solid #201914; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .eyebrow { margin: 0 0 0.35rem; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: #9C4A2F; }
+  h1 { margin: 0; font-size: 1.5rem; }
+  .periodoEvento { margin: 0.35rem 0 0; font-size: 0.95rem; color: #4D4842; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; margin: 0 0 1.75rem; font-size: 0.9rem; }
+  dt { color: #4D4842; }
+  dd { margin: 0; font-weight: 600; }
+  h2 {
+    font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em;
+    border-top: 1px dashed #B87C34; padding-top: 1rem; margin: 0 0 0.75rem; color: #9C4A2F;
+  }
+  table.atividades { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.atividades td { padding: 0.6rem 0; border-bottom: 1px solid #EDE4D4; vertical-align: top; }
+  table.atividades td.status { text-align: right; white-space: nowrap; color: #4D4842; padding-left: 1rem; }
+  .periodoAtividade { color: #4D4842; font-size: 0.85rem; }
+  .vazio { color: #4D4842; font-size: 0.9rem; }
+  footer {
+    margin-top: 2.5rem; padding-top: 1rem; border-top: 1px dashed #B87C34;
+    font-size: 0.75rem; color: #4D4842; text-align: center;
+  }
+  @page { margin: 1.5cm; }
+</style>
+</head>
+<body>
+  <div class="comprovante">
+    <div class="cabecalho">
+      <p class="eyebrow">Comprovante de Inscrição</p>
+      <h1>${escaparHtml(`${paraNumeroRomano(edicao.numero)} — ${edicao.nome}`)}</h1>
+      <p class="periodoEvento">${escaparHtml(formatarPeriodoEdicao(edicao.dataInicio, edicao.dataFim))}</p>
+    </div>
+
+    <dl>
+      ${nomeParticipante ? `<dt>Participante</dt><dd>${escaparHtml(nomeParticipante)}</dd>` : ""}
+      <dt>Emitido em</dt><dd>${escaparHtml(new Date().toLocaleString("pt-BR"))}</dd>
+    </dl>
+
+    <h2>Atividades específicas</h2>
+    ${linhasAtividades}
+
+    <footer>Narrativas Interculturais, Decoloniais e Antirracistas em Educação — GPDES/UnB</footer>
+  </div>
+</body>
+</html>`;
+
+    janela.document.open();
+    janela.document.write(html);
+    janela.document.close();
+    janela.focus();
+    janela.onafterprint = () => janela.close();
+    setTimeout(() => janela.print(), 250);
+  }
+
+  function renderizarItem(item) {
+    return (
+      <li key={item.id} className={styles.itemAtividade}>
+        <div>
+          <strong>{item.atividade.nome}</strong>
+          <br />
+          <span className={styles.periodoAtividade}>
+            {formatarPeriodoAtividade(item.atividade.inicioAtividade, item.atividade.fimAtividade)}
+          </span>
+        </div>
+        {onCancelarAtividade && (
+          <button type="button" className={styles.cancelar} onClick={() => onCancelarAtividade(item)}>
+            Cancelar
+          </button>
+        )}
+      </li>
+    );
+  }
+
+  return (
+    <div className={styles.cartao}>
+      <div className={styles.faixa}>
+        <span className={styles.rotulo}>Comprovante de Inscrição</span>
+        <button
+          type="button"
+          className={styles.imprimir}
+          onClick={aoImprimir}
+          aria-label="Imprimir comprovante"
+          title="Imprimir comprovante"
+        >
+          <Printer size={16} strokeWidth={1.5} aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className={styles.cabecalho}>
+        <p className={styles.nomeEdicao}>
+          {paraNumeroRomano(edicao.numero)} — {edicao.nome}
+        </p>
+        <p className={styles.periodo}>{formatarPeriodoEdicao(edicao.dataInicio, edicao.dataFim)}</p>
+        {nomeParticipante && (
+          <p className={styles.participante}>
+            Participante <strong>{nomeParticipante}</strong>
+          </p>
+        )}
+      </div>
+
+      <div className={styles.atividades}>
+        <p className={styles.subtitulo}>Atividades específicas</p>
+
+        {inscricoesAtividade.length === 0 && (
+          <p className={styles.vazio}>Nenhuma atividade específica selecionada ainda.</p>
+        )}
+
+        {confirmadas.length > 0 && <ul className={styles.lista}>{confirmadas.map(renderizarItem)}</ul>}
+
+        {listaEspera.length > 0 && (
+          <>
+            <p className={styles.subtituloEspera}>Lista de espera</p>
+            <ul className={styles.lista}>{listaEspera.map(renderizarItem)}</ul>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

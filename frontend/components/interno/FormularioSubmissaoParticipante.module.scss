@@ -1,0 +1,92 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+  max-width: 720px;
+}
+
+.blocoAutores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rotuloAutores {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.listaAutores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linhaAutor {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--fundo);
+}
+
+.autorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.autorNome {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.autorEmail {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.marcadorVoce {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.botaoRemover {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  font-family: inherit;
+  color: var(--erro);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.botaoAdicionarAutor {
+  align-self: flex-start;
+}
+
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}

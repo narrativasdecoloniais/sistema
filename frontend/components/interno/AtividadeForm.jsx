@@ -36,6 +36,7 @@ function estadoInicial(atividadeInicial) {
     cargaHoraria: atividadeInicial?.cargaHoraria ?? null,
     local: atividadeInicial?.local || "",
     atividadeContinua: atividadeInicial?.atividadeContinua || false,
+    paraConvidados: atividadeInicial?.paraConvidados || false,
     exigeInscricao: atividadeInicial?.exigeInscricao ?? true,
     semLimiteVagas: atividadeInicial?.semLimiteVagas || false,
     vagas: atividadeInicial?.vagas ?? null,
@@ -374,6 +375,12 @@ export default function AtividadeForm({
         rotulo="Atividade contínua"
         checked={dados.atividadeContinua}
         onChange={(valor) => atualizarCampo("atividadeContinua", valor)}
+      />
+      <CampoCheckbox
+        id="para-convidados"
+        rotulo="Atividade para convidados"
+        checked={dados.paraConvidados}
+        onChange={(valor) => atualizarCampo("paraConvidados", valor)}
       />
       <CampoCheckbox
         id="exige-inscricao"

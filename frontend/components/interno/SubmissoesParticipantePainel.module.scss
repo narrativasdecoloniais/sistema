@@ -1,0 +1,115 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  color: var(--texto);
+  margin: 0 0 0.35rem;
+}
+
+.descricao {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+}
+
+.vazio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.vazioApoio {
+  margin: 0.35rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.tabelaWrapper {
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+  }
+
+  th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--texto-suave);
+    border-bottom: 1px solid var(--borda);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--borda);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  td {
+    color: var(--texto);
+    white-space: normal;
+  }
+}
+
+@media (max-width: 720px) {
+  .tabela {
+    thead {
+      display: none;
+    }
+
+    tbody tr {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0;
+      text-align: right;
+
+      &::before {
+        content: attr(data-rotulo);
+        font-weight: 600;
+        color: var(--texto-suave);
+        text-align: left;
+        flex-shrink: 0;
+      }
+    }
+  }
+}

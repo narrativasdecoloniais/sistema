@@ -13,6 +13,7 @@ import SecaoInformacoesBasicas from "./SecaoInformacoesBasicas";
 import SecaoDivulgacao from "./SecaoDivulgacao";
 import SecaoLocal from "./SecaoLocal";
 import SecaoDataHora from "./SecaoDataHora";
+import SecaoInscricoes from "./SecaoInscricoes";
 import CabecalhoSecao from "./CabecalhoSecao";
 import styles from "./EdicaoForm.module.scss";
 
@@ -23,6 +24,9 @@ function estadoInicial(edicaoInicial) {
     descricao: edicaoInicial?.descricao || "",
     dataInicio: edicaoInicial?.dataInicio || "",
     dataFim: edicaoInicial?.dataFim || "",
+    inicioInscricoes: edicaoInicial?.inicioInscricoes || "",
+    fimInscricoes: edicaoInicial?.fimInscricoes || "",
+    inscricoesEncerradasManualmente: edicaoInicial?.inscricoesEncerradasManualmente === true,
     slug: edicaoInicial?.slug || "",
     cargaHorariaTotal: edicaoInicial?.cargaHorariaTotal ?? null,
     instagram: edicaoInicial?.instagram || "",
@@ -45,6 +49,8 @@ function paraPayload(dados) {
     descricao: dados.descricao || undefined,
     dataInicio: dados.dataInicio || undefined,
     dataFim: dados.dataFim || undefined,
+    inicioInscricoes: dados.inicioInscricoes || undefined,
+    fimInscricoes: dados.fimInscricoes || undefined,
     slug: dados.slug || undefined,
     cargaHorariaTotal: dados.cargaHorariaTotal ?? undefined,
     instagram: dados.instagram || undefined,
@@ -214,6 +220,13 @@ export default function EdicaoForm({ edicaoInicial, resumido = false, usuario })
         aoMudarImediato={aoMudarImediato}
       />
       <SecaoDataHora
+        edicao={edicao}
+        erros={erros}
+        aoMudar={aoMudar}
+        aoSalvar={aoSalvar}
+        aoMudarImediato={aoMudarImediato}
+      />
+      <SecaoInscricoes
         edicao={edicao}
         erros={erros}
         aoMudar={aoMudar}

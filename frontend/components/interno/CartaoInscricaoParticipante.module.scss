@@ -1,0 +1,144 @@
+.cartao {
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+  overflow: hidden;
+}
+
+.faixa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--fundo);
+  border-bottom: 1px solid var(--borda);
+}
+
+.rotulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.imprimir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--texto);
+    background: var(--fundo);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.cabecalho {
+  padding: 1.25rem 1.25rem 0.75rem;
+}
+
+.nomeEdicao {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.periodo {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.participante {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--texto);
+}
+
+.atividades {
+  padding: 0.75rem 1.25rem 1.25rem;
+  border-top: 1px dashed var(--borda);
+  margin-top: 0.75rem;
+}
+
+.subtitulo {
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.subtituloEspera {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.vazio {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.itemAtividade {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--borda);
+  font-size: 0.875rem;
+  color: var(--texto);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.periodoAtividade {
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+}
+
+.cancelar {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--erro);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
