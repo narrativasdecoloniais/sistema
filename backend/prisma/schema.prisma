@@ -437,27 +437,28 @@ model Edicao {
 }
 
 model Atividade {
-  id                String         @id @default(uuid())
-  edicaoId          String
-  edicao            Edicao         @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  tipoAtividadeId   String
-  tipoAtividade     TipoAtividade  @relation(fields: [tipoAtividadeId], references: [id])
-  nome              String
-  slug              String
-  descricao         String?
-  cargaHoraria      Int?
-  local             String?
-  exigeInscricao    Boolean        @default(true)
-  semLimiteVagas    Boolean        @default(false)
-  vagas             Int?
-  inicioAtividade   DateTime
-  fimAtividade      DateTime
-  atividadeContinua Boolean        @default(false)
-  paraConvidados    Boolean        @default(false)
-  areaSubmissaoId   String?
-  areaSubmissao     AreaSubmissao? @relation(fields: [areaSubmissaoId], references: [id], onDelete: Restrict)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id                     String         @id @default(uuid())
+  edicaoId               String
+  edicao                 Edicao         @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipoAtividadeId        String
+  tipoAtividade          TipoAtividade  @relation(fields: [tipoAtividadeId], references: [id])
+  nome                   String
+  slug                   String
+  descricao              String?
+  cargaHoraria           Int?
+  local                  String?
+  exigeInscricao         Boolean        @default(true)
+  semLimiteVagas         Boolean        @default(false)
+  vagas                  Int?
+  inicioAtividade        DateTime
+  fimAtividade           DateTime
+  atividadeContinua      Boolean        @default(false)
+  paraConvidados         Boolean        @default(false)
+  paraCriancasConvidadas Boolean        @default(false)
+  areaSubmissaoId        String?
+  areaSubmissao          AreaSubmissao? @relation(fields: [areaSubmissaoId], references: [id], onDelete: Restrict)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   pessoas    AtividadePessoa[]
   inscricoes InscricaoAtividade[]

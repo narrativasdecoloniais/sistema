@@ -50,6 +50,7 @@ const atividadeSchema = z
     }),
     atividadeContinua: z.boolean().optional().default(false),
     paraConvidados: z.boolean().optional().default(false),
+    paraCriancasConvidadas: z.boolean().optional().default(false),
   })
   .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
     message: "O fim da atividade deve ser posterior ao início",
