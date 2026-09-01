@@ -69,8 +69,8 @@ const entrar = asyncHandler(async (req, res) => {
 
 const verificarEmailAutor = asyncHandler(async (req, res) => {
   const dados = verificarEmailAutorSchema.parse(req.body);
-  const usuario = await usuariosService.buscarPorEmail(dados.email);
-  return res.json({ nome: usuario?.ativo ? usuario.nome : null });
+  const nome = await usuariosService.buscarNomePublicoPorEmail(dados.email);
+  return res.json({ nome });
 });
 
 const criar = asyncHandler(async (req, res) => {

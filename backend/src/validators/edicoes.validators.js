@@ -101,6 +101,17 @@ const edicaoSchema = z
         errorMap: () => ({ message: "Informe uma data de término válida" }),
       })
       .optional(),
+    inicioInscricoes: z
+      .coerce.date({
+        errorMap: () => ({ message: "Informe uma data de início de inscrições válida" }),
+      })
+      .optional(),
+    fimInscricoes: z
+      .coerce.date({
+        errorMap: () => ({ message: "Informe uma data de término de inscrições válida" }),
+      })
+      .optional(),
+    inscricoesEncerradasManualmente: z.boolean().optional(),
     slug: z
       .string()
       .trim()
@@ -287,6 +298,14 @@ const edicaoSchema = z
     message: "A data de término deve ser posterior à data de início",
     path: ["dataFim"],
   })
+  .refine(
+    (dados) =>
+      !dados.inicioInscricoes || !dados.fimInscricoes || dados.fimInscricoes > dados.inicioInscricoes,
+    {
+      message: "O fim das inscrições deve ser posterior ao início",
+      path: ["fimInscricoes"],
+    }
+  )
   .refine((dados) => dados.tipoAcaoContribuicao !== "LINK" || Boolean(dados.linkContribuicaoUrl?.trim()), {
     message: "Informe a URL do link",
     path: ["linkContribuicaoUrl"],

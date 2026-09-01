@@ -1,5 +1,6 @@
 const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
+const inscricoesService = require("./inscricoes.service");
 
 const CAMPOS_USUARIO = {
   id: true,
@@ -36,19 +37,14 @@ async function criar(edicaoId, usuarioId) {
   });
 }
 
+// Cancela também as inscrições em atividades da mesma edição, promovendo
+// automaticamente a lista de espera de cada uma — ver
+// cancelarInscricaoEdicaoComPromocao em inscricoes.service.js.
 async function excluir(id) {
   const inscricao = await prisma.inscricaoEdicao.findUnique({ where: { id } });
   if (!inscricao) throw new ErroHttp(404, "Inscrição não encontrada.");
 
-  await prisma.$transaction([
-    prisma.inscricaoAtividade.deleteMany({
-      where: {
-        usuarioId: inscricao.usuarioId,
-        atividade: { edicaoId: inscricao.edicaoId },
-      },
-    }),
-    prisma.inscricaoEdicao.delete({ where: { id } }),
-  ]);
+  await inscricoesService.cancelarInscricaoEdicaoComPromocao(inscricao.usuarioId, inscricao.edicaoId);
 }
 
 module.exports = { listarPorEdicao, buscarPorId, criar, excluir };

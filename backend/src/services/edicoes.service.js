@@ -90,6 +90,21 @@ async function buscarEdicaoAtual() {
   return prisma.edicao.findFirst({ orderBy: { numero: "desc" }, include: INCLUDE_PADRAO });
 }
 
+// Edições onde a janela de inscrições (ver inscricoesAbertas.js) está aberta
+// agora mesmo — usada pela área do participante para listar em quais
+// edições é possível se inscrever no momento.
+async function listarEdicoesComInscricoesAbertas() {
+  const agora = new Date();
+  return prisma.edicao.findMany({
+    where: {
+      inscricoesEncerradasManualmente: false,
+      inicioInscricoes: { lte: agora },
+      fimInscricoes: { gte: agora },
+    },
+    orderBy: { numero: "desc" },
+  });
+}
+
 async function buscarPorSlug(slug) {
   return prisma.edicao.findUnique({ where: { slug }, include: INCLUDE_PADRAO });
 }
@@ -211,6 +226,7 @@ module.exports = {
   buscarEdicaoAtual,
   buscarPorSlug,
   listarEdicoesAnteriores,
+  listarEdicoesComInscricoesAbertas,
   criarEdicao,
   atualizarEdicao,
   excluirEdicao,

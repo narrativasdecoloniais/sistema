@@ -33,6 +33,15 @@ async function buscarPorEmail(email) {
   return prisma.usuario.findUnique({ where: { email } });
 }
 
+// Nome de uma conta a partir do e-mail, sem vazar mais dados que isso — usado
+// pra autofill ao adicionar um coautor de submissão (público e área do
+// participante). Retorna null tanto se não existe conta quanto se está
+// inativa, propositalmente (mesmo tratamento nos dois casos).
+async function buscarNomePublicoPorEmail(email) {
+  const usuario = await buscarPorEmail(email);
+  return usuario?.ativo ? usuario.nome : null;
+}
+
 async function buscarPorId(id) {
   const usuario = await prisma.usuario.findUnique({ where: { id }, select: CAMPOS_PUBLICOS });
   return anexarUrlFoto(usuario);
@@ -233,6 +242,7 @@ module.exports = {
   CAMPOS_PUBLICOS,
   buscarPorCpf,
   buscarPorEmail,
+  buscarNomePublicoPorEmail,
   buscarPorId,
   buscarPorTermo,
   buscarCompletoPorId,

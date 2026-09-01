@@ -196,6 +196,53 @@ async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds }) {
   return { inscricaoEdicao, inscricoesAtividade, novas: idsCriadosAgora, jaEstavaInscrito };
 }
 
+// Remove a inscrição em atividade e, se ela estava CONFIRMADA, promove
+// automaticamente a mais antiga da lista de espera (se houver) — reaproveitado
+// tanto pelo cancelamento self-service (público e da área do participante)
+// quanto pelo admin, para que o comportamento nunca fique assimétrico.
+async function promoverAoCancelar(tx, inscricaoAtividadeId) {
+  const inscricao = await tx.inscricaoAtividade.findUnique({ where: { id: inscricaoAtividadeId } });
+  if (!inscricao) throw new ErroHttp(404, "Inscrição em atividade não encontrada.");
+
+  await tx.inscricaoAtividade.delete({ where: { id: inscricaoAtividadeId } });
+
+  let promovida = null;
+  if (inscricao.status === "CONFIRMADA") {
+    const proxima = await tx.inscricaoAtividade.findFirst({
+      where: { atividadeId: inscricao.atividadeId, status: "LISTA_ESPERA" },
+      orderBy: { createdAt: "asc" },
+    });
+    if (proxima) {
+      promovida = await tx.inscricaoAtividade.update({
+        where: { id: proxima.id },
+        data: { status: "CONFIRMADA" },
+      });
+    }
+  }
+
+  return { removida: inscricao, promovida };
+}
+
+async function cancelarInscricaoAtividadeComPromocao(inscricaoAtividadeId) {
+  return prisma.$transaction((tx) => promoverAoCancelar(tx, inscricaoAtividadeId));
+}
+
+// Cancela a inscrição geral do usuário numa edição e todas as inscrições em
+// atividades dela, promovendo a lista de espera de cada atividade cancelada.
+async function cancelarInscricaoEdicaoComPromocao(usuarioId, edicaoId) {
+  return prisma.$transaction(async (tx) => {
+    const inscricoesAtividade = await tx.inscricaoAtividade.findMany({
+      where: { usuarioId, atividade: { edicaoId } },
+    });
+
+    for (const inscricao of inscricoesAtividade) {
+      await promoverAoCancelar(tx, inscricao.id);
+    }
+
+    await tx.inscricaoEdicao.delete({ where: { usuarioId_edicaoId: { usuarioId, edicaoId } } });
+  });
+}
+
 async function cancelarInscricaoAtividade(usuarioId, inscricaoAtividadeId) {
   const inscricaoAtividade = await prisma.inscricaoAtividade.findUnique({
     where: { id: inscricaoAtividadeId },
@@ -205,7 +252,7 @@ async function cancelarInscricaoAtividade(usuarioId, inscricaoAtividadeId) {
     throw new ErroHttp(404, "Inscrição em atividade não encontrada.");
   }
 
-  await prisma.inscricaoAtividade.delete({ where: { id: inscricaoAtividadeId } });
+  await cancelarInscricaoAtividadeComPromocao(inscricaoAtividadeId);
 }
 
 module.exports = {
@@ -219,4 +266,6 @@ module.exports = {
   validarSemConflitos,
   finalizarInscricao,
   cancelarInscricaoAtividade,
+  cancelarInscricaoAtividadeComPromocao,
+  cancelarInscricaoEdicaoComPromocao,
 };

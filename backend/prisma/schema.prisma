@@ -173,6 +173,17 @@ model Edicao {
   descricao                         String?
   dataInicio                        DateTime?
   dataFim                           DateTime?
+  // Janela de inscrições de participantes (self-service, área do
+  // participante) — independente do período do evento em si (dataInicio/
+  // dataFim). Sem os dois preenchidos, inscrições ficam fechadas por
+  // padrão (nunca abrem "por acidente" numa edição sem essa configuração).
+  inicioInscricoes                  DateTime?
+  fimInscricoes                     DateTime?
+  // AND-gate sobre a janela acima — nunca um OR. Marcar true só FECHA
+  // inscrições antes do fim da janela; nunca abre fora dela. Para reabrir
+  // antes do fim, o gestor desmarca; a data ainda manda se abre ou não
+  // (ver backend/src/utils/inscricoesAbertas.js).
+  inscricoesEncerradasManualmente   Boolean              @default(false)
   slug                              String?              @unique
   cargaHorariaTotal                 Int?
   instagram                         String?
@@ -442,6 +453,7 @@ model Atividade {
   inicioAtividade   DateTime
   fimAtividade      DateTime
   atividadeContinua Boolean        @default(false)
+  paraConvidados    Boolean        @default(false)
   areaSubmissaoId   String?
   areaSubmissao     AreaSubmissao? @relation(fields: [areaSubmissaoId], references: [id], onDelete: Restrict)
   createdAt         DateTime       @default(now())
@@ -739,8 +751,8 @@ model InscricaoAtividade {
   createdAt   DateTime                 @default(now())
   updatedAt   DateTime                 @updatedAt
 
-  // Cancelamento de inscrição fica fora do escopo atual; se for adicionado,
-  // também será preciso decidir promoção automática de lista de espera.
+  // Cancelamento (self-service ou admin) promove automaticamente o próximo
+  // da lista de espera — ver promoverAoCancelar em inscricoes.service.js.
   @@unique([usuarioId, atividadeId])
   @@index([atividadeId, status])
   @@map("inscricoes_atividade")

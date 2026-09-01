@@ -1,10 +1,5 @@
 const prisma = require("../config/prisma");
-
-const INCLUDE_PADRAO = {
-  modalidadeSubmissao: { select: { id: true, nome: true } },
-  areaSubmissao: { select: { id: true, titulo: true } },
-  autores: { orderBy: { ordem: "asc" } },
-};
+const INCLUDE_PADRAO = require("../utils/submissaoIncludePadrao");
 
 async function listarPorEdicao(edicaoId, { modalidadeSubmissaoId, areaSubmissaoId } = {}) {
   return prisma.submissao.findMany({

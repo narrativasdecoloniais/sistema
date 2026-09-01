@@ -1,5 +1,6 @@
 const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
+const inscricoesService = require("./inscricoes.service");
 
 const CAMPOS_USUARIO = {
   id: true,
@@ -63,8 +64,10 @@ async function atualizarStatus(id, status) {
   });
 }
 
+// Promove automaticamente o próximo da lista de espera, mesmo comportamento
+// do cancelamento self-service — ver promoverAoCancelar em inscricoes.service.js.
 async function excluir(id) {
-  await prisma.inscricaoAtividade.delete({ where: { id } });
+  await inscricoesService.cancelarInscricaoAtividadeComPromocao(id);
 }
 
 module.exports = { listarPorEdicao, buscarPorId, criar, atualizarStatus, excluir };
