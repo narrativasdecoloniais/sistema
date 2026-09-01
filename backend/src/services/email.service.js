@@ -71,6 +71,18 @@ async function enviarEmailRecuperacaoSenha(usuario, token) {
   });
 }
 
+// Link mágico do fluxo passwordless de submissão de trabalho (sem CPF, só
+// e-mail) — destino preserva a página de formulário de onde a pessoa veio
+// (modalidade/área já escolhidas), ver frontend/app/(publico)/submissao/entrar.
+async function enviarEmailEntrarSubmissao(usuario, token, destino) {
+  const link = `${env.frontendUrl}/submissao/entrar?token=${token}&destino=${encodeURIComponent(destino)}`;
+  await enviarEmail({
+    para: usuario.email,
+    assunto: "Continue sua submissão — Narrativas",
+    html: `<p>Olá, ${usuario.nome}.</p><p>Clique no link abaixo para continuar sua submissão de trabalho:</p><p><a href="${link}">${link}</a></p><p>Se você não pediu isso, ignore este e-mail.</p>`,
+  });
+}
+
 async function enviarEmailConviteOrganizador(usuario, token) {
   const link = `${env.frontendUrl}/definir-senha?token=${token}`;
   await enviarEmail({
@@ -191,6 +203,7 @@ async function enviarEmailConfirmacaoInscricao(
 module.exports = {
   enviarEmailConfirmacao,
   enviarEmailRecuperacaoSenha,
+  enviarEmailEntrarSubmissao,
   enviarEmailConviteOrganizador,
   enviarEmailNotificacaoOrganizador,
   enviarEmailPromocaoAdmin,

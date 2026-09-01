@@ -18,15 +18,19 @@ import CardAtividadeProgramacao from "@/components/publico/CardAtividadePrograma
 import ModalListaConteudo from "@/components/publico/ModalListaConteudo";
 
 // Carrega o script do Google Maps via window/document — precisa ficar fora do SSR.
-const MapaLocalizacao = dynamic(() => import("@/components/publico/MapaLocalizacao"), {
-  ssr: false,
-});
+const MapaLocalizacao = dynamic(
+  () => import("@/components/publico/MapaLocalizacao"),
+  {
+    ssr: false,
+  },
+);
 import { agruparAtividadesPorDia } from "@/lib/inscricao";
 import {
   formatarDiaAtividade,
   formatarHoraCurta,
   agruparAtividadesPorHorarioInicio,
   formatarPeriodoSubmissao,
+  prazoSubmissaoAberto,
   dividirParagrafos,
 } from "@/lib/publico";
 import {
@@ -662,45 +666,54 @@ export default function PaginaInicialConteudo({
             className={styles.modalidadesGrade}
             variants={containerVariants}
           >
-            {modalidades.map((modalidade) => (
-              <motion.article
-                key={modalidade.slug}
-                className={styles.modalidadeCartao}
-                variants={itemVariants}
-              >
-                <div className={styles.modalidadeCabecalho}>
-                  <h3 className={styles.modalidadeNome}>{modalidade.nome}</h3>
-                  {modalidade.subtitulo && (
-                    <span className={styles.modalidadeSubtitulo}>
-                      {modalidade.subtitulo}
-                    </span>
-                  )}
-                </div>
-                <p className={styles.modalidadePrazo}>
-                  Prazo:{" "}
-                  {formatarPeriodoSubmissao(
-                    modalidade.prazoInicio,
-                    modalidade.prazoFim,
-                  )}
-                </p>
-                <p className={styles.modalidadeResumo}>
-                  {modalidade.resumoCurto}
-                </p>
-                <button
-                  type="button"
-                  className={styles.modalidadeCtaPrimario}
-                  disabled
+            {modalidades.map((modalidade) => {
+              const prazoAberto = prazoSubmissaoAberto(
+                modalidade.prazoInicio,
+                modalidade.prazoFim,
+              );
+
+              return (
+                <motion.article
+                  key={modalidade.slug}
+                  className={styles.modalidadeCartao}
+                  variants={itemVariants}
                 >
-                  Realizar submissão
-                </button>
-                <Link
-                  href={`/submissao/${modalidade.slug}`}
-                  className={styles.modalidadeLink}
-                >
-                  {modalidade.linkRotulo} →
-                </Link>
-              </motion.article>
-            ))}
+                  <div className={styles.modalidadeCabecalho}>
+                    <h3 className={styles.modalidadeNome}>{modalidade.nome}</h3>
+                    {modalidade.subtitulo && (
+                      <span className={styles.modalidadeSubtitulo}>
+                        {modalidade.subtitulo}
+                      </span>
+                    )}
+                  </div>
+                  <p className={styles.modalidadePrazo}>
+                    Prazo:{" "}
+                    {formatarPeriodoSubmissao(
+                      modalidade.prazoInicio,
+                      modalidade.prazoFim,
+                    )}
+                  </p>
+                  <p className={styles.modalidadeResumo}>
+                    {modalidade.resumoCurto}
+                  </p>
+                  <Link
+                    href={`/submissao/${modalidade.slug}/enviar`}
+                    className={`${styles.modalidadeCtaPrimario} ${
+                      prazoAberto ? "" : styles.modalidadeCtaDesabilitado
+                    }`}
+                    aria-disabled={!prazoAberto}
+                  >
+                    {prazoAberto ? "Realizar submissão" : "Prazo encerrado"}
+                  </Link>
+                  <Link
+                    href={`/submissao/${modalidade.slug}`}
+                    className={styles.modalidadeLink}
+                  >
+                    {modalidade.linkRotulo} →
+                  </Link>
+                </motion.article>
+              );
+            })}
           </motion.div>
         </motion.div>
       </motion.section>
@@ -805,15 +818,17 @@ export default function PaginaInicialConteudo({
                     diaProgramacaoAtual.atividades,
                   ).map((grupo, indice, todosGrupos) => (
                     <Fragment key={grupo.atividades[0].id}>
-                      {indice === 0 && grupo.atividades[0].atividadeContinua && (
-                        <p className={styles.rotuloContinuas}>
-                          <Carimbo />
-                          <span>Atividades contínuas</span>
-                        </p>
-                      )}
+                      {indice === 0 &&
+                        grupo.atividades[0].atividadeContinua && (
+                          <p className={styles.rotuloContinuas}>
+                            <Carimbo />
+                            <span>Atividades contínuas</span>
+                          </p>
+                        )}
                       {indice > 0 &&
                         !grupo.atividades[0].atividadeContinua &&
-                        todosGrupos[indice - 1].atividades[0].atividadeContinua && (
+                        todosGrupos[indice - 1].atividades[0]
+                          .atividadeContinua && (
                           <p className={styles.rotuloPorHorario}>
                             <Carimbo />
                             <span>Atividades por horário</span>
@@ -874,7 +889,10 @@ export default function PaginaInicialConteudo({
           )}
           <div className={styles.localizacaoConteudo}>
             <span className={styles.localizacaoLabel}>Localização</span>
-            <MapaLocalizacao ref={mapaLocalizacaoRef} pontos={pontosInteresse} />
+            <MapaLocalizacao
+              ref={mapaLocalizacaoRef}
+              pontos={pontosInteresse}
+            />
             <ul className={styles.localizacaoLista}>
               {pontosInteresse.map((ponto) => (
                 <li
@@ -882,7 +900,9 @@ export default function PaginaInicialConteudo({
                   className={styles.localizacaoItem}
                   role="button"
                   tabIndex={0}
-                  onClick={() => mapaLocalizacaoRef.current?.focarPonto(ponto.id)}
+                  onClick={() =>
+                    mapaLocalizacaoRef.current?.focarPonto(ponto.id)
+                  }
                   onKeyDown={(evento) => {
                     if (evento.key === "Enter" || evento.key === " ") {
                       evento.preventDefault();
@@ -891,12 +911,22 @@ export default function PaginaInicialConteudo({
                   }}
                 >
                   {ponto.imagem && (
-                    <img src={ponto.imagem} alt="" className={styles.localizacaoImagem} />
+                    <img
+                      src={ponto.imagem}
+                      alt=""
+                      className={styles.localizacaoImagem}
+                    />
                   )}
-                  <span className={styles.localizacaoTipo}>{ponto.tipo.nome}</span>
+                  <span className={styles.localizacaoTipo}>
+                    {ponto.tipo.nome}
+                  </span>
                   <span className={styles.localizacaoNome}>
                     {ponto.link ? (
-                      <a href={ponto.link} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={ponto.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {ponto.nome}
                       </a>
                     ) : (
@@ -904,7 +934,9 @@ export default function PaginaInicialConteudo({
                     )}
                   </span>
                   {ponto.endereco && (
-                    <span className={styles.localizacaoEndereco}>{ponto.endereco}</span>
+                    <span className={styles.localizacaoEndereco}>
+                      {ponto.endereco}
+                    </span>
                   )}
                   <a
                     href={urlGoogleMaps(ponto)}
@@ -913,7 +945,17 @@ export default function PaginaInicialConteudo({
                     className={styles.localizacaoAbrirMaps}
                     onClick={(evento) => evento.stopPropagation()}
                   >
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                       <polyline points="15 3 21 3 21 9" />
                       <line x1="10" y1="14" x2="21" y2="3" />
@@ -1006,11 +1048,18 @@ export default function PaginaInicialConteudo({
           )}
           <Marcador />
           <motion.div className={styles.conteudo} variants={containerVariants}>
-            <motion.h2 className={styles.tituloSecundario} variants={itemVariants}>
+            <motion.h2
+              className={styles.tituloSecundario}
+              variants={itemVariants}
+            >
               {tituloComissoes}
             </motion.h2>
             {dividirParagrafos(corpoComissoes).map((paragrafo, indice) => (
-              <motion.p key={indice} className={styles.secaoTexto} variants={itemVariants}>
+              <motion.p
+                key={indice}
+                className={styles.secaoTexto}
+                variants={itemVariants}
+              >
                 {paragrafo}
               </motion.p>
             ))}
@@ -1019,19 +1068,30 @@ export default function PaginaInicialConteudo({
                 <motion.p className={styles.secaoTexto} variants={itemVariants}>
                   {grupo.nome}
                 </motion.p>
-                <motion.ul className={styles.listasGrade} variants={containerVariants}>
+                <motion.ul
+                  className={styles.listasGrade}
+                  variants={containerVariants}
+                >
                   {grupo.listas.map((lista) => (
                     <motion.li key={lista.id} variants={itemVariants}>
                       <button
                         type="button"
                         className={styles.listaCartao}
-                        onClick={() => setListaAberta({ grupoNome: grupo.nome, lista })}
+                        onClick={() =>
+                          setListaAberta({ grupoNome: grupo.nome, lista })
+                        }
                       >
                         <span className={styles.listaTexto}>
-                          <span className={styles.listaEyebrow}>{grupo.nome}</span>
-                          <span className={styles.listaTitulo}>{lista.nome}</span>
+                          <span className={styles.listaEyebrow}>
+                            {grupo.nome}
+                          </span>
+                          <span className={styles.listaTitulo}>
+                            {lista.nome}
+                          </span>
                           <span className={styles.listaResumo}>
-                            {lista.itens.length === 1 ? "1 item" : `${lista.itens.length} itens`}
+                            {lista.itens.length === 1
+                              ? "1 item"
+                              : `${lista.itens.length} itens`}
                           </span>
                         </span>
                         <span className={styles.listaSeta} aria-hidden="true">

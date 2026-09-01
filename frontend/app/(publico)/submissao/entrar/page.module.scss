@@ -1,0 +1,36 @@
+.pagina {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: calc(3rem + 70px) 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+
+  @media (max-width: 700px) {
+    padding: calc(2rem + 70px) 1.5rem 3.5rem;
+  }
+}
+
+.instrucao {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--tinta);
+  line-height: 1.6;
+}
+
+.link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--barro);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

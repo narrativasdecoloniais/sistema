@@ -13,6 +13,7 @@
     "promover-papel": "node src/scripts/promoverPapel.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
     "@google-cloud/storage": "^7.21.0",
     "@prisma/client": "^5.20.0",
     "bcryptjs": "^2.4.3",
@@ -24,7 +25,11 @@
     "express-rate-limit": "^7.4.0",
     "jsdom": "^30.0.1",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.12.2",
     "nodemailer": "^6.9.15",
+    "pdf-parse": "^2.4.5",
+    "sharp": "^0.35.4",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {

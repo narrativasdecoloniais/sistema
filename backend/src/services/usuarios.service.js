@@ -61,11 +61,25 @@ async function buscarCompletoPorId(id) {
   return prisma.usuario.findUnique({ where: { id } });
 }
 
+// Autor/coautor de submissão sem conta é guardado só como nome/e-mail soltos
+// (SubmissaoAutor.usuarioId null) — se essa pessoa se cadastrar depois, por
+// qualquer um dos fluxos de criação de conta, associamos retroativamente
+// pelo e-mail. Chamada ao final de toda função criarUsuario* abaixo.
+async function associarAutoriasPendentes(usuarioId, email) {
+  // mode: "insensitive" porque e-mail não é normalizado no cadastro — sem
+  // isso, um coautor guardado como "Ana@x.com" não associaria com a conta
+  // criada depois como "ana@x.com".
+  await prisma.submissaoAutor.updateMany({
+    where: { usuarioId: null, email: { equals: email, mode: "insensitive" } },
+    data: { usuarioId },
+  });
+}
+
 async function criarUsuario(dados) {
   const senhaHash = await gerarHash(dados.senha);
   const agora = new Date();
 
-  return prisma.usuario.create({
+  const usuario = await prisma.usuario.create({
     data: {
       nome: dados.nome,
       email: dados.email,
@@ -77,6 +91,8 @@ async function criarUsuario(dados) {
       aceitePrivacidadeEm: agora,
     },
   });
+  await associarAutoriasPendentes(usuario.id, usuario.email);
+  return usuario;
 }
 
 // Cria uma conta sem senha, CPF, categoria ou instituição — usada quando um
@@ -106,7 +122,7 @@ async function criarUsuarioViaInscricao({ nome, email, cpf, instituicao, categor
   const senhaHash = await gerarHash(crypto.randomBytes(32).toString("hex"));
   const agora = new Date();
 
-  return prisma.usuario.create({
+  const usuario = await prisma.usuario.create({
     data: {
       nome,
       email,
@@ -118,6 +134,31 @@ async function criarUsuarioViaInscricao({ nome, email, cpf, instituicao, categor
       aceitePrivacidadeEm: agora,
     },
   });
+  await associarAutoriasPendentes(usuario.id, usuario.email);
+  return usuario;
+}
+
+// Mesmo padrão de criarUsuarioViaInscricao, mas sem CPF — o fluxo público de
+// submissão de trabalho identifica só por e-mail (ver submissoes.service.js).
+// emailConfirmado começa false; o próprio clique no link mágico de entrada
+// confirma o e-mail (ver controller de submissão pública).
+async function criarUsuarioViaSubmissao({ nome, email, instituicao, categoria }) {
+  const senhaHash = await gerarHash(crypto.randomBytes(32).toString("hex"));
+  const agora = new Date();
+
+  const usuario = await prisma.usuario.create({
+    data: {
+      nome,
+      email,
+      instituicao,
+      categoria,
+      senhaHash,
+      aceiteTermosEm: agora,
+      aceitePrivacidadeEm: agora,
+    },
+  });
+  await associarAutoriasPendentes(usuario.id, usuario.email);
+  return usuario;
 }
 
 async function definirSenhaEAceites(id, { senha, cpf, aceiteTermosEm, aceitePrivacidadeEm }) {
@@ -198,6 +239,7 @@ module.exports = {
   criarUsuario,
   criarUsuarioConvidado,
   criarUsuarioViaInscricao,
+  criarUsuarioViaSubmissao,
   definirSenhaEAceites,
   atualizarPerfil,
   atualizarSenha,

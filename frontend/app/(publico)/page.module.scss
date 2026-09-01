@@ -1112,10 +1112,11 @@
   line-height: 1.6;
 }
 
-// CTA primário do cartão — dessaturado por estar desabilitado (fluxo de
-// submissão ainda não existe). Anel de foco fixo (não segue a cor de
-// destaque customizável) pra sempre ter contraste previsível, mesma
-// cautela já aplicada nos outros ajustes desta sessão.
+// CTA primário do cartão — vira link ativo pro formulário de envio quando o
+// prazo da modalidade está aberto (ver .modalidadeCtaDesabilitado pro
+// estado fora do prazo). Anel de foco fixo (não segue a cor de destaque
+// customizável) pra sempre ter contraste previsível, mesma cautela já
+// aplicada nos outros ajustes desta sessão.
 .modalidadeCtaPrimario {
   display: inline-flex;
   align-items: center;
@@ -1128,12 +1129,29 @@
   font-size: 1rem;
   font-weight: 700;
   border: none;
-  cursor: not-allowed;
-  opacity: 0.55;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
 
   &:focus-visible {
     outline: 2px solid var(--tinta);
     outline-offset: 2px;
+  }
+}
+
+// Prazo fora da janela [prazoInicio, prazoFim] — link fica só visual, sem
+// navegar (o backend também recusa a submissão fora do prazo), mesmo
+// tratamento do .ctaDesabilitado em submissao/[modalidade]/page.module.scss.
+.modalidadeCtaDesabilitado {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+
+  &:hover {
+    opacity: 0.55;
   }
 }
 

@@ -98,7 +98,6 @@ export default function ModalListaConteudo({ grupoNome, lista, aoFechar }) {
         </div>
 
         <div className={styles.conteudo}>
-          <h3 className={styles.subtitulo}>Itens</h3>
           <ul className={styles.itensLista}>
             {lista.itens.map((item) => (
               <li key={item.id} className={styles.itensListaItem}>

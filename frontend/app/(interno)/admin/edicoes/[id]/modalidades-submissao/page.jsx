@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
 import { buscarEdicaoPorId } from "@/lib/edicoes";
 import { listarModalidadesSubmissao } from "@/lib/modalidadesSubmissao";
+import { listarAtividades } from "@/lib/atividades";
 import ModalidadesSubmissaoPainel from "@/components/interno/ModalidadesSubmissaoPainel";
 
 export default async function PaginaModalidadesSubmissao({ params }) {
@@ -13,7 +14,16 @@ export default async function PaginaModalidadesSubmissao({ params }) {
   const edicao = await buscarEdicaoPorId(params.id);
   if (!edicao) notFound();
 
-  const modalidades = await listarModalidadesSubmissao(params.id);
+  const [modalidades, atividades] = await Promise.all([
+    listarModalidadesSubmissao(params.id),
+    listarAtividades(params.id),
+  ]);
 
-  return <ModalidadesSubmissaoPainel edicaoId={params.id} modalidadesIniciais={modalidades} />;
+  return (
+    <ModalidadesSubmissaoPainel
+      edicaoId={params.id}
+      modalidadesIniciais={modalidades}
+      atividadesDisponiveis={atividades}
+    />
+  );
 }

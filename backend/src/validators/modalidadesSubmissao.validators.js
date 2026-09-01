@@ -1,14 +1,5 @@
 const { z } = require("zod");
 
-const pessoaAreaSchema = z.object({
-  id: z.string().uuid().optional(),
-  nome: z.string().trim().min(2, "Informe o nome da pessoa"),
-  afiliacao: z.string().trim().max(200, "A afiliação deve ter no máximo 200 caracteres").optional(),
-  papel: z.enum(["COORDENACAO", "CONVIDADO"], {
-    errorMap: () => ({ message: "Selecione o papel da pessoa" }),
-  }),
-});
-
 const areaSubmissaoSchema = z.object({
   id: z.string().uuid().optional(),
   slug: z
@@ -18,7 +9,7 @@ const areaSubmissaoSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen"),
   titulo: z.string().trim().min(3, "Informe o título da área"),
   descricao: z.string().trim().optional(),
-  pessoas: z.array(pessoaAreaSchema).optional(),
+  atividadeIds: z.array(z.string().uuid()).optional().default([]),
 });
 
 const modalidadeSubmissaoSchema = z

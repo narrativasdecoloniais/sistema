@@ -1,60 +1,73 @@
 const prisma = require("../config/prisma");
 const sincronizarLista = require("../utils/sincronizarLista");
+const ErroHttp = require("../utils/erroHttp");
 
 const INCLUDE_PADRAO = {
   areas: {
     orderBy: { ordem: "asc" },
-    include: { pessoas: { orderBy: { ordem: "asc" } } },
+    include: {
+      atividades: {
+        select: {
+          id: true,
+          nome: true,
+          slug: true,
+          local: true,
+          inicioAtividade: true,
+          fimAtividade: true,
+          tipoAtividade: { select: { nome: true } },
+        },
+        orderBy: { inicioAtividade: "asc" },
+      },
+    },
   },
 };
 
-function camposPessoa(pessoa, indice) {
+function camposArea(area, indice) {
   return {
-    nome: pessoa.nome,
-    afiliacao: pessoa.afiliacao ?? null,
-    papel: pessoa.papel,
-    ordem: indice,
-  };
-}
-
-// Resolve o segundo nível de aninhamento (área -> pessoas) dentro do próprio
-// montarCampos da área, sem precisar ensinar sincronizarLista a lidar com
-// dois níveis: pra área nova não há nada pra diffar (create direto); pra
-// área existente, busca as pessoas atuais e monta um nested write nativo do
-// Prisma (deleteMany/update/create) que entra junto no update/create da
-// própria área — tudo ainda colapsa numa única prisma.$transaction, como em
-// atividades.service.js.
-async function camposArea(area, indice) {
-  const pessoas = (area.pessoas || []).map((pessoa, indicePessoa) => ({ ...pessoa, indicePessoa }));
-
-  const campos = {
     slug: area.slug,
     titulo: area.titulo,
     descricao: area.descricao ?? null,
     ordem: indice,
   };
+}
 
-  if (!area.id) {
-    campos.pessoas = {
-      create: pessoas.map((pessoa) => camposPessoa(pessoa, pessoa.indicePessoa)),
-    };
-    return campos;
+// Roda antes do deleteMany de sincronizarLista, pra área removida do payload
+// — se ainda tiver atividade vinculada, aborta a exclusão inteira antes de
+// qualquer mutação rodar (mesmo contrato de aoRemover usado em
+// atividades.service.js, mas aqui pra bloquear em vez de limpar imagem).
+async function guardarRemocaoArea(area) {
+  const emUso = await prisma.atividade.count({ where: { areaSubmissaoId: area.id } });
+  if (emUso > 0) {
+    throw new ErroHttp(409, "Esta área temática está vinculada a atividades e não pode ser excluída.");
   }
+}
 
-  const existentes = await prisma.pessoaAreaSubmissao.findMany({ where: { areaSubmissaoId: area.id } });
-  const idsRecebidos = pessoas.filter((pessoa) => pessoa.id).map((pessoa) => pessoa.id);
-  const removidos = existentes.filter((pessoa) => !idsRecebidos.includes(pessoa.id));
+// Atividade não é filha da área (já existe, criada em Programação) — o
+// vínculo é só o FK Atividade.areaSubmissaoId, então sincroniza por fora do
+// nested write de área: busca as áreas já persistidas (id real, inclusive
+// das recém-criadas) e casa com o payload pelo slug, único por modalidade.
+async function sincronizarAtividadesDasAreas(modalidadeSubmissaoId, edicaoId, areasPayload = []) {
+  const areasDb = await prisma.areaSubmissao.findMany({
+    where: { modalidadeSubmissaoId },
+    select: { id: true, slug: true },
+  });
 
-  campos.pessoas = {
-    ...(removidos.length > 0 && { deleteMany: { id: { in: removidos.map((pessoa) => pessoa.id) } } }),
-    update: pessoas
-      .filter((pessoa) => pessoa.id)
-      .map((pessoa) => ({ where: { id: pessoa.id }, data: camposPessoa(pessoa, pessoa.indicePessoa) })),
-    create: pessoas
-      .filter((pessoa) => !pessoa.id)
-      .map((pessoa) => camposPessoa(pessoa, pessoa.indicePessoa)),
-  };
-  return campos;
+  for (const areaPayload of areasPayload) {
+    const areaDb = areasDb.find((item) => item.slug === areaPayload.slug);
+    if (!areaDb) continue;
+
+    const atividadeIds = areaPayload.atividadeIds || [];
+    await prisma.atividade.updateMany({
+      where: { areaSubmissaoId: areaDb.id, id: { notIn: atividadeIds } },
+      data: { areaSubmissaoId: null },
+    });
+    if (atividadeIds.length > 0) {
+      await prisma.atividade.updateMany({
+        where: { id: { in: atividadeIds }, edicaoId },
+        data: { areaSubmissaoId: areaDb.id },
+      });
+    }
+  }
 }
 
 async function listarModalidades(edicaoId) {
@@ -82,11 +95,9 @@ async function buscarPorSlug(edicaoId, slug) {
 async function criarModalidade(edicaoId, dados) {
   const { areas, ...camposModalidade } = dados;
   const areasCriadas =
-    areas && areas.length > 0
-      ? await Promise.all(areas.map((area, indice) => camposArea(area, indice)))
-      : undefined;
+    areas && areas.length > 0 ? areas.map((area, indice) => camposArea(area, indice)) : undefined;
 
-  return prisma.modalidadeSubmissao.create({
+  const modalidade = await prisma.modalidadeSubmissao.create({
     data: {
       ...camposModalidade,
       edicaoId,
@@ -94,17 +105,39 @@ async function criarModalidade(edicaoId, dados) {
     },
     include: INCLUDE_PADRAO,
   });
+
+  if (areas && areas.length > 0) {
+    await sincronizarAtividadesDasAreas(modalidade.id, edicaoId, areas);
+    return buscarPorId(edicaoId, modalidade.id);
+  }
+
+  return modalidade;
 }
 
 async function atualizarModalidade(id, dados) {
   const { areas, ...camposModalidade } = dados;
 
   const operacoes = areas
-    ? await sincronizarLista(prisma.areaSubmissao, "modalidadeSubmissaoId", id, areas, camposArea)
+    ? await sincronizarLista(
+        prisma.areaSubmissao,
+        "modalidadeSubmissaoId",
+        id,
+        areas,
+        camposArea,
+        guardarRemocaoArea
+      )
     : [];
 
   if (operacoes.length > 0) {
     await prisma.$transaction(operacoes);
+  }
+
+  if (areas) {
+    const modalidadeAtual = await prisma.modalidadeSubmissao.findUnique({
+      where: { id },
+      select: { edicaoId: true },
+    });
+    await sincronizarAtividadesDasAreas(id, modalidadeAtual.edicaoId, areas);
   }
 
   return prisma.modalidadeSubmissao.update({
@@ -115,6 +148,10 @@ async function atualizarModalidade(id, dados) {
 }
 
 async function excluirModalidade(id) {
+  const emUso = await prisma.atividade.count({ where: { areaSubmissao: { modalidadeSubmissaoId: id } } });
+  if (emUso > 0) {
+    throw new ErroHttp(409, "Esta modalidade possui áreas vinculadas a atividades e não pode ser excluída.");
+  }
   await prisma.modalidadeSubmissao.delete({ where: { id } });
 }
 

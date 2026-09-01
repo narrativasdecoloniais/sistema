@@ -25,6 +25,9 @@ enum TipoToken {
   CONFIRMACAO_EMAIL
   RECUPERACAO_SENHA
   CONVITE_ORGANIZADOR
+  // Link mágico de identificação passwordless do fluxo público de submissão
+  // de trabalho (ver submissoes.service.js) — não usa CPF, só e-mail.
+  ENTRAR_SUBMISSAO
 }
 
 // Seções administráveis do site, usadas para restringir o que um
@@ -86,15 +89,6 @@ enum ModalidadeEdicao {
   HIBRIDO
 }
 
-// Papel de uma pessoa dentro de uma área temática de submissão — mesma
-// pessoa nunca ocupa os dois papéis ao mesmo tempo (se acontecer, vira duas
-// linhas). Separa as duas seções públicas de sempre ("Coordenação" /
-// "Convidadas e convidados especiais") sem precisar de duas tabelas.
-enum PapelPessoaArea {
-  COORDENACAO
-  CONVIDADO
-}
-
 // Faixa lateral da Hero: cor sólida (corFaixaHero*), imagem enviada pelo
 // gestor (imagemFaixaHero*) ou nenhuma (elemento oculto) — ver
 // page.module.scss, .heroFaixa.
@@ -141,6 +135,8 @@ model Usuario {
   refreshTokens       RefreshToken[]
   inscricoesEdicao    InscricaoEdicao[]
   inscricoesAtividade InscricaoAtividade[]
+  submissoes          Submissao[]
+  submissaoAutorias   SubmissaoAutor[]
 
   @@map("usuarios")
 }
@@ -171,77 +167,77 @@ model RefreshToken {
 }
 
 model Edicao {
-  id                   String            @id @default(uuid())
-  numero               Int               @unique
-  nome                 String
-  descricao            String?
-  dataInicio           DateTime?
-  dataFim              DateTime?
-  slug                 String?           @unique
-  cargaHorariaTotal    Int?
-  instagram            String?
-  facebook             String?
+  id                                String               @id @default(uuid())
+  numero                            Int                  @unique
+  nome                              String
+  descricao                         String?
+  dataInicio                        DateTime?
+  dataFim                           DateTime?
+  slug                              String?              @unique
+  cargaHorariaTotal                 Int?
+  instagram                         String?
+  facebook                          String?
   // E-mail de contato da organização — botão flutuante nas páginas públicas
   // (BotaoContatoFlutuante.jsx) e rodapé (Footer.jsx).
-  emailContato         String?
-  linksExtras          Json?
-  modalidade           ModalidadeEdicao?
-  local                String?
-  pais                 String?
-  estado               String?
-  cidade               String?
-  fusoHorario          String?           @default("America/Sao_Paulo")
-  notificarAlteracoes  Boolean           @default(true)
+  emailContato                      String?
+  linksExtras                       Json?
+  modalidade                        ModalidadeEdicao?
+  local                             String?
+  pais                              String?
+  estado                            String?
+  cidade                            String?
+  fusoHorario                       String?              @default("America/Sao_Paulo")
+  notificarAlteracoes               Boolean              @default(true)
   // Cor de fundo/texto/ícone/búzio/borda em toda a página pública da edição:
   // String livre, não enum — aceita um token da paleta curada (ex. "BARRO")
   // ou um hex literal (ex. "#3366CC") escolhido livremente no seletor
   // "Personalizada" do admin (ver CampoCorSecao.jsx/lib/cores.js no
   // frontend, corSchema em edicoes.validators.js no backend).
-  corFundoRealizadores String            @default("BARRO")
+  corFundoRealizadores              String               @default("BARRO")
   // Opacidade (0-100) do fundo de Realizadores — mesmo mecanismo de
   // opacidadeFundoHero acima (mistura corFundoRealizadores com --papel via
   // CSS color-mix(), ver .realizadores em page.module.scss).
-  opacidadeFundoRealizadores Int         @default(100)
+  opacidadeFundoRealizadores        Int                  @default(100)
   // Liga/desliga a faixa lateral (definida em faixaHero*) nesta seção — mesmo
   // mecanismo de mostrarFaixaApresentacao/Modalidades/Agenda/Publicacoes
   // abaixo, ver FaixaLateral em PaginaInicialConteudo.jsx.
-  mostrarFaixaRealizadores Boolean       @default(true)
-  corFundoApoiadores String            @default("BARRO")
-  opacidadeFundoApoiadores Int         @default(100)
-  mostrarFaixaApoiadores Boolean       @default(true)
+  mostrarFaixaRealizadores          Boolean              @default(true)
+  corFundoApoiadores                String               @default("BARRO")
+  opacidadeFundoApoiadores          Int                  @default(100)
+  mostrarFaixaApoiadores            Boolean              @default(true)
   // Logo customizada da Hero, enviada pelo gestor em SVG. Guardada como texto
   // (não no GCS) porque precisa ser injetada inline no DOM para reaproveitar
   // o efeito de reveal mascarado (rolo de tinta) — uma URL consumida via
   // <img> não permitiria isso. logoSvgViewBox guarda o viewBox original do
   // arquivo enviado, usado para renderizar a arte proporcionalmente dentro
   // do quadro fixo 778x896 do componente Logo.
-  logoSvg              String?
-  logoSvgViewBox       String?
+  logoSvg                           String?
+  logoSvgViewBox                    String?
   // Mapa "--logo-cor-N" -> hex, extraído automaticamente do SVG enviado (ver
   // sanitizarSvgLogo.js) — os fill/stroke/stop-color originais do arquivo são
   // reescritos pra referenciar essas variáveis, permitindo que o gestor edite
   // cada cor depois sem precisar reenviar o arquivo (Logo.jsx aplica esse
   // mapa como custom properties inline).
-  logoSvgCores         Json?
+  logoSvgCores                      Json?
   // Cores da Hero, customizáveis por edição. PAPEL como default de
   // corFundoHero preserva a aparência atual (a Hero hoje não define fundo
   // próprio).
-  corFundoHero         String            @default("PAPEL")
+  corFundoHero                      String               @default("PAPEL")
   // Opacidade (0-100) do fundo da Hero — mistura corFundoHero com o --papel
   // por trás via CSS color-mix() (ver .hero em page.module.scss). 100 =
   // opaco, aparência atual. Só se aplica quando fundoHeroTipo = COR.
-  opacidadeFundoHero   Int               @default(100)
+  opacidadeFundoHero                Int                  @default(100)
   // Fundo da Hero pode ser cor sólida (corFundoHero/opacidadeFundoHero acima,
   // compartilhados entre breakpoints) ou uma imagem — aí sim com um arquivo
   // por breakpoint (desktop/mobile), já que a Hero muda muito de proporção
   // entre os dois e uma imagem só distorceria ou cortaria mal num dos casos.
   // Reusa TipoFaixaHero (COR/IMAGEM/NENHUMA) por já existir — NENHUMA não é
   // oferecido na UI de fundo (fundo sempre precisa de algo).
-  fundoHeroTipo          TipoFaixaHero   @default(COR)
-  imagemFundoHeroDesktop String?
-  imagemFundoHeroMobile  String?
-  corTextoHero         String            @default("TINTA")
-  corBuzioHero         String            @default("BUZIO")
+  fundoHeroTipo                     TipoFaixaHero        @default(COR)
+  imagemFundoHeroDesktop            String?
+  imagemFundoHeroMobile             String?
+  corTextoHero                      String               @default("TINTA")
+  corBuzioHero                      String               @default("BUZIO")
   // Faixas decorativas encostadas nas laterais da Hero (ver page.module.scss,
   // .heroFaixa) — cor independente do fundo/texto/búzio. Configuráveis
   // separadamente pra desktop e mobile (o gestor pode, por exemplo, usar uma
@@ -251,18 +247,18 @@ model Edicao {
   // gestor (imagemFaixaHero*, URL no GCS — imagem raster comum, ao contrário
   // da logo, então não precisa ser inline: repete verticalmente via CSS
   // background-repeat).
-  faixaHeroTipoDesktop TipoFaixaHero     @default(COR)
-  corFaixaHeroDesktop  String            @default("OCRE")
-  imagemFaixaHeroDesktop String?
+  faixaHeroTipoDesktop              TipoFaixaHero        @default(COR)
+  corFaixaHeroDesktop               String               @default("OCRE")
+  imagemFaixaHeroDesktop            String?
   // Largura em px — substitui o clamp() fluido que era fixo em código
   // (layout.module.scss) por um valor fixo escolhido pelo gestor. Também
   // usado pela BarraNavegacao (ajusta o próprio padding, ver
   // EdicaoExibidaContext.jsx) pra não ficar por baixo da faixa.
-  larguraFaixaHeroDesktop Int             @default(96)
-  faixaHeroTipoMobile  TipoFaixaHero     @default(COR)
-  corFaixaHeroMobile   String            @default("OCRE")
-  imagemFaixaHeroMobile String?
-  larguraFaixaHeroMobile  Int             @default(40)
+  larguraFaixaHeroDesktop           Int                  @default(96)
+  faixaHeroTipoMobile               TipoFaixaHero        @default(COR)
+  corFaixaHeroMobile                String               @default("OCRE")
+  imagemFaixaHeroMobile             String?
+  larguraFaixaHeroMobile            Int                  @default(40)
   // Liga/desliga a faixa lateral só na Hero — os campos acima continuam
   // sendo a definição compartilhada (estilo) usada por todas as seções;
   // NENHUMA em faixaHeroTipo* ainda é o "desligar em toda a página" (não
@@ -270,56 +266,56 @@ model Edicao {
   // mesmo mecanismo de mostrarFaixaApresentacao/Modalidades/Agenda/
   // Publicacoes/Realizadores abaixo — a Hero era a única seção sem essa
   // independência.
-  mostrarFaixaHero Boolean @default(true)
+  mostrarFaixaHero                  Boolean              @default(true)
   // Cores da navbar pública, customizáveis por edição — dois estados (Topo:
   // antes de rolar; Rolado: depois de rolar, ou sempre nas rotas sem Hero).
   // Defaults reproduzem exatamente a aparência hoje hardcoded em
   // BarraNavegacao.module.scss. navMesmoEstilo, quando true, faz o estado
   // Rolado usar as cores do Topo (ver BarraNavegacao.jsx).
-  fundoNavTopoTipo     TipoFundoNav      @default(TRANSPARENTE)
-  corFundoNavTopo      String            @default("PAPEL")
-  corTextoNavTopo      String            @default("TINTA")
-  corIconeNavTopo      String            @default("TINTA")
-  corBordaNavTopo      String            @default("TINTA")
-  corFundoNavRolado    String            @default("CERRADO")
-  corTextoNavRolado    String            @default("PAPEL")
-  corIconeNavRolado    String            @default("BUZIO")
-  corBordaNavRolado    String            @default("BUZIO")
-  navMesmoEstilo       Boolean           @default(false)
+  fundoNavTopoTipo                  TipoFundoNav         @default(TRANSPARENTE)
+  corFundoNavTopo                   String               @default("PAPEL")
+  corTextoNavTopo                   String               @default("TINTA")
+  corIconeNavTopo                   String               @default("TINTA")
+  corBordaNavTopo                   String               @default("TINTA")
+  corFundoNavRolado                 String               @default("CERRADO")
+  corTextoNavRolado                 String               @default("PAPEL")
+  corIconeNavRolado                 String               @default("BUZIO")
+  corBordaNavRolado                 String               @default("BUZIO")
+  navMesmoEstilo                    Boolean              @default(false)
   // Cor das abas de âncora (.ancoraBotao — Submissão/Programação/Anais, ver
   // BarraNavegacao.jsx). Par único (não Topo/Rolado, diferente das cores
   // acima) — mesmo mecanismo de corFundoBotaoApresentacao/
   // corFundoBotaoCardModalidades. O hover é automático (opacity reduzido em
   // cima da própria cor escolhida, ver .ancoraBotao em
   // BarraNavegacao.module.scss), sem campo próprio no banco.
-  corFundoBotaoNav     String            @default("BARRO")
-  corTextoBotaoNav     String            @default("PAPEL")
+  corFundoBotaoNav                  String               @default("BARRO")
+  corTextoBotaoNav                  String               @default("PAPEL")
   // Demais dobras da página pública, cada uma com sua própria rota no admin
   // (.../pagina/apresentacao, /modalidades, /agenda, /publicacoes). Mesmos 3
   // eixos independentes da Hero (corFundo+opacidadeFundo misturados via
   // color-mix, mais corTexto/corBuzio à parte — ver opacidadeFundoHero/
   // corTextoHero/corBuzioHero acima). Agenda não tem título/corpo: o
   // conteúdo daquela seção já vem da API de atividades, só a aparência muda.
-  tituloApresentacao        String?
-  corpoApresentacao         String?
-  corFundoApresentacao      String        @default("PAPEL")
-  opacidadeFundoApresentacao Int          @default(100)
-  corTextoApresentacao      String        @default("TINTA")
-  corBuzioApresentacao      String        @default("BARRO")
+  tituloApresentacao                String?
+  corpoApresentacao                 String?
+  corFundoApresentacao              String               @default("PAPEL")
+  opacidadeFundoApresentacao        Int                  @default(100)
+  corTextoApresentacao              String               @default("TINTA")
+  corBuzioApresentacao              String               @default("BARRO")
   // Botões "Inscreva-se"/"Conheça o GPDES" desta seção (.inscricaoCta/
   // .gpdesCta) — par único de cor compartilhado pelos dois, igual ao botão
   // de Modalidades (corFundoBotaoCard*/corTextoBotaoCard* abaixo): o
   // secundário vira uma versão em contorno da mesma cor do primário, em
   // vez de cada botão ter seu próprio eixo. Sem "Card" no nome porque,
   // diferente de Modalidades, esses botões não ficam dentro de um card.
-  corFundoBotaoApresentacao String        @default("BARRO")
-  corTextoBotaoApresentacao String        @default("PAPEL")
-  tituloModalidades         String?
-  corpoModalidades          String?
-  corFundoModalidades       String        @default("PAPEL")
-  opacidadeFundoModalidades Int           @default(100)
-  corTextoModalidades       String        @default("TINTA")
-  corBuzioModalidades       String        @default("BUZIO")
+  corFundoBotaoApresentacao         String               @default("BARRO")
+  corTextoBotaoApresentacao         String               @default("PAPEL")
+  tituloModalidades                 String?
+  corpoModalidades                  String?
+  corFundoModalidades               String               @default("PAPEL")
+  opacidadeFundoModalidades         Int                  @default(100)
+  corTextoModalidades               String               @default("TINTA")
+  corBuzioModalidades               String               @default("BUZIO")
   // Cor dos cards dentro de Modalidades/Agenda (.modalidadeCartao/
   // CardAtividadeProgramacao) — eixo à parte da seção em volta. Defaults
   // reproduzem a aparência hardcoded de hoje (fundo color-mix(ocre 6%,
@@ -331,83 +327,83 @@ model Edicao {
   // Modalidades (.modalidadeCtaPrimario/.modalidadeLink) — o link de
   // Agenda (.detalhes) não tem preenchimento, então não corre o mesmo
   // risco e não ganha cor própria. Publicações não tem cards.
-  corFundoCardModalidades           String   @default("OCRE")
-  opacidadeFundoCardModalidades     Int        @default(6)
-  corTextoCardModalidades           String @default("TINTA")
-  corTextoSecundarioCardModalidades String @default("TINTA")
-  corAcentoCardModalidades          String @default("BARRO")
-  corFundoBotaoCardModalidades      String @default("BARRO")
-  corTextoBotaoCardModalidades      String @default("PAPEL")
-  corFundoAgenda            String      @default("PAPEL")
-  opacidadeFundoAgenda      Int           @default(100)
-  corTextoAgenda            String    @default("TINTA")
-  corBuzioAgenda            String    @default("BUZIO")
-  corFundoCardAgenda        String      @default("OCRE")
-  opacidadeFundoCardAgenda  Int           @default(6)
-  corTextoCardAgenda        String    @default("TINTA")
-  corTextoSecundarioCardAgenda String @default("TINTA")
-  corAcentoCardAgenda       String    @default("BARRO")
-  tituloPublicacoes         String?
-  corpoPublicacoes          String?
-  corFundoPublicacoes       String      @default("PAPEL")
-  opacidadeFundoPublicacoes Int           @default(100)
-  corTextoPublicacoes       String    @default("TINTA")
-  corBuzioPublicacoes       String    @default("BUZIO")
+  corFundoCardModalidades           String               @default("OCRE")
+  opacidadeFundoCardModalidades     Int                  @default(6)
+  corTextoCardModalidades           String               @default("TINTA")
+  corTextoSecundarioCardModalidades String               @default("TINTA")
+  corAcentoCardModalidades          String               @default("BARRO")
+  corFundoBotaoCardModalidades      String               @default("BARRO")
+  corTextoBotaoCardModalidades      String               @default("PAPEL")
+  corFundoAgenda                    String               @default("PAPEL")
+  opacidadeFundoAgenda              Int                  @default(100)
+  corTextoAgenda                    String               @default("TINTA")
+  corBuzioAgenda                    String               @default("BUZIO")
+  corFundoCardAgenda                String               @default("OCRE")
+  opacidadeFundoCardAgenda          Int                  @default(6)
+  corTextoCardAgenda                String               @default("TINTA")
+  corTextoSecundarioCardAgenda      String               @default("TINTA")
+  corAcentoCardAgenda               String               @default("BARRO")
+  tituloPublicacoes                 String?
+  corpoPublicacoes                  String?
+  corFundoPublicacoes               String               @default("PAPEL")
+  opacidadeFundoPublicacoes         Int                  @default(100)
+  corTextoPublicacoes               String               @default("TINTA")
+  corBuzioPublicacoes               String               @default("BUZIO")
   // Seção "Localização" (mapa + lista de pontos de interesse) — sem búzio
   // porque essa seção não usa o marcador Búzio (ver PaginaInicialConteudo.jsx).
-  corFundoLocalizacao       String      @default("PAPEL")
-  opacidadeFundoLocalizacao Int           @default(100)
-  corTextoLocalizacao       String    @default("TINTA")
+  corFundoLocalizacao               String               @default("PAPEL")
+  opacidadeFundoLocalizacao         Int                  @default(100)
+  corTextoLocalizacao               String               @default("TINTA")
   // Seção "Comissões" (lista de cartões, um por comissão, ver Comissao
   // abaixo) — mesmo bloco de 7 campos de Publicações, com búzio (dobra de
   // texto simples, sem cards com eixo de cor próprio).
-  tituloComissoes         String?
-  corpoComissoes          String?
-  corFundoComissoes       String   @default("PAPEL")
-  opacidadeFundoComissoes Int      @default(100)
-  corTextoComissoes       String   @default("TINTA")
-  corBuzioComissoes       String   @default("BUZIO")
+  tituloComissoes                   String?
+  corpoComissoes                    String?
+  corFundoComissoes                 String               @default("PAPEL")
+  opacidadeFundoComissoes           Int                  @default(100)
+  corTextoComissoes                 String               @default("TINTA")
+  corBuzioComissoes                 String               @default("BUZIO")
   // Faixa lateral (cor/imagem/largura definidas nos campos faixaHero* acima)
   // é renderizada por cada seção que a mantiver ligada (ver FaixaLateral em
   // PaginaInicialConteudo.jsx) — esses 6 campos só dizem se aquela seção
   // específica participa ou não. Default true preserva o comportamento atual
   // (faixa contínua em todas as seções).
-  mostrarFaixaApresentacao Boolean       @default(true)
-  mostrarFaixaModalidades  Boolean       @default(true)
-  mostrarFaixaAgenda       Boolean       @default(true)
-  mostrarFaixaPublicacoes  Boolean       @default(true)
-  mostrarFaixaLocalizacao  Boolean       @default(true)
-  mostrarFaixaComissoes    Boolean       @default(true)
+  mostrarFaixaApresentacao          Boolean              @default(true)
+  mostrarFaixaModalidades           Boolean              @default(true)
+  mostrarFaixaAgenda                Boolean              @default(true)
+  mostrarFaixaPublicacoes           Boolean              @default(true)
+  mostrarFaixaLocalizacao           Boolean              @default(true)
+  mostrarFaixaComissoes             Boolean              @default(true)
   // Aparência compartilhada por TODAS as páginas de detalhe de atividade
   // (.../atividades/[slug]) — não por atividade individual (uma tentativa
   // anterior de personalização por atividade foi revertida). Mesmos 3 eixos
   // independentes das demais dobras (corFundo+opacidadeFundo via color-mix,
   // corTexto/corBuzio à parte) — ver DetalheAtividade.jsx no público e
   // AparenciaAtividadesForm.jsx no admin (.../pagina/atividades).
-  corFundoAtividades       String        @default("PAPEL")
-  opacidadeFundoAtividades Int           @default(100)
-  corTextoAtividades       String        @default("TINTA")
-  corBuzioAtividades       String        @default("BARRO")
-  mostrarFaixaAtividades   Boolean       @default(true)
+  corFundoAtividades                String               @default("PAPEL")
+  opacidadeFundoAtividades          Int                  @default(100)
+  corTextoAtividades                String               @default("TINTA")
+  corBuzioAtividades                String               @default("BARRO")
+  mostrarFaixaAtividades            Boolean              @default(true)
   // Mensagem de contribuição voluntária (ex. pedido de doação via PIX) na
   // etapa final da inscrição pública — não é uma dobra da home, por isso
   // sem cor/opacidade/faixa como as acima. Só aparece no público quando
   // corpoContribuicao estiver preenchido; a ação extra (link ou valor pra
   // copiar) é mutuamente exclusiva, controlada por tipoAcaoContribuicao.
-  tituloContribuicao       String?
-  corpoContribuicao        String?
-  tipoAcaoContribuicao     TipoAcaoContribuicao @default(NENHUMA)
-  linkContribuicaoUrl      String?
-  linkContribuicaoRotulo   String?
-  copiaContribuicaoValor   String?
-  copiaContribuicaoRotulo  String?
+  tituloContribuicao                String?
+  corpoContribuicao                 String?
+  tipoAcaoContribuicao              TipoAcaoContribuicao @default(NENHUMA)
+  linkContribuicaoUrl               String?
+  linkContribuicaoRotulo            String?
+  copiaContribuicaoValor            String?
+  copiaContribuicaoRotulo           String?
   // QR code opcional pra acompanhar a chave PIX (tipoAcaoContribuicao ==
   // COPIAR) — mesmo tratamento de imagem raster escalar das faixas/fundo da
   // Hero (upload vira URL do GCS via processarImagemEscalar em
   // edicoes.service.js).
-  qrCodeContribuicao       String?
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  qrCodeContribuicao                String?
+  createdAt                         DateTime             @default(now())
+  updatedAt                         DateTime             @updatedAt
 
   atividades           Atividade[]
   realizadores         EdicaoRealizador[]
@@ -415,30 +411,33 @@ model Edicao {
   pontosInteresse      EdicaoPontoInteresse[]
   inscricoes           InscricaoEdicao[]
   modalidadesSubmissao ModalidadeSubmissao[]
+  submissoes           Submissao[]
   gruposConteudo       GrupoConteudo[]
 
   @@map("edicoes")
 }
 
 model Atividade {
-  id              String        @id @default(uuid())
-  edicaoId        String
-  edicao          Edicao        @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  tipoAtividadeId String
-  tipoAtividade   TipoAtividade @relation(fields: [tipoAtividadeId], references: [id])
-  nome            String
-  slug            String
-  descricao       String?
-  cargaHoraria    Int?
-  local           String?
-  exigeInscricao  Boolean       @default(true)
-  semLimiteVagas  Boolean       @default(false)
-  vagas           Int?
-  inicioAtividade DateTime
-  fimAtividade    DateTime
-  atividadeContinua Boolean   @default(false)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String         @id @default(uuid())
+  edicaoId          String
+  edicao            Edicao         @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipoAtividadeId   String
+  tipoAtividade     TipoAtividade  @relation(fields: [tipoAtividadeId], references: [id])
+  nome              String
+  slug              String
+  descricao         String?
+  cargaHoraria      Int?
+  local             String?
+  exigeInscricao    Boolean        @default(true)
+  semLimiteVagas    Boolean        @default(false)
+  vagas             Int?
+  inicioAtividade   DateTime
+  fimAtividade      DateTime
+  atividadeContinua Boolean        @default(false)
+  areaSubmissaoId   String?
+  areaSubmissao     AreaSubmissao? @relation(fields: [areaSubmissaoId], references: [id], onDelete: Restrict)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   pessoas    AtividadePessoa[]
   inscricoes InscricaoAtividade[]
@@ -566,11 +565,11 @@ model EdicaoApoiador {
 // "Hospedagem"), compartilhado entre todas as edições — mesmo espírito de
 // TipoAtividade. Cor livre (hex), usada nos marcadores do mapa público.
 model TipoPontoInteresse {
-  id        String                 @id @default(uuid())
-  nome      String                 @unique
+  id        String   @id @default(uuid())
+  nome      String   @unique
   cor       String
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   pontos EdicaoPontoInteresse[]
 
@@ -603,9 +602,9 @@ model EdicaoPontoInteresse {
 // Submissões → Modalidades. Substitui o catálogo antes fixo em
 // frontend/lib/modalidadesSubmissao.js.
 model ModalidadeSubmissao {
-  id             String    @id @default(uuid())
+  id             String   @id @default(uuid())
   edicaoId       String
-  edicao         Edicao    @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  edicao         Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
   slug           String
   nome           String
   subtitulo      String?
@@ -614,15 +613,16 @@ model ModalidadeSubmissao {
   resumoCurto    String
   perguntaTitulo String
   descricao      String?
-  linkRotulo     String    @default("Saiba mais")
+  linkRotulo     String   @default("Saiba mais")
   // Rótulo usado nas áreas desta modalidade, ex. "Conversatório" — a área N
   // é exibida publicamente como "{rotuloItem} N" (N deriva de AreaSubmissao.ordem).
-  rotuloItem     String    @default("Área")
-  ordem          Int       @default(0)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  rotuloItem     String   @default("Área")
+  ordem          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  areas AreaSubmissao[]
+  areas      AreaSubmissao[]
+  submissoes Submissao[]
 
   @@unique([edicaoId, slug])
   @@map("modalidades_submissao")
@@ -641,27 +641,61 @@ model AreaSubmissao {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
-  pessoas PessoaAreaSubmissao[]
+  submissoes Submissao[]
+  atividades Atividade[]
 
   @@unique([modalidadeSubmissaoId, slug])
   @@map("areas_submissao")
 }
 
-// Coordenador(a) ou convidado(a) especial de uma área temática — mesmo
-// modelo pros dois papéis (ver enum PapelPessoaArea), a página pública
-// agrupa pelas duas seções de sempre.
-model PessoaAreaSubmissao {
-  id              String          @id @default(uuid())
-  areaSubmissaoId String
-  areaSubmissao   AreaSubmissao   @relation(fields: [areaSubmissaoId], references: [id], onDelete: Cascade)
-  nome            String
-  afiliacao       String?
-  papel           PapelPessoaArea
-  ordem           Int             @default(0)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+// Trabalho submetido por um participante numa modalidade/área de submissão.
+// Quem submete (usuarioId, identificado via fluxo passwordless por e-mail em
+// submissoes.service.js) é sempre o autor principal — nunca escolhido pelo
+// client, ver SubmissaoAutor.principal.
+model Submissao {
+  id                      String              @id @default(uuid())
+  edicaoId                String
+  edicao                  Edicao              @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  modalidadeSubmissaoId   String
+  modalidadeSubmissao     ModalidadeSubmissao @relation(fields: [modalidadeSubmissaoId], references: [id])
+  areaSubmissaoId         String?
+  areaSubmissao           AreaSubmissao?      @relation(fields: [areaSubmissaoId], references: [id])
+  titulo                  String
+  // HTML sanitizado (ver sanitizarResumoSubmissao.js) — imagens embutidas já
+  // trocadas de data URI por URL do GCS antes de salvar.
+  resumo                  String              @db.Text
+  // HTML sanitizado (ver sanitizarReferenciaBibliografica.js) — só permite
+  // <strong>, sem link/itálico/imagem.
+  referenciaBibliografica String              @db.Text
+  usuarioId               String
+  usuario                 Usuario             @relation(fields: [usuarioId], references: [id])
+  autores                 SubmissaoAutor[]
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
 
-  @@map("pessoas_area_submissao")
+  @@map("submissoes")
+}
+
+// Autor/coautor de uma submissão. nome/email/orcid são sempre guardados aqui
+// (denormalizados), mesmo quando a pessoa tem conta — usuarioId só existe
+// quando o e-mail bate com um Usuario (na hora de adicionar, ou associado
+// retroativamente se essa pessoa se cadastrar depois, ver
+// usuarios.service.js).
+model SubmissaoAutor {
+  id          String    @id @default(uuid())
+  submissaoId String
+  submissao   Submissao @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+  nome        String
+  email       String
+  orcid       String?
+  usuarioId   String?
+  usuario     Usuario?  @relation(fields: [usuarioId], references: [id])
+  principal   Boolean   @default(false)
+  ordem       Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([usuarioId])
+  @@map("submissao_autores")
 }
 
 enum StatusInscricaoAtividade {

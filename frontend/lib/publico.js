@@ -368,6 +368,19 @@ export function formatarPeriodoSubmissao(dataInicioIso, dataFimIso) {
   return `${formatador.format(new Date(dataInicioIso))} – ${formatador.format(new Date(dataFimIso))}`;
 }
 
+// Mesmo raciocínio de fuso fixo em UTC de formatarPeriodoSubmissao, aplicado
+// à checagem de "prazo aberto": compara datas (não instantes) pra o dia de
+// dataFimIso contar inteiro como aberto. Comparar `new Date() <= new
+// Date(dataFimIso)` direto fecha o prazo já na meia-noite UTC do próprio
+// dataFimIso — ou seja, o último dia do prazo aparecia fechado o dia
+// inteiro em vez de só depois dele.
+export function prazoSubmissaoAberto(dataInicioIso, dataFimIso) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const inicio = new Date(dataInicioIso).toISOString().slice(0, 10);
+  const fim = new Date(dataFimIso).toISOString().slice(0, 10);
+  return hoje >= inicio && hoje <= fim;
+}
+
 // Corpo de texto livre (descrição de modalidade/área, corpoApresentacao
 // etc.) é sempre um único campo String no banco — parágrafos separados por
 // linha em branco, divididos aqui só na hora de renderizar.

@@ -356,15 +356,6 @@ export const atividadeSchema = z
     path: ["vagas"],
   });
 
-export const pessoaAreaSchema = z.object({
-  id: z.string().optional(),
-  nome: z.string().trim().min(2, "Informe o nome da pessoa"),
-  afiliacao: z.string().trim().max(200, "A afiliação deve ter no máximo 200 caracteres").optional(),
-  papel: z.enum(["COORDENACAO", "CONVIDADO"], {
-    errorMap: () => ({ message: "Selecione o papel da pessoa" }),
-  }),
-});
-
 export const areaSubmissaoSchema = z.object({
   id: z.string().optional(),
   slug: z
@@ -374,7 +365,7 @@ export const areaSubmissaoSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen"),
   titulo: z.string().trim().min(3, "Informe o título da área"),
   descricao: z.string().trim().optional(),
-  pessoas: z.array(pessoaAreaSchema).optional(),
+  atividadeIds: z.array(z.string()).optional().default([]),
 });
 
 export const modalidadeSubmissaoSchema = z
@@ -417,6 +408,47 @@ export const inscricaoAtividadeAdminSchema = z.object({
   atividadeId: z.string().min(1, "Selecione uma atividade"),
   status: z.enum(["CONFIRMADA", "LISTA_ESPERA"], {
     errorMap: () => ({ message: "Selecione um status" }),
+  }),
+});
+
+export const submissaoEmailSchema = z.object({
+  email: z.string().trim().email("E-mail inválido"),
+});
+
+export const submissaoCadastroSchema = z.object({
+  nome: z.string().trim().min(3, "Informe o nome completo"),
+  email: z.string().trim().email("E-mail inválido"),
+  instituicao: z.string().trim().min(2, "Informe a instituição"),
+  categoria: z.enum(["ESTUDANTE", "DOCENTE", "PESQUISADOR", "COMUNIDADE_EXTERNA"], {
+    errorMap: () => ({ message: "Selecione uma categoria" }),
+  }),
+  aceiteTermos: z.literal(true, {
+    errorMap: () => ({ message: "É necessário aceitar os termos de uso" }),
+  }),
+  aceitePrivacidade: z.literal(true, {
+    errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
+  }),
+});
+
+export const submissaoAutorSchema = z.object({
+  nome: z.string().trim().min(2, "Informe o nome do autor"),
+  email: z.string().trim().email("E-mail inválido"),
+  orcid: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/, "ORCID inválido")
+    .optional()
+    .or(z.literal("")),
+});
+
+export const submissaoSchema = z.object({
+  modalidadeSubmissaoId: z.string().min(1, "Selecione a modalidade"),
+  areaSubmissaoId: z.string().optional(),
+  titulo: z.string().trim().min(3, "Informe o título do trabalho").max(500),
+  resumo: z.string().trim().min(1, "Informe o resumo"),
+  referenciaBibliografica: z.string().trim().min(1, "Informe a referência bibliográfica"),
+  aceiteDeclaracao: z.literal(true, {
+    errorMap: () => ({ message: "É necessário declarar concordância com as regras de submissão" }),
   }),
 });
 

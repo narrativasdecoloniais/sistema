@@ -5,6 +5,7 @@ const gruposConteudoRoutes = require("./gruposConteudo.routes");
 const inscricoesEdicaoRoutes = require("./inscricoesEdicao.routes");
 const inscricoesAtividadeRoutes = require("./inscricoesAtividade.routes");
 const modalidadesSubmissaoRoutes = require("./modalidadesSubmissao.routes");
+const submissoesAdminRoutes = require("./submissoesAdmin.routes");
 const autenticar = require("../middlewares/autenticar");
 const autorizar = require("../middlewares/autorizar");
 const autorizarSecao = require("../middlewares/autorizarSecao");
@@ -28,5 +29,6 @@ router.use("/:edicaoId/grupos-conteudo", gruposConteudoRoutes);
 router.use("/:edicaoId/inscricoes-gerais", inscricoesEdicaoRoutes);
 router.use("/:edicaoId/inscricoes-atividades", inscricoesAtividadeRoutes);
 router.use("/:edicaoId/modalidades-submissao", modalidadesSubmissaoRoutes);
+router.use("/:edicaoId/submissoes", submissoesAdminRoutes);
 
 module.exports = router;

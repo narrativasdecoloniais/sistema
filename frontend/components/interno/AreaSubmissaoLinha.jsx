@@ -1,35 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import CampoTexto from "./CampoTexto";
 import CampoArea from "./CampoArea";
-import { Button } from "primereact/button";
-import PessoaAreaLinha from "./PessoaAreaLinha";
+import CampoMultiSelect from "./CampoMultiSelect";
 import styles from "./AtividadeForm.module.scss";
+import multiSelectStyles from "./CampoMultiSelect.module.scss";
 
-const GRUPOS_PAPEL = [
-  { valor: "COORDENACAO", rotulo: "Coordenação" },
-  { valor: "CONVIDADO", rotulo: "Convidadas e convidados especiais" },
-];
-
-// Duas seções fixas (não dinâmicas por catálogo, ao contrário do tipo de
-// participação de AtividadePessoa) — a ordem publicada é sempre Coordenação
-// antes de Convidados, então a listagem do admin replica essa ordem fixa em
-// vez de agrupar pela ordem de aparecimento no array.
-function agruparPessoasPorPapel(pessoas) {
-  return GRUPOS_PAPEL.map(({ valor, rotulo }) => ({
-    chave: valor,
-    rotulo,
-    itens: pessoas
-      .map((pessoa, indiceFlat) => ({ pessoa, indiceFlat }))
-      .filter(({ pessoa }) => pessoa.papel === valor),
-  }));
-}
-
-// Erros vêm do form pai com caminho pontilhado completo (ex.
-// "areas.2.pessoas.0.nome") — recorta pro prefixo desta área/pessoa antes
-// de repassar pros componentes filhos, que só conhecem o próprio campo.
+// Erros vêm do form pai com caminho pontilhado completo (ex. "areas.2.titulo")
+// — recorta pro prefixo desta área antes de repassar pros campos, que só
+// conhecem o próprio nome.
 function escoparErros(erros, prefixo) {
   const escopado = {};
   for (const [chave, valor] of Object.entries(erros)) {
@@ -45,63 +25,41 @@ export default function AreaSubmissaoLinha({
   podeSubir,
   podeDescer,
   erros,
+  atividadesDisponiveis,
+  outrasAreas,
   aoAlternarExpandir,
   aoMudarCampo,
   aoMover,
   aoRemover,
 }) {
-  const [pessoaExpandidaId, setPessoaExpandidaId] = useState(null);
-
-  const prefixo = `areas.${indiceFlat}.`;
-  const errosArea = escoparErros(erros, prefixo);
-  const errosPessoas = escoparErros(erros, `${prefixo}pessoas.`);
-  const pessoas = area.pessoas || [];
-  const gruposPessoas = agruparPessoasPorPapel(pessoas);
+  const errosArea = escoparErros(erros, `areas.${indiceFlat}.`);
   const tituloExibicao = area.titulo || "Nova área";
+  const atividadeIds = area.atividadeIds || [];
 
-  function aoMudarPessoa(indice, campo, valor) {
-    const novasPessoas = [...pessoas];
-    novasPessoas[indice] = { ...novasPessoas[indice], [campo]: valor };
-    aoMudarCampo("pessoas", novasPessoas);
-  }
+  const atividadesOrdenadas = [...(atividadesDisponiveis || [])].sort((a, b) =>
+    a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+  );
 
-  function aoAdicionarPessoa() {
-    const localId = crypto.randomUUID();
-    aoMudarCampo("pessoas", [...pessoas, { localId, nome: "", afiliacao: "", papel: "COORDENACAO" }]);
-    setPessoaExpandidaId(localId);
-  }
+  // Uma atividade só pode pertencer a uma área — se já estiver marcada numa
+  // área irmã deste mesmo formulário, ou já vinculada no banco a outra área,
+  // o item fica desabilitado aqui até ser desmarcada na origem (evita
+  // "roubar" o vínculo silenciosamente ao salvar).
+  function ocupacaoExterna(atividade) {
+    const areaIrma = (outrasAreas || []).find(
+      (outra, indice) => indice !== indiceFlat && (outra.atividadeIds || []).includes(atividade.id)
+    );
+    if (areaIrma) {
+      return { titulo: areaIrma.titulo || "Nova área" };
+    }
 
-  function aoRemoverPessoa(indice) {
-    const localId = pessoas[indice]?.localId;
-    aoMudarCampo("pessoas", pessoas.filter((_, i) => i !== indice));
-    setPessoaExpandidaId((atual) => (atual === localId ? null : atual));
-  }
+    if (atividade.areaSubmissao && atividade.areaSubmissao.id !== area.id) {
+      return {
+        titulo: atividade.areaSubmissao.titulo,
+        modalidade: atividade.areaSubmissao.modalidadeSubmissao?.nome,
+      };
+    }
 
-  function aoAlternarExpandirPessoa(localId) {
-    setPessoaExpandidaId((atual) => (atual === localId ? null : localId));
-  }
-
-  // Mesmo algoritmo de troca-dentro-do-grupo já usado pra pessoas de
-  // atividade (AtividadeForm.jsx) — só troca as duas pessoas do mesmo
-  // papel, sem afetar a posição de quem tem o outro papel.
-  function moverPessoa(localId, direcao) {
-    const indiceAtual = pessoas.findIndex((pessoa) => pessoa.localId === localId);
-    if (indiceAtual === -1) return;
-
-    const papel = pessoas[indiceAtual].papel;
-    const indicesGrupo = [];
-    pessoas.forEach((pessoa, indice) => {
-      if (pessoa.papel === papel) indicesGrupo.push(indice);
-    });
-
-    const posicaoGrupo = indicesGrupo.indexOf(indiceAtual);
-    const posicaoAlvo = posicaoGrupo + direcao;
-    if (posicaoAlvo < 0 || posicaoAlvo >= indicesGrupo.length) return;
-
-    const indiceAlvo = indicesGrupo[posicaoAlvo];
-    const novasPessoas = [...pessoas];
-    [novasPessoas[indiceAtual], novasPessoas[indiceAlvo]] = [novasPessoas[indiceAlvo], novasPessoas[indiceAtual]];
-    aoMudarCampo("pessoas", novasPessoas);
+    return null;
   }
 
   return (
@@ -135,9 +93,6 @@ export default function AreaSubmissaoLinha({
         >
           <span className={styles.textoResumo}>
             <span className={styles.nomeResumo}>{tituloExibicao}</span>
-            <span className={styles.descricaoResumo}>
-              {pessoas.length} {pessoas.length === 1 ? "pessoa" : "pessoas"}
-            </span>
           </span>
         </button>
       </div>
@@ -166,38 +121,32 @@ export default function AreaSubmissaoLinha({
             erro={errosArea.descricao}
           />
 
-          <div className={styles.secaoPessoas}>
-            <span className={styles.rotuloLista}>Pessoas</span>
-            {gruposPessoas.map(
-              (grupo) =>
-                grupo.itens.length > 0 && (
-                  <div key={grupo.chave} className={styles.grupoPessoas}>
-                    <span className={styles.tituloGrupo}>{grupo.rotulo}</span>
-                    {grupo.itens.map(({ pessoa, indiceFlat: indicePessoa }, posicaoGrupo) => (
-                      <PessoaAreaLinha
-                        key={pessoa.localId}
-                        pessoa={pessoa}
-                        indiceFlat={indicePessoa}
-                        expandida={pessoaExpandidaId === pessoa.localId}
-                        podeSubir={posicaoGrupo > 0}
-                        podeDescer={posicaoGrupo < grupo.itens.length - 1}
-                        erros={escoparErros(errosPessoas, `${indicePessoa}.`)}
-                        aoAlternarExpandir={() => aoAlternarExpandirPessoa(pessoa.localId)}
-                        aoMudarCampo={(campo, valor) => aoMudarPessoa(indicePessoa, campo, valor)}
-                        aoMover={(direcao) => moverPessoa(pessoa.localId, direcao)}
-                        aoRemover={() => aoRemoverPessoa(indicePessoa)}
-                      />
-                    ))}
-                  </div>
-                )
-            )}
-            <Button
-              type="button"
-              label="Adicionar pessoa"
-              onClick={aoAdicionarPessoa}
-              pt={{ root: { className: styles.botaoSecundario } }}
-            />
-          </div>
+          <CampoMultiSelect
+            id={`area-atividades-${indiceFlat}`}
+            rotulo="Atividades vinculadas"
+            value={atividadeIds}
+            onChange={(novosIds) => aoMudarCampo("atividadeIds", novosIds)}
+            options={atividadesOrdenadas}
+            optionDisabled={(atividade) => Boolean(ocupacaoExterna(atividade))}
+            placeholder="Selecionar atividades"
+            filterPlaceholder="Buscar atividade..."
+            vazio="Nenhuma atividade cadastrada nesta edição ainda."
+            vazioFiltro="Nenhuma atividade encontrada."
+            itemTemplate={(atividade) => {
+              const ocupacao = ocupacaoExterna(atividade);
+              return (
+                <div className={multiSelectStyles.itemConteudo}>
+                  <span className={multiSelectStyles.itemRotulo}>{atividade.nome}</span>
+                  {ocupacao && (
+                    <span className={multiSelectStyles.itemLegenda}>
+                      Já vinculada a {ocupacao.titulo}
+                      {ocupacao.modalidade ? ` — ${ocupacao.modalidade}` : ""}
+                    </span>
+                  )}
+                </div>
+              );
+            }}
+          />
 
           <button
             type="button"

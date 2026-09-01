@@ -6,6 +6,9 @@ const ErroHttp = require("../utils/erroHttp");
 const INCLUDE_PADRAO = {
   tipoAtividade: true,
   pessoas: { orderBy: { ordem: "asc" }, include: { tipoParticipacao: true } },
+  areaSubmissao: {
+    select: { id: true, titulo: true, modalidadeSubmissao: { select: { nome: true } } },
+  },
 };
 
 // `indice` reflete a posição da pessoa no array recebido do admin (já na
@@ -144,6 +147,12 @@ async function excluirAtividade(id) {
   if (totalInscricoes > 0) {
     throw new ErroHttp(409, "Não é possível excluir uma atividade com inscrições.");
   }
+
+  const atividade = await prisma.atividade.findUnique({ where: { id }, select: { areaSubmissaoId: true } });
+  if (atividade?.areaSubmissaoId) {
+    throw new ErroHttp(409, "Não é possível excluir uma atividade vinculada a uma área temática de submissão.");
+  }
+
   await prisma.atividade.delete({ where: { id } });
 }
 

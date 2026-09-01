@@ -30,8 +30,18 @@ export function redimensionarParaDataUri(arquivo, dimensaoMax = 256, qualidade =
 // Redimensiona uma logo mantendo a proporção original (sem recorte) e
 // preservando transparência quando o arquivo for PNG/WebP/SVG — diferente de
 // redimensionarParaDataUri, que recorta em quadrado e força JPEG (adequado
-// para foto de perfil, não para logo institucional retangular).
-export function redimensionarLogoParaDataUri(arquivo, dimensaoMax = 480, qualidadeJpeg = 0.9) {
+// para foto de perfil, não para logo institucional retangular). `forcarJpeg`
+// ignora essa preservação de transparência (usado para fotos de conteúdo,
+// ex. CampoRichText.jsx — nunca precisam de canal alfa, e o clipboard/apps
+// como o Word costumam reportar até fotos comuns como "image/png", que sem
+// isso viraria um PNG sem compressão de qualidade, várias vezes maior que o
+// JPEG equivalente).
+export function redimensionarLogoParaDataUri(
+  arquivo,
+  dimensaoMax = 480,
+  qualidadeJpeg = 0.9,
+  forcarJpeg = false
+) {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader();
     leitor.onerror = () => reject(new Error("Falha ao ler o arquivo."));
@@ -48,7 +58,8 @@ export function redimensionarLogoParaDataUri(arquivo, dimensaoMax = 480, qualida
         canvas.height = altura;
         canvas.getContext("2d").drawImage(imagem, 0, 0, largura, altura);
 
-        const manterTransparencia = ["image/png", "image/webp", "image/svg+xml"].includes(arquivo.type);
+        const manterTransparencia =
+          !forcarJpeg && ["image/png", "image/webp", "image/svg+xml"].includes(arquivo.type);
         resolve(
           manterTransparencia
             ? canvas.toDataURL("image/png")

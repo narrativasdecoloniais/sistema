@@ -175,7 +175,6 @@
   display: flex;
 }
 
-// não clicável porque ainda não existe fluxo de submissão por trás
 .cta {
   display: inline-flex;
   align-items: center;
@@ -187,11 +186,27 @@
   font-size: 1rem;
   font-weight: 700;
   border: none;
-  cursor: not-allowed;
-  opacity: 0.55;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
 
   &:focus-visible {
     outline: 2px solid var(--tinta);
     outline-offset: 2px;
+  }
+}
+
+// Prazo fora da janela [prazoInicio, prazoFim] — link fica só visual,
+// sem navegar (o backend também recusa a submissão fora do prazo).
+.ctaDesabilitado {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+
+  &:hover {
+    opacity: 0.55;
   }
 }

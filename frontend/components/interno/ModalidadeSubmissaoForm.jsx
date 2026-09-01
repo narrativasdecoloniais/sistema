@@ -29,22 +29,16 @@ function estadoInicial(modalidadeInicial) {
     linkRotulo: modalidadeInicial?.linkRotulo || "Saiba mais",
     rotuloItem: modalidadeInicial?.rotuloItem || "Área",
     // localId é só de identidade na UI (chave React, linha expandida) —
-    // pessoa/área nova ganha um UUID cliente-only; existente reusa o id do
-    // banco. Nunca é lido pelo backend: o zod (modo strip por padrão)
-    // descarta a chave antes do envio.
+    // área nova ganha um UUID cliente-only; existente reusa o id do banco.
+    // Nunca é lido pelo backend: o zod (modo strip por padrão) descarta a
+    // chave antes do envio.
     areas: (modalidadeInicial?.areas || []).map((area) => ({
       id: area.id,
       localId: area.id,
       slug: area.slug,
       titulo: area.titulo,
       descricao: area.descricao || "",
-      pessoas: (area.pessoas || []).map((pessoa) => ({
-        id: pessoa.id,
-        localId: pessoa.id,
-        nome: pessoa.nome,
-        afiliacao: pessoa.afiliacao || "",
-        papel: pessoa.papel,
-      })),
+      atividadeIds: (area.atividades || []).map((atividade) => atividade.id),
     })),
   };
 }
@@ -52,6 +46,7 @@ function estadoInicial(modalidadeInicial) {
 export default function ModalidadeSubmissaoForm({
   edicaoId,
   modalidadeInicial,
+  atividadesDisponiveis,
   aoSalvar,
   aoCancelar,
   aoExcluir,
@@ -103,7 +98,7 @@ export default function ModalidadeSubmissaoForm({
     const localId = crypto.randomUUID();
     setDados((atual) => ({
       ...atual,
-      areas: [...atual.areas, { localId, slug: "", titulo: "", descricao: "", pessoas: [] }],
+      areas: [...atual.areas, { localId, slug: "", titulo: "", descricao: "", atividadeIds: [] }],
     }));
     setAreaExpandidaId(localId);
   }
@@ -250,6 +245,8 @@ export default function ModalidadeSubmissaoForm({
             podeSubir={indice > 0}
             podeDescer={indice < dados.areas.length - 1}
             erros={erros}
+            atividadesDisponiveis={atividadesDisponiveis}
+            outrasAreas={dados.areas}
             aoAlternarExpandir={() => aoAlternarExpandirArea(area.localId)}
             aoMudarCampo={(campo, valor) => aoMudarArea(indice, campo, valor)}
             aoMover={(direcao) => moverArea(area.localId, direcao)}
@@ -294,7 +291,7 @@ export default function ModalidadeSubmissaoForm({
     {confirmandoExclusao && (
       <ModalConfirmacao
         titulo="Excluir modalidade"
-        mensagem={`Tem certeza que deseja excluir "${modalidadeInicial?.nome}"? Essa ação também remove todas as áreas e pessoas cadastradas nela e não pode ser desfeita.`}
+        mensagem={`Tem certeza que deseja excluir "${modalidadeInicial?.nome}"? Essa ação também remove todas as áreas cadastradas nela e não pode ser desfeita.`}
         confirmando={excluindo}
         onConfirmar={aoConfirmarExclusao}
         onCancelar={() => setConfirmandoExclusao(false)}

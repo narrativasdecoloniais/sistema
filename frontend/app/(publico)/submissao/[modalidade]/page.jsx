@@ -4,22 +4,30 @@ import Divisor from "@/components/graficos/Divisor";
 import {
   buscarModalidadeSubmissaoPublicaPorSlug,
   formatarPeriodoSubmissao,
+  prazoSubmissaoAberto,
   dividirParagrafos,
 } from "@/lib/publico";
 import styles from "./page.module.scss";
 
 export async function generateMetadata({ params }) {
-  const modalidade = await buscarModalidadeSubmissaoPublicaPorSlug(params.modalidade);
+  const modalidade = await buscarModalidadeSubmissaoPublicaPorSlug(
+    params.modalidade,
+  );
   return {
-    title: modalidade ? `${modalidade.nome} — Submissão` : "Modalidade não encontrada",
+    title: modalidade
+      ? `${modalidade.nome} — Submissão`
+      : "Modalidade não encontrada",
   };
 }
 
 export default async function PaginaModalidadeSubmissao({ params }) {
-  const modalidade = await buscarModalidadeSubmissaoPublicaPorSlug(params.modalidade);
+  const modalidade = await buscarModalidadeSubmissaoPublicaPorSlug(
+    params.modalidade,
+  );
   if (!modalidade) notFound();
 
   const descricao = dividirParagrafos(modalidade.descricao);
+  const prazoAberto = prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim);
 
   return (
     <article className={styles.pagina}>
@@ -31,7 +39,10 @@ export default async function PaginaModalidadeSubmissao({ params }) {
         )}
         <p className={styles.prazo}>
           Prazo de submissão:{" "}
-          {formatarPeriodoSubmissao(modalidade.prazoInicio, modalidade.prazoFim)}
+          {formatarPeriodoSubmissao(
+            modalidade.prazoInicio,
+            modalidade.prazoFim,
+          )}
         </p>
       </header>
 
@@ -51,8 +62,8 @@ export default async function PaginaModalidadeSubmissao({ params }) {
           <h2 className={styles.subtituloSecao}>Áreas temáticas</h2>
           <p className={styles.areasIntro}>
             Cada {modalidade.rotuloItem} reúne uma coordenação e convidadas/os
-            especiais em torno de um eixo temático. Selecione um deles para
-            ver a descrição completa.
+            especiais em torno de um eixo temático. Selecione um deles para ver
+            a descrição completa.
           </p>
           <ul className={styles.areasGrade}>
             {modalidade.areas.map((area, indice) => (
@@ -78,14 +89,18 @@ export default async function PaginaModalidadeSubmissao({ params }) {
       )}
 
       <p className={styles.notaDocumentos}>
-        As regras completas de submissão e o modelo (template) desta
-        modalidade serão disponibilizados aqui assim que publicados.
+        As regras completas de submissão e o modelo (template) desta modalidade
+        serão disponibilizados aqui assim que publicados.
       </p>
 
       <div className={styles.acoes}>
-        <button type="button" className={styles.cta} disabled>
-          Realizar submissão
-        </button>
+        <Link
+          href={`/submissao/${modalidade.slug}/enviar`}
+          className={`${styles.cta} ${prazoAberto ? "" : styles.ctaDesabilitado}`}
+          aria-disabled={!prazoAberto}
+        >
+          {prazoAberto ? "Realizar submissão" : "Prazo encerrado"}
+        </Link>
       </div>
     </article>
   );

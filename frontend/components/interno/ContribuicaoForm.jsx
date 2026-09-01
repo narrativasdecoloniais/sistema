@@ -7,7 +7,7 @@ import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { extrairErros } from "@/lib/validacao";
 import CampoTexto from "./CampoTexto";
-import CampoRichText from "./CampoRichText";
+import CampoRichText from "@/components/forms/CampoRichText";
 import CampoRadioSecao from "./CampoRadioSecao";
 import CampoLogo from "./CampoLogo";
 import CabecalhoSecao from "./CabecalhoSecao";

@@ -1,6 +1,9 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import { buscarEdicaoPorId } from "@/lib/edicoes";
+import { listarSubmissoes } from "@/lib/submissoesAdmin";
+import { listarModalidadesSubmissao } from "@/lib/modalidadesSubmissao";
+import SubmissoesRecebimentoPainel from "@/components/interno/SubmissoesRecebimentoPainel";
 
 export default async function PaginaSubmissoesRecebimento({ params }) {
   const usuario = await obterUsuarioAtual();
@@ -8,10 +11,19 @@ export default async function PaginaSubmissoesRecebimento({ params }) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
+  const edicao = await buscarEdicaoPorId(params.id);
+  if (!edicao) notFound();
+
+  const [submissoes, modalidades] = await Promise.all([
+    listarSubmissoes(params.id),
+    listarModalidadesSubmissao(params.id),
+  ]);
+
   return (
-    <PaginaEmBreve
-      titulo="Recebimento de submissões"
-      descricao="Em breve você vai poder acompanhar os trabalhos recebidos desta edição por aqui."
+    <SubmissoesRecebimentoPainel
+      edicaoId={params.id}
+      submissoesIniciais={submissoes}
+      modalidadesIniciais={modalidades}
     />
   );
 }

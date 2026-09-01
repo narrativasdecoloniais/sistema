@@ -1,0 +1,268 @@
+@use "../../styles/tokens-interno" as interno;
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.rotulo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.raiz {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  cursor: pointer;
+
+  &:has(:focus-visible) {
+    outline: none;
+    border-color: var(--acento);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 20%, transparent);
+  }
+}
+
+.invalido {
+  border-color: var(--erro);
+}
+
+.rotuloContainer {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.marcadorTexto {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+}
+
+.token {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  max-width: 100%;
+  // inline-flex sem min-width:0 mantém a largura do conteúdo (nome inteiro
+  // da atividade) mesmo com max-width:100% — é isso que quebrava o layout.
+  min-width: 0;
+}
+
+.tokenRotulo {
+  font-size: 0.8125rem;
+  color: var(--texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.removerToken {
+  display: inline-flex;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--erro);
+  }
+}
+
+.gatilho {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--texto-suave);
+}
+
+// O PrimeReact portala o painel direto pro document.body, fora do wrapper
+// de (interno)/layout.module.scss onde --superficie/--borda/etc. são
+// definidas — sem isso o painel fica sem nenhuma cor (var() cai pro inicial).
+.painel {
+  @include interno.tokens;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.cabecalhoPainel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.botaoFechar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--texto);
+  }
+}
+
+.containerFiltro {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+}
+
+.entradaFiltro {
+  width: 100%;
+  padding: 0.5rem 0.7rem 0.5rem 2.2rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--fundo);
+  color: var(--texto);
+  font-size: 0.9rem;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--acento);
+  }
+}
+
+.iconeFiltro {
+  position: absolute;
+  left: 0.7rem;
+  color: var(--texto-suave);
+  pointer-events: none;
+}
+
+.wrapperLista {
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--fundo);
+  }
+
+  &[data-p-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.itemConteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.itemRotulo {
+  font-size: 0.9rem;
+  color: var(--texto);
+}
+
+.itemLegenda {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+.checkboxContainer {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.raizCheckbox {
+  position: relative;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+
+.inputOculto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.caixaCheckbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  background: var(--superficie);
+  pointer-events: none;
+
+  &[data-p-highlight="true"] {
+    background: var(--acento);
+    border-color: var(--acento);
+  }
+}
+
+.iconeCheck {
+  width: 12px;
+  height: 12px;
+  color: var(--fundo);
+}
+
+.mensagemVazia {
+  padding: 0.9rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+.mensagemErro {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--erro);
+}

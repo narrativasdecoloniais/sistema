@@ -11,7 +11,7 @@ import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./AtividadesPainel.module.scss";
 
-export default function ModalidadesSubmissaoPainel({ edicaoId, modalidadesIniciais }) {
+export default function ModalidadesSubmissaoPainel({ edicaoId, modalidadesIniciais, atividadesDisponiveis }) {
   const router = useRouter();
   const { notificar } = useToast();
 
@@ -140,6 +140,7 @@ export default function ModalidadesSubmissaoPainel({ edicaoId, modalidadesInicia
           <ModalidadeSubmissaoForm
             edicaoId={edicaoId}
             modalidadeInicial={modalidadeEmEdicao}
+            atividadesDisponiveis={atividadesDisponiveis}
             aoSalvar={aoSalvar}
             aoCancelar={fecharModal}
             aoExcluir={excluirModalidade}
@@ -150,7 +151,7 @@ export default function ModalidadesSubmissaoPainel({ edicaoId, modalidadesInicia
       {confirmandoId && (
         <ModalConfirmacao
           titulo="Excluir modalidade"
-          mensagem={`Tem certeza que deseja excluir "${modalidades.find((modalidade) => modalidade.id === confirmandoId)?.nome}"? Essa ação também remove todas as áreas e pessoas cadastradas nela e não pode ser desfeita.`}
+          mensagem={`Tem certeza que deseja excluir "${modalidades.find((modalidade) => modalidade.id === confirmandoId)?.nome}"? Essa ação também remove todas as áreas cadastradas nela e não pode ser desfeita.`}
           confirmando={processandoId === confirmandoId}
           onConfirmar={() => excluirModalidade(confirmandoId)}
           onCancelar={() => setConfirmandoId(null)}

@@ -4,6 +4,7 @@ const prisma = require("../config/prisma");
 const VALIDADE_CONFIRMACAO_EMAIL_HORAS = 48;
 const VALIDADE_RECUPERACAO_SENHA_HORAS = 2;
 const VALIDADE_CONVITE_ORGANIZADOR_HORAS = 24 * 7;
+const VALIDADE_ENTRAR_SUBMISSAO_MINUTOS = 30;
 
 function gerarTokenAleatorio() {
   return crypto.randomBytes(32).toString("hex");
@@ -37,6 +38,21 @@ async function criarTokenConviteOrganizador(usuarioId) {
 
   await prisma.tokenVerificacao.create({
     data: { usuarioId, tipo: "CONVITE_ORGANIZADOR", token, expiraEm },
+  });
+
+  return token;
+}
+
+// Link mágico do fluxo passwordless de submissão de trabalho — identifica só
+// por e-mail (sem CPF). Validade curta porque é só a etapa de identificação;
+// a sessão de submissão em si (JWT bearer) tem validade própria e maior, ver
+// submissoes.service.js.
+async function criarTokenEntrarSubmissao(usuarioId) {
+  const token = gerarTokenAleatorio();
+  const expiraEm = new Date(Date.now() + VALIDADE_ENTRAR_SUBMISSAO_MINUTOS * 60 * 1000);
+
+  await prisma.tokenVerificacao.create({
+    data: { usuarioId, tipo: "ENTRAR_SUBMISSAO", token, expiraEm },
   });
 
   return token;
@@ -82,6 +98,7 @@ module.exports = {
   criarTokenConfirmacaoEmail,
   criarTokenRecuperacaoSenha,
   criarTokenConviteOrganizador,
+  criarTokenEntrarSubmissao,
   consumirToken,
   buscarTokenConfirmacaoEmailValido,
 };

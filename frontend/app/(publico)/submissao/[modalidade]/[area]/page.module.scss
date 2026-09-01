@@ -61,92 +61,47 @@
   font-size: clamp(1.1rem, 2.2vw, 1.35rem);
 }
 
-.coordenacaoLista {
+.atividadesLista {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.9rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.coordenadorItem {
+.atividadeItem {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-}
+  gap: 0.15rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--areia);
 
-.coordenadorNome {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--tinta);
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.coordenadorAfiliacao {
-  font-size: 0.8rem;
-  color: var(--texto-suave);
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-// Convidadas/os especiais: foto em moldura quadrada, cantos retos — coerente
-// com a estética de cartaz/stencil (sem avatares redondos, sem orgânico).
-.convidadosGrade {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1.5rem 1.2rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.convidadoCartao {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  // min-width:0 permite que o item encolha dentro da faixa do grid; sem
-  // isso, afiliações sem espaço (ex. "Mespt|CEAM|NEAB|NEFA-UnB") empurram a
-  // coluna e vazam sobre o card vizinho.
-  min-width: 0;
-  p{
-    margin: 0;
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
   }
 }
 
-.convidadoFoto {
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: var(--areia);
-  border: 1px solid var(--ocre);
-  border-radius: 50%;
-}
-
-.convidadoInicial {
-  font-family: var(--font-archivo), sans-serif;
-  font-weight: 700;
-  font-size: 2rem;
-  color: var(--barro);
-}
-
-.convidadoNome {
-  font-size: 0.92rem;
+.atividadeNome {
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--tinta);
-  line-height: 1.35;
-  overflow-wrap: anywhere;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tinta);
+    outline-offset: 2px;
+  }
 }
 
-.convidadoAfiliacao {
-  font-size: 0.8rem;
+.atividadeMeta {
+  font-size: 0.85rem;
   color: var(--texto-suave);
-  line-height: 1.45;
-  overflow-wrap: anywhere;
 }
 
 .notaDocumentos {
@@ -161,7 +116,6 @@
   display: flex;
 }
 
-// não clicável porque ainda não existe fluxo de submissão por trás
 .cta {
   display: inline-flex;
   align-items: center;
@@ -173,11 +127,27 @@
   font-size: 1rem;
   font-weight: 700;
   border: none;
-  cursor: not-allowed;
-  opacity: 0.55;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
 
   &:focus-visible {
     outline: 2px solid var(--tinta);
     outline-offset: 2px;
+  }
+}
+
+// Prazo fora da janela [prazoInicio, prazoFim] — link fica só visual,
+// sem navegar (o backend também recusa a submissão fora do prazo).
+.ctaDesabilitado {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+
+  &:hover {
+    opacity: 0.55;
   }
 }
