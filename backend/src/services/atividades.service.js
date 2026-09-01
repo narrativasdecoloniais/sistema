@@ -98,8 +98,28 @@ async function buscarPorSlug(edicaoId, slug) {
   });
 }
 
+// Duas atividades na mesma edição podem ter o mesmo nome (ex. oficina
+// repetida em outro horário) — o slug não pode travar esse cadastro, então
+// desambigua com sufixo numérico (-2, -3...) em vez de deixar o Postgres
+// rejeitar por violar @@unique([edicaoId, slug]).
+async function gerarSlugUnico(edicaoId, slugBase) {
+  const existentes = await prisma.atividade.findMany({
+    where: { edicaoId, slug: { startsWith: slugBase } },
+    select: { slug: true },
+  });
+  const slugs = new Set(existentes.map((atividade) => atividade.slug));
+
+  if (!slugs.has(slugBase)) return slugBase;
+
+  let contador = 2;
+  while (slugs.has(`${slugBase}-${contador}`)) {
+    contador += 1;
+  }
+  return `${slugBase}-${contador}`;
+}
+
 async function criarAtividade(edicaoId, dados) {
-  const { pessoas, ...camposAtividade } = dados;
+  const { pessoas, slug, ...camposAtividade } = dados;
   const pessoasCriadas =
     pessoas && pessoas.length > 0
       ? await Promise.all(pessoas.map((pessoa, indice) => camposPessoa(pessoa, indice)))
@@ -108,6 +128,7 @@ async function criarAtividade(edicaoId, dados) {
   return prisma.atividade.create({
     data: {
       ...camposAtividade,
+      slug: await gerarSlugUnico(edicaoId, slug),
       ...normalizarInscricao(dados),
       edicaoId,
       pessoas: pessoasCriadas ? { create: pessoasCriadas } : undefined,
