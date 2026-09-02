@@ -59,7 +59,6 @@ export default function AtividadesPorTipo({
 
       {tipos.map((tipo) => (
         <div key={tipo.id} className={styles.secaoTipo}>
-          <h4 className={styles.tituloTipo}>{tipo.nome}</h4>
           {tipo.atividades.length === 1 ? (
             renderizarCartao(tipo.atividades[0])
           ) : (
