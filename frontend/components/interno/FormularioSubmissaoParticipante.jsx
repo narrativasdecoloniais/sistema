@@ -9,7 +9,7 @@ import Checkbox from "@/components/forms/Checkbox";
 import Botao from "@/components/forms/Botao";
 import ModalAdicionarAutorParticipante from "./ModalAdicionarAutorParticipante";
 import { useToast } from "./ToastProvider";
-import { listarModalidadesSubmissaoPublicas } from "@/lib/publico";
+import { listarModalidadesSubmissaoPublicas, prazoSubmissaoAberto } from "@/lib/publico";
 import { criarSubmissao } from "@/lib/participanteSubmissoes";
 import { submissaoSchema, extrairErros } from "@/lib/validacao";
 import styles from "./FormularioSubmissaoParticipante.module.scss";
@@ -122,11 +122,15 @@ export default function FormularioSubmissaoParticipante({ nomeUsuario }) {
         <option value="" disabled>
           Selecione
         </option>
-        {modalidades.map((modalidade) => (
-          <option key={modalidade.id} value={modalidade.id}>
-            {modalidade.nome}
-          </option>
-        ))}
+        {modalidades.map((modalidade) => {
+          const prazoAberto = prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim);
+          return (
+            <option key={modalidade.id} value={modalidade.id} disabled={!prazoAberto}>
+              {modalidade.nome}
+              {prazoAberto ? "" : " (prazo encerrado)"}
+            </option>
+          );
+        })}
       </CampoSelect>
 
       {modalidadeSelecionada && modalidadeSelecionada.areas.length > 0 && (

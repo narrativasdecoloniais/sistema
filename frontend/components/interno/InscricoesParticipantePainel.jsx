@@ -44,42 +44,28 @@ export default function InscricoesParticipantePainel() {
           <p>Nenhuma edição com inscrições abertas no momento.</p>
         </div>
       ) : (
-        <div className={styles.tabelaWrapper}>
-          <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Edição</th>
-                <th>Período de inscrição</th>
-                <th>Status</th>
-                <th className={styles.colunaAcoes}>Ação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inscricoes.map(({ edicao, aberta, jaInscrito }) => (
-                <tr key={edicao.id}>
-                  <td data-rotulo="Edição">
-                    {paraNumeroRomano(edicao.numero)} — {edicao.nome}
-                  </td>
-                  <td data-rotulo="Período de inscrição">
-                    {formatarPeriodoEdicao(edicao.inicioInscricoes, edicao.fimInscricoes)}
-                  </td>
-                  <td data-rotulo="Status">
-                    <div className={styles.tags}>
-                      {jaInscrito && <span className={`${styles.tag} ${styles.tagInscrito}`}>Inscrito</span>}
-                      <span className={`${styles.tag} ${aberta ? styles.tagAberta : styles.tagEncerrada}`}>
-                        {aberta ? "Aberta" : "Encerrada"}
-                      </span>
-                    </div>
-                  </td>
-                  <td data-rotulo="Ação" className={styles.colunaAcoes}>
-                    <Link href={`/participante/inscricoes/${edicao.id}`} className={styles.link}>
-                      {jaInscrito ? "Ver inscrição" : "Inscrever-se"}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className={styles.grade}>
+          {inscricoes.map(({ edicao, aberta, jaInscrito }) => (
+            <article key={edicao.id} className={styles.cartao}>
+              <div className={styles.cartaoCabecalho}>
+                <h3 className={styles.cartaoTitulo}>
+                  {paraNumeroRomano(edicao.numero)} — {edicao.nome}
+                </h3>
+                <div className={styles.tags}>
+                  {jaInscrito && <span className={`${styles.tag} ${styles.tagInscrito}`}>Inscrito</span>}
+                  <span className={`${styles.tag} ${aberta ? styles.tagAberta : styles.tagEncerrada}`}>
+                    {aberta ? "Aberta" : "Encerrada"}
+                  </span>
+                </div>
+              </div>
+              <p className={styles.cartaoMeta}>
+                {formatarPeriodoEdicao(edicao.inicioInscricoes, edicao.fimInscricoes)}
+              </p>
+              <Link href={`/participante/inscricoes/${edicao.id}`} className={styles.cartaoAcao}>
+                {jaInscrito ? "Ver inscrição" : "Inscrever-se"} <span aria-hidden="true">→</span>
+              </Link>
+            </article>
+          ))}
         </div>
       )}
     </div>

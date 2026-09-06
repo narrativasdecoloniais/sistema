@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Botao from "@/components/forms/Botao";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CartaoInscricaoParticipante from "./CartaoInscricaoParticipante";
+import DetalhesAtividadeModal from "./DetalhesAtividadeModal";
+import NavegacaoDiasParticipante, {
+  idAbaDiaParticipante,
+  idPainelDiaParticipante,
+} from "./NavegacaoDiasParticipante";
 import { useToast } from "./ToastProvider";
-import { formatarPeriodoAtividade } from "@/lib/publico";
-import { haSobreposicao } from "@/lib/inscricao";
+import { formatarPeriodoAtividade, formatarDiaAtividade } from "@/lib/publico";
+import { haSobreposicao, agruparAtividadesPorDia } from "@/lib/inscricao";
 import {
   buscarInscricaoEdicao,
   salvarInscricao,
@@ -26,6 +31,9 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
   const [processandoAtividadeId, setProcessandoAtividadeId] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
   const [confirmandoCarregando, setConfirmandoCarregando] = useState(false);
+  const [detalheAtividade, setDetalheAtividade] = useState(null);
+  const [diaAtivo, setDiaAtivo] = useState(null);
+  const idDias = useId();
 
   async function carregar() {
     try {
@@ -110,9 +118,9 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
 
   const { edicao, aberta, jaInscritoNaEdicao, inscricaoAtual, atividades } = estado;
   const inscricoesAtividade = inscricaoAtual?.inscricoesAtividade || [];
-  const atividadesOrdenadas = [...(atividades || [])].sort(
-    (a, b) => new Date(a.inicioAtividade) - new Date(b.inicioAtividade)
-  );
+  const dias = agruparAtividadesPorDia(atividades || []);
+  const chaveAtiva = diaAtivo && dias.some((dia) => dia.chave === diaAtivo) ? diaAtivo : (dias[0]?.chave ?? null);
+  const diaAtual = dias.find((dia) => dia.chave === chaveAtiva) ?? null;
 
   return (
     <div className={styles.pagina}>
@@ -153,61 +161,86 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
         )
       )}
 
-      {aberta && atividadesOrdenadas.length > 0 && (
+      {aberta && dias.length > 0 && (
         <div className={styles.secaoAtividades}>
           <h2 className={styles.subtitulo}>Atividades específicas</h2>
-          <div className={styles.tabelaWrapper}>
-            <table className={styles.tabela}>
-              <thead>
-                <tr>
-                  <th>Atividade</th>
-                  <th>Período</th>
-                  <th>Vagas</th>
-                  <th className={styles.colunaAcoes}>Ação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {atividadesOrdenadas.map((atividade) => {
-                  const conflito = inscricoesAtividade.find((item) =>
-                    haSobreposicao(atividade, item.atividade)
-                  );
 
-                  return (
-                    <tr key={atividade.id}>
-                      <td data-rotulo="Atividade">{atividade.nome}</td>
-                      <td data-rotulo="Período">
-                        {formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade)}
-                      </td>
-                      <td data-rotulo="Vagas">
-                        {atividade.semLimiteVagas
-                          ? "Sem limite"
-                          : atividade.lotada
-                            ? "Lotada (lista de espera)"
-                            : `${atividade.vagasRestantes} vaga(s)`}
-                      </td>
-                      <td data-rotulo="Ação" className={styles.colunaAcoes}>
-                        {conflito ? (
-                          <span className={styles.conflito}>
-                            Conflita com &quot;{conflito.atividade.nome}&quot;
-                          </span>
-                        ) : (
-                          <Botao
-                            type="button"
-                            variante="secundario"
-                            carregando={processandoAtividadeId === atividade.id}
-                            onClick={() => inscreverEmAtividade(atividade.id)}
-                          >
-                            Inscrever-se
-                          </Botao>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {dias.length > 1 ? (
+            <NavegacaoDiasParticipante
+              dias={dias}
+              chaveAtiva={chaveAtiva}
+              onSelecionar={setDiaAtivo}
+              idBase={idDias}
+            />
+          ) : (
+            diaAtual && <p className={styles.diaUnico}>{formatarDiaAtividade(diaAtual.inicioIso).completo}</p>
+          )}
+
+          {diaAtual && (
+            <div
+              className={styles.grade}
+              {...(dias.length > 1
+                ? {
+                    role: "tabpanel",
+                    id: idPainelDiaParticipante(idDias, diaAtual.chave),
+                    "aria-labelledby": idAbaDiaParticipante(idDias, diaAtual.chave),
+                  }
+                : {})}
+            >
+              {diaAtual.atividades.map((atividade) => {
+                const conflito = inscricoesAtividade.find((item) =>
+                  haSobreposicao(atividade, item.atividade)
+                );
+
+                return (
+                  <article key={atividade.id} className={styles.cartao}>
+                    <div className={styles.cartaoCabecalho}>
+                      <span className={styles.tipo}>{atividade.tipoAtividade.nome}</span>
+                      <h3 className={styles.cartaoTitulo}>{atividade.nome}</h3>
+                    </div>
+                    <p className={styles.cartaoMeta}>
+                      {formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade)}
+                    </p>
+                    <p className={styles.cartaoMeta}>
+                      {atividade.semLimiteVagas
+                        ? "Sem limite de vagas"
+                        : atividade.lotada
+                          ? "Lotada (lista de espera)"
+                          : `${atividade.vagasRestantes} vaga(s)`}
+                    </p>
+                    <div className={styles.cartaoAcoes}>
+                      <button
+                        type="button"
+                        className={styles.detalhes}
+                        onClick={() => setDetalheAtividade(atividade)}
+                      >
+                        Ver detalhes <span aria-hidden="true">→</span>
+                      </button>
+                      {conflito ? (
+                        <span className={styles.conflito}>
+                          Conflita com &quot;{conflito.atividade.nome}&quot;
+                        </span>
+                      ) : (
+                        <Botao
+                          type="button"
+                          variante="secundario"
+                          carregando={processandoAtividadeId === atividade.id}
+                          onClick={() => inscreverEmAtividade(atividade.id)}
+                        >
+                          Inscrever-se
+                        </Botao>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
+      )}
+
+      {detalheAtividade && (
+        <DetalhesAtividadeModal atividade={detalheAtividade} onFechar={() => setDetalheAtividade(null)} />
       )}
 
       {confirmando && (

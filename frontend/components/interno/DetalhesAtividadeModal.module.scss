@@ -1,0 +1,38 @@
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.linha {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--texto);
+}
+
+.vagas {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.descricao {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--borda);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--texto);
+}

@@ -68,93 +68,93 @@
   color: var(--texto);
 }
 
-.tabelaWrapper {
+.diaUnico {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.1rem 1.25rem;
   border: 1px solid var(--borda);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--superficie);
-  overflow-x: auto;
 }
 
-.tabela {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9375rem;
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.85rem 1rem;
-    white-space: nowrap;
-  }
-
-  th {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--texto-suave);
-    border-bottom: 1px solid var(--borda);
-  }
-
-  tbody tr {
-    border-bottom: 1px solid var(--borda);
-
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-
-  td {
-    color: var(--texto);
-  }
+.cartaoCabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-.colunaAcoes {
-  white-space: nowrap;
+.tipo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.cartaoTitulo {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--texto);
+}
+
+.cartaoMeta {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.cartaoAcoes {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.detalhes {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.7rem;
+  background: none;
+  border: 1.5px solid var(--borda);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--acento);
+    color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
 }
 
 .conflito {
   font-size: 0.8125rem;
   color: var(--texto-suave);
   font-style: italic;
-}
-
-@media (max-width: 720px) {
-  .tabela {
-    thead {
-      display: none;
-    }
-
-    tbody tr {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 1rem;
-    }
-
-    td {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      padding: 0;
-      white-space: normal;
-      text-align: right;
-
-      &::before {
-        content: attr(data-rotulo);
-        font-weight: 600;
-        color: var(--texto-suave);
-        text-align: left;
-      }
-    }
-
-    .colunaAcoes {
-      justify-content: flex-end;
-
-      &::before {
-        content: none;
-      }
-    }
-  }
 }
