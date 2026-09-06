@@ -17,16 +17,20 @@
     --largura-faixa-hero: clamp(40px, 6vw, 96px);
   }
 
-  // Modo alto contraste do widget de acessibilidade (AcessibilidadeWidget.jsx)
-  // — atributo fica em <html> (setado por JS + script inline anti-flash, ver
-  // layout.jsx), não em .wrapper, então o seletor sobe até lá com :global.
-  // Reescreve só a camada de tokens de base; a camada semântica (--cor-*)
-  // em _tokens-publico.scss referencia essas variáveis e herda o ajuste.
+  // Modos visuais exclusivos do widget de acessibilidade
+  // (AcessibilidadeWidget.jsx) que trocam a paleta — atributo
+  // `data-modo-visual` fica em <html> (setado por JS + script inline
+  // anti-flash, ver layout.jsx), não em .wrapper, então o seletor sobe até lá
+  // com :global. Reescreve só a camada de tokens de base; a camada semântica
+  // (--cor-*) em _tokens-publico.scss referencia essas variáveis e herda o
+  // ajuste. Os outros modos do grupo (cinza/auto-contraste/negativo) não
+  // trocam tokens — aplicam `filter` em `body`, ver styles/globals.scss.
+  //
   // --areia vira cinza claro (não branco puro) pra preservar a distinção
   // visual entre página (--papel) e cartão/superfície (--areia) — a maioria
   // dos cartões já tem borda própria, mas não custa manter os dois planos
   // diferenciáveis também por cor.
-  :global(html[data-alto-contraste="true"]) & {
+  :global(html[data-modo-visual="alto-contraste"]) & {
     --tinta: #000000;
     --barro: #7a1f00;
     --ocre: #6b4400;
@@ -36,6 +40,18 @@
     --buzio: #7a4b00;
     --texto-suave: #1a1a1a;
     --cor-erro: #8a0000;
+  }
+
+  // "Fundo claro" neutraliza os tons terrosos decorativos pra um branco/cinza
+  // neutro com texto bem escuro, sem ir tão longe quanto o alto contraste
+  // (que também satura as cores de acento pra máxima distinção). Cores de
+  // acento (--barro/--ocre/--cerrado/--buzio) seguem as mesmas — já leem bem
+  // sobre branco puro.
+  :global(html[data-modo-visual="fundo-claro"]) & {
+    --tinta: #141414;
+    --areia: #f2f2f2;
+    --papel: #ffffff;
+    --texto-suave: #3a3a3a;
   }
 }
 

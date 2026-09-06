@@ -48,11 +48,16 @@
 }
 
 // Mesmo tratamento "comprovante" de BotaoContatoFlutuante/CardContribuicao.
+// max-height+scroll porque a lista cresceu (tamanho de texto + 5 modos
+// visuais + 2 ajustes + redefinir) e pode passar da altura livre em telas
+// baixas (ex. celular em paisagem).
 .popover {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  width: min(260px, calc(100vw - 3rem));
+  gap: 0.75rem;
+  width: min(280px, calc(100vw - 3rem));
+  max-height: min(75vh, 520px);
+  overflow-y: auto;
   padding: 1rem;
   background: var(--papel);
   border: 1.5px solid var(--ocre);
@@ -61,17 +66,15 @@
 }
 
 .rotulo {
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--barro);
+  color: var(--tinta);
 }
 
 .controle {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .controleRotulo {
@@ -85,79 +88,64 @@
 
 .stepper {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
-// Alvo de toque ≥44px (DESIGN.md) — largura maior que altura porque o
-// rótulo "A−"/"A+" pede mais espaço horizontal que um ícone quadrado.
-.stepperBotao {
-  flex: 1 1 0;
+// Grupo de opções separado por um traço fino do bloco anterior — usado pro
+// grupo exclusivo de modo visual e pro par links-sublinhados/fonte-legível.
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--areia);
+}
+
+// Linha de opção (ícone + rótulo) reaproveitada pelo stepper de tamanho de
+// texto, pelo grupo de modo visual, pelos ajustes independentes e por
+// "Redefinir". Alvo de toque ≥44px (DESIGN.md).
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
   min-height: 44px;
+  padding: 0.4rem 0.5rem;
   background: none;
-  border: 1.5px solid var(--ocre);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-family: inherit;
-  color: var(--barro);
+  color: var(--tinta);
   cursor: pointer;
+  text-align: left;
+
+  svg {
+    flex-shrink: 0;
+    color: var(--barro);
+  }
 
   &:hover:not(:disabled) {
-    border-color: var(--barro);
+    background: var(--areia);
   }
 
   &:focus-visible {
     outline: 2px solid var(--barro);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   &:disabled {
     opacity: 0.4;
     cursor: default;
   }
-}
-
-.alternador {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  min-height: 44px;
-  padding: 0;
-  background: none;
-  border: none;
-  font-size: 0.85rem;
-  font-family: inherit;
-  color: var(--tinta);
-  cursor: pointer;
-  text-align: left;
-}
-
-.chave {
-  flex-shrink: 0;
-  width: 40px;
-  height: 24px;
-  padding: 2px;
-  border-radius: 999px;
-  background: var(--areia);
-  border: 1.5px solid var(--ocre);
-  transition: background 0.15s ease;
 
   &[data-ativo="true"] {
     background: var(--barro);
-    border-color: var(--barro);
-  }
-}
+    color: var(--papel);
 
-.chaveBolinha {
-  display: block;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--papel);
-  transition: transform 0.15s ease;
-
-  [data-ativo="true"] > & {
-    transform: translateX(16px);
+    svg {
+      color: var(--papel);
+    }
   }
 }

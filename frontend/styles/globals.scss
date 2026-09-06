@@ -46,3 +46,43 @@ html.acessibilidade-fonte-2 {
 html.acessibilidade-fonte-3 {
   font-size: 137.5%;
 }
+
+// Modos visuais do widget de acessibilidade que se resolvem com `filter`
+// (os outros dois do mesmo grupo exclusivo — alto contraste/fundo claro —
+// trocam tokens de cor em (publico)/layout.module.scss). Em `body`, não em
+// `html`, porque `filter` só afeta o próprio elemento em diante como caixa
+// renderizada — aplicado na raiz do documento ele não pinta nada.
+html[data-modo-visual="cinza"] body {
+  filter: grayscale(1);
+}
+
+html[data-modo-visual="auto-contraste"] body {
+  filter: contrast(1.35) saturate(1.1);
+}
+
+html[data-modo-visual="negativo"] body {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+// Ajuste independente (fora do grupo de modo visual) do widget de
+// acessibilidade — força sublinhado em todo link da página, mesmo nos que só
+// diferenciam por cor.
+html[data-links-sublinhados] a {
+  text-decoration: underline !important;
+}
+
+// Ajuste independente do widget de acessibilidade — troca as duas fontes
+// (--font-archivo/--font-stencil, ver app/layout.jsx) por uma fonte de
+// sistema simples e remove o caixa-alta/letter-spacing decorativo do
+// utilitário .stencil. !important porque a variável de fonte já chega com
+// especificidade de classe (a de next/font, aplicada em <html>) e precisa
+// ser sobrescrita de forma garantida, sem depender de ordem de import.
+html[data-fonte-legivel] {
+  --font-archivo: Arial, Helvetica, sans-serif !important;
+  --font-stencil: Arial, Helvetica, sans-serif !important;
+}
+
+html[data-fonte-legivel] .stencil {
+  letter-spacing: normal;
+  text-transform: none;
+}
