@@ -9,6 +9,7 @@ router.get("/:id", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesContro
 router.post("/", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.criar);
 router.patch("/:id", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.atualizar);
 router.patch("/:id/horario", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.atualizarHorario);
+router.post("/:id/duplicar", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.duplicar);
 router.delete("/:id", autorizarSecao("ATIVIDADES", "PROGRAMACAO"), atividadesController.excluir);
 
 module.exports = router;

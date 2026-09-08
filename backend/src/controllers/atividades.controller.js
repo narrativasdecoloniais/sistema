@@ -74,4 +74,13 @@ const excluir = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Atividade excluída com sucesso." });
 });
 
-module.exports = { listar, buscarPorId, criar, atualizar, atualizarHorario, excluir };
+const duplicar = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const existente = await atividadesService.buscarPorId(req.params.edicaoId, req.params.id);
+  if (!existente) throw new ErroHttp(404, "Atividade não encontrada.");
+  const dados = atividadeHorarioSchema.parse(req.body);
+  const atividade = await atividadesService.duplicarAtividade(req.params.edicaoId, existente, dados);
+  return res.status(201).json({ atividade });
+});
+
+module.exports = { listar, buscarPorId, criar, atualizar, atualizarHorario, duplicar, excluir };

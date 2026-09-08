@@ -163,6 +163,46 @@ async function atualizarHorario(id, { inicioAtividade, fimAtividade }) {
   });
 }
 
+// Duplica uma atividade existente (incluindo as pessoas envolvidas, com as
+// mesmas fotos já hospedadas no storage — nada é reenviado) pra outro
+// dia/horário, sempre na mesma edição. `original` já vem carregado pelo
+// controller (buscarPorId), então essa função só monta o create — nunca
+// recebe dados de formulário, então não precisa (nem pode) passar pelo
+// atividadeSchema/atividadePessoaSchema.
+async function duplicarAtividade(edicaoId, original, { inicioAtividade, fimAtividade }) {
+  const pessoasCriadas = original.pessoas.map((pessoa) => ({
+    nome: pessoa.nome,
+    imagem: pessoa.imagem,
+    descricao: pessoa.descricao,
+    breveDescricao: pessoa.breveDescricao,
+    tipoParticipacaoId: pessoa.tipoParticipacaoId,
+    ordem: pessoa.ordem,
+  }));
+
+  return prisma.atividade.create({
+    data: {
+      edicaoId,
+      tipoAtividadeId: original.tipoAtividadeId,
+      nome: original.nome,
+      slug: await gerarSlugUnico(edicaoId, original.slug),
+      descricao: original.descricao,
+      cargaHoraria: original.cargaHoraria,
+      local: original.local,
+      exigeInscricao: original.exigeInscricao,
+      semLimiteVagas: original.semLimiteVagas,
+      vagas: original.vagas,
+      inicioAtividade,
+      fimAtividade,
+      atividadeContinua: original.atividadeContinua,
+      paraConvidados: original.paraConvidados,
+      paraCriancasConvidadas: original.paraCriancasConvidadas,
+      areaSubmissaoId: original.areaSubmissaoId,
+      pessoas: pessoasCriadas.length > 0 ? { create: pessoasCriadas } : undefined,
+    },
+    include: INCLUDE_PADRAO,
+  });
+}
+
 async function excluirAtividade(id) {
   const totalInscricoes = await prisma.inscricaoAtividade.count({ where: { atividadeId: id } });
   if (totalInscricoes > 0) {
@@ -184,5 +224,6 @@ module.exports = {
   criarAtividade,
   atualizarAtividade,
   atualizarHorario,
+  duplicarAtividade,
   excluirAtividade,
 };
