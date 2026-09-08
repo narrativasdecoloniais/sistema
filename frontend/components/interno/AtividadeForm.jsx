@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Copy } from "lucide-react";
 import { Button } from "primereact/button";
 import CampoTexto from "./CampoTexto";
 import CampoNumero from "./CampoNumero";
@@ -113,6 +113,7 @@ export default function AtividadeForm({
   aoSalvar,
   aoCancelar,
   aoExcluir,
+  aoDuplicar,
 }) {
   const { notificar } = useToast();
   const modoEdicao = Boolean(atividadeInicial);
@@ -452,16 +453,32 @@ export default function AtividadeForm({
         />
       </div>
 
-      <div className={`${styles.acoes} ${modoEdicao && aoExcluir ? styles.acoesComExcluir : ""}`}>
-        {modoEdicao && aoExcluir && (
-          <button
-            type="button"
-            className={styles.botaoPerigo}
-            onClick={() => setConfirmandoExclusao(true)}
-          >
-            <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
-            Excluir atividade
-          </button>
+      <div
+        className={`${styles.acoes} ${modoEdicao && (aoExcluir || aoDuplicar) ? styles.acoesComExcluir : ""}`}
+      >
+        {modoEdicao && (aoExcluir || aoDuplicar) && (
+          <div className={styles.acoesSecundarias}>
+            {aoDuplicar && (
+              <button
+                type="button"
+                className={styles.botaoSecundarioAcao}
+                onClick={() => aoDuplicar(atividadeInicial)}
+              >
+                <Copy size={16} strokeWidth={1.5} aria-hidden="true" />
+                Duplicar atividade
+              </button>
+            )}
+            {aoExcluir && (
+              <button
+                type="button"
+                className={styles.botaoPerigo}
+                onClick={() => setConfirmandoExclusao(true)}
+              >
+                <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                Excluir atividade
+              </button>
+            )}
+          </div>
         )}
         <div className={styles.acoesPrincipais}>
           <Button

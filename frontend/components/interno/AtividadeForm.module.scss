@@ -37,6 +37,44 @@
   gap: 0.75rem;
 }
 
+.acoesSecundarias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.botaoSecundarioAcao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--fundo);
+    color: var(--texto);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .botaoPerigo {
   display: inline-flex;
   align-items: center;

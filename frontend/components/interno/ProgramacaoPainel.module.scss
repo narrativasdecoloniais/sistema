@@ -146,6 +146,24 @@
   white-space: nowrap;
 }
 
+.corpoSucesso {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mensagemSucesso {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+.acoesSucesso {
+  display: flex;
+  justify-content: flex-end;
+}
+
 @media (max-width: 720px) {
   .calendarioWrapper {
     padding: 0.75rem;

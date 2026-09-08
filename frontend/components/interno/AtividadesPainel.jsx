@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
+import ModalDuplicarAtividade from "./ModalDuplicarAtividade";
 import AtividadeForm from "./AtividadeForm";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
@@ -20,6 +21,8 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmandoId, setConfirmandoId] = useState(null);
+  const [duplicandoAtividade, setDuplicandoAtividade] = useState(null);
+  const [duplicataCriada, setDuplicataCriada] = useState(null);
 
   function abrirCriacao() {
     setAtividadeEmEdicao(null);
@@ -45,6 +48,13 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
       return [...atual, atividadeSalva];
     });
     fecharModal();
+    router.refresh();
+  }
+
+  function aoDuplicar(atividadeCriada) {
+    setAtividades((atual) => [...atual, atividadeCriada]);
+    setDuplicandoAtividade(null);
+    setDuplicataCriada(atividadeCriada);
     router.refresh();
   }
 
@@ -130,6 +140,14 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
                       </button>
                       <button
                         type="button"
+                        className={styles.botaoIcone}
+                        aria-label={`Duplicar ${atividade.nome}`}
+                        onClick={() => setDuplicandoAtividade(atividade)}
+                      >
+                        <Copy size={16} strokeWidth={1.5} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
                         className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
                         aria-label={`Excluir ${atividade.nome}`}
                         onClick={() => setConfirmandoId(atividade.id)}
@@ -170,6 +188,31 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
           onConfirmar={() => excluirAtividade(confirmandoId)}
           onCancelar={() => setConfirmandoId(null)}
         />
+      )}
+
+      {duplicandoAtividade && (
+        <ModalDuplicarAtividade
+          edicaoId={edicaoId}
+          atividade={duplicandoAtividade}
+          onCancelar={() => setDuplicandoAtividade(null)}
+          onDuplicar={aoDuplicar}
+        />
+      )}
+
+      {duplicataCriada && (
+        <Modal titulo="Atividade duplicada" onFechar={() => setDuplicataCriada(null)}>
+          <div className={styles.corpoSucesso}>
+            <p className={styles.mensagemSucesso}>
+              &quot;{duplicataCriada.nome}&quot; foi duplicada com sucesso, incluindo{" "}
+              {duplicataCriada.pessoas?.length || 0} pessoa(s) envolvida(s).
+            </p>
+            <div className={styles.acoesSucesso}>
+              <Botao type="button" onClick={() => setDuplicataCriada(null)}>
+                OK
+              </Botao>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

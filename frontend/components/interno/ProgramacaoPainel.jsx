@@ -10,6 +10,7 @@ import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import AtividadeForm from "./AtividadeForm";
+import ModalDuplicarAtividade from "./ModalDuplicarAtividade";
 import SeletorDiaProgramacao from "./SeletorDiaProgramacao";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
@@ -102,6 +103,8 @@ export default function ProgramacaoPainel({ edicaoId, atividadesIniciais, tiposA
   const [chaveDiaSelecionado, setChaveDiaSelecionado] = useState(null);
   const [atividadeEmEdicao, setAtividadeEmEdicao] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
+  const [duplicandoAtividade, setDuplicandoAtividade] = useState(null);
+  const [duplicataCriada, setDuplicataCriada] = useState(null);
 
   const dias = useMemo(() => agruparAtividadesPorDia(atividades), [atividades]);
   const diaAtivo = dias.find((dia) => dia.chave === chaveDiaSelecionado) ?? dias[0] ?? null;
@@ -126,6 +129,18 @@ export default function ProgramacaoPainel({ edicaoId, atividadesIniciais, tiposA
   function fecharModal() {
     setModalAberto(false);
     setAtividadeEmEdicao(null);
+  }
+
+  function abrirDuplicacao(atividade) {
+    fecharModal();
+    setDuplicandoAtividade(atividade);
+  }
+
+  function aoDuplicar(atividadeCriada) {
+    setAtividades((atual) => [...atual, atividadeCriada]);
+    setDuplicandoAtividade(null);
+    setDuplicataCriada(atividadeCriada);
+    router.refresh();
   }
 
   function aoSalvarFormulario(atividadeSalva) {
@@ -242,7 +257,33 @@ export default function ProgramacaoPainel({ edicaoId, atividadesIniciais, tiposA
             aoSalvar={aoSalvarFormulario}
             aoCancelar={fecharModal}
             aoExcluir={excluirAtividade}
+            aoDuplicar={abrirDuplicacao}
           />
+        </Modal>
+      )}
+
+      {duplicandoAtividade && (
+        <ModalDuplicarAtividade
+          edicaoId={edicaoId}
+          atividade={duplicandoAtividade}
+          onCancelar={() => setDuplicandoAtividade(null)}
+          onDuplicar={aoDuplicar}
+        />
+      )}
+
+      {duplicataCriada && (
+        <Modal titulo="Atividade duplicada" onFechar={() => setDuplicataCriada(null)}>
+          <div className={styles.corpoSucesso}>
+            <p className={styles.mensagemSucesso}>
+              &quot;{duplicataCriada.nome}&quot; foi duplicada com sucesso, incluindo{" "}
+              {duplicataCriada.pessoas?.length || 0} pessoa(s) envolvida(s).
+            </p>
+            <div className={styles.acoesSucesso}>
+              <Botao type="button" onClick={() => setDuplicataCriada(null)}>
+                OK
+              </Botao>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
