@@ -34,6 +34,21 @@ const cadastrar = asyncHandler(async (req, res) => {
   const dados = cadastroInscricaoSchema.parse(req.body);
 
   const emailExistente = await usuariosService.buscarPorEmail(dados.email);
+  if (emailExistente && emailExistente.ativo) {
+    if (emailExistente.cpf) {
+      throw new ErroHttp(409, "Já existe um cadastro com esse e-mail, associado a outro CPF.");
+    }
+
+    const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
+    if (cpfExistente) {
+      throw new ErroHttp(409, "Já existe um cadastro com esse CPF.");
+    }
+
+    const usuario = await usuariosService.vincularCpfAoUsuario(emailExistente.id, dados.cpf);
+    const token = inscricoesService.gerarTokenInscricao(usuario.id);
+    return res.json({ token, nome: usuario.nome });
+  }
+
   if (emailExistente) {
     throw new ErroHttp(409, "Já existe um cadastro com esse e-mail.");
   }

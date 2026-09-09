@@ -170,6 +170,18 @@ async function criarUsuarioViaSubmissao({ nome, email, instituicao, categoria })
   return usuario;
 }
 
+// Conta já existia (criada via submissão de trabalho ou convite de
+// organizador, sem CPF) e a pessoa está se inscrevendo agora com um CPF
+// novo — completa o cadastro nessa mesma conta em vez de tentar criar uma
+// segunda com o mesmo e-mail (que violaria o @unique).
+async function vincularCpfAoUsuario(id, cpf) {
+  const agora = new Date();
+  return prisma.usuario.update({
+    where: { id },
+    data: { cpf, aceiteTermosEm: agora, aceitePrivacidadeEm: agora },
+  });
+}
+
 async function definirSenhaEAceites(id, { senha, cpf, aceiteTermosEm, aceitePrivacidadeEm }) {
   const senhaHash = await gerarHash(senha);
 
@@ -250,6 +262,7 @@ module.exports = {
   criarUsuarioConvidado,
   criarUsuarioViaInscricao,
   criarUsuarioViaSubmissao,
+  vincularCpfAoUsuario,
   definirSenhaEAceites,
   atualizarPerfil,
   atualizarSenha,
