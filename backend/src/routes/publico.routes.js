@@ -2,7 +2,6 @@ const { Router } = require("express");
 const publicoController = require("../controllers/publico.controller");
 const inscricoesRoutes = require("./inscricoes.routes");
 const submissoesPublicoRoutes = require("./submissoesPublico.routes");
-const { limitadorAuth } = require("../middlewares/rateLimiter");
 
 const router = Router();
 
@@ -22,7 +21,7 @@ router.get(
   "/edicoes/:edicaoSlug/atividades/:atividadeSlug",
   publicoController.buscarAtividadePorEdicaoSlug
 );
-router.use("/inscricao", limitadorAuth, inscricoesRoutes);
-router.use("/submissao", limitadorAuth, submissoesPublicoRoutes);
+router.use("/inscricao", inscricoesRoutes);
+router.use("/submissao", submissoesPublicoRoutes);
 
 module.exports = router;

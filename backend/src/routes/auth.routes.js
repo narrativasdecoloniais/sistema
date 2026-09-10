@@ -1,19 +1,17 @@
 const { Router } = require("express");
 const authController = require("../controllers/auth.controller");
-const { limitadorAuth } = require("../middlewares/rateLimiter");
+const { limitadorSensivel, limitadorPadrao } = require("../middlewares/rateLimiter");
 
 const router = Router();
 
-router.use(limitadorAuth);
-
-router.post("/cadastro", authController.cadastrar);
-router.get("/confirmar-email", authController.confirmarEmail);
-router.post("/reenviar-confirmacao", authController.reenviarConfirmacao);
-router.post("/login", authController.login);
-router.post("/refresh", authController.refresh);
-router.post("/logout", authController.logout);
-router.post("/recuperar-senha", authController.recuperarSenha);
-router.post("/redefinir-senha", authController.redefinirSenha);
-router.post("/definir-senha", authController.definirSenha);
+router.post("/cadastro", limitadorSensivel, authController.cadastrar);
+router.get("/confirmar-email", limitadorPadrao, authController.confirmarEmail);
+router.post("/reenviar-confirmacao", limitadorSensivel, authController.reenviarConfirmacao);
+router.post("/login", limitadorSensivel, authController.login);
+router.post("/refresh", limitadorPadrao, authController.refresh);
+router.post("/logout", limitadorPadrao, authController.logout);
+router.post("/recuperar-senha", limitadorSensivel, authController.recuperarSenha);
+router.post("/redefinir-senha", limitadorPadrao, authController.redefinirSenha);
+router.post("/definir-senha", limitadorPadrao, authController.definirSenha);
 
 module.exports = router;
