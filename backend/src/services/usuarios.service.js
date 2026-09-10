@@ -218,9 +218,14 @@ async function atualizarPerfil(id, dados) {
   return anexarUrlFoto(usuario);
 }
 
+// Também confirma o e-mail: quem chega aqui pelo "esqueci minha senha" clicou
+// num link enviado pra própria caixa de entrada, o que já prova posse do
+// e-mail — evita um segundo passo de confirmação separado pra contas criadas
+// sem senha (inscrição, submissão). Quem troca a senha já logado também passa
+// por aqui; nesse caso o e-mail já estava confirmado (login exige isso).
 async function atualizarSenha(id, novaSenha) {
   const senhaHash = await gerarHash(novaSenha);
-  await prisma.usuario.update({ where: { id }, data: { senhaHash } });
+  await prisma.usuario.update({ where: { id }, data: { senhaHash, emailConfirmado: true } });
 }
 
 async function confirmarEmail(id) {
