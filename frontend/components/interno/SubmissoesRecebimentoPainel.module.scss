@@ -131,7 +131,8 @@
   white-space: nowrap;
 }
 
-.colunaTitulo {
+.tabela th.colunaTitulo,
+.tabela td.colunaTitulo {
   max-width: 320px;
   white-space: normal;
   word-break: break-word;
