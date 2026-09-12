@@ -95,6 +95,7 @@
 
 .tabela {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.9375rem;
 
@@ -102,7 +103,8 @@
   td {
     text-align: left;
     padding: 0.85rem 1rem;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: break-word;
   }
 
   th {
@@ -127,24 +129,51 @@
   }
 }
 
-.colunaAcoes {
-  white-space: nowrap;
+// table-layout: fixed usa a largura definida nas células da primeira linha
+// (o cabeçalho) pra fixar cada coluna — sem isso, o algoritmo automático do
+// navegador espreme colunas com texto livre (título/área) até quase 1
+// caractere de largura pra caber o conteúdo rígido (nowrap) das outras.
+.colunaTitulo {
+  width: 24%;
 }
 
-.tabela th.colunaTitulo,
-.tabela td.colunaTitulo {
-  max-width: 320px;
-  white-space: normal;
-  word-break: break-word;
+.colunaModalidade {
+  width: 12%;
+}
+
+.colunaArea {
+  width: 20%;
+}
+
+.colunaAutorPrincipal {
+  width: 16%;
+}
+
+.colunaCoautores {
+  width: 8%;
+}
+
+.colunaData {
+  width: 10%;
+}
+
+.colunaAcoes {
+  width: 10%;
+}
+
+.tabela th.colunaAcoes,
+.tabela td.colunaAcoes,
+.tabela th.colunaCoautores,
+.tabela td.colunaCoautores,
+.tabela th.colunaData,
+.tabela td.colunaData {
+  white-space: nowrap;
 }
 
 .colunaAutor {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  max-width: 220px;
-  white-space: normal;
-  word-break: break-word;
 }
 
 .autorNome {
@@ -352,6 +381,7 @@
       align-items: center;
       gap: 1rem;
       padding: 0;
+      width: auto;
       white-space: normal;
       text-align: right;
 

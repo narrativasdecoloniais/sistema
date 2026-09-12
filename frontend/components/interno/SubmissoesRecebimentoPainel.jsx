@@ -178,11 +178,11 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
             <thead>
               <tr>
                 <th className={styles.colunaTitulo}>Título</th>
-                <th>Modalidade</th>
-                <th>Área</th>
-                <th>Autor principal</th>
-                <th>Coautores</th>
-                <th>Enviado em</th>
+                <th className={styles.colunaModalidade}>Modalidade</th>
+                <th className={styles.colunaArea}>Área</th>
+                <th className={styles.colunaAutorPrincipal}>Autor principal</th>
+                <th className={styles.colunaCoautores}>Coautores</th>
+                <th className={styles.colunaData}>Enviado em</th>
                 <th className={styles.colunaAcoes}>Ações</th>
               </tr>
             </thead>
@@ -204,8 +204,12 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
                         <span className={styles.autorEmail}>{autorPrincipal?.email}</span>
                       </div>
                     </td>
-                    <td data-rotulo="Coautores">{coautores.length}</td>
-                    <td data-rotulo="Enviado em">{formatarData(submissao.createdAt)}</td>
+                    <td data-rotulo="Coautores" className={styles.colunaCoautores}>
+                      {coautores.length}
+                    </td>
+                    <td data-rotulo="Enviado em" className={styles.colunaData}>
+                      {formatarData(submissao.createdAt)}
+                    </td>
                     <td data-rotulo="Ações" className={styles.colunaAcoes}>
                       <div className={styles.acoesLinha}>
                         <button
