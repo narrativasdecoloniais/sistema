@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const prisma = require("../config/prisma");
+const ErroHttp = require("../utils/erroHttp");
 const { gerarHash } = require("../utils/senha");
 const storageService = require("./storage.service");
 
@@ -232,6 +233,28 @@ async function confirmarEmail(id) {
   await prisma.usuario.update({ where: { id }, data: { emailConfirmado: true } });
 }
 
+// Alteração feita pelo gestor (admin ou organizador com a seção Participantes
+// liberada) sobre a conta de outra pessoa — diferente de atualizarPerfil, que
+// é o próprio usuário editando os próprios dados e nunca aceita e-mail. Já
+// marca emailConfirmado: true porque é o gestor digitando o endereço correto,
+// não a pessoa provando posse dele por link — não precisa de um novo fluxo de
+// confirmação.
+async function atualizarEmail(id, novoEmail) {
+  const usuario = await buscarCompletoPorId(id);
+  if (!usuario) throw new ErroHttp(404, "Usuário não encontrado.");
+
+  const emailExistente = await buscarPorEmail(novoEmail);
+  if (emailExistente && emailExistente.id !== id) {
+    throw new ErroHttp(409, "Já existe um cadastro com esse e-mail.");
+  }
+
+  return prisma.usuario.update({
+    where: { id },
+    data: { email: novoEmail, emailConfirmado: true },
+    select: CAMPOS_PUBLICOS,
+  });
+}
+
 async function anonimizarUsuario(id) {
   await prisma.$transaction([
     prisma.usuario.update({
@@ -272,5 +295,6 @@ module.exports = {
   atualizarPerfil,
   atualizarSenha,
   confirmarEmail,
+  atualizarEmail,
   anonimizarUsuario,
 };

@@ -1,6 +1,10 @@
 const asyncHandler = require("../utils/asyncHandler");
 const ErroHttp = require("../utils/erroHttp");
-const { atualizarPerfilSchema, alterarSenhaSchema } = require("../validators/usuarios.validators");
+const {
+  atualizarPerfilSchema,
+  alterarSenhaSchema,
+  atualizarEmailSchema,
+} = require("../validators/usuarios.validators");
 const usuariosService = require("../services/usuarios.service");
 const authService = require("../services/auth.service");
 const { conferirHash } = require("../utils/senha");
@@ -17,6 +21,12 @@ const buscar = asyncHandler(async (req, res) => {
 
   const usuarios = await usuariosService.buscarPorTermo(termo);
   return res.json({ usuarios });
+});
+
+const atualizarEmailUsuario = asyncHandler(async (req, res) => {
+  const dados = atualizarEmailSchema.parse(req.body);
+  const usuario = await usuariosService.atualizarEmail(req.params.id, dados.email);
+  return res.json({ usuario });
 });
 
 const atualizarMeuPerfil = asyncHandler(async (req, res) => {
@@ -44,4 +54,11 @@ const excluirMinhaConta = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Conta excluída com sucesso." });
 });
 
-module.exports = { meuPerfil, buscar, atualizarMeuPerfil, alterarMinhaSenha, excluirMinhaConta };
+module.exports = {
+  meuPerfil,
+  buscar,
+  atualizarEmailUsuario,
+  atualizarMeuPerfil,
+  alterarMinhaSenha,
+  excluirMinhaConta,
+};

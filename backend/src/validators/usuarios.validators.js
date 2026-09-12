@@ -27,4 +27,8 @@ const alterarSenhaSchema = z
     path: ["confirmarNovaSenha"],
   });
 
-module.exports = { atualizarPerfilSchema, alterarSenhaSchema };
+const atualizarEmailSchema = z.object({
+  email: z.string().trim().email("E-mail inválido"),
+});
+
+module.exports = { atualizarPerfilSchema, alterarSenhaSchema, atualizarEmailSchema };
