@@ -7,6 +7,7 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import InscricaoEdicaoForm from "./InscricaoEdicaoForm";
+import CartoesContadores from "./CartoesContadores";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { formatarCpf } from "@/lib/cpf";
@@ -70,6 +71,8 @@ export default function InscricoesEdicaoPainel({ edicaoId, inscricoesIniciais })
           Adicionar inscrição
         </Botao>
       </div>
+
+      <CartoesContadores itens={[{ rotulo: "Total de inscritos", valor: inscricoes.length }]} />
 
       {inscricoes.length === 0 ? (
         <div className={styles.vazio}>

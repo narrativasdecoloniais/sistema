@@ -8,6 +8,7 @@ import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CampoSelecao from "./CampoSelecao";
 import InscricaoAtividadeForm from "./InscricaoAtividadeForm";
+import CartoesContadores from "./CartoesContadores";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./InscricoesAtividadePainel.module.scss";
@@ -38,6 +39,15 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
         : inscricoes,
     [inscricoes, filtroAtividadeId]
   );
+
+  const contagem = useMemo(() => {
+    const confirmadas = inscricoesFiltradas.filter((item) => item.status === "CONFIRMADA").length;
+    return {
+      total: inscricoesFiltradas.length,
+      confirmadas,
+      listaEspera: inscricoesFiltradas.length - confirmadas,
+    };
+  }, [inscricoesFiltradas]);
 
   function fecharModal() {
     setModalAberto(false);
@@ -119,6 +129,14 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
           ))}
         </CampoSelecao>
       </div>
+
+      <CartoesContadores
+        itens={[
+          { rotulo: "Total", valor: contagem.total },
+          { rotulo: "Confirmadas", valor: contagem.confirmadas, tom: "sucesso" },
+          { rotulo: "Lista de espera", valor: contagem.listaEspera, tom: "alerta" },
+        ]}
+      />
 
       {inscricoesFiltradas.length === 0 ? (
         <div className={styles.vazio}>

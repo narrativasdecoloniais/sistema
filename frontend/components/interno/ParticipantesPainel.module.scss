@@ -12,6 +12,12 @@
   flex-wrap: wrap;
 }
 
+.acoesCabecalho {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .titulo {
   font-size: 1.4rem;
   color: var(--texto);

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Trash2, ShieldPlus, Settings2 } from "lucide-react";
+import { UserPlus, MailPlus, Trash2, ShieldPlus, Settings2 } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import ParticipanteForm from "./ParticipanteForm";
+import AlterarEmailUsuarioForm from "./AlterarEmailUsuarioForm";
 import SeletorSecoesAdmin from "./SeletorSecoesAdmin";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
@@ -30,6 +31,7 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
 
   const [participantes, setParticipantes] = useState(participantesIniciais);
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalEmailAberto, setModalEmailAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
   const [editandoPermissoesId, setEditandoPermissoesId] = useState(null);
@@ -43,6 +45,18 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
   function aoSalvar(participanteSalvo) {
     setParticipantes((atual) => [...atual, participanteSalvo]);
     fecharModal();
+    router.refresh();
+  }
+
+  function fecharModalEmail() {
+    setModalEmailAberto(false);
+  }
+
+  function aoSalvarEmail(usuarioAtualizado) {
+    setParticipantes((atual) =>
+      atual.map((item) => (item.id === usuarioAtualizado.id ? { ...item, ...usuarioAtualizado } : item))
+    );
+    fecharModalEmail();
     router.refresh();
   }
 
@@ -130,12 +144,18 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
             seções específicas do painel, ou promovidos a administrador.
           </p>
         </div>
-        {souAdmin && (
-          <Botao type="button" onClick={() => setModalAberto(true)}>
-            <UserPlus size={18} strokeWidth={1.5} aria-hidden="true" />
-            Adicionar organizador
+        <div className={styles.acoesCabecalho}>
+          <Botao type="button" variante="secundario" onClick={() => setModalEmailAberto(true)}>
+            <MailPlus size={18} strokeWidth={1.5} aria-hidden="true" />
+            Alterar e-mail de usuário
           </Botao>
-        )}
+          {souAdmin && (
+            <Botao type="button" onClick={() => setModalAberto(true)}>
+              <UserPlus size={18} strokeWidth={1.5} aria-hidden="true" />
+              Adicionar organizador
+            </Botao>
+          )}
+        </div>
       </div>
 
       {participantes.length === 0 ? (
@@ -222,6 +242,12 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
       {modalAberto && (
         <Modal titulo="Adicionar organizador" onFechar={fecharModal}>
           <ParticipanteForm aoSalvar={aoSalvar} aoCancelar={fecharModal} />
+        </Modal>
+      )}
+
+      {modalEmailAberto && (
+        <Modal titulo="Alterar e-mail de usuário" onFechar={fecharModalEmail}>
+          <AlterarEmailUsuarioForm aoSalvar={aoSalvarEmail} aoCancelar={fecharModalEmail} />
         </Modal>
       )}
 

@@ -260,6 +260,10 @@ export const participanteSchema = z
   })
   .merge(permissoesSecoesSchema);
 
+export const alterarEmailUsuarioSchema = z.object({
+  email: z.string().trim().email("E-mail inválido"),
+});
+
 export const definirSenhaSchema = z
   .object({
     cpf: z.string().refine((valor) => cpfValido(valor), "CPF inválido"),
