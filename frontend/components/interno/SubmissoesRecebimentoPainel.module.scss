@@ -131,10 +131,19 @@
   white-space: nowrap;
 }
 
+.colunaTitulo {
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+}
+
 .colunaAutor {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  max-width: 220px;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .autorNome {

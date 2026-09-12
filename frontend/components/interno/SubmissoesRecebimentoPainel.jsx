@@ -177,7 +177,7 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
           <table className={styles.tabela}>
             <thead>
               <tr>
-                <th>Título</th>
+                <th className={styles.colunaTitulo}>Título</th>
                 <th>Modalidade</th>
                 <th>Área</th>
                 <th>Autor principal</th>
@@ -193,7 +193,9 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
 
                 return (
                   <tr key={submissao.id}>
-                    <td data-rotulo="Título">{submissao.titulo}</td>
+                    <td data-rotulo="Título" className={styles.colunaTitulo}>
+                      {submissao.titulo}
+                    </td>
                     <td data-rotulo="Modalidade">{submissao.modalidadeSubmissao.nome}</td>
                     <td data-rotulo="Área">{submissao.areaSubmissao?.titulo || "—"}</td>
                     <td data-rotulo="Autor principal">
