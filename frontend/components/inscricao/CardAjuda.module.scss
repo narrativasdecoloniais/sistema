@@ -1,0 +1,43 @@
+// Mesmo tratamento "comprovante" de CardContribuicao.module.scss — borda
+// ocre, raio contido (DESIGN.md, máx. 6px), fundo papel.
+.cartao {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--papel);
+  border: 1.5px solid var(--ocre);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(32, 25, 20, 0.07);
+  text-decoration: none;
+  color: var(--tinta);
+
+  &:hover {
+    border-color: var(--barro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.icone {
+  flex-shrink: 0;
+  color: var(--barro);
+}
+
+.texto {
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  strong {
+    color: var(--tinta);
+  }
+}
+
+.numero {
+  font-weight: 600;
+  color: var(--barro);
+  white-space: nowrap;
+}

@@ -9,6 +9,7 @@ import CampoSelect from "@/components/forms/CampoSelect";
 import Checkbox from "@/components/forms/Checkbox";
 import { useToast } from "@/components/publico/ToastProvider";
 import EtapasInscricao from "@/components/inscricao/EtapasInscricao";
+import CardAjuda from "@/components/inscricao/CardAjuda";
 import CardInscricaoConfirmada from "@/components/inscricao/CardInscricaoConfirmada";
 import CardContribuicao from "@/components/inscricao/CardContribuicao";
 import AtividadeSelecionavel from "@/components/inscricao/AtividadeSelecionavel";
@@ -400,6 +401,8 @@ function InscricaoConteudo() {
         <span className={styles.eyebrow}>Participe</span>
         <h1 className={`${styles.titulo} stencil`}>Inscreva-se</h1>
       </header>
+
+      <CardAjuda />
 
       <EtapasInscricao
         passos={calcularPassos(atividadesDisponiveis.length > 0, modoAdicionar)}

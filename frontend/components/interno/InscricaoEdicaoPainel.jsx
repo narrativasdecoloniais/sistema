@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Botao from "@/components/forms/Botao";
+import CardAjudaInscricao from "./CardAjudaInscricao";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CartaoInscricaoParticipante from "./CartaoInscricaoParticipante";
 import DetalhesAtividadeModal from "./DetalhesAtividadeModal";
@@ -124,6 +125,8 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
 
   return (
     <div className={styles.pagina}>
+      <CardAjudaInscricao />
+
       <h1 className={styles.titulo}>{edicao.nome}</h1>
 
       {!aberta && (

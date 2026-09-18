@@ -1,0 +1,42 @@
+// Mesmo tratamento de cartão de CartaoInscricaoParticipante.module.scss —
+// borda sutil, raio contido, fundo de superfície da pele interna.
+.cartao {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--texto);
+
+  &:hover {
+    border-color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.icone {
+  flex-shrink: 0;
+  color: var(--acento);
+}
+
+.texto {
+  font-size: 0.875rem;
+  line-height: 1.5;
+
+  strong {
+    color: var(--texto);
+  }
+}
+
+.numero {
+  font-weight: 600;
+  color: var(--acento);
+  white-space: nowrap;
+}
