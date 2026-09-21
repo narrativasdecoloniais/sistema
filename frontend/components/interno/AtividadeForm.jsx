@@ -15,6 +15,7 @@ import PessoaEnvolvidaLinha from "./PessoaEnvolvidaLinha";
 import { apiClient } from "@/lib/apiClient";
 import { atividadeSchema, extrairErros } from "@/lib/validacao";
 import { gerarSlug } from "@/lib/slug";
+import { ordenarGruposPorOrdemDoTipo } from "@/lib/publico";
 import { paraData, paraHora, combinar } from "@/lib/dataHoraIngenua";
 import { useToast } from "./ToastProvider";
 import styles from "./AtividadeForm.module.scss";
@@ -87,22 +88,24 @@ function paraPayload(dados, atividadeInicial) {
 
 // Espelha o algoritmo de agruparPessoasPorTipoParticipacao
 // (frontend/lib/publico.js): agrupa na ordem de primeiro aparecimento no
-// array, não na ordem do catálogo de tipos, pra essa listagem ser um
-// preview fiel da ordem que sai na página pública.
+// array e depois aplica a `ordem` do tipo (quando definida no catálogo) com
+// a mesma função da página pública, pra essa listagem ser um preview fiel
+// da ordem que sai lá.
 function agruparPessoasPorTipo(pessoas, tiposParticipacao) {
-  const nomesPorId = new Map(tiposParticipacao.map((tipo) => [tipo.id, tipo.nome]));
+  const tiposPorId = new Map(tiposParticipacao.map((tipo) => [tipo.id, tipo]));
   const grupos = new Map();
 
   pessoas.forEach((pessoa, indiceFlat) => {
     const chave = pessoa.tipoParticipacaoId || "sem-tipo";
+    const tipo = pessoa.tipoParticipacaoId ? tiposPorId.get(pessoa.tipoParticipacaoId) : null;
     const rotulo = pessoa.tipoParticipacaoId
-      ? nomesPorId.get(pessoa.tipoParticipacaoId) || "Tipo removido"
+      ? tipo?.nome || "Tipo removido"
       : "Outros participantes";
-    if (!grupos.has(chave)) grupos.set(chave, { chave, rotulo, itens: [] });
+    if (!grupos.has(chave)) grupos.set(chave, { chave, rotulo, ordem: tipo?.ordem ?? null, itens: [] });
     grupos.get(chave).itens.push({ pessoa, indiceFlat });
   });
 
-  return Array.from(grupos.values());
+  return ordenarGruposPorOrdemDoTipo(Array.from(grupos.values()));
 }
 
 export default function AtividadeForm({
@@ -219,8 +222,8 @@ export default function AtividadeForm({
   // Troca de posição, no array flat, a pessoa movida com a vizinha
   // adjacente dentro do MESMO tipo (preservando a ordem relativa atual do
   // grupo) — nunca mexe em pessoas de outro tipo, então a ordem das seções
-  // (definida por qual tipo aparece primeiro no array) nunca é afetada por
-  // essa troca.
+  // (definida pela `ordem` do tipo, ou por qual tipo aparece primeiro no
+  // array quando não há ordem) nunca é afetada por essa troca.
   function moverPessoa(localId, direcao) {
     setDados((atual) => {
       const { pessoas } = atual;

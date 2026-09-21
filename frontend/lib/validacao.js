@@ -314,6 +314,12 @@ export const grupoConteudoSchema = z.object({
 
 export const tipoParticipacaoSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do tipo de participação"),
+  ordem: z
+    .number({ invalid_type_error: "Informe um número inteiro" })
+    .int("Informe um número inteiro")
+    .min(1, "A ordem deve ser 1 ou maior")
+    .nullable()
+    .optional(),
 });
 
 export const atividadePessoaSchema = z.object({

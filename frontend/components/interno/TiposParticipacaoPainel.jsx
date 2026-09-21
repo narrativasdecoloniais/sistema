@@ -11,6 +11,17 @@ import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./TiposParticipacaoPainel.module.scss";
 
+// Mesma ordem da listagem do backend: tipos com ordem definida primeiro
+// (menor antes), os demais por nome.
+function ordenarTipos(tipos) {
+  return [...tipos].sort((a, b) => {
+    if (a.ordem != null && b.ordem != null && a.ordem !== b.ordem) return a.ordem - b.ordem;
+    if (a.ordem != null && b.ordem == null) return -1;
+    if (a.ordem == null && b.ordem != null) return 1;
+    return a.nome.localeCompare(b.nome);
+  });
+}
+
 export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = true }) {
   const router = useRouter();
   const { notificar } = useToast();
@@ -39,10 +50,10 @@ export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = tr
   function aoSalvar(tipoSalvo) {
     setTipos((atual) => {
       const jaExiste = atual.some((item) => item.id === tipoSalvo.id);
-      if (jaExiste) {
-        return atual.map((item) => (item.id === tipoSalvo.id ? tipoSalvo : item));
-      }
-      return [...atual, tipoSalvo].sort((a, b) => a.nome.localeCompare(b.nome));
+      const proximos = jaExiste
+        ? atual.map((item) => (item.id === tipoSalvo.id ? tipoSalvo : item))
+        : [...atual, tipoSalvo];
+      return ordenarTipos(proximos);
     });
     fecharModal();
     router.refresh();
@@ -71,7 +82,8 @@ export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = tr
           <h1 className={styles.titulo}>Tipos de participação</h1>
           <p className={styles.descricao}>
             Catálogo de tipos (ex.: facilitador, mediador, apresentador) usado para classificar as
-            pessoas envolvidas nas atividades de todas as edições.
+            pessoas envolvidas nas atividades de todas as edições. A ordem define em que sequência os
+            tipos aparecem na página da atividade; tipos sem ordem aparecem depois, como antes.
           </p>
         </div>
         {podeEditar && (
@@ -94,6 +106,7 @@ export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = tr
           <table className={styles.tabela}>
             <thead>
               <tr>
+                <th>Ordem</th>
                 <th>Nome</th>
                 <th className={styles.colunaAcoes}>Ações</th>
               </tr>
@@ -101,6 +114,7 @@ export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = tr
             <tbody>
               {tipos.map((tipo) => (
                 <tr key={tipo.id}>
+                  <td data-rotulo="Ordem">{tipo.ordem ?? "—"}</td>
                   <td data-rotulo="Nome">{tipo.nome}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
                     {podeEditar && (

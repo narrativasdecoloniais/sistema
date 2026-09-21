@@ -353,17 +353,35 @@ export function agruparAtividadesPorHorarioInicio(atividades = []) {
 // lista única "Pessoas envolvidas" (o rótulo do tipo já identifica cada
 // pessoa, então não precisa repetir em cada cartão). Pessoas sem tipo
 // definido caem num grupo à parte ao final.
+//
+// A ordem das seções obedece `ordem` do tipo de participação quando ela foi
+// definida no admin; sem ordem, vale a ordem de primeiro aparecimento entre
+// as pessoas da atividade (ver ordenarGruposPorOrdemDoTipo).
 export function agruparPessoasPorTipoParticipacao(pessoas = []) {
   const porTipo = new Map();
 
   for (const pessoa of pessoas) {
     const chave = pessoa.tipoParticipacao?.id ?? "sem-tipo";
     const rotulo = pessoa.tipoParticipacao?.nome ?? "Outros participantes";
-    if (!porTipo.has(chave)) porTipo.set(chave, { rotulo, pessoas: [] });
+    const ordem = pessoa.tipoParticipacao?.ordem ?? null;
+    if (!porTipo.has(chave)) porTipo.set(chave, { rotulo, ordem, pessoas: [] });
     porTipo.get(chave).pessoas.push(pessoa);
   }
 
-  return Array.from(porTipo.values());
+  return ordenarGruposPorOrdemDoTipo(Array.from(porTipo.values()));
+}
+
+// Grupos cujo tipo tem `ordem` vêm primeiro, do menor pro maior; os demais
+// (tipo sem ordem, ou pessoas sem tipo) seguem depois exatamente na ordem
+// em que já estavam — ou seja, sem nenhuma ordem definida o resultado é
+// idêntico ao de antes da preferência existir. Empates de `ordem` também
+// preservam a ordem de entrada (Array.prototype.sort é estável).
+export function ordenarGruposPorOrdemDoTipo(grupos) {
+  const comOrdem = grupos
+    .filter((grupo) => grupo.ordem != null)
+    .sort((a, b) => a.ordem - b.ordem);
+  const semOrdem = grupos.filter((grupo) => grupo.ordem == null);
+  return [...comOrdem, ...semOrdem];
 }
 
 // Datas de prazo de submissão são só dia (sem hora relevante) — timeZone

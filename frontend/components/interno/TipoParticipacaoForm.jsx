@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "primereact/button";
 import CampoTexto from "./CampoTexto";
+import CampoNumero from "./CampoNumero";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { tipoParticipacaoSchema, extrairErros } from "@/lib/validacao";
@@ -13,7 +14,10 @@ export default function TipoParticipacaoForm({ tipoParticipacaoInicial, aoSalvar
   const { notificar } = useToast();
   const modoEdicao = Boolean(tipoParticipacaoInicial);
 
-  const [dados, setDados] = useState({ nome: tipoParticipacaoInicial?.nome || "" });
+  const [dados, setDados] = useState({
+    nome: tipoParticipacaoInicial?.nome || "",
+    ordem: tipoParticipacaoInicial?.ordem ?? null,
+  });
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -54,9 +58,21 @@ export default function TipoParticipacaoForm({ tipoParticipacaoInicial, aoSalvar
         id="nome"
         rotulo="Nome do tipo de participação"
         value={dados.nome}
-        onChange={(evento) => setDados({ nome: evento.target.value })}
+        onChange={(evento) => setDados((atual) => ({ ...atual, nome: evento.target.value }))}
         erro={erros.nome}
       />
+      <CampoNumero
+        id="ordem"
+        rotulo="Ordem de exibição (opcional)"
+        value={dados.ordem}
+        min={1}
+        onValueChange={(evento) => setDados((atual) => ({ ...atual, ordem: evento.value ?? null }))}
+        erro={erros.ordem}
+      />
+      <p className={styles.ajuda}>
+        Define a posição deste tipo nas páginas das atividades (1 aparece primeiro). Deixe em branco
+        para não definir uma ordem.
+      </p>
       <div className={styles.acoes}>
         <Button
           type="button"
