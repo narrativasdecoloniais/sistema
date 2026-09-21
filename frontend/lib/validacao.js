@@ -59,6 +59,23 @@ export const inscricaoCadastroSchema = z.object({
   }),
 });
 
+// Vínculo do CPF a uma conta existente (importada do Even3 ou criada por
+// submissão) pelo fluxo de inscrição — mesmas regras de
+// backend/src/validators/inscricoes.validators.js.
+export const inscricaoVinculoEmailSchema = z.object({
+  email: z.string().trim().email("E-mail inválido"),
+});
+
+export const inscricaoVinculoCodigoSchema = z.object({
+  codigo: z.string().trim().min(6, "Informe o código enviado por e-mail"),
+  aceiteTermos: z.literal(true, {
+    errorMap: () => ({ message: "É necessário aceitar os termos de uso" }),
+  }),
+  aceitePrivacidade: z.literal(true, {
+    errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
+  }),
+});
+
 export const loginSchema = z.object({
   cpf: z
     .string()

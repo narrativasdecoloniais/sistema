@@ -178,3 +178,9 @@
     outline-offset: 3px;
   }
 }
+
+// Variante do .link usada no meio de um parágrafo: acompanha o tamanho do texto.
+.linkNoTexto {
+  font-size: inherit;
+  text-decoration: underline;
+}

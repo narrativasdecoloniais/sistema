@@ -1,0 +1,116 @@
+.explicacao {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+
+.status {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--texto-suave);
+}
+
+.inverter {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--acento);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.cartoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.cartaoTitulo {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.cartaoNome {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--texto);
+  overflow-wrap: anywhere;
+}
+
+.cartaoDetalhe {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.vinculos {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0 0;
+  list-style: none;
+  border-top: 1px solid var(--borda);
+  font-size: 0.8125rem;
+  color: var(--texto);
+}
+
+.bloqueios,
+.avisos {
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.bloqueios {
+  color: var(--erro);
+}
+
+.avisos {
+  color: var(--texto);
+}
+
+.opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--texto);
+  cursor: pointer;
+
+  input {
+    margin-top: 0.2rem;
+    accent-color: var(--acento);
+  }
+}

@@ -140,9 +140,9 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
                 </motion.li>
               ))}
             </motion.ul>
-            <motion.div className={styles.inscreverMobileWrapper} variants={itemVariants}>
-              <Link href="/inscricao" className={styles.inscreverMobile} onClick={fecharMenu}>
-                Inscrever
+            <motion.div className={styles.entrarMobileWrapper} variants={itemVariants}>
+              <Link href="/login" className={styles.entrarMobile} onClick={fecharMenu}>
+                Entrar
               </Link>
             </motion.div>
           </motion.div>
@@ -196,8 +196,8 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
         <use href="#buzio-simbolo-1" width="100%" height="100%" />
       </svg>
 
-      <Link href="/inscricao" className={styles.inscrever}>
-        Inscrever
+      <Link href="/login" className={styles.entrar}>
+        Entrar
       </Link>
 
       <button

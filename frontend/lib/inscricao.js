@@ -35,6 +35,17 @@ export function cadastrarParaInscricao(dados) {
   return requisitar("/publico/inscricao/cadastro", { method: "POST", body: dados });
 }
 
+export function solicitarVinculoConta({ cpf, email }) {
+  return requisitar("/publico/inscricao/vinculo/solicitar", { method: "POST", body: { cpf, email } });
+}
+
+export function confirmarVinculoConta({ cpf, email, codigo, aceiteTermos, aceitePrivacidade }) {
+  return requisitar("/publico/inscricao/vinculo/confirmar", {
+    method: "POST",
+    body: { cpf, email, codigo, aceiteTermos, aceitePrivacidade },
+  });
+}
+
 // Usa o cookie de sessão (login), não o token de inscrição — por isso passa
 // pelo apiClient (credentials: "include") em vez de requisitar() com Bearer.
 export function buscarTokenPorSessao() {

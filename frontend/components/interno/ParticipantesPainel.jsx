@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, MailPlus, Trash2, ShieldPlus, Settings2 } from "lucide-react";
+import { UserPlus, MailPlus, GitMerge, Trash2, ShieldPlus, Settings2 } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import ParticipanteForm from "./ParticipanteForm";
 import AlterarEmailUsuarioForm from "./AlterarEmailUsuarioForm";
+import UnificarContasForm from "./UnificarContasForm";
 import SeletorSecoesAdmin from "./SeletorSecoesAdmin";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
@@ -32,6 +33,7 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
   const [participantes, setParticipantes] = useState(participantesIniciais);
   const [modalAberto, setModalAberto] = useState(false);
   const [modalEmailAberto, setModalEmailAberto] = useState(false);
+  const [modalUnificarAberto, setModalUnificarAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
   const [editandoPermissoesId, setEditandoPermissoesId] = useState(null);
@@ -57,6 +59,17 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
       atual.map((item) => (item.id === usuarioAtualizado.id ? { ...item, ...usuarioAtualizado } : item))
     );
     fecharModalEmail();
+    router.refresh();
+  }
+
+  function fecharModalUnificar() {
+    setModalUnificarAberto(false);
+  }
+
+  // A tabela só lista organizadores/admins, que nunca entram numa unificação
+  // (o backend bloqueia), então não há linha pra atualizar — só recarrega.
+  function aoUnificar() {
+    fecharModalUnificar();
     router.refresh();
   }
 
@@ -148,6 +161,10 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
           <Botao type="button" variante="secundario" onClick={() => setModalEmailAberto(true)}>
             <MailPlus size={18} strokeWidth={1.5} aria-hidden="true" />
             Alterar e-mail de usuário
+          </Botao>
+          <Botao type="button" variante="secundario" onClick={() => setModalUnificarAberto(true)}>
+            <GitMerge size={18} strokeWidth={1.5} aria-hidden="true" />
+            Unificar contas
           </Botao>
           {souAdmin && (
             <Botao type="button" onClick={() => setModalAberto(true)}>
@@ -248,6 +265,12 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
       {modalEmailAberto && (
         <Modal titulo="Alterar e-mail de usuário" onFechar={fecharModalEmail}>
           <AlterarEmailUsuarioForm aoSalvar={aoSalvarEmail} aoCancelar={fecharModalEmail} />
+        </Modal>
+      )}
+
+      {modalUnificarAberto && (
+        <Modal titulo="Unificar contas" onFechar={fecharModalUnificar}>
+          <UnificarContasForm aoConcluir={aoUnificar} aoCancelar={fecharModalUnificar} />
         </Modal>
       )}
 

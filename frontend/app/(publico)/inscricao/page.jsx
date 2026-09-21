@@ -20,6 +20,8 @@ import {
   inscricaoCpfSchema,
   inscricaoIdentidadeSchema,
   inscricaoCadastroSchema,
+  inscricaoVinculoEmailSchema,
+  inscricaoVinculoCodigoSchema,
   extrairErros,
   categorias,
 } from "@/lib/validacao";
@@ -27,6 +29,8 @@ import {
   buscarCpf,
   confirmarEmailExistente,
   cadastrarParaInscricao,
+  solicitarVinculoConta,
+  confirmarVinculoConta,
   buscarTokenPorSessao,
   buscarEstadoInscricao,
   finalizarInscricao,
@@ -63,9 +67,18 @@ const CADASTRO_INICIAL = {
   aceitePrivacidade: false,
 };
 
+const VINCULO_INICIAL = { codigo: "", aceiteTermos: false, aceitePrivacidade: false };
+
 function indicePasso(etapa, possuiAtividades, modoAdicionar) {
   if (etapa === "carregando" || etapa === "cpf") return 0;
-  if (etapa === "identidade" || etapa === "cadastro") return 1;
+  if (
+    etapa === "identidade" ||
+    etapa === "cadastro" ||
+    etapa === "vinculo-email" ||
+    etapa === "vinculo-codigo"
+  ) {
+    return 1;
+  }
   if (modoAdicionar) return etapa === "concluido" ? 3 : 2;
   if (etapa === "inscricao-geral") return 2;
   if (etapa === "aviso-atividades" || etapa === "atividades") return possuiAtividades ? 3 : 2;
@@ -80,6 +93,8 @@ function InscricaoConteudo() {
   const [etapa, setEtapa] = useState("carregando");
   const [cpf, setCpf] = useState("");
   const [emailIdentidade, setEmailIdentidade] = useState("");
+  const [emailVinculo, setEmailVinculo] = useState("");
+  const [camposVinculo, setCamposVinculo] = useState(VINCULO_INICIAL);
   const [camposCadastro, setCamposCadastro] = useState(CADASTRO_INICIAL);
   const [tokenInscricao, setTokenInscricao] = useState("");
   const [nomeUsuario, setNomeUsuario] = useState("");
@@ -255,6 +270,60 @@ function InscricaoConteudo() {
       setTokenInscricao(dados.token);
       setNomeUsuario(dados.nome);
       notificar("Cadastro realizado.", "sucesso");
+      await buscarEstadoEAvancar(dados.token);
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  // "CPF novo" não quer dizer "pessoa nova": contas importadas do Even3 (ou
+  // criadas ao submeter um trabalho) não têm CPF. Quem já tem cadastro com
+  // outro e-mail informa qual é; enviamos um código pra lá pra provar posse e
+  // o CPF passa a valer nessa conta, em vez de nascer uma conta duplicada.
+  async function aoSolicitarVinculo(evento) {
+    evento.preventDefault();
+
+    const resultadoValidacao = inscricaoVinculoEmailSchema.safeParse({ email: emailVinculo });
+    if (!resultadoValidacao.success) {
+      setErros(extrairErros(resultadoValidacao));
+      return;
+    }
+    setErros({});
+    setCarregando(true);
+
+    try {
+      const dados = await solicitarVinculoConta({ cpf, email: resultadoValidacao.data.email });
+      notificar(dados.mensagem, "sucesso");
+      setEtapa("vinculo-codigo");
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function aoConfirmarVinculo(evento) {
+    evento.preventDefault();
+
+    const resultadoValidacao = inscricaoVinculoCodigoSchema.safeParse(camposVinculo);
+    if (!resultadoValidacao.success) {
+      setErros(extrairErros(resultadoValidacao));
+      return;
+    }
+    setErros({});
+    setCarregando(true);
+
+    try {
+      const dados = await confirmarVinculoConta({
+        cpf,
+        email: emailVinculo.trim(),
+        ...resultadoValidacao.data,
+      });
+      setTokenInscricao(dados.token);
+      setNomeUsuario(dados.nome);
+      notificar("Cadastro vinculado ao seu CPF.", "sucesso");
       await buscarEstadoEAvancar(dados.token);
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -457,6 +526,20 @@ function InscricaoConteudo() {
           <p className={styles.instrucao}>
             Esse CPF ainda não tem cadastro. Preencha seus dados para continuar.
           </p>
+          <p className={styles.instrucao}>
+            Já submeteu um trabalho (inclusive pelo Even3) ou tem cadastro com outro e-mail?{" "}
+            <button
+              type="button"
+              className={`${styles.link} ${styles.linkNoTexto}`}
+              onClick={() => {
+                setErros({});
+                setEtapa("vinculo-email");
+              }}
+            >
+              Use o seu cadastro existente
+            </button>{" "}
+            para não ficar com dois.
+          </p>
           <Campo
             id="nome"
             rotulo="Nome completo"
@@ -514,6 +597,75 @@ function InscricaoConteudo() {
           </button>
           <button type="button" className={styles.link} onClick={() => setEtapa("cpf")}>
             Voltar e informar outro CPF
+          </button>
+        </form>
+      )}
+
+      {etapa === "vinculo-email" && (
+        <form onSubmit={aoSolicitarVinculo} className={styles.formulario}>
+          <p className={styles.instrucao}>
+            Informe o e-mail do cadastro que você já tem — por exemplo, o que usou ao submeter o
+            trabalho. Vamos enviar um código para ele.
+          </p>
+          <Campo
+            id="email-vinculo"
+            rotulo="E-mail do cadastro existente"
+            type="email"
+            value={emailVinculo}
+            onChange={(evento) => setEmailVinculo(evento.target.value)}
+            erro={erros.email}
+          />
+          <button type="submit" className={styles.cta} disabled={carregando}>
+            {carregando ? "Aguarde..." : "Enviar código"}
+          </button>
+          <button type="button" className={styles.link} onClick={() => setEtapa("cadastro")}>
+            Voltar e criar um cadastro novo
+          </button>
+        </form>
+      )}
+
+      {etapa === "vinculo-codigo" && (
+        <form onSubmit={aoConfirmarVinculo} className={styles.formulario}>
+          <p className={styles.instrucao}>
+            Se houver um cadastro com o e-mail <strong>{emailVinculo}</strong>, enviamos um código
+            para ele. Digite o código abaixo para usar esse cadastro com o seu CPF. O código vale
+            por 30 minutos.
+          </p>
+          <Campo
+            id="codigo-vinculo"
+            rotulo="Código recebido por e-mail"
+            value={camposVinculo.codigo}
+            onChange={(evento) =>
+              setCamposVinculo((atual) => ({ ...atual, codigo: evento.target.value }))
+            }
+            erro={erros.codigo}
+          />
+          <Checkbox
+            id="vinculoAceiteTermos"
+            rotulo="Li e aceito os termos de uso do evento."
+            checked={camposVinculo.aceiteTermos}
+            onChange={(evento) =>
+              setCamposVinculo((atual) => ({ ...atual, aceiteTermos: evento.target.checked }))
+            }
+            erro={erros.aceiteTermos}
+          />
+          <Checkbox
+            id="vinculoAceitePrivacidade"
+            rotulo="Li e aceito a política de privacidade (LGPD)."
+            checked={camposVinculo.aceitePrivacidade}
+            onChange={(evento) =>
+              setCamposVinculo((atual) => ({ ...atual, aceitePrivacidade: evento.target.checked }))
+            }
+            erro={erros.aceitePrivacidade}
+          />
+          <button type="submit" className={styles.cta} disabled={carregando}>
+            {carregando ? "Aguarde..." : "Continuar"}
+          </button>
+          <button type="button" className={styles.link} onClick={() => setEtapa("vinculo-email")}>
+            Não recebi — informar outro e-mail ou pedir de novo
+          </button>
+          <button type="button" className={styles.link} onClick={() => setEtapa("cadastro")}>
+            Voltar e criar um cadastro novo
           </button>
         </form>
       )}

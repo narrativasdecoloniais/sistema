@@ -6,7 +6,7 @@ import { apiClient } from "@/lib/apiClient";
 import { formatarCpf } from "@/lib/cpf";
 import styles from "./BuscaUsuario.module.scss";
 
-export default function BuscaUsuario({ rotulo = "Buscar participante", usuarioSelecionado, onSelecionar, erro }) {
+export default function BuscaUsuario({ id = "busca-usuario", rotulo = "Buscar participante", usuarioSelecionado, onSelecionar, erro }) {
   const [termo, setTermo] = useState("");
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
@@ -62,7 +62,7 @@ export default function BuscaUsuario({ rotulo = "Buscar participante", usuarioSe
   return (
     <div className={styles.grupo}>
       <CampoTexto
-        id="busca-usuario"
+        id={id}
         rotulo={`${rotulo} (nome, e-mail ou CPF)`}
         value={termo}
         onChange={(evento) => aoDigitar(evento.target.value)}
