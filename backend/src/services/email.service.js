@@ -83,6 +83,17 @@ async function enviarEmailEntrarSubmissao(usuario, token, destino) {
   });
 }
 
+// Código digitado na própria tela de inscrição (não é link) — o fluxo de
+// inscrição guarda o CPF já informado só no estado da página, então um link
+// que abrisse outra aba perderia esse contexto.
+async function enviarEmailVinculoConta(usuario, codigo) {
+  await enviarEmail({
+    para: usuario.email,
+    assunto: "Seu código para vincular o CPF — Narrativas",
+    html: `<p>Olá, ${usuario.nome}.</p><p>Alguém pediu, na página de inscrição do Narrativas, para usar este cadastro (o mesmo e-mail da sua submissão de trabalho) em vez de criar um novo. Digite o código abaixo na tela de inscrição para confirmar:</p><p style="font-size:1.6rem;font-weight:700;letter-spacing:0.2em;">${codigo}</p><p>O código vale por 30 minutos. Se não foi você, ignore este e-mail — nada será alterado.</p>`,
+  });
+}
+
 async function enviarEmailConviteOrganizador(usuario, token) {
   const link = `${env.frontendUrl}/definir-senha?token=${token}`;
   await enviarEmail({
@@ -204,6 +215,7 @@ module.exports = {
   enviarEmailConfirmacao,
   enviarEmailRecuperacaoSenha,
   enviarEmailEntrarSubmissao,
+  enviarEmailVinculoConta,
   enviarEmailConviteOrganizador,
   enviarEmailNotificacaoOrganizador,
   enviarEmailPromocaoAdmin,

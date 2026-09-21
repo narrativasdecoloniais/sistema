@@ -28,6 +28,10 @@ enum TipoToken {
   // Link mágico de identificação passwordless do fluxo público de submissão
   // de trabalho (ver submissoes.service.js) — não usa CPF, só e-mail.
   ENTRAR_SUBMISSAO
+  // Código curto enviado pro e-mail de uma conta importada (sem CPF) pra
+  // provar posse dela e vincular o CPF a ela no fluxo público de inscrição,
+  // em vez de criar uma conta duplicada (ver inscricoes.service.js).
+  VINCULAR_CONTA
 }
 
 // Seções administráveis do site, usadas para restringir o que um

@@ -30,8 +30,39 @@ async function buscarPorCpf(cpf) {
   return prisma.usuario.findUnique({ where: { cpf } });
 }
 
+function normalizarEmail(email) {
+  return String(email).trim().toLowerCase();
+}
+
+// Compara sem diferenciar maiúsculas: o e-mail não era normalizado no cadastro
+// (o da importação do Even3 veio como digitado, ex. "Ana@x.com"), então quem
+// digitava "ana@x.com" não achava a conta — nem recebia o e-mail de recuperação
+// de senha — e acabava com uma conta duplicada. O índice único do banco ainda
+// diferencia caixa, então podem existir duas contas que só diferem nisso; nesse
+// caso vale a de grafia idêntica, depois a que já tem CPF (é a que a pessoa usa
+// pra entrar) e por fim a mais antiga.
 async function buscarPorEmail(email) {
-  return prisma.usuario.findUnique({ where: { email } });
+  const alvo = String(email).trim();
+  const candidatos = await prisma.usuario.findMany({
+    where: { email: { equals: alvo, mode: "insensitive" } },
+    orderBy: { createdAt: "asc" },
+  });
+  return (
+    candidatos.find((usuario) => usuario.email === alvo) ||
+    candidatos.find((usuario) => usuario.cpf) ||
+    candidatos[0] ||
+    null
+  );
+}
+
+// Conta que ainda pode receber um CPF: ativa e sem CPF (importada do Even3 ou
+// criada por submissão). mode: "insensitive" porque o e-mail não é
+// normalizado no cadastro e o da importação veio como digitado no Even3
+// (ex. "Ana@x.com") — a mesma pessoa digita "ana@x.com" e não bateria.
+async function buscarContaSemCpfPorEmail(email) {
+  return prisma.usuario.findFirst({
+    where: { email: { equals: email, mode: "insensitive" }, cpf: null, ativo: true },
+  });
 }
 
 // Nome de uma conta a partir do e-mail, sem vazar mais dados que isso — usado
@@ -92,7 +123,7 @@ async function criarUsuario(dados) {
   const usuario = await prisma.usuario.create({
     data: {
       nome: dados.nome,
-      email: dados.email,
+      email: normalizarEmail(dados.email),
       cpf: dados.cpf,
       instituicao: dados.instituicao,
       categoria: dados.categoria,
@@ -115,7 +146,7 @@ async function criarUsuarioConvidado({ nome, email, acessoCompleto, secoesPermit
   return prisma.usuario.create({
     data: {
       nome,
-      email,
+      email: normalizarEmail(email),
       senhaHash,
       papeis: ["ORGANIZADOR"],
       acessoCompleto,
@@ -135,7 +166,7 @@ async function criarUsuarioViaInscricao({ nome, email, cpf, instituicao, categor
   const usuario = await prisma.usuario.create({
     data: {
       nome,
-      email,
+      email: normalizarEmail(email),
       cpf,
       instituicao,
       categoria,
@@ -159,7 +190,7 @@ async function criarUsuarioViaSubmissao({ nome, email, instituicao, categoria })
   const usuario = await prisma.usuario.create({
     data: {
       nome,
-      email,
+      email: normalizarEmail(email),
       instituicao,
       categoria,
       senhaHash,
@@ -175,11 +206,19 @@ async function criarUsuarioViaSubmissao({ nome, email, instituicao, categoria })
 // organizador, sem CPF) e a pessoa está se inscrevendo agora com um CPF
 // novo — completa o cadastro nessa mesma conta em vez de tentar criar uma
 // segunda com o mesmo e-mail (que violaria o @unique).
-async function vincularCpfAoUsuario(id, cpf) {
+// confirmarEmail: só quando a posse do e-mail já foi provada (código enviado
+// pra caixa de entrada da conta) — o vínculo direto por e-mail digitado
+// (cadastrar em inscricoes.controller.js) não prova nada e não confirma.
+async function vincularCpfAoUsuario(id, cpf, { confirmarEmail = false } = {}) {
   const agora = new Date();
   return prisma.usuario.update({
     where: { id },
-    data: { cpf, aceiteTermosEm: agora, aceitePrivacidadeEm: agora },
+    data: {
+      cpf,
+      aceiteTermosEm: agora,
+      aceitePrivacidadeEm: agora,
+      ...(confirmarEmail ? { emailConfirmado: true } : {}),
+    },
   });
 }
 
@@ -250,14 +289,16 @@ async function atualizarEmail(id, novoEmail) {
 
   return prisma.usuario.update({
     where: { id },
-    data: { email: novoEmail, emailConfirmado: true },
+    data: { email: normalizarEmail(novoEmail), emailConfirmado: true },
     select: CAMPOS_PUBLICOS,
   });
 }
 
-async function anonimizarUsuario(id) {
-  await prisma.$transaction([
-    prisma.usuario.update({
+// Operações (ainda não executadas) que anonimizam a conta — separadas pra
+// unificarUsuarios poder rodá-las dentro da sua própria transação.
+function operacoesAnonimizacao(id, cliente = prisma) {
+  return [
+    cliente.usuario.update({
       where: { id },
       data: {
         nome: "Usuário removido",
@@ -271,17 +312,22 @@ async function anonimizarUsuario(id) {
         anonimizadoEm: new Date(),
       },
     }),
-    prisma.refreshToken.updateMany({
+    cliente.refreshToken.updateMany({
       where: { usuarioId: id, revogadoEm: null },
       data: { revogadoEm: new Date() },
     }),
-  ]);
+  ];
+}
+
+async function anonimizarUsuario(id) {
+  await prisma.$transaction(operacoesAnonimizacao(id));
 }
 
 module.exports = {
   CAMPOS_PUBLICOS,
   buscarPorCpf,
   buscarPorEmail,
+  buscarContaSemCpfPorEmail,
   buscarNomePublicoPorEmail,
   buscarPorId,
   buscarPorTermo,
@@ -297,4 +343,5 @@ module.exports = {
   confirmarEmail,
   atualizarEmail,
   anonimizarUsuario,
+  operacoesAnonimizacao,
 };

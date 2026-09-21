@@ -5,6 +5,11 @@ const VALIDADE_CONFIRMACAO_EMAIL_HORAS = 48;
 const VALIDADE_RECUPERACAO_SENHA_HORAS = 2;
 const VALIDADE_CONVITE_ORGANIZADOR_HORAS = 24 * 7;
 const VALIDADE_ENTRAR_SUBMISSAO_MINUTOS = 30;
+const VALIDADE_VINCULAR_CONTA_MINUTOS = 30;
+
+// Sem 0/O/1/I/L — o código é digitado à mão a partir do e-mail.
+const ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const TAMANHO_CODIGO = 8;
 
 function gerarTokenAleatorio() {
   return crypto.randomBytes(32).toString("hex");
@@ -58,6 +63,42 @@ async function criarTokenEntrarSubmissao(usuarioId) {
   return token;
 }
 
+function normalizarCodigoVinculo(codigo) {
+  return String(codigo || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+// O token guardado leva o id do usuário como prefixo: como o código é curto
+// (feito pra digitar), a busca precisa ser sempre por (conta + código) e
+// nunca só pelo código — senão um chute qualquer poderia bater no código
+// pendente de outra pessoa. Só vale uma vez por conta: pedir de novo
+// invalida o anterior.
+function chaveCodigoVinculo(usuarioId, codigo) {
+  return `vinculo.${usuarioId}.${normalizarCodigoVinculo(codigo)}`;
+}
+
+async function criarCodigoVinculoConta(usuarioId) {
+  const codigo = Array.from(
+    { length: TAMANHO_CODIGO },
+    () => ALFABETO_CODIGO[crypto.randomInt(ALFABETO_CODIGO.length)]
+  ).join("");
+  const expiraEm = new Date(Date.now() + VALIDADE_VINCULAR_CONTA_MINUTOS * 60 * 1000);
+
+  await prisma.$transaction([
+    prisma.tokenVerificacao.deleteMany({
+      where: { usuarioId, tipo: "VINCULAR_CONTA", usadoEm: null },
+    }),
+    prisma.tokenVerificacao.create({
+      data: { usuarioId, tipo: "VINCULAR_CONTA", token: chaveCodigoVinculo(usuarioId, codigo), expiraEm },
+    }),
+  ]);
+
+  return codigo;
+}
+
+async function consumirCodigoVinculoConta(usuarioId, codigo) {
+  return consumirToken(chaveCodigoVinculo(usuarioId, codigo), "VINCULAR_CONTA");
+}
+
 async function consumirToken(token, tipo) {
   const registro = await prisma.tokenVerificacao.findUnique({ where: { token } });
 
@@ -99,6 +140,8 @@ module.exports = {
   criarTokenRecuperacaoSenha,
   criarTokenConviteOrganizador,
   criarTokenEntrarSubmissao,
+  criarCodigoVinculoConta,
+  consumirCodigoVinculoConta,
   consumirToken,
   buscarTokenConfirmacaoEmailValido,
 };

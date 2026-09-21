@@ -4,8 +4,11 @@ const {
   atualizarPerfilSchema,
   alterarSenhaSchema,
   atualizarEmailSchema,
+  previaUnificacaoSchema,
+  unificarUsuariosSchema,
 } = require("../validators/usuarios.validators");
 const usuariosService = require("../services/usuarios.service");
+const unificacaoService = require("../services/unificacaoUsuarios.service");
 const authService = require("../services/auth.service");
 const { conferirHash } = require("../utils/senha");
 
@@ -27,6 +30,21 @@ const atualizarEmailUsuario = asyncHandler(async (req, res) => {
   const dados = atualizarEmailSchema.parse(req.body);
   const usuario = await usuariosService.atualizarEmail(req.params.id, dados.email);
   return res.json({ usuario });
+});
+
+const previaUnificacao = asyncHandler(async (req, res) => {
+  const dados = previaUnificacaoSchema.parse(req.body);
+  const previa = await unificacaoService.previaUnificacao(dados.manterId, dados.removerId);
+  return res.json({ previa });
+});
+
+const unificarUsuarios = asyncHandler(async (req, res) => {
+  const dados = unificarUsuariosSchema.parse(req.body);
+  const resultado = await unificacaoService.unificarUsuarios(dados);
+  console.log(
+    `[unificacao] ${req.usuario.id} uniu a conta ${dados.removerId} na conta ${dados.manterId}`
+  );
+  return res.json(resultado);
 });
 
 const atualizarMeuPerfil = asyncHandler(async (req, res) => {
@@ -58,6 +76,8 @@ module.exports = {
   meuPerfil,
   buscar,
   atualizarEmailUsuario,
+  previaUnificacao,
+  unificarUsuarios,
   atualizarMeuPerfil,
   alterarMinhaSenha,
   excluirMinhaConta,

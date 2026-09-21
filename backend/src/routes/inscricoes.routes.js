@@ -9,6 +9,8 @@ const router = Router();
 router.post("/cpf", limitadorPadrao, inscricoesController.buscarPorCpf);
 router.post("/confirmar-email", limitadorSensivel, inscricoesController.confirmarEmailExistente);
 router.post("/cadastro", limitadorPadrao, inscricoesController.cadastrar);
+router.post("/vinculo/solicitar", limitadorSensivel, inscricoesController.solicitarVinculo);
+router.post("/vinculo/confirmar", limitadorSensivel, inscricoesController.confirmarVinculo);
 router.get("/token-por-sessao", autenticar, limitadorPadrao, inscricoesController.tokenPorSessao);
 router.get("/estado", autenticarInscricao, limitadorPadrao, inscricoesController.buscarEstado);
 router.post("/finalizar", autenticarInscricao, limitadorPadrao, inscricoesController.finalizar);
