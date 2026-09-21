@@ -2,7 +2,11 @@ const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
 
 async function listarTiposParticipacao() {
-  return prisma.tipoParticipacao.findMany({ orderBy: { nome: "asc" } });
+  // Tipos com ordem definida primeiro (na ordem escolhida), os demais em
+  // seguida por nome — mesma lógica de quem aparece antes nas páginas públicas.
+  return prisma.tipoParticipacao.findMany({
+    orderBy: [{ ordem: { sort: "asc", nulls: "last" } }, { nome: "asc" }],
+  });
 }
 
 async function buscarPorId(id) {

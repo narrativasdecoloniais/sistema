@@ -545,9 +545,14 @@ model AtividadePessoa {
   @@map("atividade_pessoas")
 }
 
+// `ordem` é a preferência de renderização do tipo nas páginas públicas da
+// atividade (menor = aparece antes). Opcional de propósito: nulo significa
+// "sem ordem definida" e o tipo se comporta como antes da coluna existir
+// (grupos na ordem de primeiro aparecimento entre as pessoas da atividade).
 model TipoParticipacao {
   id        String   @id @default(uuid())
   nome      String   @unique
+  ordem     Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
