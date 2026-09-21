@@ -19,7 +19,7 @@ Regra de bolso: **a ousadia mora no público; a disciplina mora no interno.** Ne
 - **Sem algarismos romanos** como recurso de design (numeração de seções, passos, listas): numeração imperial contradiz a identidade decolonial. Exceção única: a numeração de edição do evento ("V edição"), que é convenção da marca do cliente e permanece.
 - **Sem ícones de UI kit no site público** (calendário, pessoa+, bússola etc.). O marcador do mundo público é o **búzio**. Na área interna, ícones de linha são permitidos com parcimônia (Lucide, traço 1.5px), nunca como decoração.
 - **O búzio é assinatura, não padronagem.** . Ele marca; não tapeça.
-- **Nada de**: gradientes decorativos, glassmorphism, sombras difusas grandes, cantos muito arredondados (raio máx. 6px em qualquer contexto), emojis na interface, marcadores numerados "01/02/03" de template.
+- **Nada de**: gradientes decorativos, glassmorphism, sombras difusas grandes, cantos muito arredondados (raio máx. 6px em qualquer contexto — exceções: avatar de usuário e botões de ação circulares, como o de criar edição, que podem ser totalmente arredondados), emojis na interface, marcadores numerados "01/02/03" de template.
 
 ## 2. Tokens de cor
 
@@ -31,7 +31,7 @@ Regra de bolso: **a ousadia mora no público; a disciplina mora no interno.** Ne
 | `--barro` | `#9C4A2F` | CTAs, links, destaques de ação |
 | `--ocre` | `#B87C34` | Acento secundário, uso pontual |
 | `--buzio` | `#EDB153` | O búzio e detalhes-assinatura (conferir amostragem no PNG da logo) |
-| `--areia` | `#EDE4D4` | Superfícies de apoio raras (não usar como faixa de seção) |
+| `--areia` | `#EDE4D4` | Superfícies de apoio raras |
 | `--papel` | `#FAF6EE` | Fundo único das páginas públicas |
 | `--cerrado` | `#55603F` | Apoio pontual (detalhes, estados) |
 | `--texto-suave` | `#4D4842` | Texto secundário — ~8.4:1 sobre `--papel` e ~7.2:1 sobre `--areia`, acima do mínimo AA (4.5:1) em ambos |
@@ -93,6 +93,7 @@ Regras: todo grafismo novo segue o padrão — JSX puro, `<svg>` inline, `viewBo
 - Densidade confortável: tabelas com linhas de ~48px, formulários em coluna única (duas no máximo, para campos curtos relacionados), rótulos acima dos campos.
 - Página interna típica: título da página + descrição curta → ações primárias à direita do título → conteúdo. Breadcrumb quando a hierarquia passa de dois níveis.
 - Botões: primário preenchido `--acento` (um por tela, o da ação principal), secundário com borda, terciário como texto. Destrutivo em `--erro` com confirmação.
+- Confirmação de ação (excluir, remover, promover etc.) **sempre em modal** (`ModalConfirmacao`), nunca inline substituindo os botões de ação na própria linha da tabela/lista.
 
 ## 6. Princípios de UX
 
