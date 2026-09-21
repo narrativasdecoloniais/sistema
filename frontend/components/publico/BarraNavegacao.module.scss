@@ -5,7 +5,7 @@
   align-items: center;
   gap: 1.5rem;
   // horizontal soma a largura da faixa lateral fixa (ver .heroFaixa em
-  // page.module.scss) com um respiro fixo, pra logo/links/Entrar nunca
+  // page.module.scss) com um respiro fixo, pra logo/links/Inscrever nunca
   // ficarem por baixo dela nem colados na borda. --largura-faixa-hero-mobile-
   // valor vem inline de BarraNavegacao.jsx (largura por edição, ver
   // EdicaoExibidaContext.jsx); no fallback, cai pro --largura-faixa-hero
@@ -116,7 +116,7 @@
   transition: color 0.4s ease;
 }
 
-// Búzio decorativo entre o menu e o Entrar — some junto com eles no mobile
+// Búzio decorativo entre o menu e o Inscrever — some junto com eles no mobile
 // (o painel do hamburguer não tem esse separador).
 .buzioSeparador {
   flex-shrink: 0;
@@ -254,7 +254,7 @@
   }
 }
 
-.entrar {
+.inscrever {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
@@ -322,11 +322,11 @@
 
 // margin-top: auto no wrapper (não no link) empurra o botão pro fim do
 // painel, que ocupa 100% da altura via position: fixed; inset: 0
-.entrarMobileWrapper {
+.inscreverMobileWrapper {
   margin-top: auto;
 }
 
-.entrarMobile {
+.inscreverMobile {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -351,7 +351,7 @@
   }
 
   .ancoras,
-  .entrar,
+  .inscrever,
   .buzioSeparador {
     display: none;
   }
