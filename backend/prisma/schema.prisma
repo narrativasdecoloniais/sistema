@@ -459,6 +459,10 @@ model Atividade {
   atividadeContinua      Boolean        @default(false)
   paraConvidados         Boolean        @default(false)
   paraCriancasConvidadas Boolean        @default(false)
+  // Posição na programação entre atividades que começam no mesmo horário
+  // (menor = aparece antes). Nulo = sem ordem definida: mantém a ordem
+  // anterior à coluna (tipo, depois nome).
+  ordem                  Int?
   areaSubmissaoId        String?
   areaSubmissao          AreaSubmissao? @relation(fields: [areaSubmissaoId], references: [id], onDelete: Restrict)
   createdAt              DateTime       @default(now())

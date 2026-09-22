@@ -196,6 +196,7 @@ async function duplicarAtividade(edicaoId, original, { inicioAtividade, fimAtivi
       atividadeContinua: original.atividadeContinua,
       paraConvidados: original.paraConvidados,
       paraCriancasConvidadas: original.paraCriancasConvidadas,
+      ordem: original.ordem,
       areaSubmissaoId: original.areaSubmissaoId,
       pessoas: pessoasCriadas.length > 0 ? { create: pessoasCriadas } : undefined,
     },
