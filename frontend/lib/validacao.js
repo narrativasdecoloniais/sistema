@@ -394,6 +394,12 @@ export const atividadeSchema = z
     atividadeContinua: z.boolean().optional().default(false),
     paraConvidados: z.boolean().optional().default(false),
     paraCriancasConvidadas: z.boolean().optional().default(false),
+    ordem: z
+      .number({ invalid_type_error: "Informe um número inteiro" })
+      .int("Informe um número inteiro")
+      .min(1, "A ordem deve ser 1 ou maior")
+      .nullable()
+      .optional(),
   })
   .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
     message: "O fim da atividade deve ser posterior ao início",

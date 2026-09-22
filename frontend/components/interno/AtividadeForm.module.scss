@@ -10,6 +10,12 @@
   color: var(--alerta);
 }
 
+.ajuda {
+  margin: -0.5rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+}
+
 .linha {
   display: flex;
   flex-wrap: wrap;

@@ -39,6 +39,7 @@ function estadoInicial(atividadeInicial) {
     atividadeContinua: atividadeInicial?.atividadeContinua || false,
     paraConvidados: atividadeInicial?.paraConvidados || false,
     paraCriancasConvidadas: atividadeInicial?.paraCriancasConvidadas || false,
+    ordem: atividadeInicial?.ordem ?? null,
     exigeInscricao: atividadeInicial?.exigeInscricao ?? true,
     semLimiteVagas: atividadeInicial?.semLimiteVagas || false,
     vagas: atividadeInicial?.vagas ?? null,
@@ -72,6 +73,8 @@ function paraPayload(dados, atividadeInicial) {
     descricao: dados.descricao || undefined,
     cargaHoraria: dados.cargaHoraria ?? undefined,
     local: dados.local || undefined,
+    // null explícito (não undefined) pra conseguir limpar a ordem ao editar.
+    ordem: dados.ordem ?? null,
     pessoas: (dados.pessoas || []).map((pessoa) => {
       const imagemOriginal = pessoa.id ? imagensOriginais.get(pessoa.id) ?? null : null;
       const imagemAlterada = pessoa.imagem !== imagemOriginal;
@@ -375,6 +378,18 @@ export default function AtividadeForm({
           }
         />
       </div>
+      <CampoNumero
+        id="ordem"
+        rotulo="Ordem na programação (opcional)"
+        value={dados.ordem}
+        min={1}
+        onValueChange={(evento) => atualizarCampo("ordem", evento.value ?? null)}
+        erro={erros.ordem}
+      />
+      <p className={styles.ajuda}>
+        Define a posição entre atividades que começam no mesmo horário (1 aparece primeiro). Deixe
+        em branco para não definir uma ordem.
+      </p>
       <CampoCheckbox
         id="atividade-continua"
         rotulo="Atividade contínua"

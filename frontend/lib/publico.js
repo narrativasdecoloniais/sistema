@@ -310,6 +310,19 @@ export function formatarFaixaHorario(inicioIso, fimIso) {
   return `${formatarHoraCurta(inicioIso)} às ${formatarHoraCurta(fimIso)}`;
 }
 
+// Comparador da `ordem` que o gestor define na atividade: com ordem vêm
+// primeiro, do menor pro maior; sem ordem seguem depois, e empate (ou
+// nenhuma ordem) devolve 0 — como Array.prototype.sort é estável, o
+// resultado sem ordens definidas é idêntico ao de antes da preferência existir.
+export function compararPorOrdemDaAtividade(a, b) {
+  const ordemA = a.ordem ?? null;
+  const ordemB = b.ordem ?? null;
+  if (ordemA == null && ordemB == null) return 0;
+  if (ordemA == null) return 1;
+  if (ordemB == null) return -1;
+  return ordemA - ordemB;
+}
+
 // Agrupa por horário de início idêntico (não por sobreposição — uma
 // atividade longa tipo "8h às 18h" não deve "engolir" todo o resto do dia
 // num carrossel só; ver agruparAtividadesSimultaneas em lib/inscricao.js
@@ -331,8 +344,10 @@ function agruparPorInicioIdentico(atividades) {
     .sort(([a], [b]) => new Date(a) - new Date(b))
     .map(([inicioIso, itens]) => ({
       inicioIso,
-      atividades: [...itens].sort((a, b) =>
-        a.tipoAtividade.nome.localeCompare(b.tipoAtividade.nome, "pt-BR")
+      atividades: [...itens].sort(
+        (a, b) =>
+          compararPorOrdemDaAtividade(a, b) ||
+          a.tipoAtividade.nome.localeCompare(b.tipoAtividade.nome, "pt-BR")
       ),
     }));
 }

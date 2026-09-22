@@ -111,6 +111,7 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
                 <th>Slug</th>
                 <th>Vagas</th>
                 <th>Pessoas</th>
+                <th>Ordem</th>
                 <th className={styles.colunaAcoes}>Ações</th>
               </tr>
             </thead>
@@ -128,6 +129,7 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
                         : atividade.vagas}
                   </td>
                   <td data-rotulo="Pessoas">{atividade.pessoas?.length || 0}</td>
+                  <td data-rotulo="Ordem">{atividade.ordem ?? "—"}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
                     <div className={styles.acoesLinha}>
                       <button

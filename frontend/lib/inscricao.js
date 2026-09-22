@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/apiClient";
+import { compararPorOrdemDaAtividade } from "@/lib/publico";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -110,7 +111,9 @@ export function agruparAtividadesPorDia(atividades = []) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([chave, itens]) => {
       const ordenadas = [...itens].sort(
-        (a, b) => new Date(a.inicioAtividade) - new Date(b.inicioAtividade)
+        (a, b) =>
+          new Date(a.inicioAtividade) - new Date(b.inicioAtividade) ||
+          compararPorOrdemDaAtividade(a, b)
       );
       return { chave, inicioIso: ordenadas[0].inicioAtividade, atividades: ordenadas };
     });
@@ -125,7 +128,9 @@ export function agruparAtividadesPorDia(atividades = []) {
 // descolar da definição de conflito usada no resto do fluxo.
 function agruparPorSobreposicao(atividades) {
   const ordenadas = [...atividades].sort(
-    (a, b) => new Date(a.inicioAtividade) - new Date(b.inicioAtividade)
+    (a, b) =>
+      new Date(a.inicioAtividade) - new Date(b.inicioAtividade) ||
+      compararPorOrdemDaAtividade(a, b)
   );
 
   const grupos = [];
