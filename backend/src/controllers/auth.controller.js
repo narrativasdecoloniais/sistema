@@ -145,7 +145,10 @@ const redefinirSenha = asyncHandler(async (req, res) => {
 
 const definirSenha = asyncHandler(async (req, res) => {
   const dados = definirSenhaSchema.parse(req.body);
-  const registro = await tokenService.consumirToken(dados.token, "CONVITE_ORGANIZADOR");
+  const registro = await tokenService.consumirToken(dados.token, [
+    "CONVITE_ORGANIZADOR",
+    "CONVITE_AVALIADOR",
+  ]);
 
   if (!registro) {
     throw new ErroHttp(400, "Link de convite inválido ou expirado.");

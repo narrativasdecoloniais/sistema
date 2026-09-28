@@ -11,7 +11,9 @@ const CAMPOS_USUARIO = {
 
 const INCLUDE_PADRAO = {
   usuario: { select: CAMPOS_USUARIO },
-  atividade: { select: { id: true, nome: true, edicaoId: true } },
+  atividade: {
+    select: { id: true, nome: true, edicaoId: true, tipoAtividade: { select: { id: true, nome: true } } },
+  },
 };
 
 async function listarPorEdicao(edicaoId, { atividadeId } = {}) {
@@ -70,4 +72,16 @@ async function excluir(id) {
   await inscricoesService.cancelarInscricaoAtividadeComPromocao(id);
 }
 
-module.exports = { listarPorEdicao, buscarPorId, criar, atualizarStatus, excluir };
+// Só aceita ids que pertencem à edição informada — qualquer id de fora (ou
+// inexistente) derruba o lote inteiro, em vez de excluir parte silenciosamente.
+async function excluirEmLote(edicaoId, ids) {
+  const encontradas = await prisma.inscricaoAtividade.count({
+    where: { id: { in: ids }, atividade: { edicaoId } },
+  });
+  if (encontradas !== ids.length) {
+    throw new ErroHttp(404, "Uma ou mais inscrições não foram encontradas nesta edição.");
+  }
+  return inscricoesService.cancelarInscricoesAtividadeComPromocao(ids);
+}
+
+module.exports = { listarPorEdicao, buscarPorId, criar, atualizarStatus, excluir, excluirEmLote };

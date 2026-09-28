@@ -4,6 +4,7 @@ const edicoesService = require("../services/edicoes.service");
 const atividadesService = require("../services/atividades.service");
 const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.service");
 const gruposConteudoService = require("../services/gruposConteudo.service");
+const prisma = require("../config/prisma");
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
@@ -83,7 +84,38 @@ const listarGruposConteudo = asyncHandler(async (req, res) => {
   return res.json({ grupos });
 });
 
+// Só depois da divulgação. Ressalvas/formatação entram quando a correção
+// estiver concluída — nunca publica texto ainda pendente de ajuste. Autores
+// só com nome (sem e-mail).
+const listarTrabalhosAprovados = asyncHandler(async (req, res) => {
+  const edicao = await edicoesService.buscarEdicaoAtual();
+  if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
+  if (!edicao.resultadoDivulgadoEm) return res.json({ trabalhos: [] });
+
+  const trabalhos = await prisma.submissao.findMany({
+    where: {
+      edicaoId: edicao.id,
+      OR: [
+        { decisaoFinal: "APROVADO" },
+        { decisaoFinal: { in: ["APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"] }, statusCorrecao: "CONCLUIDA" },
+      ],
+    },
+    select: {
+      id: true,
+      titulo: true,
+      resumo: true,
+      referenciaBibliografica: true,
+      modalidadeSubmissao: { select: { id: true, nome: true, slug: true, ordem: true } },
+      areaSubmissao: { select: { id: true, titulo: true, ordem: true } },
+      autores: { select: { nome: true, principal: true }, orderBy: { ordem: "asc" } },
+    },
+    orderBy: { titulo: "asc" },
+  });
+  return res.json({ trabalhos });
+});
+
 module.exports = {
+  listarTrabalhosAprovados,
   buscarEdicaoAtual,
   listarEdicoesAnteriores,
   buscarEdicaoPorSlug,

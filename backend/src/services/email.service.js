@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const env = require("../config/env");
+const escaparHtml = require("../utils/escaparHtml");
 
 // Railway (e a maioria dos PaaS) bloqueia portas de SMTP (25/465/587) no
 // tráfego de saída para prevenir abuso, então em produção o envio precisa
@@ -112,6 +113,24 @@ async function enviarEmailNotificacaoOrganizador(usuario) {
   });
 }
 
+async function enviarEmailConviteAvaliador(usuario, token) {
+  const link = `${env.frontendUrl}/definir-senha?token=${token}`;
+  await enviarEmail({
+    para: usuario.email,
+    assunto: "Convite para avaliar trabalhos do Narrativas",
+    html: `<p>Olá, ${usuario.nome}.</p><p>Você foi convidado(a) para avaliar trabalhos submetidos ao Narrativas. Clique no link abaixo para definir sua senha; depois, os trabalhos atribuídos a você ficam em "Trabalhos para avaliar", na sua área do participante:</p><p><a href="${link}">${link}</a></p><p>Se você não esperava este convite, ignore este e-mail.</p>`,
+  });
+}
+
+async function enviarEmailNotificacaoAvaliador(usuario) {
+  const link = `${env.frontendUrl}/participante/avaliacoes`;
+  await enviarEmail({
+    para: usuario.email,
+    assunto: "Você agora é avaliador(a) de trabalhos do Narrativas",
+    html: `<p>Olá, ${usuario.nome}.</p><p>Você foi adicionado(a) como avaliador(a) de trabalhos submetidos ao Narrativas. Entre com sua conta para ver os trabalhos atribuídos a você:</p><p><a href="${link}">${link}</a></p>`,
+  });
+}
+
 async function enviarEmailPromocaoAdmin(usuario) {
   const link = `${env.frontendUrl}/admin`;
   await enviarEmail({
@@ -132,6 +151,21 @@ const CORES_EMAIL = {
   areia: "#ede4d4",
   buzio: "#edb153",
 };
+
+// Moldura com a paleta pública usada pelos e-mails "de evento" (comprovante
+// de inscrição, resultado de submissão). corpoHtml entra como está — quem
+// chama é responsável por escapar/sanitizar o conteúdo.
+function layoutEmailPublico({ eyebrow, titulo, corpoHtml }) {
+  return `
+    <div style="background: ${CORES_EMAIL.papel}; padding: 32px 16px;">
+      <div style="max-width: 600px; margin: 0 auto; background: ${CORES_EMAIL.areia}; border-top: 4px solid ${CORES_EMAIL.buzio}; padding: 32px; color: ${CORES_EMAIL.tinta};">
+        <p style="margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: ${CORES_EMAIL.barro};">${eyebrow}</p>
+        <h1 style="margin: 0 0 20px; font-size: 22px; color: ${CORES_EMAIL.tinta};">${titulo}</h1>
+        ${corpoHtml}
+      </div>
+    </div>
+  `;
+}
 
 function formatarPeriodoAtividade(inicio, fim) {
   const formatador = new Intl.DateTimeFormat("pt-BR", {
@@ -169,12 +203,7 @@ async function enviarEmailConfirmacaoInscricao(
     ? `Olá, ${usuario.nome}. Você adicionou novas atividades à sua inscrição no evento.`
     : `Olá, ${usuario.nome}. Sua inscrição no evento está confirmada.`;
 
-  const html = `
-    <div style="background: ${CORES_EMAIL.papel}; padding: 32px 16px;">
-      <div style="max-width: 600px; margin: 0 auto; background: ${CORES_EMAIL.areia}; border-top: 4px solid ${CORES_EMAIL.buzio}; padding: 32px;">
-        <p style="margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: ${CORES_EMAIL.barro};">${eyebrow}</p>
-        <h1 style="margin: 0 0 20px; font-size: 22px; color: ${CORES_EMAIL.tinta};">${edicao.nome}</h1>
-
+  const corpoHtml = `
         <p style="margin: 0 0 20px; color: ${CORES_EMAIL.tinta};">
           ${introducao}
         </p>
@@ -200,14 +229,29 @@ async function enviarEmailConfirmacaoInscricao(
         <p style="margin: 20px 0 0; font-size: 12px; color: ${CORES_EMAIL.tinta};">
           Se você não fez essa inscrição, ignore este e-mail.
         </p>
-      </div>
-    </div>
   `;
+  const html = layoutEmailPublico({ eyebrow, titulo: edicao.nome, corpoHtml });
 
   await enviarEmail({
     para: usuario.email,
     assunto: `${eyebrow} — ${edicao.nome}`,
     html,
+  });
+}
+
+async function enviarEmailCorrecaoDevolvida(usuario, { edicao, titulo, motivo, prazo }) {
+  const link = `${env.frontendUrl}/participante/submissoes`;
+  const corpoHtml = `
+    <p style="margin: 0 0 16px;">Olá, ${escaparHtml(usuario.nome)}.</p>
+    <p style="margin: 0 0 16px;">A organização conferiu a correção do trabalho <strong>${escaparHtml(titulo)}</strong> e pediu novos ajustes:</p>
+    <p style="margin: 0 0 16px; padding: 12px 16px; background: ${CORES_EMAIL.papel};">${escaparHtml(motivo)}</p>
+    ${prazo ? `<p style="margin: 0 0 16px;">Envie a nova versão até <strong>${escaparHtml(prazo)}</strong>.</p>` : ""}
+    <p style="margin: 0;"><a href="${link}" style="color: ${CORES_EMAIL.barro};">Acessar minhas submissões</a></p>
+  `;
+  await enviarEmail({
+    para: usuario.email,
+    assunto: `Correção devolvida — ${edicao.nome}`,
+    html: layoutEmailPublico({ eyebrow: "Resultado da submissão", titulo: edicao.nome, corpoHtml }),
   });
 }
 
@@ -218,6 +262,11 @@ module.exports = {
   enviarEmailVinculoConta,
   enviarEmailConviteOrganizador,
   enviarEmailNotificacaoOrganizador,
+  enviarEmailConviteAvaliador,
+  enviarEmailNotificacaoAvaliador,
   enviarEmailPromocaoAdmin,
   enviarEmailConfirmacaoInscricao,
+  enviarEmailCorrecaoDevolvida,
+  enviarEmail,
+  layoutEmailPublico,
 };

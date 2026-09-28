@@ -12,4 +12,16 @@ const atualizarInscricaoAtividadeSchema = z.object({
   status: z.enum(STATUS, { errorMap: () => ({ message: "Status inválido" }) }),
 });
 
-module.exports = { criarInscricaoAtividadeSchema, atualizarInscricaoAtividadeSchema };
+const excluirInscricoesAtividadeEmLoteSchema = z.object({
+  ids: z
+    .array(z.string().uuid("Inscrição inválida"))
+    .min(1, "Selecione ao menos uma inscrição")
+    .max(2000, "Selecione no máximo 2000 inscrições por vez")
+    .transform((ids) => [...new Set(ids)]),
+});
+
+module.exports = {
+  criarInscricaoAtividadeSchema,
+  atualizarInscricaoAtividadeSchema,
+  excluirInscricoesAtividadeEmLoteSchema,
+};

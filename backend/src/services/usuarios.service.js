@@ -137,10 +137,17 @@ async function criarUsuario(dados) {
 }
 
 // Cria uma conta sem senha, CPF, categoria ou instituição — usada quando um
-// admin convida alguém para organizar antes dessa pessoa ter se cadastrado por
-// conta própria. Senha e CPF reais só são definidos quando o convite é aceito
-// (ver definirSenhaEAceites), então o hash abaixo nunca é utilizável para login.
-async function criarUsuarioConvidado({ nome, email, acessoCompleto, secoesPermitidas }) {
+// admin convida alguém para organizar (ou avaliar submissões) antes dessa
+// pessoa ter se cadastrado por conta própria. Senha e CPF reais só são
+// definidos quando o convite é aceito (ver definirSenhaEAceites), então o hash
+// abaixo nunca é utilizável para login.
+async function criarUsuarioConvidado({
+  nome,
+  email,
+  papeis = ["ORGANIZADOR"],
+  acessoCompleto = false,
+  secoesPermitidas = [],
+}) {
   const senhaHash = await gerarHash(crypto.randomBytes(32).toString("hex"));
 
   return prisma.usuario.create({
@@ -148,7 +155,7 @@ async function criarUsuarioConvidado({ nome, email, acessoCompleto, secoesPermit
       nome,
       email: normalizarEmail(email),
       senhaHash,
-      papeis: ["ORGANIZADOR"],
+      papeis,
       acessoCompleto,
       secoesPermitidas,
     },

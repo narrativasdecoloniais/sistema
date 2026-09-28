@@ -52,7 +52,16 @@ const criarSubmissaoSchema = z.object({
   }),
 });
 
+// Correção pedida no resultado: título só é aceito em APROVADO_COM_RESSALVAS
+// (o service ignora para APROVADO_FORMATACAO).
+const correcaoSubmissaoSchema = z.object({
+  titulo: z.string().trim().min(3, "Informe o título do trabalho").max(500).optional(),
+  resumo: z.string().trim().min(1, "Informe o resumo"),
+  referenciaBibliografica: z.string().trim().min(1, "Informe a referência bibliográfica"),
+});
+
 module.exports = {
+  correcaoSubmissaoSchema,
   emailSubmissaoSchema,
   cadastroSubmissaoSchema,
   entrarSubmissaoSchema,

@@ -2,6 +2,7 @@ const { Router } = require("express");
 const autenticar = require("../middlewares/autenticar");
 const participanteInscricoesRoutes = require("./participanteInscricoes.routes");
 const participanteSubmissoesRoutes = require("./participanteSubmissoes.routes");
+const participanteAvaliacoesRoutes = require("./participanteAvaliacoes.routes");
 
 const router = Router();
 
@@ -12,5 +13,7 @@ router.use(autenticar);
 
 router.use("/inscricoes", participanteInscricoesRoutes);
 router.use("/submissoes", participanteSubmissoesRoutes);
+// Qualquer logado pode chamar; só vê as atribuições que são dele.
+router.use("/avaliacoes", participanteAvaliacoesRoutes);
 
 module.exports = router;

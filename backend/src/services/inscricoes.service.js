@@ -227,6 +227,32 @@ async function cancelarInscricaoAtividadeComPromocao(inscricaoAtividadeId) {
   return prisma.$transaction((tx) => promoverAoCancelar(tx, inscricaoAtividadeId));
 }
 
+// Exclusão em lote do admin: tudo ou nada numa transação, promovendo a lista
+// de espera como no cancelamento individual. As de lista de espera saem
+// primeiro pra não promover alguém que também está sendo excluído. Devolve os
+// ids promovidos, pro painel atualizar o status sem recarregar a lista inteira.
+async function cancelarInscricoesAtividadeComPromocao(ids) {
+  return prisma.$transaction(
+    async (tx) => {
+      const inscricoes = await tx.inscricaoAtividade.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, status: true },
+      });
+      const emOrdem = [...inscricoes].sort(
+        (a, b) => (a.status === "LISTA_ESPERA" ? 0 : 1) - (b.status === "LISTA_ESPERA" ? 0 : 1)
+      );
+
+      const promovidas = [];
+      for (const inscricao of emOrdem) {
+        const { promovida } = await promoverAoCancelar(tx, inscricao.id);
+        if (promovida) promovidas.push(promovida.id);
+      }
+      return { excluidas: inscricoes.length, promovidas };
+    },
+    { timeout: 60000 }
+  );
+}
+
 // Cancela a inscrição geral do usuário numa edição e todas as inscrições em
 // atividades dela, promovendo a lista de espera de cada atividade cancelada.
 async function cancelarInscricaoEdicaoComPromocao(usuarioId, edicaoId) {
@@ -267,5 +293,6 @@ module.exports = {
   finalizarInscricao,
   cancelarInscricaoAtividade,
   cancelarInscricaoAtividadeComPromocao,
+  cancelarInscricoesAtividadeComPromocao,
   cancelarInscricaoEdicaoComPromocao,
 };

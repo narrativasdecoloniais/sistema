@@ -48,6 +48,17 @@ async function criarTokenConviteOrganizador(usuarioId) {
   return token;
 }
 
+async function criarTokenConviteAvaliador(usuarioId) {
+  const token = gerarTokenAleatorio();
+  const expiraEm = new Date(Date.now() + VALIDADE_CONVITE_ORGANIZADOR_HORAS * 60 * 60 * 1000);
+
+  await prisma.tokenVerificacao.create({
+    data: { usuarioId, tipo: "CONVITE_AVALIADOR", token, expiraEm },
+  });
+
+  return token;
+}
+
 // Link mágico do fluxo passwordless de submissão de trabalho — identifica só
 // por e-mail (sem CPF). Validade curta porque é só a etapa de identificação;
 // a sessão de submissão em si (JWT bearer) tem validade própria e maior, ver
@@ -99,10 +110,13 @@ async function consumirCodigoVinculoConta(usuarioId, codigo) {
   return consumirToken(chaveCodigoVinculo(usuarioId, codigo), "VINCULAR_CONTA");
 }
 
+// tipo pode ser uma lista — o /definir-senha aceita tanto convite de
+// organizador quanto de avaliador.
 async function consumirToken(token, tipo) {
+  const tiposAceitos = Array.isArray(tipo) ? tipo : [tipo];
   const registro = await prisma.tokenVerificacao.findUnique({ where: { token } });
 
-  if (!registro || registro.tipo !== tipo) return null;
+  if (!registro || !tiposAceitos.includes(registro.tipo)) return null;
   if (registro.usadoEm) return null;
   if (registro.expiraEm < new Date()) return null;
 
@@ -139,6 +153,7 @@ module.exports = {
   criarTokenConfirmacaoEmail,
   criarTokenRecuperacaoSenha,
   criarTokenConviteOrganizador,
+  criarTokenConviteAvaliador,
   criarTokenEntrarSubmissao,
   criarCodigoVinculoConta,
   consumirCodigoVinculoConta,

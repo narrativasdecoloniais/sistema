@@ -3,6 +3,7 @@ const ErroHttp = require("../utils/erroHttp");
 const {
   criarInscricaoAtividadeSchema,
   atualizarInscricaoAtividadeSchema,
+  excluirInscricoesAtividadeEmLoteSchema,
 } = require("../validators/inscricoesAtividade.validators");
 const edicoesService = require("../services/edicoes.service");
 const usuariosService = require("../services/usuarios.service");
@@ -59,4 +60,11 @@ const excluir = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Inscrição excluída com sucesso." });
 });
 
-module.exports = { listar, criar, atualizar, excluir };
+const excluirEmLote = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const { ids } = excluirInscricoesAtividadeEmLoteSchema.parse(req.body);
+  const resultado = await inscricoesAtividadeService.excluirEmLote(req.params.edicaoId, ids);
+  return res.json(resultado);
+});
+
+module.exports = { listar, criar, atualizar, excluir, excluirEmLote };

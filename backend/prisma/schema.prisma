@@ -32,6 +32,9 @@ enum TipoToken {
   // provar posse dela e vincular o CPF a ela no fluxo público de inscrição,
   // em vez de criar uma conta duplicada (ver inscricoes.service.js).
   VINCULAR_CONTA
+  // Convite de avaliador de submissões para quem ainda não tem conta —
+  // consumido no mesmo /definir-senha do convite de organizador.
+  CONVITE_AVALIADOR
 }
 
 // Seções administráveis do site, usadas para restringir o que um
@@ -141,6 +144,7 @@ model Usuario {
   inscricoesAtividade InscricaoAtividade[]
   submissoes          Submissao[]
   submissaoAutorias   SubmissaoAutor[]
+  avaliacoesEdicao    AvaliadorEdicao[]
 
   @@map("usuarios")
 }
@@ -188,6 +192,11 @@ model Edicao {
   // antes do fim, o gestor desmarca; a data ainda manda se abre ou não
   // (ver backend/src/utils/inscricoesAbertas.js).
   inscricoesEncerradasManualmente   Boolean              @default(false)
+  // Resultado das submissões (ver resultadoSubmissoes.service.js): divulgado
+  // uma única vez por edição; o prazo vale para todas as correções pedidas
+  // (APROVADO_COM_RESSALVAS e APROVADO_FORMATACAO).
+  resultadoDivulgadoEm              DateTime?
+  prazoCorrecaoSubmissao            DateTime?
   slug                              String?              @unique
   cargaHorariaTotal                 Int?
   instagram                         String?
@@ -428,14 +437,16 @@ model Edicao {
   createdAt                         DateTime             @default(now())
   updatedAt                         DateTime             @updatedAt
 
-  atividades           Atividade[]
-  realizadores         EdicaoRealizador[]
-  apoiadores           EdicaoApoiador[]
-  pontosInteresse      EdicaoPontoInteresse[]
-  inscricoes           InscricaoEdicao[]
-  modalidadesSubmissao ModalidadeSubmissao[]
-  submissoes           Submissao[]
-  gruposConteudo       GrupoConteudo[]
+  atividades            Atividade[]
+  realizadores          EdicaoRealizador[]
+  apoiadores            EdicaoApoiador[]
+  pontosInteresse       EdicaoPontoInteresse[]
+  inscricoes            InscricaoEdicao[]
+  modalidadesSubmissao  ModalidadeSubmissao[]
+  submissoes            Submissao[]
+  gruposConteudo        GrupoConteudo[]
+  avaliadores           AvaliadorEdicao[]
+  modelosEmailResultado ModeloEmailResultado[]
 
   @@map("edicoes")
 }
@@ -675,8 +686,11 @@ model AreaSubmissao {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
-  submissoes Submissao[]
-  atividades Atividade[]
+  submissoes            Submissao[]
+  atividades            Atividade[]
+  avaliadores           AvaliadorEdicao[]
+  sugestoesComoAtual    SugestaoTrocaArea[] @relation("SugestaoAreaAtual")
+  sugestoesComoSugerida SugestaoTrocaArea[] @relation("SugestaoAreaSugerida")
 
   @@unique([modalidadeSubmissaoId, slug])
   @@map("areas_submissao")
@@ -687,27 +701,163 @@ model AreaSubmissao {
 // submissoes.service.js) é sempre o autor principal — nunca escolhido pelo
 // client, ver SubmissaoAutor.principal.
 model Submissao {
-  id                      String              @id @default(uuid())
+  id                      String                @id @default(uuid())
   edicaoId                String
-  edicao                  Edicao              @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  edicao                  Edicao                @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
   modalidadeSubmissaoId   String
-  modalidadeSubmissao     ModalidadeSubmissao @relation(fields: [modalidadeSubmissaoId], references: [id])
+  modalidadeSubmissao     ModalidadeSubmissao   @relation(fields: [modalidadeSubmissaoId], references: [id])
   areaSubmissaoId         String?
-  areaSubmissao           AreaSubmissao?      @relation(fields: [areaSubmissaoId], references: [id])
+  areaSubmissao           AreaSubmissao?        @relation(fields: [areaSubmissaoId], references: [id])
   titulo                  String
   // HTML sanitizado (ver sanitizarResumoSubmissao.js) — imagens embutidas já
   // trocadas de data URI por URL do GCS antes de salvar.
-  resumo                  String              @db.Text
+  resumo                  String                @db.Text
   // HTML sanitizado (ver sanitizarReferenciaBibliografica.js) — só permite
   // <strong>, sem link/itálico/imagem.
-  referenciaBibliografica String              @db.Text
+  referenciaBibliografica String                @db.Text
   usuarioId               String
-  usuario                 Usuario             @relation(fields: [usuarioId], references: [id])
+  usuario                 Usuario               @relation(fields: [usuarioId], references: [id])
   autores                 SubmissaoAutor[]
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
+  // Decisão consolidada pela organização depois de ver as decisões dos
+  // avaliadores (AtribuicaoAvaliacao.decisao) — travada a partir daqui, o
+  // avaliador não altera mais a própria decisão.
+  decisaoFinal            DecisaoAvaliacao?
+  decisaoFinalEm          DateTime?
+  decisaoFinalPorId       String?
+  atribuicoesAvaliacao    AtribuicaoAvaliacao[]
+  sugestoesTrocaArea      SugestaoTrocaArea[]
+  // Resultado: observação da organização enviada junto com a decisão, e o
+  // fluxo de correção pedido ao autor principal (só ressalvas/formatação).
+  observacaoResultado     String?               @db.Text
+  statusCorrecao          StatusCorrecao?
+  correcaoEnviadaEm       DateTime?
+  motivoDevolucao         String?               @db.Text
+  emailResultadoEnviadoEm DateTime?
+  emailResultadoErro      String?
+  versoes                 SubmissaoVersao[]
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
 
   @@map("submissoes")
+}
+
+enum DecisaoAvaliacao {
+  APROVADO
+  APROVADO_COM_RESSALVAS
+  // Aprovado, mas o autor principal precisa revisar a formatação do resumo e
+  // da referência antes da publicação (caso típico: importados do Even3).
+  APROVADO_FORMATACAO
+  REPROVADO
+}
+
+// PENDENTE = aguardando o autor; ENVIADA = correção com ressalvas aguardando
+// conferência da organização; DEVOLVIDA = organização pediu nova correção;
+// CONCLUIDA = pronta para publicação (formatação conclui direto ao salvar).
+enum StatusCorrecao {
+  PENDENTE
+  ENVIADA
+  DEVOLVIDA
+  CONCLUIDA
+}
+
+// Cópia do texto de uma submissão antes de cada correção do autor.
+model SubmissaoVersao {
+  id                      String    @id @default(uuid())
+  submissaoId             String
+  submissao               Submissao @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+  titulo                  String
+  resumo                  String    @db.Text
+  referenciaBibliografica String    @db.Text
+  createdAt               DateTime  @default(now())
+
+  @@index([submissaoId])
+  @@map("submissao_versoes")
+}
+
+// Texto-padrão do e-mail de resultado, um por decisão e por edição — sem
+// registro, vale o texto-padrão de emailResultado.service.js.
+model ModeloEmailResultado {
+  id        String           @id @default(uuid())
+  edicaoId  String
+  edicao    Edicao           @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  decisao   DecisaoAvaliacao
+  assunto   String
+  corpo     String           @db.Text
+  updatedAt DateTime         @updatedAt
+
+  @@unique([edicaoId, decisao])
+  @@map("modelos_email_resultado")
+}
+
+// AREA = criada automaticamente pelo vínculo avaliador↔área (ver
+// avaliacoes.service.js); MANUAL = atribuída pela organização direto na
+// submissão. Só as AREA sem decisão somem quando o avaliador perde a área.
+enum OrigemAtribuicao {
+  AREA
+  MANUAL
+}
+
+enum StatusSugestaoArea {
+  PENDENTE
+  APROVADA
+  RECUSADA
+}
+
+// Avaliador de submissões numa edição (externo ou da organização). A
+// distribuição é materializada em AtribuicaoAvaliacao — as áreas aqui só
+// disparam a criação das atribuições, não são consultadas em tempo real.
+model AvaliadorEdicao {
+  id          String                @id @default(uuid())
+  edicaoId    String
+  edicao      Edicao                @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  usuarioId   String
+  usuario     Usuario               @relation(fields: [usuarioId], references: [id])
+  areas       AreaSubmissao[]
+  atribuicoes AtribuicaoAvaliacao[]
+  sugestoes   SugestaoTrocaArea[]
+  createdAt   DateTime              @default(now())
+
+  @@unique([edicaoId, usuarioId])
+  @@map("avaliadores_edicao")
+}
+
+model AtribuicaoAvaliacao {
+  id                String            @id @default(uuid())
+  submissaoId       String
+  submissao         Submissao         @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+  avaliadorEdicaoId String
+  avaliadorEdicao   AvaliadorEdicao   @relation(fields: [avaliadorEdicaoId], references: [id], onDelete: Cascade)
+  origem            OrigemAtribuicao
+  decisao           DecisaoAvaliacao?
+  decididoEm        DateTime?
+  createdAt         DateTime          @default(now())
+
+  @@unique([submissaoId, avaliadorEdicaoId])
+  @@index([avaliadorEdicaoId])
+  @@map("atribuicoes_avaliacao")
+}
+
+// Avaliador pode, em vez de avaliar, sugerir que a submissão está na área
+// errada. Aprovada pela organização, a submissão muda de área e é
+// redistribuída do zero para os avaliadores da nova área.
+model SugestaoTrocaArea {
+  id                String             @id @default(uuid())
+  submissaoId       String
+  submissao         Submissao          @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+  avaliadorEdicaoId String
+  avaliadorEdicao   AvaliadorEdicao    @relation(fields: [avaliadorEdicaoId], references: [id], onDelete: Cascade)
+  areaAtualId       String?
+  areaAtual         AreaSubmissao?     @relation("SugestaoAreaAtual", fields: [areaAtualId], references: [id], onDelete: SetNull)
+  areaSugeridaId    String
+  areaSugerida      AreaSubmissao      @relation("SugestaoAreaSugerida", fields: [areaSugeridaId], references: [id], onDelete: Cascade)
+  justificativa     String?
+  status            StatusSugestaoArea @default(PENDENTE)
+  resolvidoPorId    String?
+  resolvidoEm       DateTime?
+  createdAt         DateTime           @default(now())
+
+  @@index([submissaoId])
+  @@map("sugestoes_troca_area")
 }
 
 // Autor/coautor de uma submissão. nome/email/orcid são sempre guardados aqui

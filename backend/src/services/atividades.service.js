@@ -51,12 +51,35 @@ function normalizarInscricao(dados) {
   };
 }
 
+// Só a listagem do admin traz a contagem de inscritos (`inscritos`), numa
+// única groupBy por atividade+status — fica fora de INCLUDE_PADRAO porque as
+// demais respostas (criar/editar/duplicar) não mudam inscrições e o painel
+// preserva a contagem que já tinha.
 async function listarAtividades(edicaoId) {
-  return prisma.atividade.findMany({
+  const atividades = await prisma.atividade.findMany({
     where: { edicaoId },
     include: INCLUDE_PADRAO,
     orderBy: { createdAt: "asc" },
   });
+
+  const contagens = await prisma.inscricaoAtividade.groupBy({
+    by: ["atividadeId", "status"],
+    where: { atividadeId: { in: atividades.map((atividade) => atividade.id) } },
+    _count: { _all: true },
+  });
+
+  const inscritosPorAtividade = new Map();
+  for (const linha of contagens) {
+    const atual = inscritosPorAtividade.get(linha.atividadeId) || { confirmadas: 0, listaEspera: 0 };
+    if (linha.status === "CONFIRMADA") atual.confirmadas = linha._count._all;
+    else atual.listaEspera = linha._count._all;
+    inscritosPorAtividade.set(linha.atividadeId, atual);
+  }
+
+  return atividades.map((atividade) => ({
+    ...atividade,
+    inscritos: inscritosPorAtividade.get(atividade.id) || { confirmadas: 0, listaEspera: 0 },
+  }));
 }
 
 async function buscarPorId(edicaoId, id) {
