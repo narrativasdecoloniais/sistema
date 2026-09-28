@@ -1,0 +1,175 @@
+.cabecalho {
+  th {
+    vertical-align: top;
+  }
+}
+
+.botaoOrdenar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  background: none;
+  border: none;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.55;
+  }
+
+  &:hover {
+    color: var(--texto);
+
+    svg {
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.botaoOrdenarAtivo {
+  color: var(--acento);
+
+  svg {
+    opacity: 1;
+  }
+}
+
+.filtro {
+  display: block;
+  width: 100%;
+  min-width: 6.5rem;
+  min-height: 32px;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--texto);
+
+  &::placeholder {
+    color: var(--texto-suave);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 1px;
+    border-color: var(--acento);
+  }
+}
+
+.colunaAcoes {
+  vertical-align: top;
+}
+
+// Checkbox de seleção de linha (primeira coluna). Especificidade dobrada pra
+// vencer o padding/max-width de `.tabela th, .tabela td` de cada painel.
+.colunaSelecao.colunaSelecao {
+  width: 1%;
+  min-width: 0;
+  padding-right: 0;
+  vertical-align: middle;
+}
+
+thead .colunaSelecao.colunaSelecao {
+  vertical-align: bottom;
+  padding-bottom: 1.35rem;
+}
+
+.caixaSelecao {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--acento);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.rotuloAcoes {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+tr.linhaSemResultado > td {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.botaoLimpar {
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--acento);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+// No celular cada linha vira cartão (ver os módulos de cada painel) e o
+// <thead> deixa de ser uma linha de cabeçalho: os controles de
+// ordenação/filtro empilham em grade acima dos cartões.
+@media (max-width: 720px) {
+  .cabecalho {
+    display: block;
+    border-bottom: 1px solid var(--borda);
+
+    tr {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+
+    tr th {
+      display: block;
+      min-width: 0;
+      max-width: none;
+      padding: 0;
+      border-bottom: none;
+    }
+  }
+
+  .colunaAcoes {
+    display: none !important;
+  }
+
+  // No cartão mobile, o "selecionar todas" fica numa célula própria da grade
+  // de filtros, e o checkbox de cada linha vira um item "Selecionar".
+  thead .colunaSelecao.colunaSelecao {
+    padding: 0;
+  }
+
+  tr.linhaSemResultado > td {
+    display: block;
+    text-align: center;
+
+    &::before {
+      content: none;
+    }
+  }
+}

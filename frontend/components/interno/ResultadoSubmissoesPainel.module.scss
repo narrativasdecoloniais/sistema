@@ -1,0 +1,148 @@
+// Complementa AvaliacaoSubmissoesPainel.module.scss (tabelas, abas, modais e
+// estados vazios são compartilhados com a tela de Avaliação).
+
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.semMargem {
+  margin: 0;
+  color: var(--texto);
+}
+
+.listaPendencias {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.link {
+  color: var(--acento);
+  font-weight: 600;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.textoErro {
+  color: var(--erro);
+  font-weight: 600;
+}
+
+.progresso {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.barra {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--sucesso);
+    transition: width 0.3s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    span {
+      transition: none;
+    }
+  }
+}
+
+.acoesConferencia {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+// Versão anterior × atual lado a lado; empilha em telas estreitas.
+.comparacao {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.marcadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marcador {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--fundo);
+  color: var(--texto-suave);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+
+  code {
+    color: var(--texto);
+    font-weight: 600;
+  }
+
+  &:hover {
+    border-color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.cartaoModelo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.cabecalhoModelo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.tituloModelo {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--texto);
+}
+
+.acoesModelo {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

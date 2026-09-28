@@ -1,6 +1,9 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import { buscarEdicaoPorId } from "@/lib/edicoes";
+import { listarSubmissoesEmAvaliacao, listarAvaliadores, listarSugestoesTrocaArea } from "@/lib/avaliacoesAdmin";
+import { listarModalidadesSubmissao } from "@/lib/modalidadesSubmissao";
+import AvaliacaoSubmissoesPainel from "@/components/interno/AvaliacaoSubmissoesPainel";
 
 export default async function PaginaSubmissoesAvaliacao({ params }) {
   const usuario = await obterUsuarioAtual();
@@ -8,10 +11,24 @@ export default async function PaginaSubmissoesAvaliacao({ params }) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
+  const edicao = await buscarEdicaoPorId(params.id);
+  if (!edicao) notFound();
+
+  const [submissoes, avaliadores, sugestoes, modalidades] = await Promise.all([
+    listarSubmissoesEmAvaliacao(params.id),
+    listarAvaliadores(params.id),
+    listarSugestoesTrocaArea(params.id),
+    listarModalidadesSubmissao(params.id),
+  ]);
+
   return (
-    <PaginaEmBreve
-      titulo="Avaliação de submissões"
-      descricao="Em breve você vai poder distribuir e acompanhar avaliações de trabalhos por aqui."
+    <AvaliacaoSubmissoesPainel
+      edicaoId={params.id}
+      submissoesIniciais={submissoes}
+      avaliadoresIniciais={avaliadores}
+      sugestoesIniciais={sugestoes}
+      modalidades={modalidades}
+      resultadoDivulgadoEm={edicao.resultadoDivulgadoEm}
     />
   );
 }

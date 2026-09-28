@@ -105,3 +105,68 @@
   color: var(--texto-suave);
   font-size: 0.8125rem;
 }
+
+// Resultado divulgado (decisão, observação e correção pendente).
+.resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--borda);
+}
+
+.resultadoDecisao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  color: var(--texto);
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.resultadoRotulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texto-suave);
+}
+
+.resultadoTexto {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.875rem;
+  white-space: pre-line;
+}
+
+.resultadoPendente {
+  margin: 0;
+  color: var(--acento);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.resultadoAcao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  background: var(--acento);
+  color: var(--superficie);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}

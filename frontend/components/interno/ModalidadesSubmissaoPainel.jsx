@@ -7,15 +7,25 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import ModalidadeSubmissaoForm from "./ModalidadeSubmissaoForm";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./AtividadesPainel.module.scss";
+
+const COLUNAS = [
+  { chave: "nome", rotulo: "Nome", valor: (modalidade) => modalidade.nome },
+  { chave: "slug", rotulo: "Slug", valor: (modalidade) => modalidade.slug },
+  { chave: "areas", rotulo: "Áreas", valor: (modalidade) => modalidade.areas?.length || 0 },
+];
 
 export default function ModalidadesSubmissaoPainel({ edicaoId, modalidadesIniciais, atividadesDisponiveis }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [modalidades, setModalidades] = useState(modalidadesIniciais);
+  const tabela = useTabela(modalidades, COLUNAS);
   const [modalidadeEmEdicao, setModalidadeEmEdicao] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
@@ -90,17 +100,14 @@ export default function ModalidadesSubmissaoPainel({ edicaoId, modalidadesInicia
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="modalidades-de-submissao" nomeAba="Modalidades" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Slug</th>
-                <th>Áreas</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="modalidades-submissao" classeAcoes={styles.colunaAcoes} />
             <tbody>
-              {modalidades.map((modalidade) => (
+              {tabela.linhasVisiveis.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+              )}
+              {tabela.linhasVisiveis.map((modalidade) => (
                 <tr key={modalidade.id}>
                   <td data-rotulo="Nome">{modalidade.nome}</td>
                   <td data-rotulo="Slug">{modalidade.slug}</td>

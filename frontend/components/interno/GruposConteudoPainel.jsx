@@ -7,15 +7,24 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import GrupoConteudoForm from "./GrupoConteudoForm";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./AtividadesPainel.module.scss";
+
+const COLUNAS = [
+  { chave: "nome", rotulo: "Nome", valor: (grupo) => grupo.nome },
+  { chave: "listas", rotulo: "Listas", valor: (grupo) => grupo.listas?.length || 0 },
+];
 
 export default function GruposConteudoPainel({ edicaoId, gruposIniciais }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [grupos, setGrupos] = useState(gruposIniciais);
+  const tabela = useTabela(grupos, COLUNAS);
   const [grupoEmEdicao, setGrupoEmEdicao] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
@@ -90,16 +99,14 @@ export default function GruposConteudoPainel({ edicaoId, gruposIniciais }) {
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="comissoes-e-programas" nomeAba="Grupos" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Listas</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="grupos-conteudo" classeAcoes={styles.colunaAcoes} />
             <tbody>
-              {grupos.map((grupo) => (
+              {tabela.linhasVisiveis.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+              )}
+              {tabela.linhasVisiveis.map((grupo) => (
                 <tr key={grupo.id}>
                   <td data-rotulo="Nome">{grupo.nome}</td>
                   <td data-rotulo="Listas">{grupo.listas?.length || 0}</td>

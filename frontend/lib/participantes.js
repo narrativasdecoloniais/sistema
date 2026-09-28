@@ -22,3 +22,11 @@ export async function listarParticipantes() {
   const dados = await requisitarComCookies("/organizadores");
   return dados?.organizadores || [];
 }
+
+// Todos os usuários (menos anonimizados) com a situação na edição — inscrição
+// geral e contagem de inscrições em atividades. Endpoint ADMIN-only: pra quem
+// não é ADMIN, devolve 403 e aqui vira lista vazia.
+export async function listarUsuariosDaEdicao(edicaoId) {
+  const dados = await requisitarComCookies(`/edicoes/${edicaoId}/usuarios`);
+  return dados?.usuarios || [];
+}

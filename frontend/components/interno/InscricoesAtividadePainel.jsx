@@ -6,9 +6,12 @@ import { Plus, Trash2, ArrowUpCircle, Clock } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
-import CampoSelecao from "./CampoSelecao";
 import InscricaoAtividadeForm from "./InscricaoAtividadeForm";
 import CartoesContadores from "./CartoesContadores";
+import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
+import useSelecaoLinhas from "./useSelecaoLinhas";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./InscricoesAtividadePainel.module.scss";
@@ -22,23 +25,61 @@ const ROTULO_STATUS = {
   LISTA_ESPERA: "Lista de espera",
 };
 
+const OPCOES_STATUS = Object.entries(ROTULO_STATUS).map(([valor, rotulo]) => ({ valor, rotulo }));
+
 export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais, atividades }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [inscricoes, setInscricoes] = useState(inscricoesIniciais);
-  const [filtroAtividadeId, setFiltroAtividadeId] = useState("");
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmandoId, setConfirmandoId] = useState(null);
 
-  const inscricoesFiltradas = useMemo(
-    () =>
-      filtroAtividadeId
-        ? inscricoes.filter((item) => item.atividade.id === filtroAtividadeId)
-        : inscricoes,
-    [inscricoes, filtroAtividadeId]
+  const colunas = useMemo(
+    () => [
+      {
+        chave: "atividade",
+        rotulo: "Atividade",
+        valor: (inscricao) => inscricao.atividade.nome,
+        filtro: "select",
+        opcoes: atividades.map((atividade) => ({ valor: atividade.id, rotulo: atividade.nome })),
+        corresponde: (inscricao, atividadeId) => inscricao.atividade.id === atividadeId,
+      },
+      {
+        chave: "tipoAtividade",
+        rotulo: "Tipo de atividade",
+        valor: (inscricao) => inscricao.atividade.tipoAtividade?.nome || null,
+        filtro: "select",
+      },
+      { chave: "nome", rotulo: "Nome", valor: (inscricao) => inscricao.usuario.nome },
+      { chave: "email", rotulo: "E-mail", valor: (inscricao) => inscricao.usuario.email },
+      {
+        chave: "status",
+        rotulo: "Status",
+        valor: (inscricao) => inscricao.status,
+        filtro: "select",
+        opcoes: OPCOES_STATUS,
+        exportar: (inscricao) => ROTULO_STATUS[inscricao.status],
+      },
+      {
+        chave: "inscritoEm",
+        rotulo: "Inscrito em",
+        valor: (inscricao) => new Date(inscricao.createdAt).getTime(),
+        texto: (inscricao) => formatarData(inscricao.createdAt),
+      },
+    ],
+    [atividades]
   );
+
+  const tabela = useTabela(inscricoes, colunas);
+  const selecao = useSelecaoLinhas(tabela);
+  const [confirmandoLote, setConfirmandoLote] = useState(false);
+  const [excluindoLote, setExcluindoLote] = useState(false);
+  const inscricoesFiltradas = tabela.linhasVisiveis;
+  // Só sugere a atividade no modal de adicionar quando exatamente uma está filtrada.
+  const atividadesFiltradas = tabela.filtros.atividade || [];
+  const filtroAtividadeId = atividadesFiltradas.length === 1 ? atividadesFiltradas[0] : "";
 
   const contagem = useMemo(() => {
     const confirmadas = inscricoesFiltradas.filter((item) => item.status === "CONFIRMADA").length;
@@ -96,6 +137,37 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
     }
   }
 
+  async function excluirSelecionadas() {
+    const ids = [...selecao.selecionados];
+    setExcluindoLote(true);
+
+    try {
+      const resposta = await apiClient.post(
+        `/edicoes/${edicaoId}/inscricoes-atividades/exclusao-em-lote`,
+        { ids }
+      );
+      const removidas = new Set(ids);
+      const promovidas = new Set(resposta.promovidas || []);
+      setInscricoes((atual) =>
+        atual
+          .filter((item) => !removidas.has(item.id))
+          .map((item) => (promovidas.has(item.id) ? { ...item, status: "CONFIRMADA" } : item))
+      );
+      selecao.limpar();
+      notificar(
+        promovidas.size > 0
+          ? `${ids.length} inscrições excluídas. ${promovidas.size} ${promovidas.size === 1 ? "pessoa saiu" : "pessoas saíram"} da lista de espera.`
+          : `${ids.length} ${ids.length === 1 ? "inscrição excluída" : "inscrições excluídas"} com sucesso.`
+      );
+      router.refresh();
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setExcluindoLote(false);
+      setConfirmandoLote(false);
+    }
+  }
+
   const inscricaoEmConfirmacao = inscricoes.find((item) => item.id === confirmandoId);
 
   return (
@@ -114,22 +186,6 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
         </Botao>
       </div>
 
-      <div className={styles.filtro}>
-        <CampoSelecao
-          id="filtroAtividade"
-          rotulo="Filtrar por atividade"
-          value={filtroAtividadeId}
-          onChange={(evento) => setFiltroAtividadeId(evento.target.value)}
-        >
-          <option value="">Todas as atividades</option>
-          {atividades.map((atividade) => (
-            <option key={atividade.id} value={atividade.id}>
-              {atividade.nome}
-            </option>
-          ))}
-        </CampoSelecao>
-      </div>
-
       <CartoesContadores
         itens={[
           { rotulo: "Total", valor: contagem.total },
@@ -138,32 +194,46 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
         ]}
       />
 
-      {inscricoesFiltradas.length === 0 ? (
+      {inscricoes.length === 0 ? (
         <div className={styles.vazio}>
           <p>Nenhuma inscrição em atividade encontrada.</p>
           <p className={styles.vazioApoio}>
-            {inscricoes.length === 0
-              ? "As inscrições aparecem aqui conforme as pessoas se inscrevem pelo site público, ou você pode adicionar uma manualmente."
-              : "Nenhuma inscrição para a atividade selecionada."}
+            As inscrições aparecem aqui conforme as pessoas se inscrevem pelo site público, ou você
+            pode adicionar uma manualmente.
           </p>
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="inscricoes-em-atividades" nomeAba="Inscrições em atividades">
+            {selecao.quantidade > 0 && (
+              <BotaoAcaoTabela perigo onClick={() => setConfirmandoLote(true)}>
+                <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                Excluir {selecao.quantidade} {selecao.quantidade === 1 ? "selecionada" : "selecionadas"}
+              </BotaoAcaoTabela>
+            )}
+          </BotaoExportarTabela>
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Atividade</th>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>Status</th>
-                <th>Inscrito em</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela
+              tabela={tabela}
+              idTabela="inscricoes-atividade"
+              classeAcoes={styles.colunaAcoes}
+              selecao={selecao}
+            />
             <tbody>
+              {inscricoesFiltradas.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={colunas.length + 2} />
+              )}
               {inscricoesFiltradas.map((inscricao) => (
                 <tr key={inscricao.id}>
+                  <CelulaSelecao
+                    selecao={selecao}
+                    id={inscricao.id}
+                    rotulo={`Selecionar inscrição de ${inscricao.usuario.nome} em ${inscricao.atividade.nome}`}
+                  />
                   <td data-rotulo="Atividade">{inscricao.atividade.nome}</td>
+                  <td data-rotulo="Tipo de atividade">
+                    {inscricao.atividade.tipoAtividade?.nome || "—"}
+                  </td>
                   <td data-rotulo="Nome">{inscricao.usuario.nome}</td>
                   <td data-rotulo="E-mail">{inscricao.usuario.email}</td>
                   <td data-rotulo="Status">
@@ -222,6 +292,17 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
             aoCancelar={fecharModal}
           />
         </Modal>
+      )}
+
+      {confirmandoLote && (
+        <ModalConfirmacao
+          titulo="Excluir inscrições selecionadas"
+          mensagem={`Tem certeza que deseja excluir ${selecao.quantidade} ${selecao.quantidade === 1 ? "inscrição" : "inscrições"}? Vagas liberadas em inscrições confirmadas promovem automaticamente a lista de espera. Essa ação não pode ser desfeita.`}
+          rotuloConfirmar="Excluir"
+          confirmando={excluindoLote}
+          onConfirmar={excluirSelecionadas}
+          onCancelar={() => setConfirmandoLote(false)}
+        />
       )}
 
       {confirmandoId && (

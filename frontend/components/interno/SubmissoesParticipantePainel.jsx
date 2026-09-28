@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import { paraNumeroRomano } from "@/lib/romanos";
 import { listarMinhasSubmissoes } from "@/lib/participanteSubmissoes";
 import { listarModalidadesSubmissaoPublicas, prazoSubmissaoAberto } from "@/lib/publico";
+import { ROTULOS_DECISAO, formatarPrazoCorrecao } from "@/lib/avaliacoes";
 import styles from "./SubmissoesParticipantePainel.module.scss";
 
 function formatarData(iso) {
@@ -102,9 +104,55 @@ export default function SubmissoesParticipantePainel() {
                 {submissao.autores.map((autor) => autor.nome).join(", ")}
               </p>
               <p className={styles.cartaoData}>Enviado em {formatarData(submissao.createdAt)}</p>
+              {submissao.resultado && (
+                <ResultadoSubmissao id={submissao.id} resultado={submissao.resultado} ehAutorPrincipal={submissao.ehAutorPrincipal} />
+              )}
             </article>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+const ACAO_CORRECAO = {
+  APROVADO_COM_RESSALVAS: { botao: "Corrigir trabalho", verbo: "enviar a versão corrigida" },
+  APROVADO_FORMATACAO: { botao: "Revisar formatação", verbo: "revisar a formatação do resumo e das referências" },
+};
+
+// Só chega preenchido depois que a organização divulga o resultado (a API
+// omite a decisão antes disso).
+function ResultadoSubmissao({ id, resultado, ehAutorPrincipal }) {
+  const acao = ACAO_CORRECAO[resultado.decisao];
+  const prazo = formatarPrazoCorrecao(resultado.prazoCorrecao);
+  const pendente = ["PENDENTE", "DEVOLVIDA"].includes(resultado.statusCorrecao);
+
+  let situacao = null;
+  if (acao) {
+    if (resultado.statusCorrecao === "CONCLUIDA") situacao = "Correção concluída.";
+    else if (resultado.statusCorrecao === "ENVIADA") situacao = "Correção enviada — aguardando conferência da organização.";
+    else if (!resultado.prazoAberto) situacao = `O prazo de correção terminou em ${prazo}. Fale com a organização.`;
+    else if (ehAutorPrincipal) situacao = `Você precisa ${acao.verbo} até ${prazo}.`;
+    else situacao = `O autor principal precisa ${acao.verbo} até ${prazo}.`;
+  }
+
+  return (
+    <div className={styles.resultado}>
+      <p className={styles.resultadoDecisao}>
+        <span className={styles.resultadoRotulo}>Resultado</span>
+        {ROTULOS_DECISAO[resultado.decisao]}
+      </p>
+      {resultado.observacao && <p className={styles.resultadoTexto}>{resultado.observacao}</p>}
+      {resultado.statusCorrecao === "DEVOLVIDA" && resultado.motivoDevolucao && (
+        <p className={styles.resultadoTexto}>
+          <strong>Correção devolvida:</strong> {resultado.motivoDevolucao}
+        </p>
+      )}
+      {situacao && <p className={pendente && resultado.prazoAberto ? styles.resultadoPendente : styles.resultadoTexto}>{situacao}</p>}
+      {resultado.podeCorrigir && acao && (
+        <Link href={`/participante/submissoes/${id}/correcao`} className={styles.resultadoAcao}>
+          {acao.botao}
+        </Link>
       )}
     </div>
   );

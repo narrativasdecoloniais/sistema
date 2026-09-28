@@ -8,9 +8,50 @@ import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import ModalDuplicarAtividade from "./ModalDuplicarAtividade";
 import AtividadeForm from "./AtividadeForm";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./AtividadesPainel.module.scss";
+
+function rotuloVagas(atividade) {
+  if (!atividade.exigeInscricao) return "Sem inscrição";
+  if (atividade.semLimiteVagas) return "Ilimitado";
+  return String(atividade.vagas);
+}
+
+// Atividade sem inscrição não tem contagem — null ordena por último e vira
+// "—" na tela e célula vazia no Excel.
+function contagemInscritos(atividade, campo) {
+  if (!atividade.exigeInscricao) return null;
+  return atividade.inscritos?.[campo] ?? 0;
+}
+
+const COLUNAS = [
+  { chave: "nome", rotulo: "Nome", valor: (atividade) => atividade.nome },
+  { chave: "tipo", rotulo: "Tipo", valor: (atividade) => atividade.tipoAtividade?.nome, filtro: "select" },
+  {
+    chave: "vagas",
+    rotulo: "Vagas",
+    // Sem inscrição fica por último; ilimitado acima de qualquer número.
+    valor: (atividade) =>
+      !atividade.exigeInscricao ? null : atividade.semLimiteVagas ? Infinity : atividade.vagas,
+    texto: rotuloVagas,
+  },
+  {
+    chave: "inscritos",
+    rotulo: "Inscritos",
+    valor: (atividade) => contagemInscritos(atividade, "confirmadas"),
+  },
+  {
+    chave: "listaEspera",
+    rotulo: "Lista de espera",
+    valor: (atividade) => contagemInscritos(atividade, "listaEspera"),
+  },
+  { chave: "pessoas", rotulo: "Pessoas", valor: (atividade) => atividade.pessoas?.length || 0 },
+  { chave: "ordem", rotulo: "Ordem", valor: (atividade) => atividade.ordem ?? null },
+];
 
 export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAtividade, tiposParticipacao }) {
   const router = useRouter();
@@ -23,6 +64,7 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
   const [confirmandoId, setConfirmandoId] = useState(null);
   const [duplicandoAtividade, setDuplicandoAtividade] = useState(null);
   const [duplicataCriada, setDuplicataCriada] = useState(null);
+  const tabela = useTabela(atividades, COLUNAS);
 
   function abrirCriacao() {
     setAtividadeEmEdicao(null);
@@ -43,16 +85,23 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
     setAtividades((atual) => {
       const jaExiste = atual.some((item) => item.id === atividadeSalva.id);
       if (jaExiste) {
-        return atual.map((item) => (item.id === atividadeSalva.id ? atividadeSalva : item));
+        // A resposta de edição não traz `inscritos` (só a listagem traz) —
+        // mantém a contagem já carregada, que não muda ao editar.
+        return atual.map((item) =>
+          item.id === atividadeSalva.id ? { inscritos: item.inscritos, ...atividadeSalva } : item
+        );
       }
-      return [...atual, atividadeSalva];
+      return [...atual, { inscritos: { confirmadas: 0, listaEspera: 0 }, ...atividadeSalva }];
     });
     fecharModal();
     router.refresh();
   }
 
   function aoDuplicar(atividadeCriada) {
-    setAtividades((atual) => [...atual, atividadeCriada]);
+    setAtividades((atual) => [
+      ...atual,
+      { inscritos: { confirmadas: 0, listaEspera: 0 }, ...atividadeCriada },
+    ]);
     setDuplicandoAtividade(null);
     setDuplicataCriada(atividadeCriada);
     router.refresh();
@@ -103,30 +152,23 @@ export default function AtividadesPainel({ edicaoId, atividadesIniciais, tiposAt
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="atividades" nomeAba="Atividades" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Slug</th>
-                <th>Vagas</th>
-                <th>Pessoas</th>
-                <th>Ordem</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="atividades" classeAcoes={styles.colunaAcoes} />
             <tbody>
-              {atividades.map((atividade) => (
+              {tabela.linhasVisiveis.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+              )}
+              {tabela.linhasVisiveis.map((atividade) => (
                 <tr key={atividade.id}>
                   <td data-rotulo="Nome">{atividade.nome}</td>
                   <td data-rotulo="Tipo">{atividade.tipoAtividade?.nome}</td>
-                  <td data-rotulo="Slug">{atividade.slug}</td>
-                  <td data-rotulo="Vagas">
-                    {!atividade.exigeInscricao
-                      ? "Sem inscrição"
-                      : atividade.semLimiteVagas
-                        ? "Ilimitado"
-                        : atividade.vagas}
+                  <td data-rotulo="Vagas">{rotuloVagas(atividade)}</td>
+                  <td data-rotulo="Inscritos">
+                    {contagemInscritos(atividade, "confirmadas") ?? "—"}
+                  </td>
+                  <td data-rotulo="Lista de espera">
+                    {contagemInscritos(atividade, "listaEspera") ?? "—"}
                   </td>
                   <td data-rotulo="Pessoas">{atividade.pessoas?.length || 0}</td>
                   <td data-rotulo="Ordem">{atividade.ordem ?? "—"}</td>

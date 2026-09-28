@@ -31,6 +31,31 @@
   }
 }
 
+// Variante usada nos filtros de coluna (CabecalhoTabela): mesma altura do
+// input de texto vizinho e sem herdar o caixa-alta do <th>.
+.compacto {
+  min-height: 32px;
+  padding: 0.3rem 0.5rem;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+
+  .rotuloContainer {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .marcadorTexto {
+    font-size: 0.8125rem;
+    color: var(--texto);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 .invalido {
   border-color: var(--erro);
 }

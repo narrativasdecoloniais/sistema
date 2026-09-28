@@ -60,7 +60,7 @@ export default function Sidebar({ usuario }) {
           {emAdmin ? (
             <NavegacaoEdicao idEdicaoAtual={idEdicaoAtual} usuario={usuario} />
           ) : (
-            <NavegacaoParticipante />
+            <NavegacaoParticipante usuario={usuario} />
           )}
         </nav>
       )}

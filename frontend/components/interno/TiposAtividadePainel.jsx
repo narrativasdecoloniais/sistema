@@ -7,15 +7,21 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import TipoAtividadeForm from "./TipoAtividadeForm";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./TiposAtividadePainel.module.scss";
+
+const COLUNAS = [{ chave: "nome", rotulo: "Nome", valor: (tipo) => tipo.nome }];
 
 export default function TiposAtividadePainel({ tiposIniciais, podeEditar = true }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [tipos, setTipos] = useState(tiposIniciais);
+  const tabela = useTabela(tipos, COLUNAS);
   const [tipoEmEdicao, setTipoEmEdicao] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
@@ -91,15 +97,14 @@ export default function TiposAtividadePainel({ tiposIniciais, podeEditar = true 
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="tipos-de-atividade" nomeAba="Tipos de atividade" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="tipos-atividade" classeAcoes={styles.colunaAcoes} />
             <tbody>
-              {tipos.map((tipo) => (
+              {tabela.linhasVisiveis.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+              )}
+              {tabela.linhasVisiveis.map((tipo) => (
                 <tr key={tipo.id}>
                   <td data-rotulo="Nome">{tipo.nome}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>

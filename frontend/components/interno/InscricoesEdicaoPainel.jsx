@@ -8,6 +8,9 @@ import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import InscricaoEdicaoForm from "./InscricaoEdicaoForm";
 import CartoesContadores from "./CartoesContadores";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { formatarCpf } from "@/lib/cpf";
@@ -19,11 +22,33 @@ function formatarData(valor) {
   });
 }
 
+const COLUNAS = [
+  { chave: "nome", rotulo: "Nome", valor: (inscricao) => inscricao.usuario.nome },
+  { chave: "email", rotulo: "E-mail", valor: (inscricao) => inscricao.usuario.email },
+  {
+    chave: "cpf",
+    rotulo: "CPF",
+    valor: (inscricao) => inscricao.usuario.cpf || null,
+    // Aceita busca com ou sem pontuação.
+    texto: (inscricao) =>
+      inscricao.usuario.cpf ? `${formatarCpf(inscricao.usuario.cpf)} ${inscricao.usuario.cpf}` : "",
+    exportar: (inscricao) => (inscricao.usuario.cpf ? formatarCpf(inscricao.usuario.cpf) : ""),
+  },
+  { chave: "instituicao", rotulo: "Instituição", valor: (inscricao) => inscricao.usuario.instituicao || null },
+  {
+    chave: "inscritoEm",
+    rotulo: "Inscrito em",
+    valor: (inscricao) => new Date(inscricao.createdAt).getTime(),
+    texto: (inscricao) => formatarData(inscricao.createdAt),
+  },
+];
+
 export default function InscricoesEdicaoPainel({ edicaoId, inscricoesIniciais }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [inscricoes, setInscricoes] = useState(inscricoesIniciais);
+  const tabela = useTabela(inscricoes, COLUNAS);
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmandoId, setConfirmandoId] = useState(null);
@@ -84,19 +109,14 @@ export default function InscricoesEdicaoPainel({ edicaoId, inscricoesIniciais })
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="inscricoes-gerais" nomeAba="Inscrições gerais" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>CPF</th>
-                <th>Instituição</th>
-                <th>Inscrito em</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="inscricoes-edicao" classeAcoes={styles.colunaAcoes} />
             <tbody>
-              {inscricoes.map((inscricao) => (
+              {tabela.linhasVisiveis.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+              )}
+              {tabela.linhasVisiveis.map((inscricao) => (
                 <tr key={inscricao.id}>
                   <td data-rotulo="Nome">{inscricao.usuario.nome}</td>
                   <td data-rotulo="E-mail">{inscricao.usuario.email}</td>

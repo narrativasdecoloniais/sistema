@@ -1,6 +1,9 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import { buscarEdicaoPorId } from "@/lib/edicoes";
+import { buscarResumoResultado, listarTrabalhosResultado, listarModelosEmailResultado } from "@/lib/resultadoAdmin";
+import { listarModalidadesSubmissao } from "@/lib/modalidadesSubmissao";
+import ResultadoSubmissoesPainel from "@/components/interno/ResultadoSubmissoesPainel";
 
 export default async function PaginaSubmissoesResultado({ params }) {
   const usuario = await obterUsuarioAtual();
@@ -8,10 +11,24 @@ export default async function PaginaSubmissoesResultado({ params }) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
+  const edicao = await buscarEdicaoPorId(params.id);
+  if (!edicao) notFound();
+
+  const [resumo, trabalhos, { modelos, marcadores }, modalidades] = await Promise.all([
+    buscarResumoResultado(params.id),
+    listarTrabalhosResultado(params.id),
+    listarModelosEmailResultado(params.id),
+    listarModalidadesSubmissao(params.id),
+  ]);
+
   return (
-    <PaginaEmBreve
-      titulo="Resultado das submissões"
-      descricao="Em breve você vai poder divulgar o resultado da avaliação de trabalhos por aqui."
+    <ResultadoSubmissoesPainel
+      edicaoId={params.id}
+      resumoInicial={resumo}
+      trabalhosIniciais={trabalhos}
+      modelosIniciais={modelos}
+      marcadores={marcadores}
+      modalidades={modalidades}
     />
   );
 }

@@ -7,15 +7,21 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import TipoPontoInteresseForm from "./TipoPontoInteresseForm";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./TiposPontoInteressePainel.module.scss";
+
+const COLUNAS = [{ chave: "nome", rotulo: "Nome", valor: (tipo) => tipo.nome }];
 
 export default function TiposPontoInteressePainel({ tiposIniciais, podeEditar = true }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [tipos, setTipos] = useState(tiposIniciais);
+  const tabela = useTabela(tipos, COLUNAS);
   const [tipoEmEdicao, setTipoEmEdicao] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
@@ -91,15 +97,14 @@ export default function TiposPontoInteressePainel({ tiposIniciais, podeEditar = 
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="tipos-de-ponto-de-referencia" nomeAba="Tipos de ponto" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="tipos-ponto-interesse" classeAcoes={styles.colunaAcoes} />
             <tbody>
-              {tipos.map((tipo) => (
+              {tabela.linhasVisiveis.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+              )}
+              {tabela.linhasVisiveis.map((tipo) => (
                 <tr key={tipo.id}>
                   <td data-rotulo="Nome">
                     <span className={styles.nomeComCor}>

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, CalendarCheck, FileText, ListChecks, Award } from "lucide-react";
+import { User, CalendarCheck, FileText, ListChecks, Award, ClipboardCheck } from "lucide-react";
+import { temPapel } from "@/lib/permissoes";
 import styles from "./NavegacaoEdicao.module.scss";
 
 const GRUPOS = [
@@ -27,19 +28,33 @@ const GRUPOS = [
   },
 ];
 
-export default function NavegacaoParticipante() {
+// Só aparece para quem é avaliador em alguma edição — o papel AVALIADOR é
+// mantido em sincronia com AvaliadorEdicao pelo backend (avaliacoes.service.js).
+const GRUPO_AVALIACAO = {
+  titulo: "Avaliação",
+  itens: [{ href: "/participante/avaliacoes", rotulo: "Trabalhos para avaliar", Icone: ClipboardCheck, prefixo: true }],
+};
+
+function itemAtivo(pathname, item) {
+  return pathname === item.href || (item.prefixo && pathname.startsWith(`${item.href}/`));
+}
+
+export default function NavegacaoParticipante({ usuario }) {
   const pathname = usePathname();
+  const grupos = temPapel(usuario, "AVALIADOR")
+    ? [...GRUPOS.slice(0, 3), GRUPO_AVALIACAO, ...GRUPOS.slice(3)]
+    : GRUPOS;
 
   return (
     <>
-      {GRUPOS.map((grupo) => (
+      {grupos.map((grupo) => (
         <div key={grupo.titulo} className={styles.grupo}>
           <div className={styles.rotuloGrupo}>{grupo.titulo}</div>
           {grupo.itens.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`${styles.item} ${pathname === item.href ? styles.ativo : ""}`}
+              className={`${styles.item} ${itemAtivo(pathname, item) ? styles.ativo : ""}`}
             >
               <item.Icone size={18} strokeWidth={1.5} aria-hidden="true" />
               <span className={styles.rotulo}>{item.rotulo}</span>

@@ -25,10 +25,6 @@
   font-size: 0.9375rem;
 }
 
-.filtro {
-  max-width: 320px;
-}
-
 .vazio {
   padding: 2.5rem 1.5rem;
   text-align: center;
@@ -60,7 +56,10 @@
   td {
     text-align: left;
     padding: 0.85rem 1rem;
-    white-space: nowrap;
+    min-width: 220px;
+    max-width: 380px;
+    white-space: normal;
+    overflow-wrap: break-word;
   }
 
   th {
@@ -150,10 +149,6 @@
 
 @media (max-width: 720px) {
   .tabela {
-    thead {
-      display: none;
-    }
-
     tbody tr {
       display: flex;
       flex-direction: column;
@@ -168,6 +163,8 @@
       gap: 1rem;
       padding: 0;
       white-space: normal;
+      min-width: 0;
+      max-width: none;
       text-align: right;
 
       &::before {

@@ -20,10 +20,11 @@ export default function CampoMultiSelect({
   filterPlaceholder = "Buscar...",
   vazio = "Nenhuma opção disponível.",
   vazioFiltro = "Nenhum resultado encontrado.",
+  compacto = false,
   ...props
 }) {
   return (
-    <div className={styles.grupo}>
+    <div className={compacto ? undefined : styles.grupo}>
       {rotulo && (
         <label htmlFor={id} className={styles.rotulo}>
           {rotulo}
@@ -36,7 +37,11 @@ export default function CampoMultiSelect({
         options={options}
         optionLabel={optionLabel}
         optionValue={optionValue}
-        display="chip"
+        // Compacto (filtro de coluna de tabela): sem chips, que estourariam a
+        // altura do cabeçalho — mostra o rótulo único ou "N selecionados".
+        display={compacto ? "comma" : "chip"}
+        maxSelectedLabels={compacto ? 1 : undefined}
+        selectedItemsLabel="{0} selecionados"
         filter
         showSelectAll={false}
         filterPlaceholder={filterPlaceholder}
@@ -50,7 +55,9 @@ export default function CampoMultiSelect({
         itemTemplate={itemTemplate}
         unstyled
         pt={{
-          root: { className: `${styles.raiz} ${erro ? styles.invalido : ""}` },
+          root: {
+            className: `${styles.raiz} ${compacto ? styles.compacto : ""} ${erro ? styles.invalido : ""}`,
+          },
           labelContainer: { className: styles.rotuloContainer },
           label: { className: styles.marcadorTexto },
           token: { className: styles.token },

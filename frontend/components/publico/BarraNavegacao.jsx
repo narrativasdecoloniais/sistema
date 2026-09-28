@@ -24,6 +24,9 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
   const edicaoExibida = useEdicaoExibida();
   const numeroEdicao = edicaoExibida ? edicaoExibida.numeroEdicao : numeroEdicaoProp;
   const nav = edicaoExibida?.navegacao;
+  const ancoras = nav?.resultadoDivulgado
+    ? [ANCORAS[0], { href: "/trabalhos-aprovados", rotulo: "Aprovados" }, ...ANCORAS.slice(1)]
+    : ANCORAS;
   const pathname = usePathname();
   const naHome = pathname === "/";
   const [rolou, setRolou] = useState(!naHome);
@@ -132,7 +135,7 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
             variants={painelVariants}
           >
             <motion.ul className={styles.ancorasMobile}>
-              {ANCORAS.map((ancora) => (
+              {ancoras.map((ancora) => (
                 <motion.li key={ancora.href} variants={itemVariants}>
                   <Link href={ancora.href} onClick={fecharMenu}>
                     {ancora.rotulo}
@@ -179,7 +182,7 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
       </motion.svg>
 
       <ul className={styles.ancoras}>
-        {ANCORAS.map((ancora) => (
+        {ancoras.map((ancora) => (
           <li key={ancora.href}>
             <Link href={ancora.href} className={styles.ancoraBotao}>
               {ancora.rotulo}

@@ -190,6 +190,11 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
 // configurada pro breakpoint (tipo "NENHUMA") — mesmo ajuste de
 // PaginaInicialConteudo.jsx/DetalheAtividade.jsx, senão a navbar reservava o
 // espaço à toa.
+export async function listarTrabalhosAprovados() {
+  const dados = await requisitarPublico("/publico/edicao-atual/trabalhos-aprovados");
+  return dados?.trabalhos || [];
+}
+
 export function montarPropsNavegacao(edicao) {
   const mostrarFaixaHero = edicao?.mostrarFaixaHero ?? true;
   const faixaHeroTipoMobile = edicao?.faixaHeroTipoMobile || "COR";
@@ -220,6 +225,8 @@ export function montarPropsNavegacao(edicao) {
     navMesmoEstilo: Boolean(edicao?.navMesmoEstilo),
     corFundoBotaoNav: edicao?.corFundoBotaoNav || "BARRO",
     corTextoBotaoNav: edicao?.corTextoBotaoNav || "PAPEL",
+    // Link "Aprovados" só depois que a organização divulga o resultado.
+    resultadoDivulgado: Boolean(edicao?.resultadoDivulgadoEm),
   };
 }
 

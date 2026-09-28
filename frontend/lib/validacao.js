@@ -465,6 +465,64 @@ export const inscricaoAtividadeAdminSchema = z.object({
   }),
 });
 
+// Espelha backend/src/validators/avaliacoes.validators.js.
+const DECISOES_AVALIACAO = ["APROVADO", "APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO", "REPROVADO"];
+
+// Conta existente (usuarioId, via busca) OU convite por e-mail (nome+email).
+export const avaliadorSchema = z
+  .object({
+    usuarioId: z.string().optional(),
+    nome: z.string().trim().optional(),
+    email: z.string().trim().optional(),
+    areaIds: z.array(z.string()).default([]),
+  })
+  .superRefine((dados, ctx) => {
+    if (dados.usuarioId) return;
+    if (!dados.nome || dados.nome.length < 3) {
+      ctx.addIssue({ code: "custom", path: ["nome"], message: "Informe o nome completo" });
+    }
+    if (!dados.email || !z.string().email().safeParse(dados.email).success) {
+      ctx.addIssue({ code: "custom", path: ["email"], message: "Informe um e-mail válido" });
+    }
+  });
+
+export const atribuirAvaliadorSchema = z.object({
+  avaliadorEdicaoId: z.string().min(1, "Selecione um avaliador"),
+  submissaoIds: z.array(z.string()).min(1, "Selecione ao menos uma submissão"),
+});
+
+export const decisaoAvaliadorSchema = z.object({
+  decisao: z.enum(DECISOES_AVALIACAO, { errorMap: () => ({ message: "Selecione uma decisão" }) }),
+});
+
+export const sugestaoAreaSchema = z.object({
+  areaSugeridaId: z.string().min(1, "Selecione a área sugerida"),
+  justificativa: z.string().trim().max(2000, "Máximo de 2000 caracteres").optional().default(""),
+});
+
+// Espelha correcaoSubmissaoSchema em backend/src/validators/submissoes.validators.js.
+export const correcaoSubmissaoSchema = z.object({
+  titulo: z.string().trim().min(3, "Informe o título do trabalho").max(500).optional(),
+  resumo: z.string().trim().min(1, "Informe o resumo"),
+  referenciaBibliografica: z.string().trim().min(1, "Informe a referência bibliográfica"),
+});
+
+// Espelha backend/src/validators/resultadoSubmissoes.validators.js.
+export const modeloEmailResultadoSchema = z.object({
+  assunto: z.string().trim().min(3, "Informe o assunto").max(200, "Máximo de 200 caracteres"),
+  corpo: z.string().trim().min(1, "Informe o texto do e-mail"),
+});
+
+export const conferirCorrecaoSchema = z
+  .object({
+    aceitar: z.boolean(),
+    motivo: z.string().trim().max(5000, "Máximo de 5000 caracteres").optional().default(""),
+  })
+  .refine((dados) => dados.aceitar || dados.motivo.length >= 3, {
+    message: "Explique o que ainda precisa ser corrigido",
+    path: ["motivo"],
+  });
+
 export const submissaoEmailSchema = z.object({
   email: z.string().trim().email("E-mail inválido"),
 });

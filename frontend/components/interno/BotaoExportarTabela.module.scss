@@ -1,0 +1,63 @@
+// Fica dentro do .tabelaWrapper de cada painel, como uma faixa acima da tabela.
+.barra {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.contagem {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--texto);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--fundo);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.botaoPerigo {
+  color: var(--erro);
+  border-color: var(--erro);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--erro) 8%, var(--superficie));
+  }
+}

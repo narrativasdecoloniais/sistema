@@ -1,0 +1,56 @@
+// Mesma casca das páginas de submissão (app/(publico)/submissao/[modalidade]).
+.pagina {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: calc(3rem + 70px) 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  @media (max-width: 700px) {
+    padding: calc(2rem + 70px) 1.5rem 3.5rem;
+  }
+}
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tinta);
+  font-size: clamp(2rem, 4.5vw, 2.8rem);
+  line-height: 1.15;
+}
+
+.subtitulo {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.divisor {
+  width: 100%;
+  color: var(--ocre);
+}
+
+.aviso {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--tinta);
+  line-height: 1.6;
+}

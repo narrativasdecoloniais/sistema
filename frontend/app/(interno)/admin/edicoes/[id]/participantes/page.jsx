@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
+import { temPapel } from "@/lib/permissoes";
 import { buscarEdicaoPorId } from "@/lib/edicoes";
-import { listarParticipantes } from "@/lib/participantes";
+import { listarParticipantes, listarUsuariosDaEdicao } from "@/lib/participantes";
 import ParticipantesPainel from "@/components/interno/ParticipantesPainel";
 
 export default async function PaginaParticipantes({ params }) {
@@ -13,7 +14,19 @@ export default async function PaginaParticipantes({ params }) {
   const edicao = await buscarEdicaoPorId(params.id);
   if (!edicao) notFound();
 
-  const participantes = await listarParticipantes();
+  // A aba "Usuários" (base inteira, com CPF) é ADMIN-only — pra ORGANIZADOR
+  // nem busca, e o painel mostra só a aba "Equipe".
+  const souAdmin = temPapel(usuario, "ADMIN");
+  const [participantes, usuarios] = await Promise.all([
+    listarParticipantes(),
+    souAdmin ? listarUsuariosDaEdicao(params.id) : Promise.resolve([]),
+  ]);
 
-  return <ParticipantesPainel participantesIniciais={participantes} usuarioLogado={usuario} />;
+  return (
+    <ParticipantesPainel
+      participantesIniciais={participantes}
+      usuarios={usuarios}
+      usuarioLogado={usuario}
+    />
+  );
 }

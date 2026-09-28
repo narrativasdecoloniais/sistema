@@ -95,7 +95,6 @@
 
 .tabela {
   width: 100%;
-  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.9375rem;
 
@@ -103,6 +102,8 @@
   td {
     text-align: left;
     padding: 0.85rem 1rem;
+    min-width: 220px;
+    max-width: 380px;
     white-space: normal;
     overflow-wrap: break-word;
   }
@@ -127,38 +128,6 @@
   td {
     color: var(--texto);
   }
-}
-
-// table-layout: fixed usa a largura definida nas células da primeira linha
-// (o cabeçalho) pra fixar cada coluna — sem isso, o algoritmo automático do
-// navegador espreme colunas com texto livre (título/área) até quase 1
-// caractere de largura pra caber o conteúdo rígido (nowrap) das outras.
-.colunaTitulo {
-  width: 24%;
-}
-
-.colunaModalidade {
-  width: 12%;
-}
-
-.colunaArea {
-  width: 20%;
-}
-
-.colunaAutorPrincipal {
-  width: 16%;
-}
-
-.colunaCoautores {
-  width: 8%;
-}
-
-.colunaData {
-  width: 10%;
-}
-
-.colunaAcoes {
-  width: 10%;
 }
 
 .tabela th.colunaAcoes,
@@ -364,10 +333,6 @@
 
 @media (max-width: 720px) {
   .tabela {
-    thead {
-      display: none;
-    }
-
     tbody tr {
       display: flex;
       flex-direction: column;
@@ -382,6 +347,8 @@
       gap: 1rem;
       padding: 0;
       width: auto;
+      min-width: 0;
+      max-width: none;
       white-space: normal;
       text-align: right;
 

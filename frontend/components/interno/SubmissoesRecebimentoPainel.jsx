@@ -6,8 +6,10 @@ import { Eye, Trash2 } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
-import CampoSelecao from "./CampoSelecao";
 import CampoTexto from "./CampoTexto";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { modalidadeSubmissaoSchema, extrairErros } from "@/lib/validacao";
@@ -75,35 +77,85 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
   const router = useRouter();
   const { notificar } = useToast();
 
-  const [filtroModalidadeId, setFiltroModalidadeId] = useState("");
-  const [filtroAreaId, setFiltroAreaId] = useState("");
   const [busca, setBusca] = useState("");
   const [detalheId, setDetalheId] = useState(null);
   const [confirmandoId, setConfirmandoId] = useState(null);
   const [processandoId, setProcessandoId] = useState(null);
 
-  const areasDaModalidade = useMemo(
-    () => modalidades.find((modalidade) => modalidade.id === filtroModalidadeId)?.areas || [],
-    [modalidades, filtroModalidadeId]
+  const colunas = useMemo(
+    () => [
+      {
+        chave: "titulo",
+        rotulo: "Título",
+        valor: (submissao) => submissao.titulo,
+      },
+      {
+        chave: "modalidade",
+        rotulo: "Modalidade",
+        valor: (submissao) => submissao.modalidadeSubmissao.nome,
+        filtro: "select",
+        opcoes: modalidades.map((modalidade) => ({ valor: modalidade.id, rotulo: modalidade.nome })),
+        corresponde: (submissao, modalidadeId) => submissao.modalidadeSubmissao.id === modalidadeId,
+      },
+      {
+        chave: "area",
+        rotulo: "Área",
+        valor: (submissao) => submissao.areaSubmissao?.titulo || null,
+        filtro: "select",
+        // Prefixo da modalidade porque áreas de modalidades diferentes podem ter o mesmo título.
+        opcoes: modalidades.flatMap((modalidade) =>
+          (modalidade.areas || []).map((area) => ({
+            valor: area.id,
+            rotulo: modalidades.length > 1 ? `${modalidade.nome}: ${area.titulo}` : area.titulo,
+          }))
+        ),
+        corresponde: (submissao, areaId) => submissao.areaSubmissao?.id === areaId,
+      },
+      {
+        chave: "autorPrincipal",
+        rotulo: "Autor principal",
+        valor: (submissao) => submissao.autores.find((autor) => autor.principal)?.nome || null,
+        texto: (submissao) => {
+          const autor = submissao.autores.find((item) => item.principal);
+          return autor ? `${autor.nome} ${autor.email}` : "";
+        },
+        exportar: (submissao) => {
+          const autor = submissao.autores.find((item) => item.principal);
+          return autor ? `${autor.nome} (${autor.email})` : "";
+        },
+      },
+      {
+        chave: "coautores",
+        rotulo: "Coautores",
+        valor: (submissao) => submissao.autores.filter((autor) => !autor.principal).length,
+        classe: styles.colunaCoautores,
+      },
+      {
+        chave: "enviadoEm",
+        rotulo: "Enviado em",
+        valor: (submissao) => new Date(submissao.createdAt).getTime(),
+        texto: (submissao) => formatarData(submissao.createdAt),
+        classe: styles.colunaData,
+      },
+    ],
+    [modalidades]
   );
 
-  function aoMudarModalidade(valor) {
-    setFiltroModalidadeId(valor);
-    setFiltroAreaId("");
-  }
-
-  const submissoesFiltradas = useMemo(() => {
+  // Busca livre continua existindo porque cobre também os coautores, que a
+  // tabela só mostra como contagem.
+  const submissoesBuscadas = useMemo(() => {
     const buscaNormalizada = busca.trim().toLowerCase();
     return submissoes.filter((submissao) => {
-      if (filtroModalidadeId && submissao.modalidadeSubmissao.id !== filtroModalidadeId) return false;
-      if (filtroAreaId && submissao.areaSubmissao?.id !== filtroAreaId) return false;
       if (!buscaNormalizada) return true;
 
       const alvoTitulo = submissao.titulo.toLowerCase();
       const alvoAutores = submissao.autores.map((autor) => `${autor.nome} ${autor.email}`.toLowerCase());
       return alvoTitulo.includes(buscaNormalizada) || alvoAutores.some((alvo) => alvo.includes(buscaNormalizada));
     });
-  }, [submissoes, filtroModalidadeId, filtroAreaId, busca]);
+  }, [submissoes, busca]);
+
+  const tabela = useTabela(submissoesBuscadas, colunas);
+  const submissoesFiltradas = tabela.linhasVisiveis;
 
   async function excluirSubmissao(id) {
     setProcessandoId(id);
@@ -127,33 +179,6 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
   return (
     <>
       <div className={styles.filtros}>
-        <CampoSelecao
-          id="filtroModalidade"
-          rotulo="Modalidade"
-          value={filtroModalidadeId}
-          onChange={(evento) => aoMudarModalidade(evento.target.value)}
-        >
-          <option value="">Todas as modalidades</option>
-          {modalidades.map((modalidade) => (
-            <option key={modalidade.id} value={modalidade.id}>
-              {modalidade.nome}
-            </option>
-          ))}
-        </CampoSelecao>
-        <CampoSelecao
-          id="filtroArea"
-          rotulo="Área"
-          value={filtroAreaId}
-          onChange={(evento) => setFiltroAreaId(evento.target.value)}
-          disabled={!filtroModalidadeId || areasDaModalidade.length === 0}
-        >
-          <option value="">Todas as áreas</option>
-          {areasDaModalidade.map((area) => (
-            <option key={area.id} value={area.id}>
-              {area.titulo}
-            </option>
-          ))}
-        </CampoSelecao>
         <CampoTexto
           id="buscaSubmissao"
           rotulo="Buscar por título ou autor"
@@ -163,37 +188,31 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
         />
       </div>
 
-      {submissoesFiltradas.length === 0 ? (
+      {submissoesBuscadas.length === 0 ? (
         <div className={styles.vazio}>
           <p>Nenhuma submissão encontrada.</p>
           <p className={styles.vazioApoio}>
             {submissoes.length === 0
               ? "As submissões aparecem aqui conforme as pessoas enviam trabalhos pelo site público."
-              : "Nenhuma submissão para os filtros selecionados."}
+              : "Nenhuma submissão para a busca informada."}
           </p>
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="submissoes" nomeAba="Submissões" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th className={styles.colunaTitulo}>Título</th>
-                <th className={styles.colunaModalidade}>Modalidade</th>
-                <th className={styles.colunaArea}>Área</th>
-                <th className={styles.colunaAutorPrincipal}>Autor principal</th>
-                <th className={styles.colunaCoautores}>Coautores</th>
-                <th className={styles.colunaData}>Enviado em</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="submissoes" classeAcoes={styles.colunaAcoes} />
             <tbody>
+              {submissoesFiltradas.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={colunas.length + 1} />
+              )}
               {submissoesFiltradas.map((submissao) => {
                 const autorPrincipal = submissao.autores.find((autor) => autor.principal);
                 const coautores = submissao.autores.filter((autor) => !autor.principal);
 
                 return (
                   <tr key={submissao.id}>
-                    <td data-rotulo="Título" className={styles.colunaTitulo}>
+                    <td data-rotulo="Título">
                       {submissao.titulo}
                     </td>
                     <td data-rotulo="Modalidade">{submissao.modalidadeSubmissao.nome}</td>
@@ -309,6 +328,31 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
 // objeto inteiro a partir da modalidade já carregada, preservando os `id`
 // das áreas existentes pra sincronizarLista tratar como update em vez de
 // criar áreas duplicadas.
+// Ordena/filtra pelo prazo salvo, não pelo que está sendo digitado — senão a
+// linha pularia de posição no meio da edição.
+const COLUNAS_CONFIGURACOES = [
+  { chave: "modalidade", rotulo: "Modalidade", valor: (modalidade) => modalidade.nome },
+  {
+    chave: "prazoInicio",
+    rotulo: "Início do prazo",
+    valor: (modalidade) => paraData(modalidade.prazoInicio) || null,
+    texto: (modalidade) => formatarPrazo(modalidade.prazoInicio),
+  },
+  {
+    chave: "prazoFim",
+    rotulo: "Fim do prazo",
+    valor: (modalidade) => paraData(modalidade.prazoFim) || null,
+    texto: (modalidade) => formatarPrazo(modalidade.prazoFim),
+  },
+];
+
+function formatarPrazo(valor) {
+  const data = paraData(valor);
+  if (!data) return "";
+  const [ano, mes, dia] = data.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
 function AbaConfiguracoes({ edicaoId, modalidades, setModalidades }) {
   const router = useRouter();
   const { notificar } = useToast();
@@ -323,6 +367,7 @@ function AbaConfiguracoes({ edicaoId, modalidades, setModalidades }) {
   );
   const [erros, setErros] = useState({});
   const [salvandoId, setSalvandoId] = useState(null);
+  const tabela = useTabela(modalidades, COLUNAS_CONFIGURACOES);
 
   function atualizarPrazo(modalidadeId, campo, valor) {
     setPrazos((atual) => ({
@@ -389,17 +434,14 @@ function AbaConfiguracoes({ edicaoId, modalidades, setModalidades }) {
 
   return (
     <div className={styles.tabelaWrapper}>
+      <BotaoExportarTabela tabela={tabela} nomeArquivo="prazos-de-submissao" nomeAba="Prazos" />
       <table className={styles.tabela}>
-        <thead>
-          <tr>
-            <th>Modalidade</th>
-            <th>Início do prazo</th>
-            <th>Fim do prazo</th>
-            <th className={styles.colunaAcoes}>Ações</th>
-          </tr>
-        </thead>
+        <CabecalhoTabela tabela={tabela} idTabela="prazos-submissao" classeAcoes={styles.colunaAcoes} />
         <tbody>
-          {modalidades.map((modalidade) => {
+          {tabela.linhasVisiveis.length === 0 && (
+            <LinhaSemResultado tabela={tabela} colSpan={COLUNAS_CONFIGURACOES.length + 1} />
+          )}
+          {tabela.linhasVisiveis.map((modalidade) => {
             const prazo = prazos[modalidade.id] || { prazoInicio: "", prazoFim: "" };
             const errosLinha = erros[modalidade.id] || {};
 

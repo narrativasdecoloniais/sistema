@@ -1,0 +1,130 @@
+"use client";
+
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
+import { formatarCpf } from "@/lib/cpf";
+import styles from "./ParticipantesPainel.module.scss";
+
+const ROTULO_PAPEL = {
+  ADMIN: "Administrador",
+  ORGANIZADOR: "Organizador",
+  PARTICIPANTE: "Participante",
+};
+
+// Papel efetivo mais alto da conta (enum PapelUsuario): ADMIN > ORGANIZADOR.
+function papelPrincipal(usuario) {
+  if (usuario.papeis.includes("ADMIN")) return "ADMIN";
+  if (usuario.papeis.includes("ORGANIZADOR")) return "ORGANIZADOR";
+  return "PARTICIPANTE";
+}
+
+const COLUNAS = [
+  { chave: "nome", rotulo: "Nome", valor: (usuario) => usuario.nome },
+  { chave: "email", rotulo: "E-mail", valor: (usuario) => usuario.email },
+  {
+    chave: "cpf",
+    rotulo: "CPF",
+    valor: (usuario) => usuario.cpf || null,
+    // Aceita busca com ou sem pontuação.
+    texto: (usuario) => (usuario.cpf ? `${formatarCpf(usuario.cpf)} ${usuario.cpf}` : ""),
+    exportar: (usuario) => (usuario.cpf ? formatarCpf(usuario.cpf) : ""),
+  },
+  { chave: "instituicao", rotulo: "Instituição", valor: (usuario) => usuario.instituicao || null },
+  {
+    chave: "papel",
+    rotulo: "Papel",
+    valor: papelPrincipal,
+    filtro: "select",
+    opcoes: Object.entries(ROTULO_PAPEL).map(([valor, rotulo]) => ({ valor, rotulo })),
+    exportar: (usuario) => ROTULO_PAPEL[papelPrincipal(usuario)],
+  },
+  {
+    chave: "inscritoNaEdicao",
+    rotulo: "Inscrito na edição",
+    valor: (usuario) => (usuario.inscritoNaEdicao ? "SIM" : "NAO"),
+    filtro: "select",
+    opcoes: [
+      { valor: "SIM", rotulo: "Sim" },
+      { valor: "NAO", rotulo: "Não" },
+    ],
+    exportar: (usuario) => (usuario.inscritoNaEdicao ? "Sim" : "Não"),
+  },
+  {
+    chave: "atividades",
+    rotulo: "Atividades",
+    valor: (usuario) => usuario.atividades.confirmadas,
+  },
+  {
+    chave: "listaEspera",
+    rotulo: "Lista de espera",
+    valor: (usuario) => usuario.atividades.listaEspera,
+  },
+  {
+    chave: "submissoes",
+    rotulo: "Submissões",
+    // Quantidade de submissões da edição em que a conta enviou ou é autora/
+    // coautora. Ordena pelo número; o filtro só separa quem tem de quem não tem.
+    valor: (usuario) => usuario.submissoes,
+    filtro: "select",
+    opcoes: [
+      { valor: "COM", rotulo: "Com submissão" },
+      { valor: "SEM", rotulo: "Sem submissão" },
+    ],
+    corresponde: (usuario, valor) => (valor === "COM" ? usuario.submissoes > 0 : usuario.submissoes === 0),
+  },
+];
+
+// Aba "Usuários" da tela de Participantes (ADMIN-only): todas as contas da
+// base, com a situação de cada uma na edição aberta. Somente leitura — a
+// gestão da equipe continua na aba "Equipe".
+export default function UsuariosEdicaoTabela({ usuarios }) {
+  const tabela = useTabela(usuarios, COLUNAS);
+
+  if (usuarios.length === 0) {
+    return (
+      <div className={styles.vazio}>
+        <p>Nenhum usuário encontrado.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.tabelaWrapper}>
+      <BotaoExportarTabela tabela={tabela} nomeArquivo="usuarios" nomeAba="Usuários" />
+      <table className={styles.tabela}>
+        <CabecalhoTabela tabela={tabela} idTabela="usuarios-edicao" comAcoes={false} />
+        <tbody>
+          {tabela.linhasVisiveis.length === 0 && (
+            <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length} />
+          )}
+          {tabela.linhasVisiveis.map((usuario) => {
+            const papel = papelPrincipal(usuario);
+
+            return (
+              <tr key={usuario.id}>
+                <td data-rotulo="Nome">{usuario.nome}</td>
+                <td data-rotulo="E-mail">{usuario.email}</td>
+                <td data-rotulo="CPF">{usuario.cpf ? formatarCpf(usuario.cpf) : "—"}</td>
+                <td data-rotulo="Instituição">{usuario.instituicao || "—"}</td>
+                <td data-rotulo="Papel">
+                  {papel === "PARTICIPANTE" ? (
+                    ROTULO_PAPEL[papel]
+                  ) : (
+                    <span className={`${styles.tag} ${papel === "ADMIN" ? styles.tagAdmin : ""}`}>
+                      {ROTULO_PAPEL[papel]}
+                    </span>
+                  )}
+                </td>
+                <td data-rotulo="Inscrito na edição">{usuario.inscritoNaEdicao ? "Sim" : "Não"}</td>
+                <td data-rotulo="Atividades">{usuario.atividades.confirmadas}</td>
+                <td data-rotulo="Lista de espera">{usuario.atividades.listaEspera}</td>
+                <td data-rotulo="Submissões">{usuario.submissoes}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}

@@ -10,11 +10,15 @@ import ParticipanteForm from "./ParticipanteForm";
 import AlterarEmailUsuarioForm from "./AlterarEmailUsuarioForm";
 import UnificarContasForm from "./UnificarContasForm";
 import SeletorSecoesAdmin from "./SeletorSecoesAdmin";
+import UsuariosEdicaoTabela from "./UsuariosEdicaoTabela";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { formatarCpf } from "@/lib/cpf";
 import { temPapel } from "@/lib/permissoes";
-import { ROTULOS_SECOES_ADMIN } from "@/lib/secoesAdmin";
+import { GRUPOS_SECOES_ADMIN, ROTULOS_SECOES_ADMIN } from "@/lib/secoesAdmin";
 import styles from "./ParticipantesPainel.module.scss";
 
 function rotuloPermissoes(participante) {
@@ -25,12 +29,82 @@ function rotuloPermissoes(participante) {
   return `${total} seções`;
 }
 
-export default function ParticipantesPainel({ participantesIniciais, usuarioLogado }) {
+function ehAdmin(participante) {
+  return participante.papeis.includes("ADMIN");
+}
+
+function rotuloPapel(participante) {
+  return ehAdmin(participante) ? "Administrador" : "Organizador";
+}
+
+function textoPermissoes(participante) {
+  return ehAdmin(participante) ? "Acesso total" : rotuloPermissoes(participante);
+}
+
+// Seções do enum SecaoAdmin, com o nome do grupo pai nos subitens pra
+// desambiguar rótulos repetidos (ex.: "Apresentação" da página e da submissão).
+const OPCOES_SECOES = GRUPOS_SECOES_ADMIN.flatMap((grupo) =>
+  grupo.itens.flatMap((item) =>
+    item.subitens
+      ? item.subitens.map((sub) => ({ valor: sub.valor, rotulo: `${item.rotulo}: ${sub.rotulo}` }))
+      : [{ valor: item.valor, rotulo: item.rotulo }]
+  )
+);
+
+const COLUNAS = [
+  { chave: "nome", rotulo: "Nome", valor: (participante) => participante.nome },
+  { chave: "email", rotulo: "E-mail", valor: (participante) => participante.email },
+  {
+    chave: "cpf",
+    rotulo: "CPF",
+    valor: (participante) => participante.cpf || null,
+    // Aceita busca com ou sem pontuação; "convite" encontra os pendentes.
+    texto: (participante) =>
+      participante.cpf
+        ? `${formatarCpf(participante.cpf)} ${participante.cpf}`
+        : "Convite pendente",
+    exportar: (participante) =>
+      participante.cpf ? formatarCpf(participante.cpf) : "Convite pendente",
+  },
+  {
+    chave: "papel",
+    rotulo: "Papel",
+    valor: rotuloPapel,
+    filtro: "select",
+    opcoes: [
+      { valor: "Administrador", rotulo: "Administrador" },
+      { valor: "Organizador", rotulo: "Organizador" },
+    ],
+  },
+  {
+    chave: "permissoes",
+    rotulo: "Permissões",
+    valor: textoPermissoes,
+    filtro: "select",
+    opcoes: [
+      { valor: "TOTAL", rotulo: "Acesso total/completo" },
+      { valor: "NENHUMA", rotulo: "Sem seções liberadas" },
+      ...OPCOES_SECOES,
+    ],
+    // Uma seção específica também casa com quem tem acesso total/completo,
+    // já que essas pessoas acessam a seção de fato.
+    corresponde: (participante, valor) => {
+      const total = ehAdmin(participante) || participante.acessoCompleto;
+      if (valor === "TOTAL") return total;
+      const secoes = participante.secoesPermitidas || [];
+      if (valor === "NENHUMA") return !total && secoes.length === 0;
+      return total || secoes.includes(valor);
+    },
+  },
+];
+
+export default function ParticipantesPainel({ participantesIniciais, usuarios = [], usuarioLogado }) {
   const router = useRouter();
   const { notificar } = useToast();
   const souAdmin = temPapel(usuarioLogado, "ADMIN");
 
   const [participantes, setParticipantes] = useState(participantesIniciais);
+  const [abaAtiva, setAbaAtiva] = useState(souAdmin ? "usuarios" : "equipe");
   const [modalAberto, setModalAberto] = useState(false);
   const [modalEmailAberto, setModalEmailAberto] = useState(false);
   const [modalUnificarAberto, setModalUnificarAberto] = useState(false);
@@ -39,6 +113,7 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
   const [editandoPermissoesId, setEditandoPermissoesId] = useState(null);
   const [permissoesEmEdicao, setPermissoesEmEdicao] = useState(null);
   const [salvandoPermissoes, setSalvandoPermissoes] = useState(false);
+  const tabela = useTabela(participantes, COLUNAS);
 
   function fecharModal() {
     setModalAberto(false);
@@ -175,85 +250,109 @@ export default function ParticipantesPainel({ participantesIniciais, usuarioLoga
         </div>
       </div>
 
-      {participantes.length === 0 ? (
-        <div className={styles.vazio}>
-          <p>Nenhum organizador cadastrado ainda.</p>
-          <p className={styles.vazioApoio}>
-            Adicione alguém para dividir a gestão do Narrativas com você.
-          </p>
+      {souAdmin && (
+        <div className={styles.abas} role="tablist" aria-label="Visualização de usuários">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={abaAtiva === "usuarios"}
+            tabIndex={abaAtiva === "usuarios" ? 0 : -1}
+            className={`${styles.aba} ${abaAtiva === "usuarios" ? styles.abaAtiva : ""}`}
+            onClick={() => setAbaAtiva("usuarios")}
+          >
+            Usuários
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={abaAtiva === "equipe"}
+            tabIndex={abaAtiva === "equipe" ? 0 : -1}
+            className={`${styles.aba} ${abaAtiva === "equipe" ? styles.abaAtiva : ""}`}
+            onClick={() => setAbaAtiva("equipe")}
+          >
+            Equipe
+          </button>
         </div>
-      ) : (
-        <div className={styles.tabelaWrapper}>
-          <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>CPF</th>
-                <th>Papel</th>
-                <th>Permissões</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {participantes.map((participante) => {
-                const eAdmin = participante.papeis.includes("ADMIN");
+      )}
 
-                return (
-                  <tr key={participante.id}>
-                    <td data-rotulo="Nome">{participante.nome}</td>
-                    <td data-rotulo="E-mail">{participante.email}</td>
-                    <td data-rotulo="CPF">
-                      {participante.cpf ? formatarCpf(participante.cpf) : "Convite pendente"}
-                    </td>
-                    <td data-rotulo="Papel">
-                      <span className={`${styles.tag} ${eAdmin ? styles.tagAdmin : ""}`}>
-                        {eAdmin ? "Administrador" : "Organizador"}
-                      </span>
-                    </td>
-                    <td data-rotulo="Permissões">
-                      {eAdmin ? "Acesso total" : rotuloPermissoes(participante)}
-                    </td>
-                    <td data-rotulo="Ações" className={styles.colunaAcoes}>
-                      {!eAdmin && souAdmin && (
-                        <div className={styles.acoesLinha}>
-                          <button
-                            type="button"
-                            className={styles.botaoIcone}
-                            aria-label={`Editar permissões de ${participante.nome}`}
-                            onClick={() => abrirEdicaoPermissoes(participante)}
-                          >
-                            <Settings2 size={16} strokeWidth={1.5} aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.botaoIcone}
-                            aria-label={`Promover ${participante.nome} a administrador`}
-                            onClick={() =>
-                              setConfirmando({ id: participante.id, tipo: "promover" })
-                            }
-                          >
-                            <ShieldPlus size={16} strokeWidth={1.5} aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
-                            aria-label={`Remover ${participante.nome}`}
-                            onClick={() =>
-                              setConfirmando({ id: participante.id, tipo: "remover" })
-                            }
-                          >
-                            <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      {abaAtiva === "usuarios" ? (
+        <UsuariosEdicaoTabela usuarios={usuarios} />
+      ) : (
+        <>
+          {participantes.length === 0 ? (
+            <div className={styles.vazio}>
+              <p>Nenhum organizador cadastrado ainda.</p>
+              <p className={styles.vazioApoio}>
+                Adicione alguém para dividir a gestão do Narrativas com você.
+              </p>
+            </div>
+          ) : (
+            <div className={styles.tabelaWrapper}>
+              <BotaoExportarTabela tabela={tabela} nomeArquivo="usuarios-e-participantes" nomeAba="Participantes" />
+              <table className={styles.tabela}>
+                <CabecalhoTabela tabela={tabela} idTabela="participantes" classeAcoes={styles.colunaAcoes} />
+                <tbody>
+                  {tabela.linhasVisiveis.length === 0 && (
+                    <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+                  )}
+                  {tabela.linhasVisiveis.map((participante) => {
+                    const eAdmin = ehAdmin(participante);
+
+                    return (
+                      <tr key={participante.id}>
+                        <td data-rotulo="Nome">{participante.nome}</td>
+                        <td data-rotulo="E-mail">{participante.email}</td>
+                        <td data-rotulo="CPF">
+                          {participante.cpf ? formatarCpf(participante.cpf) : "Convite pendente"}
+                        </td>
+                        <td data-rotulo="Papel">
+                          <span className={`${styles.tag} ${eAdmin ? styles.tagAdmin : ""}`}>
+                            {rotuloPapel(participante)}
+                          </span>
+                        </td>
+                        <td data-rotulo="Permissões">{textoPermissoes(participante)}</td>
+                        <td data-rotulo="Ações" className={styles.colunaAcoes}>
+                          {!eAdmin && souAdmin && (
+                            <div className={styles.acoesLinha}>
+                              <button
+                                type="button"
+                                className={styles.botaoIcone}
+                                aria-label={`Editar permissões de ${participante.nome}`}
+                                onClick={() => abrirEdicaoPermissoes(participante)}
+                              >
+                                <Settings2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.botaoIcone}
+                                aria-label={`Promover ${participante.nome} a administrador`}
+                                onClick={() =>
+                                  setConfirmando({ id: participante.id, tipo: "promover" })
+                                }
+                              >
+                                <ShieldPlus size={16} strokeWidth={1.5} aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
+                                aria-label={`Remover ${participante.nome}`}
+                                onClick={() =>
+                                  setConfirmando({ id: participante.id, tipo: "remover" })
+                                }
+                              >
+                                <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
       {modalAberto && (

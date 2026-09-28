@@ -1,0 +1,147 @@
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.busca {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.rotuloBusca {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.campoBusca {
+  min-height: 44px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--ocre);
+  border-radius: 4px;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: inherit;
+  font-size: 1rem;
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.aba {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--barro);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--barro);
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.abaAtiva {
+  background: var(--barro);
+  color: var(--papel);
+}
+
+.area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tituloArea {
+  margin: 0;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+}
+
+.trabalhos {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Mesma linguagem do .areaCartao das páginas de submissão.
+.cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--areia);
+  border-left: 3px solid var(--barro);
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: var(--areia);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.cartaoTitulo {
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cartaoAutores {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.cartaoAcao {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.vazio {
+  margin: 0;
+  color: var(--texto-suave);
+}

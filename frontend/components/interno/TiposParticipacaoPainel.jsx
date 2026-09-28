@@ -7,6 +7,9 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import TipoParticipacaoForm from "./TipoParticipacaoForm";
+import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela from "./BotaoExportarTabela";
+import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./TiposParticipacaoPainel.module.scss";
@@ -22,11 +25,17 @@ function ordenarTipos(tipos) {
   });
 }
 
+const COLUNAS = [
+  { chave: "ordem", rotulo: "Ordem", valor: (tipo) => tipo.ordem ?? null },
+  { chave: "nome", rotulo: "Nome", valor: (tipo) => tipo.nome },
+];
+
 export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = true }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [tipos, setTipos] = useState(tiposIniciais);
+  const tabela = useTabela(tipos, COLUNAS);
   const [tipoEmEdicao, setTipoEmEdicao] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
@@ -103,16 +112,14 @@ export default function TiposParticipacaoPainel({ tiposIniciais, podeEditar = tr
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="tipos-de-participacao" nomeAba="Tipos de participação" />
           <table className={styles.tabela}>
-            <thead>
-              <tr>
-                <th>Ordem</th>
-                <th>Nome</th>
-                <th className={styles.colunaAcoes}>Ações</th>
-              </tr>
-            </thead>
+            <CabecalhoTabela tabela={tabela} idTabela="tipos-participacao" classeAcoes={styles.colunaAcoes} />
             <tbody>
-              {tipos.map((tipo) => (
+              {tabela.linhasVisiveis.length === 0 && (
+                <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+              )}
+              {tabela.linhasVisiveis.map((tipo) => (
                 <tr key={tipo.id}>
                   <td data-rotulo="Ordem">{tipo.ordem ?? "—"}</td>
                   <td data-rotulo="Nome">{tipo.nome}</td>
