@@ -39,9 +39,9 @@ const schema = z
     path: ["copiaContribuicaoValor"],
   });
 
-// Mensagem de contribuição voluntária mostrada na etapa final da inscrição
-// pública (ver CardContribuicao.jsx) — só aparece lá quando `corpo` está
-// preenchido. Segue a arquitetura de TextoSecaoForm.jsx (estado local por
+// Mensagem de contribuição voluntária mostrada a quem já está inscrito, na
+// tela de inscrição da área do participante (ver CardContribuicaoParticipante.jsx)
+// — só aparece lá quando `corpo` está preenchido. Segue a arquitetura de TextoSecaoForm.jsx (estado local por
 // campo + autosave via PATCH /edicoes/:id), mas sem cor/opacidade/faixa:
 // este bloco não é uma dobra da home, é específico da confirmação.
 export default function ContribuicaoForm({ edicaoInicial }) {
@@ -113,7 +113,7 @@ export default function ContribuicaoForm({ edicaoInicial }) {
         <CabecalhoSecao
           Icone={HandCoins}
           titulo="Contribuição"
-          descricao="Mensagem de contribuição voluntária mostrada na etapa final da inscrição — deixe o texto vazio pra não mostrar nada."
+          descricao="Mensagem de contribuição voluntária mostrada a quem concluiu a inscrição, na tela de inscrição da área do participante — deixe o texto vazio pra não mostrar nada."
         />
         <div className={styles.camposSecao}>
           <CampoTexto

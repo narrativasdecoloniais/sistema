@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import DetalheAtividade from "@/components/publico/DetalheAtividade";
-import { buscarAtividadePublicaPorSlug } from "@/lib/publico";
+import { buscarAtividadePublicaPorSlug, buscarEdicaoAtual } from "@/lib/publico";
 
 export async function generateMetadata({ params }) {
   const atividade = await buscarAtividadePublicaPorSlug(params.slug);
@@ -10,8 +10,11 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function PaginaAtividade({ params }) {
-  const atividade = await buscarAtividadePublicaPorSlug(params.slug);
+  const [atividade, edicaoAtual] = await Promise.all([
+    buscarAtividadePublicaPorSlug(params.slug),
+    buscarEdicaoAtual(),
+  ]);
   if (!atividade) notFound();
 
-  return <DetalheAtividade atividade={atividade} permiteInscricao />;
+  return <DetalheAtividade atividade={atividade} permiteInscricao={Boolean(edicaoAtual?.inscricoesAbertas)} />;
 }

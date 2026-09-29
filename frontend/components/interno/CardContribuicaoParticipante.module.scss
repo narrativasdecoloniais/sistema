@@ -1,0 +1,72 @@
+@use "../../styles/conteudo-rich-text" as rich;
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.corpo {
+  @include rich.conteudo-rich-text(var(--texto), var(--acento), var(--borda), var(--fundo));
+  font-size: 0.9375rem;
+}
+
+.acao {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--acento);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.blocoCopiar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+
+  @media (max-width: 700px) {
+    align-items: stretch;
+  }
+}
+
+.rotuloCopiar {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.qrCode {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  padding: 0.5rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  object-fit: contain;
+}

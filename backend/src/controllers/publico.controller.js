@@ -5,11 +5,14 @@ const atividadesService = require("../services/atividades.service");
 const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.service");
 const gruposConteudoService = require("../services/gruposConteudo.service");
 const prisma = require("../config/prisma");
+const inscricoesAbertas = require("../utils/inscricoesAbertas");
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
-  return res.json({ edicao });
+  // Calculado aqui pra o site público mostrar/esconder o "Inscreva-se" sem
+  // repetir a regra da janela (a inscrição em si só acontece logada).
+  return res.json({ edicao: { ...edicao, inscricoesAbertas: inscricoesAbertas(edicao) } });
 });
 
 const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
@@ -21,7 +24,7 @@ const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
 const buscarEdicaoPorSlug = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarPorSlug(req.params.slug);
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
-  return res.json({ edicao });
+  return res.json({ edicao: { ...edicao, inscricoesAbertas: inscricoesAbertas(edicao) } });
 });
 
 const listarAtividadesPorEdicaoSlug = asyncHandler(async (req, res) => {

@@ -2,7 +2,7 @@
 @use "../../styles/conteudo-rich-text" as rt;
 
 // Portal em document.body: fora da .wrapper do layout público, então os
-// tokens são declarados aqui (mesmo motivo de ModalDetalhesAtividade).
+// tokens são declarados aqui.
 .fundo {
   @include pub.tokens;
   position: fixed;

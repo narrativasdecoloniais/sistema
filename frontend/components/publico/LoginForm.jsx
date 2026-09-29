@@ -10,13 +10,13 @@ import { apiClient } from "@/lib/apiClient";
 import { loginSchema, extrairErros } from "@/lib/validacao";
 import { formatarCpf } from "@/lib/cpf";
 import { IDENTIFICACAO_INICIAL, payloadIdentificacao } from "@/lib/identificacao";
+import { destinoSeguro } from "@/lib/destino";
 import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Pré-preenche quando o usuário chega aqui já tendo digitado o CPF antes
-  // (ex.: modal "você já está inscrito(a)" do fluxo de inscrição).
+  // Pré-preenche quando o link já traz o CPF (?cpf=).
   const [identificacao, setIdentificacao] = useState(() => ({
     ...IDENTIFICACAO_INICIAL,
     cpf: formatarCpf(searchParams.get("cpf") || ""),
@@ -43,7 +43,8 @@ export default function LoginForm() {
       const podeAdministrar = resposta.usuario?.papeis?.some((papel) =>
         ["ADMIN", "ORGANIZADOR"].includes(papel)
       );
-      router.push(podeAdministrar ? "/admin" : "/participante");
+      const destino = destinoSeguro(searchParams.get("destino"));
+      router.push(destino || (podeAdministrar ? "/admin" : "/participante"));
       router.refresh();
     } catch (erro) {
       setErroGeral(erro.message);
@@ -73,6 +74,10 @@ export default function LoginForm() {
       <Link href="/recuperar-senha" className={styles.link}>
         Esqueci minha senha
       </Link>
+      <p className={styles.rodape}>
+        Já se inscreveu pelo site mas nunca criou uma senha? Use “Esqueci minha senha” — o link vai para o
+        e-mail da sua inscrição.
+      </p>
       <button type="submit" className={styles.cta} disabled={carregando}>
         {carregando ? "Aguarde..." : "Entrar"}
       </button>

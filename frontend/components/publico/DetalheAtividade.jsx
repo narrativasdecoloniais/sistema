@@ -163,11 +163,11 @@ export default function DetalheAtividade({ atividade, permiteInscricao }) {
                 </div>
                 {atividade.exigeInscricao &&
                   (permiteInscricao ? (
-                    <Link href={`/inscricao?atividade=${atividade.slug}`} className={styles.sessaoCta}>
+                    <Link href="/inscricao" className={styles.sessaoCta}>
                       Inscreva-se
                     </Link>
                   ) : (
-                    <span className={styles.sessaoEncerrada}>Inscrições encerradas</span>
+                    <span className={styles.sessaoEncerrada}>Inscrições fechadas</span>
                   ))}
               </li>
             </ul>

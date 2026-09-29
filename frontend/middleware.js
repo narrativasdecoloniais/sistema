@@ -5,7 +5,10 @@ export function middleware(request) {
     request.cookies.has("access_token") || request.cookies.has("refresh_token");
 
   if (!temSessao) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Volta pra mesma página depois do login (ex.: "Inscreva-se" da home).
+    const url = new URL("/login", request.url);
+    url.searchParams.set("destino", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();

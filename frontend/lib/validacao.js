@@ -33,45 +33,6 @@ export const cadastroSchema = z
     path: ["confirmarSenha"],
   });
 
-export const inscricaoCpfSchema = z.object({ ...camposIdentificacao }).superRefine(validarIdentificacao);
-
-export const inscricaoIdentidadeSchema = z.object({
-  email: z.string().trim().email("E-mail inválido"),
-});
-
-// A identificação (CPF ou documento) já foi validada na primeira etapa.
-export const inscricaoCadastroSchema = z.object({
-  nome: z.string().trim().min(3, "Informe o nome completo"),
-  email: z.string().trim().email("E-mail inválido"),
-  instituicao: z.string().trim().min(2, "Informe a instituição"),
-  categoria: z.enum(["ESTUDANTE", "DOCENTE", "PESQUISADOR", "COMUNIDADE_EXTERNA"], {
-    errorMap: () => ({ message: "Selecione uma categoria" }),
-  }),
-  aceiteTermos: z.literal(true, {
-    errorMap: () => ({ message: "É necessário aceitar os termos de uso" }),
-  }),
-  aceitePrivacidade: z.literal(true, {
-    errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
-  }),
-});
-
-// Vínculo do CPF a uma conta existente (importada do Even3 ou criada por
-// submissão) pelo fluxo de inscrição — mesmas regras de
-// backend/src/validators/inscricoes.validators.js.
-export const inscricaoVinculoEmailSchema = z.object({
-  email: z.string().trim().email("E-mail inválido"),
-});
-
-export const inscricaoVinculoCodigoSchema = z.object({
-  codigo: z.string().trim().min(6, "Informe o código enviado por e-mail"),
-  aceiteTermos: z.literal(true, {
-    errorMap: () => ({ message: "É necessário aceitar os termos de uso" }),
-  }),
-  aceitePrivacidade: z.literal(true, {
-    errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
-  }),
-});
-
 export const loginSchema = z
   .object({
     ...camposIdentificacao,

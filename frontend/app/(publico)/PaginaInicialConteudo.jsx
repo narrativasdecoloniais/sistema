@@ -339,6 +339,7 @@ export default function PaginaInicialConteudo({
   corAcentoCardComissoes = "BARRO",
   mostrarFaixaComissoes = true,
   temEdicaoAtual = false,
+  inscricoesAbertas = false,
   edicaoSlug,
   dataEvento = "Data a confirmar",
   localEvento,
@@ -594,9 +595,11 @@ export default function PaginaInicialConteudo({
                 className={styles.sobreEventoCtas}
                 variants={itemVariants}
               >
-                <Link href="/inscricao" className={styles.inscricaoCta}>
-                  Inscreva-se →
-                </Link>
+                {inscricoesAbertas && (
+                  <Link href="/inscricao" className={styles.inscricaoCta}>
+                    Inscreva-se →
+                  </Link>
+                )}
                 <a
                   href={URL_GPDES}
                   target="_blank"

@@ -12,7 +12,7 @@
 
 // padding + margem negativa: overflow:hidden recorta na borda do padding
 // box, então sem essa folga o outline de foco do cartão (2px + offset 2px,
-// ver AtividadeSelecionavel.module.scss) seria cortado nas bordas do
+// ver CardAtividadeProgramacao) seria cortado nas bordas do
 // viewport.
 .viewport {
   overflow: hidden;

@@ -6,6 +6,7 @@ import Botao from "@/components/forms/Botao";
 import CardAjudaInscricao from "./CardAjudaInscricao";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CartaoInscricaoParticipante from "./CartaoInscricaoParticipante";
+import CardContribuicaoParticipante from "./CardContribuicaoParticipante";
 import DetalhesAtividadeModal from "./DetalhesAtividadeModal";
 import NavegacaoDiasParticipante, {
   idAbaDiaParticipante,
@@ -145,6 +146,7 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
               aberta ? (item) => setConfirmando({ tipo: "atividade", item }) : undefined
             }
           />
+          <CardContribuicaoParticipante edicao={edicao} />
           {aberta && (
             <div className={styles.cancelarGeral}>
               <Botao type="button" variante="perigo" onClick={() => setConfirmando({ tipo: "geral" })}>

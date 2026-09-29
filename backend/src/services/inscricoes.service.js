@@ -1,26 +1,5 @@
-const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma");
-const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
-
-const TIPO_TOKEN = "inscricao";
-const EXPIRACAO_TOKEN = "30m";
-
-function gerarTokenInscricao(usuarioId) {
-  return jwt.sign({ tipo: TIPO_TOKEN, sub: usuarioId }, env.jwtAccessSecret, {
-    expiresIn: EXPIRACAO_TOKEN,
-  });
-}
-
-function verificarTokenInscricao(token) {
-  try {
-    const payload = jwt.verify(token, env.jwtAccessSecret);
-    if (payload.tipo !== TIPO_TOKEN) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
 
 async function buscarInscricaoEdicao(usuarioId, edicaoId) {
   return prisma.inscricaoEdicao.findUnique({
@@ -282,8 +261,6 @@ async function cancelarInscricaoAtividade(usuarioId, inscricaoAtividadeId) {
 }
 
 module.exports = {
-  gerarTokenInscricao,
-  verificarTokenInscricao,
   buscarInscricaoEdicao,
   buscarInscricaoCompleta,
   buscarEstadoInscricao,

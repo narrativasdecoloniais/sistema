@@ -70,16 +70,6 @@ async function buscarPorEmail(email) {
   );
 }
 
-// Conta que ainda pode receber um CPF (ou documento de estrangeiro): ativa e
-// sem nenhum dos dois (importada do Even3 ou criada por submissão). mode: "insensitive" porque o e-mail não é
-// normalizado no cadastro e o da importação veio como digitado no Even3
-// (ex. "Ana@x.com") — a mesma pessoa digita "ana@x.com" e não bateria.
-async function buscarContaSemCpfPorEmail(email) {
-  return prisma.usuario.findFirst({
-    where: { email: { equals: email, mode: "insensitive" }, cpf: null, documentoEstrangeiro: null, ativo: true },
-  });
-}
-
 // Nome de uma conta a partir do e-mail, sem vazar mais dados que isso — usado
 // pra autofill ao adicionar um coautor de submissão (público e área do
 // participante). Retorna null tanto se não existe conta quanto se está
@@ -188,31 +178,7 @@ async function criarUsuarioConvidado({
   });
 }
 
-// Cria uma conta sem senha utilizável, usada pelo fluxo público de
-// auto-inscrição em eventos: a pessoa preenche os dados de cadastro sem
-// definir senha (nem confirmar e-mail) e só define uma senha real depois,
-// via "esqueci minha senha", se quiser fazer login.
-async function criarUsuarioViaInscricao({ nome, email, identificacao, instituicao, categoria }) {
-  const senhaHash = await gerarHash(crypto.randomBytes(32).toString("hex"));
-  const agora = new Date();
-
-  const usuario = await prisma.usuario.create({
-    data: {
-      nome,
-      email: normalizarEmail(email),
-      ...identificacao,
-      instituicao,
-      categoria,
-      senhaHash,
-      aceiteTermosEm: agora,
-      aceitePrivacidadeEm: agora,
-    },
-  });
-  await associarAutoriasPendentes(usuario.id, usuario.email);
-  return usuario;
-}
-
-// Mesmo padrão de criarUsuarioViaInscricao, mas sem CPF — o fluxo público de
+// Conta sem senha utilizável e sem CPF — o fluxo público de
 // submissão de trabalho identifica só por e-mail (ver submissoes.service.js).
 // emailConfirmado começa false; o próprio clique no link mágico de entrada
 // confirma o e-mail (ver controller de submissão pública).
@@ -235,13 +201,12 @@ async function criarUsuarioViaSubmissao({ nome, email, instituicao, categoria })
   return usuario;
 }
 
-// Conta já existia (criada via submissão de trabalho ou convite de
-// organizador, sem CPF) e a pessoa está se inscrevendo agora com um CPF (ou
-// documento de estrangeiro) novo — completa o cadastro nessa mesma conta em vez de tentar criar uma
+// Conta já existia (criada via submissão de trabalho, importada do Even3 ou
+// convite, sem CPF) e a pessoa vincula agora um CPF (ou documento de
+// estrangeiro) — completa o cadastro nessa mesma conta em vez de criar uma
 // segunda com o mesmo e-mail (que violaria o @unique).
 // confirmarEmail: só quando a posse do e-mail já foi provada (código enviado
-// pra caixa de entrada da conta) — o vínculo direto por e-mail digitado
-// (cadastrar em inscricoes.controller.js) não prova nada e não confirma.
+// pra caixa de entrada da conta, ver regularizacaoContas.service.js).
 async function vincularIdentificacaoAoUsuario(id, identificacao, { confirmarEmail = false } = {}) {
   const agora = new Date();
   return prisma.usuario.update({
@@ -390,14 +355,12 @@ module.exports = {
   buscarPorDocumento,
   buscarPorIdentificacao,
   buscarPorEmail,
-  buscarContaSemCpfPorEmail,
   buscarNomePublicoPorEmail,
   buscarPorId,
   buscarPorTermo,
   buscarCompletoPorId,
   criarUsuario,
   criarUsuarioConvidado,
-  criarUsuarioViaInscricao,
   criarUsuarioViaSubmissao,
   vincularIdentificacaoAoUsuario,
   definirSenhaEAceites,

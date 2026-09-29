@@ -1,6 +1,5 @@
 const { Router } = require("express");
 const publicoController = require("../controllers/publico.controller");
-const inscricoesRoutes = require("./inscricoes.routes");
 const submissoesPublicoRoutes = require("./submissoesPublico.routes");
 const regularizacaoContasRoutes = require("./regularizacaoContas.routes");
 
@@ -23,7 +22,6 @@ router.get(
   "/edicoes/:edicaoSlug/atividades/:atividadeSlug",
   publicoController.buscarAtividadePorEdicaoSlug
 );
-router.use("/inscricao", inscricoesRoutes);
 router.use("/submissao", submissoesPublicoRoutes);
 router.use("/regularizacao", regularizacaoContasRoutes);
 

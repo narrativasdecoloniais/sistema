@@ -173,6 +173,9 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
     corAcentoCardComissoes: edicao?.corAcentoCardComissoes || "BARRO",
     mostrarFaixaComissoes: edicao?.mostrarFaixaComissoes ?? true,
     temEdicaoAtual: Boolean(ehEdicaoAtual),
+    // Janela de inscrições aberta agora (calculada no backend) — controla o
+    // botão "Inscreva-se", que só faz sentido na edição atual.
+    inscricoesAbertas: Boolean(ehEdicaoAtual && edicao?.inscricoesAbertas),
     edicaoSlug: edicao?.slug,
     dataEvento: formatarPeriodoEdicao(edicao?.dataInicio, edicao?.dataFim),
     localEvento: formatarLocalEdicao(edicao),

@@ -1,17 +1,17 @@
 "use client";
 
-import { useToast } from "@/components/publico/ToastProvider";
-import styles from "./CardContribuicao.module.scss";
+import Botao from "@/components/forms/Botao";
 import ConteudoRichText from "@/components/ConteudoRichText";
+import { useToast } from "./ToastProvider";
+import styles from "./CardContribuicaoParticipante.module.scss";
 
-// Mensagem de contribuição voluntária (ex. pedido de PIX) mostrada na etapa
-// final da inscrição — conteúdo gerenciado pelo admin por edição, ver
+// Mensagem de contribuição voluntária (ex. pedido de PIX) mostrada a quem já
+// está inscrito na edição — conteúdo gerenciado pelo admin por edição, ver
 // ContribuicaoForm.jsx (editor rico) e sanitizarCorpoContribuicao.js
 // (sanitização no backend antes de salvar, e de novo no navegador via
-// ConteudoRichText). Só renderiza
-// quando há corpo cadastrado; link e "copiar" são mutuamente exclusivos
-// (tipoAcaoContribuicao).
-export default function CardContribuicao({ edicao }) {
+// ConteudoRichText). Só renderiza quando há corpo cadastrado; link e "copiar"
+// são mutuamente exclusivos (tipoAcaoContribuicao).
+export default function CardContribuicaoParticipante({ edicao }) {
   const { notificar } = useToast();
 
   // Checagem robusta pra "sem conteúdo real" — não basta a string existir,
@@ -41,8 +41,8 @@ export default function CardContribuicao({ edicao }) {
   }
 
   return (
-    <div className={styles.cartao}>
-      {tituloContribuicao && <p className={styles.titulo}>{tituloContribuicao}</p>}
+    <section className={styles.cartao} aria-label={tituloContribuicao || "Contribuição"}>
+      {tituloContribuicao && <h2 className={styles.titulo}>{tituloContribuicao}</h2>}
 
       <ConteudoRichText className={styles.corpo} html={corpoContribuicao} tipo="texto" />
 
@@ -55,17 +55,14 @@ export default function CardContribuicao({ edicao }) {
       {tipoAcaoContribuicao === "COPIAR" && copiaContribuicaoValor && (
         <div className={styles.blocoCopiar}>
           {copiaContribuicaoRotulo && <span className={styles.rotuloCopiar}>{copiaContribuicaoRotulo}</span>}
-          <div className={styles.linhaCopiar}>
-            <code className={styles.valorCopiar}>{copiaContribuicaoValor}</code>
-            <button type="button" className={styles.botaoCopiar} onClick={aoCopiar}>
-              Clique para copiar a chave Pix
-            </button>
-          </div>
+          <Botao type="button" variante="secundario" onClick={aoCopiar}>
+            Clique para copiar a chave Pix
+          </Botao>
           {qrCodeContribuicao && (
             <img src={qrCodeContribuicao} alt="QR code para pagamento via PIX" className={styles.qrCode} />
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }

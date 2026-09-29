@@ -26,7 +26,10 @@ export default async function PaginaAtividadeDaEdicao({ params }) {
   return (
     <>
       <DefinirEdicaoExibida numero={edicao?.numero} navegacao={montarPropsNavegacao(edicao)} />
-      <DetalheAtividade atividade={atividade} permiteInscricao={atividade.edicaoId === edicaoAtual?.id} />
+      <DetalheAtividade
+        atividade={atividade}
+        permiteInscricao={atividade.edicaoId === edicaoAtual?.id && Boolean(edicaoAtual?.inscricoesAbertas)}
+      />
     </>
   );
 }

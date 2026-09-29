@@ -54,7 +54,7 @@
   }
 }
 
-// Mesmo tratamento "comprovante" de CardInscricaoConfirmada/CardContribuicao
+// Tratamento "comprovante" da pele pública
 // (borda ocre, raio 6px, sombra sutil, fundo papel).
 .popover {
   display: flex;
@@ -96,8 +96,7 @@
   overflow-wrap: anywhere;
 }
 
-// Mesmo padrão "borda sem preenchimento" já usado em CardContribuicao
-// (.botaoCopiar) e AtividadeSelecionavel (.detalhes).
+// Padrão "borda sem preenchimento" da pele pública.
 .botaoCopiar {
   flex-shrink: 0;
   min-height: 36px;

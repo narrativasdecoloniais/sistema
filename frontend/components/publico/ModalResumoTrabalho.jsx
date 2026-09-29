@@ -7,9 +7,8 @@ import ConteudoRichText from "@/components/ConteudoRichText";
 
 const SELETOR_FOCAVEIS = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-// Mesmo padrão de acessibilidade de components/inscricao/ModalDetalhesAtividade.jsx
-// (focus trap, ESC e clique no fundo fecham, trava scroll, devolve o foco),
-// também via portal para document.body.
+// Modal acessível: focus trap, ESC e clique no fundo fecham, trava scroll,
+// devolve o foco — via portal para document.body.
 export default function ModalResumoTrabalho({ trabalho, aoFechar }) {
   const painelRef = useRef(null);
   const idTitulo = useId();

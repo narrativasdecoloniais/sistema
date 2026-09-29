@@ -17,7 +17,7 @@ function formatarOrcid(valor) {
 }
 
 // Mesmo padrão de acessibilidade de
-// components/inscricao/ModalDetalhesAtividade.jsx (focus trap, ESC fecha,
+// components/publico/ModalResumoTrabalho.jsx (focus trap, ESC fecha,
 // clique no fundo fecha, trava scroll do body,
 // devolve foco ao fechar). Ao sair do e-mail, verifica se já existe uma
 // conta cadastrada com esse e-mail (verificarEmailAutor) e autopreenche o

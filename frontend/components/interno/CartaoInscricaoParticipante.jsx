@@ -11,10 +11,9 @@ function escaparHtml(valor) {
   );
 }
 
-// Comprovante da área do participante — mesma lógica de impressão (popup +
-// HTML standalone) de components/inscricao/CardInscricaoConfirmada.jsx, só
-// que a casca em tela usa os tokens da pele interna, e o cancelamento por
-// atividade abre o ModalConfirmacao do painel (não uma confirmação inline).
+// Comprovante da área do participante — impressão via popup com HTML
+// standalone; a casca em tela usa os tokens da pele interna, e o
+// cancelamento por atividade abre o ModalConfirmacao do painel.
 export default function CartaoInscricaoParticipante({
   edicao,
   inscricoesAtividade = [],
