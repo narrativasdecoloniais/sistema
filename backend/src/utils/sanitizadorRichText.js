@@ -18,6 +18,13 @@ const CONFIG_REFERENCIA = {
   ALLOWED_ATTR: ["href", "target", "rel"],
 };
 
+// Edital da monitoria (texto da organização): título/subtítulo (h2/h3),
+// listas e tabela, sem imagem.
+const CONFIG_EDITAL = {
+  ALLOWED_TAGS: [...TAGS_TEXTO, "h2", "h3", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td", "colgroup", "col"],
+  ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "colwidth"],
+};
+
 // Imagem só pode ser data URI de imagem raster (vira URL do GCS logo depois,
 // ver processarImagensEmbutidas.js) ou já estar no nosso bucket público —
 // nunca um domínio externo (rastreamento, conteúdo misto, hotlink).
@@ -92,6 +99,7 @@ function contar(janela, html, seletor) {
 module.exports = {
   CONFIG_RESUMO,
   CONFIG_REFERENCIA,
+  CONFIG_EDITAL,
   PREFIXO_BUCKET,
   DATA_URI_IMAGEM,
   criarPurificador,

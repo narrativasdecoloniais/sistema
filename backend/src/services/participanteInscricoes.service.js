@@ -84,6 +84,9 @@ async function cancelarGeral(usuarioId, edicaoId) {
 
   const inscricao = await inscricoesService.buscarInscricaoEdicao(usuarioId, edicaoId);
   if (!inscricao) throw new ErroHttp(404, "Inscrição não encontrada.");
+  if (inscricao.credenciadoEm) {
+    throw new ErroHttp(409, "Você já foi credenciado(a) no evento. Para cancelar a inscrição, fale com a equipe do evento.");
+  }
 
   await inscricoesService.cancelarInscricaoEdicaoComPromocao(usuarioId, edicaoId);
 }

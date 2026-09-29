@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { agoraIngenuo } = require("../utils/horarioBrasilia");
 const sincronizarLista = require("../utils/sincronizarLista");
 const storageService = require("./storage.service");
 const sanitizarSvgLogo = require("../utils/sanitizarSvgLogo");
@@ -94,7 +95,7 @@ async function buscarEdicaoAtual() {
 // agora mesmo — usada pela área do participante para listar em quais
 // edições é possível se inscrever no momento.
 async function listarEdicoesComInscricoesAbertas() {
-  const agora = new Date();
+  const agora = agoraIngenuo();
   return prisma.edicao.findMany({
     where: {
       inscricoesEncerradasManualmente: false,

@@ -93,6 +93,13 @@ enum SecaoAdmin {
 
 // EM_ANALISE até a coordenação decidir; CANCELADA = desistência do candidato
 // ou cancelamento pela coordenação (edital, item 8).
+// Como o credenciamento/presença foi registrado: leitura do QR code pelo
+// próprio participante ou pela equipe no admin (credenciamento.service.js).
+enum OrigemCredenciamento {
+  QR_CODE
+  EQUIPE
+}
+
 enum StatusInscricaoMonitoria {
   EM_ANALISE
   SELECIONADO
@@ -161,14 +168,17 @@ model Usuario {
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
-  tokens              TokenVerificacao[]
-  refreshTokens       RefreshToken[]
-  inscricoesEdicao    InscricaoEdicao[]
-  inscricoesAtividade InscricaoAtividade[]
-  inscricoesMonitoria InscricaoMonitoria[]
-  submissoes          Submissao[]
-  submissaoAutorias   SubmissaoAutor[]
-  avaliacoesEdicao    AvaliadorEdicao[]
+  tokens                     TokenVerificacao[]
+  refreshTokens              RefreshToken[]
+  inscricoesEdicao           InscricaoEdicao[]
+  inscricoesAtividade        InscricaoAtividade[]
+  inscricoesMonitoria        InscricaoMonitoria[]
+  // Quem da equipe credenciou/registrou presença (credenciamento.service.js).
+  credenciamentosRegistrados InscricaoEdicao[]    @relation("CredenciadoPor")
+  presencasRegistradas       InscricaoAtividade[] @relation("PresencaRegistradaPor")
+  submissoes                 Submissao[]
+  submissaoAutorias          SubmissaoAutor[]
+  avaliacoesEdicao           AvaliadorEdicao[]
 
   @@map("usuarios")
 }
@@ -236,6 +246,9 @@ model Edicao {
   funcoesMonitoria                  String[]             @default([])
   editalMonitoria                   String?              @db.Text
   resultadoMonitoriaDivulgadoEm     DateTime?
+  // Segredo do QR code de credenciamento geral (credenciamento.service.js):
+  // gerado na primeira vez que o admin abre o QR; trocar invalida o impresso.
+  tokenCredenciamento               String?              @unique
   slug                              String?              @unique
   cargaHorariaTotal                 Int?
   instagram                         String?
@@ -508,6 +521,9 @@ model Atividade {
   inicioAtividade        DateTime
   fimAtividade           DateTime
   atividadeContinua      Boolean        @default(false)
+  // Segredo do QR code de presença (só atividades com exigeInscricao) — mesmo
+  // esquema de Edicao.tokenCredenciamento.
+  tokenPresenca          String?        @unique
   paraConvidados         Boolean        @default(false)
   paraCriancasConvidadas Boolean        @default(false)
   // Posição na programação entre atividades que começam no mesmo horário
@@ -955,18 +971,24 @@ enum StatusInscricaoAtividade {
 // em novas atividades — editar/cancelar a inscrição geral em si continua
 // exigindo login (fora do escopo atual).
 model InscricaoEdicao {
-  id                    String   @id @default(uuid())
+  id                    String                @id @default(uuid())
   usuarioId             String
-  usuario               Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario               Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   edicaoId              String
-  edicao                Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  createdAt             DateTime @default(now())
+  edicao                Edicao                @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  createdAt             DateTime              @default(now())
   // Acessibilidade, respondida pelo participante ao se inscrever (e editável
   // depois). null = sem resposta: inscrição feita pelo admin ou antes da
   // pergunta existir. adaptacoesNecessarias só vem preenchido quando
   // precisaAdaptacao = true.
   precisaAdaptacao      Boolean?
   adaptacoesNecessarias String?
+  // Credenciamento geral (uma vez no evento): pelo QR code geral, pela
+  // presença numa atividade ou pela equipe. credenciadoPorId só com EQUIPE.
+  credenciadoEm         DateTime?
+  credenciamentoOrigem  OrigemCredenciamento?
+  credenciadoPorId      String?
+  credenciadoPor        Usuario?              @relation("CredenciadoPor", fields: [credenciadoPorId], references: [id], onDelete: SetNull)
 
   @@unique([usuarioId, edicaoId])
   @@map("inscricoes_edicao")
@@ -1011,14 +1033,21 @@ model InscricaoMonitoria {
 }
 
 model InscricaoAtividade {
-  id          String                   @id @default(uuid())
-  usuarioId   String
-  usuario     Usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  atividadeId String
-  atividade   Atividade                @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
-  status      StatusInscricaoAtividade
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @updatedAt
+  id                      String                   @id @default(uuid())
+  usuarioId               String
+  usuario                 Usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  atividadeId             String
+  atividade               Atividade                @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  status                  StatusInscricaoAtividade
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  // Presença na atividade (credenciamento.service.js). Pelo QR, só para
+  // CONFIRMADA; a equipe valida de qualquer um, inclusive da lista de espera
+  // (o status não muda). presencaRegistradaPorId só com EQUIPE.
+  presencaEm              DateTime?
+  presencaOrigem          OrigemCredenciamento?
+  presencaRegistradaPorId String?
+  presencaRegistradaPor   Usuario?                 @relation("PresencaRegistradaPor", fields: [presencaRegistradaPorId], references: [id], onDelete: SetNull)
 
   // Cancelamento (self-service ou admin) promove automaticamente o próximo
   // da lista de espera — ver promoverAoCancelar em inscricoes.service.js.

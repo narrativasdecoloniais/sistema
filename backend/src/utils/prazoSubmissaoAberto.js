@@ -4,8 +4,11 @@
 // prazoFim contar inteiro como aberto. Comparar `new Date() <= prazoFim`
 // direto fecharia o prazo já na meia-noite UTC do próprio dia final, em vez
 // de só depois dele.
+const { hojeIngenuo } = require("./horarioBrasilia");
+
+// "Hoje" é o dia de Brasília (horarioBrasilia.js).
 function prazoSubmissaoAberto(prazoInicio, prazoFim) {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeIngenuo();
   const inicio = new Date(prazoInicio).toISOString().slice(0, 10);
   const fim = new Date(prazoFim).toISOString().slice(0, 10);
   return hoje >= inicio && hoje <= fim;

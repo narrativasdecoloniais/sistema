@@ -1,7 +1,7 @@
 const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
 const inscricoesMonitoriaAbertas = require("../utils/inscricoesMonitoriaAbertas");
-const sanitizarCorpoContribuicao = require("../utils/sanitizarCorpoContribuicao");
+const sanitizarEditalMonitoria = require("../utils/sanitizarEditalMonitoria");
 const storageService = require("./storage.service");
 const emailService = require("./email.service");
 const emailMonitoria = require("./emailMonitoria.service");
@@ -341,7 +341,7 @@ async function atualizarConfiguracao(edicaoId, dados) {
   const atual = await buscarEdicao(edicaoId);
   const data = { ...dados };
   if (dados.editalMonitoria !== undefined) {
-    data.editalMonitoria = dados.editalMonitoria ? sanitizarCorpoContribuicao(dados.editalMonitoria) || null : null;
+    data.editalMonitoria = dados.editalMonitoria ? sanitizarEditalMonitoria(dados.editalMonitoria) || null : null;
   }
 
   // A regra "fim depois do início" também vale contra o valor já salvo

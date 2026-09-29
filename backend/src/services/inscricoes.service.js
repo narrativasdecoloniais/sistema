@@ -156,13 +156,7 @@ async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds, adaptacao
 
     const criados = [];
     for (const atividade of atividadesSelecionadas) {
-      let status = "CONFIRMADA";
-      if (!atividade.semLimiteVagas) {
-        const confirmadas = await tx.inscricaoAtividade.count({
-          where: { atividadeId: atividade.id, status: "CONFIRMADA" },
-        });
-        status = confirmadas < atividade.vagas ? "CONFIRMADA" : "LISTA_ESPERA";
-      }
+      const status = await statusParaNovaInscricao(tx, atividade);
 
       const inscricaoAtividade = await tx.inscricaoAtividade.create({
         data: { usuarioId, atividadeId: atividade.id, status },
@@ -175,6 +169,16 @@ async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds, adaptacao
 
   const { inscricaoEdicao, inscricoesAtividade } = await buscarInscricaoCompleta(edicaoId, usuarioId);
   return { inscricaoEdicao, inscricoesAtividade, novas: idsCriadosAgora, jaEstavaInscrito };
+}
+
+// Vaga livre → CONFIRMADA; lotada → LISTA_ESPERA. Chamado dentro da
+// transação que cria a inscrição (também pelo credenciamento).
+async function statusParaNovaInscricao(tx, atividade) {
+  if (atividade.semLimiteVagas) return "CONFIRMADA";
+  const confirmadas = await tx.inscricaoAtividade.count({
+    where: { atividadeId: atividade.id, status: "CONFIRMADA" },
+  });
+  return confirmadas < atividade.vagas ? "CONFIRMADA" : "LISTA_ESPERA";
 }
 
 // Remove a inscrição em atividade e, se ela estava CONFIRMADA, promove
@@ -258,11 +262,17 @@ async function cancelarInscricaoAtividade(usuarioId, inscricaoAtividadeId) {
   if (!inscricaoAtividade || inscricaoAtividade.usuarioId !== usuarioId) {
     throw new ErroHttp(404, "Inscrição em atividade não encontrada.");
   }
+  // Presença registrada é comprovante (base do certificado) — só a equipe desfaz.
+  if (inscricaoAtividade.presencaEm) {
+    throw new ErroHttp(409, "Sua presença nesta atividade já foi registrada. Para cancelar, fale com a equipe do evento.");
+  }
 
   await cancelarInscricaoAtividadeComPromocao(inscricaoAtividadeId);
 }
 
 module.exports = {
+  statusParaNovaInscricao,
+  promoverAoCancelar,
   buscarInscricaoEdicao,
   buscarInscricaoCompleta,
   buscarEstadoInscricao,

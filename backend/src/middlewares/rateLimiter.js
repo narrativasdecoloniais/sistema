@@ -23,4 +23,16 @@ const limitadorSensivel = criarLimitador(20);
 // uso normal, principalmente com várias pessoas na mesma rede/IP.
 const limitadorPadrao = criarLimitador(300);
 
-module.exports = { limitadorSensivel, limitadorPadrao };
+// Por usuário logado, não por IP: no evento, centenas de pessoas leem o QR
+// code pela mesma rede (mesmo IP), e um limite por IP travaria todo mundo.
+// Usar só depois de `autenticar` (precisa de req.usuario).
+const limitadorPorUsuario = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: producao ? 60 : 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `usuario:${req.usuario?.id}`,
+  message: { mensagem: "Muitas tentativas. Aguarde alguns minutos e tente novamente." },
+});
+
+module.exports = { limitadorSensivel, limitadorPadrao, limitadorPorUsuario };

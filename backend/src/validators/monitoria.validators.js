@@ -126,7 +126,9 @@ const configuracaoMonitoriaSchema = z
       .max(30, "Cadastre no máximo 30 atividades")
       .refine((lista) => new Set(lista).size === lista.length, "Há atividades repetidas na lista")
       .optional(),
-    editalMonitoria: z.string().max(20000, "Texto muito grande").nullish(),
+    // Tabelas geram muito HTML; o limite do texto visível fica em
+    // sanitizarEditalMonitoria.js.
+    editalMonitoria: z.string().max(300000, "O edital está grande demais").nullish(),
   })
   .refine(
     (dados) =>
