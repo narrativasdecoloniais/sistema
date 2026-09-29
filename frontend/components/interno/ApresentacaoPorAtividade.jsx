@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowUp, ArrowDown, ArrowRightLeft, Eye, Trash2 } from "lucide-react";
 import ModalConfirmacao from "./ModalConfirmacao";
 import DetalheSubmissaoModal from "./DetalheSubmissaoModal";
+import CampoMultiSelect from "./CampoMultiSelect";
 import ModalVincularAtividade from "./ModalVincularAtividade";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
@@ -19,6 +20,7 @@ export default function AbaPorAtividade({ edicaoId, dados, modalidades, recarreg
   const [removendo, setRemovendo] = useState(null);
   const [detalheId, setDetalheId] = useState(null);
   const [movendo, setMovendo] = useState(null);
+  const [filtroAtividadeIds, setFiltroAtividadeIds] = useState([]);
 
   const trabalhosPorAtividade = useMemo(() => {
     const mapa = new Map();
@@ -33,6 +35,8 @@ export default function AbaPorAtividade({ edicaoId, dados, modalidades, recarreg
   const comTrabalhos = dados.atividades.filter((atividade) => trabalhosPorAtividade.has(atividade.id));
   const semTrabalhos = dados.atividades.filter((atividade) => !trabalhosPorAtividade.has(atividade.id));
   const semAtividade = dados.trabalhos.filter((trabalho) => !trabalho.atividadeApresentacaoId).length;
+  const filtrando = filtroAtividadeIds.length > 0;
+  const visiveis = filtrando ? comTrabalhos.filter((atividade) => filtroAtividadeIds.includes(atividade.id)) : comTrabalhos;
 
   async function mover(atividadeId, indice, deslocamento) {
     const lista = [...trabalhosPorAtividade.get(atividadeId)];
@@ -108,6 +112,28 @@ export default function AbaPorAtividade({ edicaoId, dados, modalidades, recarreg
         </p>
       )}
 
+      {comTrabalhos.length > 0 && (
+        <div className={styles.filtros}>
+          <CampoMultiSelect
+            id="filtroAtividadesApresentacao"
+            rotulo="Filtrar por atividade"
+            value={filtroAtividadeIds}
+            onChange={setFiltroAtividadeIds}
+            options={comTrabalhos}
+            placeholder="Todas as atividades"
+            filterPlaceholder="Buscar atividade..."
+            vazioFiltro="Nenhuma atividade encontrada."
+          />
+        </div>
+      )}
+
+      {filtrando && visiveis.length === 0 && (
+        <div className={styles.vazio}>
+          <p>As atividades selecionadas não têm mais trabalhos.</p>
+          <p className={styles.vazioApoio}>Limpe o filtro para ver as demais atividades.</p>
+        </div>
+      )}
+
       {comTrabalhos.length === 0 && (
         <div className={styles.vazio}>
           <p>Nenhum trabalho distribuído ainda.</p>
@@ -117,7 +143,7 @@ export default function AbaPorAtividade({ edicaoId, dados, modalidades, recarreg
         </div>
       )}
 
-      {comTrabalhos.map((atividade) => {
+      {visiveis.map((atividade) => {
         const lista = trabalhosPorAtividade.get(atividade.id);
         const ocupado = ocupadoId === atividade.id;
         return (
@@ -197,7 +223,7 @@ export default function AbaPorAtividade({ edicaoId, dados, modalidades, recarreg
         );
       })}
 
-      {semTrabalhos.length > 0 && (
+      {!filtrando && semTrabalhos.length > 0 && (
         <details className={estilos.semTrabalhos}>
           <summary>Atividades sem trabalhos ({semTrabalhos.length})</summary>
           <ul>

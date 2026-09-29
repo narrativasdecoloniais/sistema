@@ -163,15 +163,19 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
     }
   }
 
+  // Vale para as duas abas: da "Usuários" pode vir um participante que ainda
+  // não está na equipe — aí ele entra na lista da "Equipe".
   async function promoverAdmin(id) {
     setProcessandoId(id);
 
     try {
       const resposta = await apiClient.patch(`/organizadores/${id}/promover`, {});
       setParticipantes((atual) =>
-        atual.map((item) => (item.id === id ? resposta.organizador : item))
+        atual.some((item) => item.id === id)
+          ? atual.map((item) => (item.id === id ? resposta.organizador : item))
+          : [...atual, resposta.organizador]
       );
-      notificar("Organizador promovido a administrador.");
+      notificar(`${resposta.organizador.nome} agora é administrador(a).`);
       router.refresh();
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -217,8 +221,9 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
     }
   }
 
-  const participanteEmConfirmacao = confirmando
-    ? participantes.find((item) => item.id === confirmando.id)
+  // Quem vem da aba "Usuários" não está em `participantes` — o nome vem junto.
+  const nomeEmConfirmacao = confirmando
+    ? confirmando.nome ?? participantes.find((item) => item.id === confirmando.id)?.nome
     : null;
 
   return (
@@ -275,7 +280,10 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
       )}
 
       {abaAtiva === "usuarios" ? (
-        <UsuariosEdicaoTabela usuarios={usuarios} />
+        <UsuariosEdicaoTabela
+          usuarios={usuarios}
+          aoPromover={(usuario) => setConfirmando({ id: usuario.id, nome: usuario.nome, tipo: "promover" })}
+        />
       ) : (
         <>
           {participantes.length === 0 ? (
@@ -402,8 +410,8 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
           titulo={confirmando.tipo === "promover" ? "Promover a administrador" : "Remover organizador"}
           mensagem={
             confirmando.tipo === "promover"
-              ? `${participanteEmConfirmacao?.nome} passará a ter acesso total ao Narrativas.`
-              : `${participanteEmConfirmacao?.nome} perderá o acesso de organizador. Essa ação não pode ser desfeita.`
+              ? `${nomeEmConfirmacao} passará a ter acesso total ao Narrativas, inclusive aos dados de todos os usuários e à gestão da equipe.`
+              : `${nomeEmConfirmacao} perderá o acesso de organizador. Essa ação não pode ser desfeita.`
           }
           rotuloConfirmar={confirmando.tipo === "promover" ? "Promover" : "Remover"}
           perigo={confirmando.tipo !== "promover"}

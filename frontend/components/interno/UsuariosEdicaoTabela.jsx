@@ -1,5 +1,6 @@
 "use client";
 
+import { ShieldPlus } from "lucide-react";
 import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
@@ -77,9 +78,10 @@ const COLUNAS = [
 ];
 
 // Aba "Usuários" da tela de Participantes (ADMIN-only): todas as contas da
-// base, com a situação de cada uma na edição aberta. Somente leitura — a
-// gestão da equipe continua na aba "Equipe".
-export default function UsuariosEdicaoTabela({ usuarios }) {
+// base, com a situação de cada uma na edição aberta. A única ação é promover
+// a administrador (a confirmação e a chamada ficam no ParticipantesPainel,
+// as mesmas da aba "Equipe"); o resto da gestão da equipe continua lá.
+export default function UsuariosEdicaoTabela({ usuarios, aoPromover }) {
   const tabela = useTabela(usuarios, COLUNAS);
 
   if (usuarios.length === 0) {
@@ -94,10 +96,10 @@ export default function UsuariosEdicaoTabela({ usuarios }) {
     <div className={styles.tabelaWrapper}>
       <BotaoExportarTabela tabela={tabela} nomeArquivo="usuarios" nomeAba="Usuários" />
       <table className={styles.tabela}>
-        <CabecalhoTabela tabela={tabela} idTabela="usuarios-edicao" comAcoes={false} />
+        <CabecalhoTabela tabela={tabela} idTabela="usuarios-edicao" classeAcoes={styles.colunaAcoes} />
         <tbody>
           {tabela.linhasVisiveis.length === 0 && (
-            <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length} />
+            <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
           )}
           {tabela.linhasVisiveis.map((usuario) => {
             const papel = papelPrincipal(usuario);
@@ -121,6 +123,21 @@ export default function UsuariosEdicaoTabela({ usuarios }) {
                 <td data-rotulo="Atividades">{usuario.atividades.confirmadas}</td>
                 <td data-rotulo="Lista de espera">{usuario.atividades.listaEspera}</td>
                 <td data-rotulo="Submissões">{usuario.submissoes}</td>
+                <td data-rotulo="Ações" className={styles.colunaAcoes}>
+                  {papel !== "ADMIN" && (
+                    <div className={styles.acoesLinha}>
+                      <button
+                        type="button"
+                        className={styles.botaoIcone}
+                        aria-label={`Promover ${usuario.nome} a administrador`}
+                        title="Promover a administrador"
+                        onClick={() => aoPromover(usuario)}
+                      >
+                        <ShieldPlus size={16} strokeWidth={1.5} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </td>
               </tr>
             );
           })}
