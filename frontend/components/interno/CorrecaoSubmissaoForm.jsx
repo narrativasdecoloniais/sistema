@@ -151,14 +151,14 @@ function Formulario({ submissao }) {
             erro={erros.titulo}
           />
         )}
-        <CampoRichText id="resumoCorrecao" rotulo="Resumo" value={resumo} onChange={setResumo} erro={erros.resumo} permitirImagem />
+        <CampoRichText id="resumoCorrecao" rotulo="Resumo" value={resumo} onChange={setResumo} erro={erros.resumo} permitirImagem permitirTabela />
         <CampoRichText
           id="referenciaCorrecao"
           rotulo="Referência bibliográfica"
           value={referenciaBibliografica}
           onChange={setReferenciaBibliografica}
           erro={erros.referenciaBibliografica}
-          ferramentas={["negrito"]}
+          ferramentas={["negrito", "italico", "link"]}
         />
         <div className={styles.acoesFormulario}>
           <Botao type="button" variante="secundario" onClick={() => router.push("/participante/submissoes")}>

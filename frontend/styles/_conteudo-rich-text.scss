@@ -1,0 +1,62 @@
+// Tipografia do HTML de resumo/referência (ConteudoRichText.jsx) e do próprio
+// editor (CampoRichText) — um lugar só, chamado com as cores de cada pele.
+// Tabela vira bloco rolável na horizontal pra nunca estourar a largura em
+// telas estreitas.
+@mixin conteudo-rich-text($cor-texto, $cor-link, $cor-borda, $cor-cabecalho) {
+  color: $cor-texto;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+
+  p {
+    margin: 0 0 0.75em;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  a {
+    color: $cor-link;
+    text-decoration: underline;
+  }
+
+  ul,
+  ol {
+    margin: 0 0 0.75em;
+    padding-left: 1.25em;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 0.5em 0;
+  }
+
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 0.75em 0;
+    font-size: 0.95em;
+  }
+
+  th,
+  td {
+    min-width: 4em;
+    padding: 0.4em 0.6em;
+    border: 1px solid $cor-borda;
+    vertical-align: top;
+    text-align: left;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  th {
+    background: $cor-cabecalho;
+    font-weight: 700;
+  }
+}

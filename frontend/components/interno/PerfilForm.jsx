@@ -9,7 +9,15 @@ import CampoFoto from "@/components/forms/CampoFoto";
 import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
-import { atualizarPerfilSchema, alterarSenhaSchema, extrairErros, categorias } from "@/lib/validacao";
+import {
+  atualizarPerfilSchema,
+  alterarSenhaSchema,
+  solicitarTrocaEmailSchema,
+  confirmarTrocaEmailSchema,
+  extrairErros,
+  categorias,
+} from "@/lib/validacao";
+import { useToast } from "./ToastProvider";
 import styles from "./PerfilForm.module.scss";
 
 export default function PerfilForm({ usuarioInicial }) {
@@ -117,6 +125,8 @@ export default function PerfilForm({ usuarioInicial }) {
           <span>{usuario?.cpf}</span>
         </div>
       </section>
+
+      <AlterarEmail emailAtual={usuario?.email} />
 
       <form onSubmit={salvarPerfil} className={styles.secao}>
         <h2 className={styles.secaoTitulo}>Editar perfil</h2>
@@ -229,5 +239,131 @@ export default function PerfilForm({ usuarioInicial }) {
         )}
       </section>
     </>
+  );
+}
+
+// Duas etapas: novo e-mail + senha atual enviam um código para o novo
+// endereço; a troca só acontece quando o código é digitado aqui.
+function AlterarEmail({ emailAtual }) {
+  const router = useRouter();
+  const { notificar } = useToast();
+
+  const [dados, setDados] = useState({ novoEmail: "", senhaAtual: "" });
+  const [codigo, setCodigo] = useState("");
+  const [codigoEnviado, setCodigoEnviado] = useState(false);
+  const [erros, setErros] = useState({});
+  const [enviando, setEnviando] = useState(false);
+
+  async function solicitar(evento) {
+    evento?.preventDefault();
+    const resultado = solicitarTrocaEmailSchema.safeParse(dados);
+    if (!resultado.success) {
+      setErros(extrairErros(resultado));
+      return;
+    }
+    setErros({});
+    setEnviando(true);
+
+    try {
+      const resposta = await apiClient.post("/usuarios/me/email/solicitar", resultado.data);
+      setCodigoEnviado(true);
+      setCodigo("");
+      notificar(resposta.mensagem);
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function confirmar(evento) {
+    evento.preventDefault();
+    const resultado = confirmarTrocaEmailSchema.safeParse({ novoEmail: dados.novoEmail, codigo });
+    if (!resultado.success) {
+      setErros(extrairErros(resultado));
+      return;
+    }
+    setErros({});
+    setEnviando(true);
+
+    try {
+      await apiClient.post("/usuarios/me/email/confirmar", resultado.data);
+      notificar("E-mail alterado com sucesso.");
+      setDados({ novoEmail: "", senhaAtual: "" });
+      setCodigo("");
+      setCodigoEnviado(false);
+      router.refresh();
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  function recomecar() {
+    setCodigoEnviado(false);
+    setCodigo("");
+    setErros({});
+  }
+
+  if (codigoEnviado) {
+    return (
+      <form onSubmit={confirmar} className={styles.secao}>
+        <h2 className={styles.secaoTitulo}>Alterar e-mail</h2>
+        <p className={styles.perigoTexto}>
+          Enviamos um código para <strong>{dados.novoEmail}</strong>. Ele vale por 30 minutos. Seu
+          e-mail atual ({emailAtual}) continua valendo até você confirmar.
+        </p>
+        <Campo
+          id="codigoTrocaEmail"
+          rotulo="Código recebido"
+          value={codigo}
+          autoComplete="one-time-code"
+          onChange={(evento) => setCodigo(evento.target.value.toUpperCase())}
+          erro={erros.codigo}
+        />
+        <div className={styles.linha}>
+          <Botao type="submit" carregando={enviando}>
+            Confirmar novo e-mail
+          </Botao>
+          <Botao type="button" variante="secundario" disabled={enviando} onClick={solicitar}>
+            Reenviar código
+          </Botao>
+          <Botao type="button" variante="secundario" disabled={enviando} onClick={recomecar}>
+            Usar outro e-mail
+          </Botao>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <form onSubmit={solicitar} className={styles.secao}>
+      <h2 className={styles.secaoTitulo}>Alterar e-mail</h2>
+      <p className={styles.perigoTexto}>
+        Vamos enviar um código para o novo endereço. A troca só vale depois que você digitar esse código.
+      </p>
+      <div className={styles.linha}>
+        <Campo
+          id="novoEmail"
+          type="email"
+          rotulo="Novo e-mail"
+          autoComplete="email"
+          value={dados.novoEmail}
+          onChange={(evento) => setDados((atual) => ({ ...atual, novoEmail: evento.target.value }))}
+          erro={erros.novoEmail}
+        />
+        <CampoSenha
+          id="senhaAtualTrocaEmail"
+          rotulo="Senha atual"
+          value={dados.senhaAtual}
+          onChange={(evento) => setDados((atual) => ({ ...atual, senhaAtual: evento.target.value }))}
+          erro={erros.senhaAtual}
+        />
+      </div>
+      <Botao type="submit" carregando={enviando}>
+        Enviar código
+      </Botao>
+    </form>
   );
 }

@@ -1,4 +1,5 @@
 @use "../../styles/tokens-publico" as pub;
+@use "../../styles/conteudo-rich-text" as rt;
 
 // Portal em document.body: fora da .wrapper do layout público, então os
 // tokens são declarados aqui (mesmo motivo de ModalDetalhesAtividade).
@@ -124,33 +125,10 @@
   font-size: 1rem;
 }
 
+// HTML de resumo/referência exibido via ConteudoRichText (sanitizado de novo
+// no navegador) — tipografia, tabelas e imagens no mixin compartilhado.
 .corpo {
-  color: var(--tinta);
+  @include rt.conteudo-rich-text(var(--tinta), var(--barro), var(--ocre), var(--areia));
   font-size: 0.975rem;
   line-height: 1.7;
-
-  p {
-    margin: 0 0 0.75em;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  a {
-    color: var(--barro);
-    text-decoration: underline;
-  }
-
-  ul,
-  ol {
-    margin: 0 0 0.75em;
-    padding-left: 1.25em;
-  }
-
-  img {
-    max-width: 100%;
-    height: auto;
-    margin: 0.5em 0;
-  }
 }

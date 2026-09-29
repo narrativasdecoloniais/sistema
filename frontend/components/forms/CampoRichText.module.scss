@@ -1,3 +1,5 @@
+@use "../../styles/conteudo-rich-text" as rt;
+
 .caixa {
   display: flex;
   flex-direction: column;
@@ -18,6 +20,7 @@
 
 .barra {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.2rem;
   padding: 0.4rem;
   border-bottom: 1px solid var(--cor-borda);
@@ -61,36 +64,50 @@
 // editorProps.attributes.class em CampoRichText.jsx) — os seletores de tag
 // abaixo miram o HTML que o próprio editor gera dentro dela.
 .entrada {
+  @include rt.conteudo-rich-text(
+    var(--cor-texto),
+    var(--cor-acento),
+    var(--cor-borda),
+    color-mix(in srgb, var(--cor-borda) 30%, transparent)
+  );
   padding: 0.65rem 0.8rem;
   min-height: 140px;
-  color: var(--cor-texto);
   font-size: 1rem;
   line-height: 1.5;
   outline: none;
 
-  p {
-    margin: 0 0 0.75em;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
+  // Célula selecionada pelo TipTap (seleção de várias células).
+  :global(.selectedCell) {
+    background: color-mix(in srgb, var(--cor-acento) 15%, transparent);
   }
 
-  a {
-    color: var(--cor-acento);
-    text-decoration: underline;
+  // No editor a tabela não vira bloco rolável (atrapalharia a seleção de
+  // células) — quem rola é a caixa inteira.
+  table {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
   }
+}
 
-  ul,
-  ol {
-    margin: 0 0 0.75em;
-    padding-left: 1.25em;
-  }
+// Grupo de ações de tabela (só aparece com o cursor dentro de uma tabela).
+.separador {
+  width: 1px;
+  align-self: stretch;
+  margin: 0 0.25rem;
+  background: var(--cor-borda);
+}
 
-  img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 0.5em 0;
-  }
+.caixaRolavel {
+  overflow-x: auto;
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Editor em tela cheia (EditorSubmissao) — área de escrita ocupa a tela.
+.entradaAlta {
+  min-height: 55vh;
 }

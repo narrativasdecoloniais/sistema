@@ -170,3 +170,13 @@
     outline-offset: 2px;
   }
 }
+
+.linkAtividade {
+  color: var(--acento);
+  text-decoration: underline;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}

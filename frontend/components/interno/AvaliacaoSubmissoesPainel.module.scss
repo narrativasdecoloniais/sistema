@@ -1,3 +1,5 @@
+@use "../../styles/conteudo-rich-text" as rt;
+
 .pagina {
   display: flex;
   flex-direction: column;
@@ -248,41 +250,15 @@
   }
 }
 
-// Espelha a tipografia gerada pelo TipTap em CampoRichText.jsx (mesmo HTML
-// já sanitizado no backend — ver comentário no dangerouslySetInnerHTML).
+
+// HTML de resumo/referência exibido via ConteudoRichText (sanitizado de novo
+// no navegador) — tipografia, tabelas e imagens no mixin compartilhado.
 .corpo {
+  @include rt.conteudo-rich-text(var(--texto), var(--acento), var(--borda), var(--fundo));
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--borda);
   border-radius: 6px;
-  color: var(--texto);
   font-size: 0.9375rem;
-  line-height: 1.6;
-
-  p {
-    margin: 0 0 0.75em;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  a {
-    color: var(--acento);
-    text-decoration: underline;
-  }
-
-  ul,
-  ol {
-    margin: 0 0 0.75em;
-    padding-left: 1.25em;
-  }
-
-  img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 0.5em 0;
-  }
 }
 
 

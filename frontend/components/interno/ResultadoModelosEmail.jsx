@@ -11,6 +11,7 @@ import { ROTULOS_DECISAO } from "@/lib/avaliacoes";
 import { modeloEmailResultadoSchema, extrairErros } from "@/lib/validacao";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
 import estilosResultado from "./ResultadoSubmissoesPainel.module.scss";
+import ConteudoRichText from "@/components/ConteudoRichText";
 
 const DESCRICOES_MARCADORES = {
   nome: "nome do autor",
@@ -182,8 +183,7 @@ function FormularioModelo({ edicaoId, modeloInicial }) {
           <div className={styles.detalhe}>
             <p className={styles.textoApoio}>Com dados de exemplo.</p>
             <p className={styles.nome}>{preencher(assunto, { html: false })}</p>
-            {/* Texto do próprio editor (TipTap), sanitizado de novo no backend ao salvar. */}
-            <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: preencher(corpo, { html: true }) }} />
+            <ConteudoRichText className={styles.corpo} html={preencher(corpo, { html: true })} tipo="texto" />
           </div>
         </Modal>
       )}

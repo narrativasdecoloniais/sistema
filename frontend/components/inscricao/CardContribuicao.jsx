@@ -2,12 +2,13 @@
 
 import { useToast } from "@/components/publico/ToastProvider";
 import styles from "./CardContribuicao.module.scss";
+import ConteudoRichText from "@/components/ConteudoRichText";
 
 // Mensagem de contribuição voluntária (ex. pedido de PIX) mostrada na etapa
 // final da inscrição — conteúdo gerenciado pelo admin por edição, ver
 // ContribuicaoForm.jsx (editor rico) e sanitizarCorpoContribuicao.js
-// (sanitização no backend antes de salvar — corpoContribuicao já chega
-// aqui como HTML seguro, por isso o dangerouslySetInnerHTML). Só renderiza
+// (sanitização no backend antes de salvar, e de novo no navegador via
+// ConteudoRichText). Só renderiza
 // quando há corpo cadastrado; link e "copiar" são mutuamente exclusivos
 // (tipoAcaoContribuicao).
 export default function CardContribuicao({ edicao }) {
@@ -43,7 +44,7 @@ export default function CardContribuicao({ edicao }) {
     <div className={styles.cartao}>
       {tituloContribuicao && <p className={styles.titulo}>{tituloContribuicao}</p>}
 
-      <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: corpoContribuicao }} />
+      <ConteudoRichText className={styles.corpo} html={corpoContribuicao} tipo="texto" />
 
       {tipoAcaoContribuicao === "LINK" && linkContribuicaoUrl && (
         <a href={linkContribuicaoUrl} target="_blank" rel="noopener noreferrer" className={styles.acao}>

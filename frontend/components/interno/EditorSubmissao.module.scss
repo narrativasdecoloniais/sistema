@@ -1,0 +1,147 @@
+// Editor em tela cheia (sem Sidebar/Topbar) — só uma barra fixa no topo e a
+// coluna de edição centralizada.
+.pagina {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borda);
+}
+
+.identificacao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.marca {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texto-suave);
+}
+
+.contexto {
+  color: var(--texto);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.acoes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.status {
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.salvo {
+  color: var(--sucesso);
+}
+
+.pendente,
+.salvando {
+  color: var(--texto-suave);
+}
+
+.invalido {
+  color: var(--alerta);
+  font-weight: 600;
+}
+
+.erro {
+  color: var(--erro);
+  font-weight: 600;
+}
+
+.botaoTexto {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--acento);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.botaoFechar {
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--acento);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--acento);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.conteudo {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  @media (max-width: 720px) {
+    padding: 1.25rem 1rem 3rem;
+  }
+}
+
+.conflito,
+.aviso {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.conflito {
+  border-left: 3px solid var(--erro);
+}
+
+.aviso {
+  border-left: 3px solid var(--alerta);
+}
+
+@media (max-width: 720px) {
+  .barra {
+    padding: 0.6rem 1rem;
+  }
+}

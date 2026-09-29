@@ -7,14 +7,17 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CampoTexto from "./CampoTexto";
+import CampoSelecao from "./CampoSelecao";
 import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
-import { modalidadeSubmissaoSchema, extrairErros } from "@/lib/validacao";
+import { modalidadeSubmissaoSchema, areaSubmissaoAdminSchema, extrairErros } from "@/lib/validacao";
 import { paraData } from "@/lib/dataHoraIngenua";
 import styles from "./SubmissoesRecebimentoPainel.module.scss";
+import ConteudoRichText from "@/components/ConteudoRichText";
+import LinkEditarSubmissao from "./LinkEditarSubmissao";
 
 function formatarData(valor) {
   return new Date(valor).toLocaleDateString("pt-BR", { dateStyle: "short" });
@@ -239,6 +242,7 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
                         >
                           <Eye size={16} strokeWidth={1.5} aria-hidden="true" />
                         </button>
+                        <LinkEditarSubmissao edicaoId={edicaoId} submissao={submissao} className={styles.botaoIcone} />
                         <button
                           type="button"
                           className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
@@ -266,14 +270,23 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
                 <dd>{submissaoEmDetalhe.modalidadeSubmissao.nome}</dd>
               </div>
               <div>
-                <dt>Área</dt>
-                <dd>{submissaoEmDetalhe.areaSubmissao?.titulo || "—"}</dd>
-              </div>
-              <div>
                 <dt>Enviado em</dt>
                 <dd>{formatarData(submissaoEmDetalhe.createdAt)}</dd>
               </div>
             </dl>
+
+            <AlterarArea
+              key={submissaoEmDetalhe.id}
+              edicaoId={edicaoId}
+              submissao={submissaoEmDetalhe}
+              areas={
+                modalidades.find((modalidade) => modalidade.id === submissaoEmDetalhe.modalidadeSubmissao.id)
+                  ?.areas || []
+              }
+              onAlterada={(atualizada) =>
+                setSubmissoes((atual) => atual.map((item) => (item.id === atualizada.id ? atualizada : item)))
+              }
+            />
 
             <div className={styles.blocoDetalhe}>
               <span className={styles.rotuloBloco}>Autores</span>
@@ -291,18 +304,15 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
 
             <div className={styles.blocoDetalhe}>
               <span className={styles.rotuloBloco}>Resumo</span>
-              {/* Já sanitizado no backend na criação (sanitizarResumoSubmissao.js) — nunca re-sanitizado no cliente. */}
-              <div
-                className={styles.corpo}
-                dangerouslySetInnerHTML={{ __html: submissaoEmDetalhe.resumo }}
-              />
+              <ConteudoRichText className={styles.corpo} html={submissaoEmDetalhe.resumo} tipo="resumo" />
             </div>
 
             <div className={styles.blocoDetalhe}>
               <span className={styles.rotuloBloco}>Referência bibliográfica</span>
-              <div
+              <ConteudoRichText
                 className={styles.corpo}
-                dangerouslySetInnerHTML={{ __html: submissaoEmDetalhe.referenciaBibliografica }}
+                html={submissaoEmDetalhe.referenciaBibliografica}
+                tipo="referencia"
               />
             </div>
           </div>
@@ -319,6 +329,75 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
         />
       )}
     </>
+  );
+}
+
+// Correção de enquadramento: só áreas da mesma modalidade. Sem decisão final,
+// o backend redistribui a avaliação para os avaliadores da nova área.
+function AlterarArea({ edicaoId, submissao, areas, onAlterada }) {
+  const router = useRouter();
+  const { notificar } = useToast();
+  const [areaId, setAreaId] = useState(submissao.areaSubmissao?.id || "");
+  const [erro, setErro] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  const alterada = areaId !== (submissao.areaSubmissao?.id || "");
+
+  async function salvar() {
+    const resultado = areaSubmissaoAdminSchema.safeParse({ areaSubmissaoId: areaId });
+    if (!resultado.success) {
+      setErro(extrairErros(resultado).areaSubmissaoId);
+      return;
+    }
+
+    setErro("");
+    setSalvando(true);
+    try {
+      const resposta = await apiClient.patch(`/edicoes/${edicaoId}/submissoes/${submissao.id}/area`, resultado.data);
+      onAlterada(resposta.submissao);
+      notificar("Área alterada com sucesso.");
+      router.refresh();
+    } catch (erroApi) {
+      notificar(erroApi.message, "erro");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className={styles.alterarArea}>
+      <CampoSelecao
+        id={`area-${submissao.id}`}
+        rotulo="Área"
+        value={areaId}
+        erro={erro}
+        onChange={(evento) => setAreaId(evento.target.value)}
+      >
+        {!submissao.areaSubmissao && <option value="">Sem área</option>}
+        {areas.map((area) => (
+          <option key={area.id} value={area.id}>
+            {area.titulo}
+          </option>
+        ))}
+      </CampoSelecao>
+      {alterada && (
+        <>
+          <p className={styles.avisoArea}>
+            {submissao.decisaoFinal
+              ? "O trabalho já tem decisão final — só a área muda, as avaliações registradas ficam como estão."
+              : "As atribuições de avaliação atuais serão descartadas e o trabalho vai para os avaliadores da nova área."}
+          </p>
+          <div className={styles.acoesArea}>
+            <Botao type="button" variante="secundario" onClick={() => setAreaId(submissao.areaSubmissao?.id || "")}>
+              Cancelar
+            </Botao>
+            <Botao type="button" onClick={salvar} carregando={salvando}>
+              Salvar área
+            </Botao>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

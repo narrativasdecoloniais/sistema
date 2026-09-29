@@ -1,6 +1,9 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import { buscarEdicaoPorId } from "@/lib/edicoes";
+import { buscarApresentacao } from "@/lib/apresentacaoAdmin";
+import { listarModalidadesSubmissao } from "@/lib/modalidadesSubmissao";
+import ApresentacaoSubmissoesPainel from "@/components/interno/ApresentacaoSubmissoesPainel";
 
 export default async function PaginaSubmissoesApresentacao({ params }) {
   const usuario = await obterUsuarioAtual();
@@ -8,10 +11,13 @@ export default async function PaginaSubmissoesApresentacao({ params }) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
-  return (
-    <PaginaEmBreve
-      titulo="Apresentação dos trabalhos"
-      descricao="Em breve você vai poder organizar a apresentação dos trabalhos aprovados por aqui."
-    />
-  );
+  const edicao = await buscarEdicaoPorId(params.id);
+  if (!edicao) notFound();
+
+  const [dados, modalidades] = await Promise.all([
+    buscarApresentacao(params.id),
+    listarModalidadesSubmissao(params.id),
+  ]);
+
+  return <ApresentacaoSubmissoesPainel edicaoId={params.id} dadosIniciais={dados} modalidades={modalidades} />;
 }

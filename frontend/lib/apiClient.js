@@ -44,7 +44,11 @@ async function requisitar(caminho, { method = "GET", body } = {}, jaTentouRenova
   const dados = await resposta.json().catch(() => null);
 
   if (!resposta.ok) {
-    throw new Error(dados?.mensagem || "Ocorreu um erro. Tente novamente.");
+    const erro = new Error(dados?.mensagem || "Ocorreu um erro. Tente novamente.");
+    // Quem precisa distinguir o tipo de falha (ex. 409 de conflito no
+    // autosave do editor de submissões) lê o status daqui.
+    erro.status = resposta.status;
+    throw erro;
   }
 
   return dados;

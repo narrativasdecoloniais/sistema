@@ -12,6 +12,7 @@ import { buscarAvaliacao, registrarDecisao, sugerirArea } from "@/lib/participan
 import { DECISOES_AVALIACAO, ROTULOS_DECISAO } from "@/lib/avaliacoes";
 import { sugestaoAreaSchema, extrairErros } from "@/lib/validacao";
 import styles from "./AvaliacoesParticipante.module.scss";
+import ConteudoRichText from "@/components/ConteudoRichText";
 
 export default function AvaliacaoParticipante({ atribuicaoId }) {
   const { notificar } = useToast();
@@ -150,15 +151,14 @@ export default function AvaliacaoParticipante({ atribuicaoId }) {
         <h2 id="titulo-resumo" className={styles.rotuloSecao}>
           Resumo
         </h2>
-        {/* Já sanitizado no backend na criação (sanitizarResumoSubmissao.js). */}
-        <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: submissao.resumo }} />
+        <ConteudoRichText className={styles.corpo} html={submissao.resumo} tipo="resumo" />
       </section>
 
       <section className={styles.bloco} aria-labelledby="titulo-referencia">
         <h2 id="titulo-referencia" className={styles.rotuloSecao}>
           Referência bibliográfica
         </h2>
-        <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: submissao.referenciaBibliografica }} />
+        <ConteudoRichText className={styles.corpo} html={submissao.referenciaBibliografica} tipo="referencia" />
       </section>
 
       {sugerindo && (

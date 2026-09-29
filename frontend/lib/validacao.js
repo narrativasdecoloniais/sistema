@@ -120,6 +120,18 @@ export const alterarSenhaSchema = z
     path: ["confirmarNovaSenha"],
   });
 
+// Espelham solicitarTrocaEmailSchema/confirmarTrocaEmailSchema em
+// backend/src/validators/usuarios.validators.js.
+export const solicitarTrocaEmailSchema = z.object({
+  novoEmail: z.string().trim().email("E-mail inválido"),
+  senhaAtual: z.string().min(1, "Informe a senha atual"),
+});
+
+export const confirmarTrocaEmailSchema = z.object({
+  novoEmail: z.string().trim().email("E-mail inválido"),
+  codigo: z.string().trim().min(1, "Informe o código"),
+});
+
 // Extrai a primeira mensagem de erro de um resultado zod, indexada por campo.
 export function extrairErros(resultado) {
   const erros = {};
@@ -498,6 +510,20 @@ export const decisaoAvaliadorSchema = z.object({
 export const sugestaoAreaSchema = z.object({
   areaSugeridaId: z.string().min(1, "Selecione a área sugerida"),
   justificativa: z.string().trim().max(2000, "Máximo de 2000 caracteres").optional().default(""),
+});
+
+// Espelha conteudoSubmissaoSchema em backend/src/validators/submissoesAdmin.validators.js
+// (editor da organização — referência pode ficar vazia).
+export const conteudoSubmissaoSchema = z.object({
+  titulo: z.string().trim().min(3, "Informe o título do trabalho").max(500, "Máximo de 500 caracteres"),
+  resumo: z.string().trim().min(1, "Informe o resumo"),
+  referenciaBibliografica: z.string().trim().default(""),
+  versaoBase: z.string().datetime({ message: "Versão inválida — recarregue a página" }),
+});
+
+// Espelha areaSubmissaoAdminSchema em backend/src/validators/submissoesAdmin.validators.js.
+export const areaSubmissaoAdminSchema = z.object({
+  areaSubmissaoId: z.string().min(1, "Selecione a área"),
 });
 
 // Espelha correcaoSubmissaoSchema em backend/src/validators/submissoes.validators.js.

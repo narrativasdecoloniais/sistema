@@ -1,0 +1,8 @@
+@use "../../styles/tokens-interno" as interno;
+
+.wrapper {
+  @include interno.tokens;
+  min-height: 100vh;
+  background: var(--fundo);
+  color: var(--texto);
+}

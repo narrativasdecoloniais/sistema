@@ -2,6 +2,7 @@ import Link from "next/link";
 import Divisor from "@/components/graficos/Divisor";
 import Marcador from "@/components/publico/Marcador";
 import FaixaLateral from "@/components/publico/FaixaLateral";
+import TrabalhosDaAtividade from "@/components/publico/TrabalhosDaAtividade";
 import { agruparPessoasPorTipoParticipacao, formatarPeriodoAtividade } from "@/lib/publico";
 import { estiloCoresPersonalizadas } from "@/lib/cores";
 import styles from "./DetalheAtividade.module.scss";
@@ -171,6 +172,13 @@ export default function DetalheAtividade({ atividade, permiteInscricao }) {
               </li>
             </ul>
           </section>
+
+          {atividade.trabalhos?.length > 0 && (
+            <section className={styles.secaoTexto}>
+              <h2 className={styles.subtituloSecao}>Trabalhos apresentados</h2>
+              <TrabalhosDaAtividade trabalhos={atividade.trabalhos} />
+            </section>
+          )}
         </div>
       </div>
     </article>

@@ -16,6 +16,8 @@ import { DECISOES_AVALIACAO, ROTULOS_DECISAO, STATUS_CORRECAO, ROTULOS_STATUS_CO
 import { conferirCorrecaoSchema, extrairErros } from "@/lib/validacao";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
 import estilosResultado from "./ResultadoSubmissoesPainel.module.scss";
+import ConteudoRichText from "@/components/ConteudoRichText";
+import LinkEditarSubmissao from "./LinkEditarSubmissao";
 
 const SEM_DECISAO = "SEM_DECISAO";
 const SEM_CORRECAO = "SEM_CORRECAO";
@@ -175,6 +177,7 @@ export default function AbaTrabalhosResultado({ edicaoId, trabalhos, modalidades
                         >
                           <Eye size={16} strokeWidth={1.5} aria-hidden="true" />
                         </button>
+                        <LinkEditarSubmissao edicaoId={edicaoId} submissao={trabalho} className={styles.botaoIcone} />
                       </div>
                     </td>
                   </tr>
@@ -409,16 +412,15 @@ function FormularioDevolucao({ conferindo, onCancelar, onDevolver }) {
   );
 }
 
-// Resumo/referência já sanitizados no backend ao salvar.
 function VersaoTexto({ rotulo, titulo, resumo, referencia }) {
   return (
     <div className={styles.blocoDetalhe}>
       {rotulo && <h3 className={styles.rotuloBloco}>{rotulo}</h3>}
       {titulo && <p className={styles.nome}>{titulo}</p>}
       <span className={styles.rotuloBloco}>Resumo</span>
-      <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: resumo }} />
+      <ConteudoRichText className={styles.corpo} html={resumo} tipo="resumo" />
       <span className={styles.rotuloBloco}>Referência bibliográfica</span>
-      <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: referencia || "<p>—</p>" }} />
+      <ConteudoRichText className={styles.corpo} html={referencia || "<p>—</p>"} tipo="referencia" />
     </div>
   );
 }

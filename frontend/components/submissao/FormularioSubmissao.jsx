@@ -183,6 +183,7 @@ export default function FormularioSubmissao({
         onChange={setResumo}
         erro={erros.resumo}
         permitirImagem
+        permitirTabela
       />
 
       <CampoRichText
@@ -191,7 +192,7 @@ export default function FormularioSubmissao({
         value={referenciaBibliografica}
         onChange={setReferenciaBibliografica}
         erro={erros.referenciaBibliografica}
-        ferramentas={["negrito"]}
+        ferramentas={["negrito", "italico", "link"]}
       />
 
       <div className={styles.blocoAutores}>

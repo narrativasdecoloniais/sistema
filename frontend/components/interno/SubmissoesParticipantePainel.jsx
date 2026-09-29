@@ -9,6 +9,7 @@ import { paraNumeroRomano } from "@/lib/romanos";
 import { listarMinhasSubmissoes } from "@/lib/participanteSubmissoes";
 import { listarModalidadesSubmissaoPublicas, prazoSubmissaoAberto } from "@/lib/publico";
 import { ROTULOS_DECISAO, formatarPrazoCorrecao } from "@/lib/avaliacoes";
+import { detalheAtividade, linkAtividade } from "@/lib/apresentacao";
 import styles from "./SubmissoesParticipantePainel.module.scss";
 
 function formatarData(iso) {
@@ -106,6 +107,23 @@ export default function SubmissoesParticipantePainel() {
               <p className={styles.cartaoData}>Enviado em {formatarData(submissao.createdAt)}</p>
               {submissao.resultado && (
                 <ResultadoSubmissao id={submissao.id} resultado={submissao.resultado} ehAutorPrincipal={submissao.ehAutorPrincipal} />
+              )}
+              {submissao.apresentacao && (
+                <div className={styles.resultado}>
+                  <p className={styles.resultadoDecisao}>
+                    <span className={styles.resultadoRotulo}>Apresentação</span>
+                    <Link
+                      href={linkAtividade(submissao.edicao, submissao.apresentacao.atividade)}
+                      className={styles.linkAtividade}
+                    >
+                      {submissao.apresentacao.atividade.nome}
+                    </Link>
+                  </p>
+                  <p className={styles.resultadoTexto}>{detalheAtividade(submissao.apresentacao.atividade)}</p>
+                  {submissao.apresentacao.ordem && (
+                    <p className={styles.resultadoTexto}>Ordem de apresentação: {submissao.apresentacao.ordem}º</p>
+                  )}
+                </div>
               )}
             </article>
           ))}

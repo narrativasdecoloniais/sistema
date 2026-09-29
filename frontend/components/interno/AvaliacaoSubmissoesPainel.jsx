@@ -19,6 +19,8 @@ import { apiClient } from "@/lib/apiClient";
 import { DECISOES_AVALIACAO, ROTULOS_DECISAO } from "@/lib/avaliacoes";
 import { atribuirAvaliadorSchema, extrairErros } from "@/lib/validacao";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
+import ConteudoRichText from "@/components/ConteudoRichText";
+import LinkEditarSubmissao from "./LinkEditarSubmissao";
 
 const SEM_DECISAO = "SEM_DECISAO";
 
@@ -311,6 +313,7 @@ function AbaSubmissoes({ edicaoId, submissoes, avaliadores, modalidades, recarre
                         >
                           <Eye size={16} strokeWidth={1.5} aria-hidden="true" />
                         </button>
+                        <LinkEditarSubmissao edicaoId={edicaoId} submissao={submissao} className={styles.botaoIcone} />
                       </div>
                     </td>
                   </tr>
@@ -641,15 +644,14 @@ function DetalheSubmissao({ edicaoId, submissao, avaliadores, recarregar, onFech
           <h3 id="titulo-resumo-trabalho" className={styles.rotuloBloco}>
             Resumo
           </h3>
-          {/* Já sanitizado no backend na criação (sanitizarResumoSubmissao.js). */}
-          <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: submissao.resumo }} />
+          <ConteudoRichText className={styles.corpo} html={submissao.resumo} tipo="resumo" />
         </section>
 
         <section className={styles.blocoDetalhe} aria-labelledby="titulo-referencia-trabalho">
           <h3 id="titulo-referencia-trabalho" className={styles.rotuloBloco}>
             Referência bibliográfica
           </h3>
-          <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: submissao.referenciaBibliografica }} />
+          <ConteudoRichText className={styles.corpo} html={submissao.referenciaBibliografica} tipo="referencia" />
         </section>
       </div>
     </Modal>

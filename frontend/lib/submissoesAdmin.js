@@ -19,3 +19,8 @@ export async function listarSubmissoes(edicaoId) {
   const dados = await requisitarComCookies(`/edicoes/${edicaoId}/submissoes`);
   return dados?.submissoes || [];
 }
+
+export async function buscarConteudoSubmissao(edicaoId, submissaoId) {
+  const dados = await requisitarComCookies(`/edicoes/${edicaoId}/submissoes/${submissaoId}/conteudo`);
+  return dados?.submissao || null;
+}

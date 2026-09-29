@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
+import { TableKit } from "@tiptap/extension-table";
 import { redimensionarLogoParaDataUri } from "@/lib/imagem";
 import stylesCampo from "./Campo.module.scss";
 import styles from "./CampoRichText.module.scss";
@@ -31,8 +32,12 @@ function recortarFragmentoHtml(html) {
 // controla tanto quais botões aparecem quanto o que o schema do editor
 // permite (ex. referência bibliográfica passa só ["negrito"], então nem
 // itálico/lista/link funcionam por atalho de teclado). `permitirImagem`
-// liga a extensão de imagem + botão de inserir arquivo. HTML sempre
-// sanitizado de novo no backend antes de salvar — nunca confiar só no editor.
+// liga a extensão de imagem + botão de inserir arquivo; `permitirTabela` liga
+// tabelas (inserir, linhas/colunas, cabeçalho, excluir). `aoEnviarImagem`
+// (opcional) recebe o data URI já redimensionado e devolve a URL final —
+// usado pelo editor da organização, que salva sozinho e não pode ficar
+// reenviando data URI a cada autosave. HTML sempre sanitizado de novo no
+// backend antes de salvar — nunca confiar só no editor.
 export default function CampoRichText({
   id,
   rotulo,
@@ -42,9 +47,17 @@ export default function CampoRichText({
   erro,
   ferramentas = FERRAMENTAS_PADRAO,
   permitirImagem = false,
+  permitirTabela = false,
+  aoEnviarImagem,
+  alto = false,
 }) {
   const idErro = `${id}-erro`;
   const inputImagemRef = useRef(null);
+  const [enviandoImagem, setEnviandoImagem] = useState(false);
+  const [erroImagem, setErroImagem] = useState("");
+  // A barra depende de "o cursor está numa tabela?" — re-renderiza a cada
+  // mudança de seleção pra mostrar/esconder as ações de tabela.
+  const [, atualizarBarra] = useReducer((contador) => contador + 1, 0);
 
   const temNegrito = ferramentas.includes("negrito");
   const temItalico = ferramentas.includes("italico");
@@ -71,15 +84,17 @@ export default function CampoRichText({
           ]
         : []),
       ...(permitirImagem ? [Image.configure({ HTMLAttributes: { alt: "" } })] : []),
+      ...(permitirTabela ? [TableKit.configure({ table: { resizable: false } })] : []),
     ],
     content: value || "",
     immediatelyRender: false,
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),
     onBlur: () => onBlur?.(),
+    onSelectionUpdate: () => atualizarBarra(),
     editorProps: {
       attributes: {
         id,
-        class: styles.entrada,
+        class: `${styles.entrada} ${alto ? styles.entradaAlta : ""}`,
         "aria-invalid": erro ? "true" : undefined,
         "aria-describedby": erro ? idErro : undefined,
       },
@@ -144,18 +159,11 @@ export default function CampoRichText({
         imagensEmbutidas.forEach((src) => {
           fetch(src)
             .then((resposta) => resposta.blob())
-            .then((arquivo) => redimensionarLogoParaDataUri(arquivo, 900, 0.85, true))
-            .then((dataUri) => {
-              editor.chain().focus().setImage({ src: dataUri, alt: "" }).run();
-            });
+            .then((arquivo) => inserirImagem(arquivo));
         });
 
         if (!texto.trim()) {
-          arquivosSoltos.forEach((arquivo) => {
-            redimensionarLogoParaDataUri(arquivo, 900, 0.85, true).then((dataUri) => {
-              editor.chain().focus().setImage({ src: dataUri, alt: "" }).run();
-            });
-          });
+          arquivosSoltos.forEach((arquivo) => inserirImagem(arquivo));
         }
 
         return true;
@@ -183,15 +191,43 @@ export default function CampoRichText({
     editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
   }
 
+  // Redimensiona (fotos de celular/Word chegam com vários MB) e, se houver
+  // aoEnviarImagem, sobe antes de inserir — o editor fica só com a URL.
+  async function inserirImagem(arquivo) {
+    setErroImagem("");
+    const dataUri = await redimensionarLogoParaDataUri(arquivo, 900, 0.85, true);
+    if (!aoEnviarImagem) {
+      editor.chain().focus().setImage({ src: dataUri, alt: "" }).run();
+      return;
+    }
+    setEnviandoImagem(true);
+    try {
+      const url = await aoEnviarImagem(dataUri);
+      editor.chain().focus().setImage({ src: url, alt: "" }).run();
+    } catch (falha) {
+      setErroImagem(falha.message || "Não foi possível enviar a imagem.");
+    } finally {
+      setEnviandoImagem(false);
+    }
+  }
+
   async function aoSelecionarImagem(evento) {
     const arquivo = evento.target.files?.[0];
     evento.target.value = "";
     if (!arquivo) return;
     if (!arquivo.type.startsWith("image/")) return;
-
-    const dataUri = await redimensionarLogoParaDataUri(arquivo, 900, 0.85, true);
-    editor.chain().focus().setImage({ src: dataUri, alt: "" }).run();
+    await inserirImagem(arquivo);
   }
+
+  const naTabela = permitirTabela && Boolean(editor?.isActive("table"));
+  const acoesTabela = [
+    { rotulo: "+ linha", titulo: "Inserir linha abaixo", executar: (c) => c.addRowAfter() },
+    { rotulo: "+ coluna", titulo: "Inserir coluna à direita", executar: (c) => c.addColumnAfter() },
+    { rotulo: "− linha", titulo: "Excluir linha", executar: (c) => c.deleteRow() },
+    { rotulo: "− coluna", titulo: "Excluir coluna", executar: (c) => c.deleteColumn() },
+    { rotulo: "Cabeçalho", titulo: "Alternar linha de cabeçalho", executar: (c) => c.toggleHeaderRow() },
+    { rotulo: "Excluir tabela", titulo: "Excluir tabela", executar: (c) => c.deleteTable() },
+  ];
 
   return (
     <div className={stylesCampo.grupo}>
@@ -251,8 +287,9 @@ export default function CampoRichText({
                 className={styles.botao}
                 onClick={() => inputImagemRef.current?.click()}
                 aria-label="Inserir imagem"
+                disabled={enviandoImagem}
               >
-                Imagem
+                {enviandoImagem ? "Enviando..." : "Imagem"}
               </button>
               <input
                 ref={inputImagemRef}
@@ -263,9 +300,40 @@ export default function CampoRichText({
               />
             </>
           )}
+          {permitirTabela && (
+            <button
+              type="button"
+              className={styles.botao}
+              onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+              aria-label="Inserir tabela"
+              disabled={naTabela}
+            >
+              Tabela
+            </button>
+          )}
+          {naTabela && (
+            <>
+              <span className={styles.separador} aria-hidden="true" />
+              {acoesTabela.map((acao) => (
+                <button
+                  key={acao.rotulo}
+                  type="button"
+                  className={styles.botao}
+                  title={acao.titulo}
+                  aria-label={acao.titulo}
+                  onClick={() => acao.executar(editor.chain().focus()).run()}
+                >
+                  {acao.rotulo}
+                </button>
+              ))}
+            </>
+          )}
         </div>
-        <EditorContent editor={editor} />
+        <div className={permitirTabela ? styles.caixaRolavel : undefined}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
+      {erroImagem && <p className={stylesCampo.mensagemErro}>{erroImagem}</p>}
       {erro && (
         <p id={idErro} className={stylesCampo.mensagemErro}>
           {erro}

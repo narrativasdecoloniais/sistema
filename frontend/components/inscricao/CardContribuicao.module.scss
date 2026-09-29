@@ -23,7 +23,7 @@
 // corpoContribuicao já chega sanitizado do backend (ver
 // sanitizarCorpoContribuicao.js) — permite só p/br/strong/em/a/ul/ol/li,
 // daí os seletores de tag abaixo mirarem o HTML injetado via
-// dangerouslySetInnerHTML em CardContribuicao.jsx.
+// ConteudoRichText em CardContribuicao.jsx.
 .corpo {
   font-size: 0.92rem;
   color: var(--tinta);

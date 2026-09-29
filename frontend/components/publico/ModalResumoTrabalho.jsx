@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ModalResumoTrabalho.module.scss";
+import ConteudoRichText from "@/components/ConteudoRichText";
 
 const SELETOR_FOCAVEIS = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -73,13 +74,12 @@ export default function ModalResumoTrabalho({ trabalho, aoFechar }) {
         <div className={styles.conteudo}>
           <section>
             <h3 className={styles.subtitulo}>Resumo</h3>
-            {/* HTML sanitizado no backend ao salvar (sanitizarResumoSubmissao.js). */}
-            <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: trabalho.resumo }} />
+            <ConteudoRichText className={styles.corpo} html={trabalho.resumo} tipo="resumo" />
           </section>
           {trabalho.referenciaBibliografica && (
             <section>
               <h3 className={styles.subtitulo}>Referências</h3>
-              <div className={styles.corpo} dangerouslySetInnerHTML={{ __html: trabalho.referenciaBibliografica }} />
+              <ConteudoRichText className={styles.corpo} html={trabalho.referenciaBibliografica} tipo="referencia" />
             </section>
           )}
         </div>
