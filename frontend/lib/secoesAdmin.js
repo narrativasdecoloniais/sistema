@@ -47,6 +47,7 @@ export const GRUPOS_SECOES_ADMIN = [
     itens: [
       { valor: "INSCRICOES_GERAIS", rotulo: "Inscrições gerais" },
       { valor: "INSCRICOES_ATIVIDADES", rotulo: "Inscrições em atividades" },
+      { valor: "MONITORIA", rotulo: "Monitoria" },
     ],
   },
   {

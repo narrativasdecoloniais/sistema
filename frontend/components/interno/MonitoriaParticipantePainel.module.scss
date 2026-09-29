@@ -1,0 +1,95 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 900px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--texto);
+}
+
+.descricao {
+  margin: 0.35rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+}
+
+.vazio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto);
+
+  p {
+    margin: 0;
+  }
+
+  p + p {
+    margin-top: 0.35rem;
+  }
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.cartaoCabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: var(--fundo);
+  color: var(--texto);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.mensagem {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.9375rem;
+}
+
+.apoio {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  overflow-wrap: break-word;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  @media (max-width: 600px) {
+    > * {
+      flex: 1 1 100%;
+    }
+  }
+}

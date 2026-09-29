@@ -14,14 +14,16 @@ export const ADAPTACAO_VAZIA = { precisaAdaptacao: null, adaptacoesNecessarias: 
 // adaptacaoInscricaoSchema em lib/validacao.js). Controlado: `valor` é
 // { precisaAdaptacao: true | false | null, adaptacoesNecessarias: string }.
 // A segunda pergunta só aparece com "Sim".
-export default function CamposAdaptacao({ id, valor, onChange, erros = {} }) {
+const PERGUNTA_PADRAO = "Você necessita de alguma adaptação ou recurso específico para participar do evento?";
+
+export default function CamposAdaptacao({ id, valor, onChange, erros = {}, pergunta = PERGUNTA_PADRAO }) {
   const escolha = valor.precisaAdaptacao === true ? "SIM" : valor.precisaAdaptacao === false ? "NAO" : null;
 
   return (
     <>
       <CampoRadioSecao
         id={`${id}-precisa`}
-        rotulo="Você necessita de alguma adaptação ou recurso específico para participar do evento?"
+        rotulo={pergunta}
         valor={escolha}
         onChange={(opcao) => onChange({ ...valor, precisaAdaptacao: opcao === "SIM" })}
         opcoes={OPCOES}

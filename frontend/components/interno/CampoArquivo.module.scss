@@ -1,0 +1,54 @@
+.descricao {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.inputOculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.nomeArquivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--texto);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.remover {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--erro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}

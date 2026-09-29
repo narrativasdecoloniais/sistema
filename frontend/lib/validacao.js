@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { corSchema } from "@/lib/cores";
 import { camposIdentificacao, validarIdentificacao } from "@/lib/identificacao";
+import { idadeEm } from "@/lib/idade";
 
 export const senhaForte = z
   .string()
@@ -135,6 +136,119 @@ export const adaptacaoInscricaoSchema = z
     precisaAdaptacao,
     adaptacoesNecessarias: precisaAdaptacao ? adaptacoesNecessarias : null,
   }));
+
+// Inscrição na monitoria — espelha criarInscricaoMonitoriaSchema e
+// configuracaoMonitoriaSchema em backend/src/validators/monitoria.validators.js
+// (mudou um, muda o outro). A idade conta no início do evento (dataReferencia).
+const TIPOS_AUTORIZACAO_MONITORIA = ["application/pdf", "image/png", "image/jpeg"];
+const TAMANHO_MAX_AUTORIZACAO_MONITORIA = 5 * 1024 * 1024;
+
+function tamanhoDataUri(dataUri) {
+  const base64 = dataUri.slice(dataUri.indexOf(",") + 1);
+  return Math.floor((base64.length * 3) / 4);
+}
+
+const cienteMonitoria = (mensagem) => z.literal(true, { errorMap: () => ({ message: mensagem }) });
+
+export function criarInscricaoMonitoriaSchema({ funcoesPermitidas, dataReferencia, temAutorizacaoSalva = false }) {
+  return z
+    .object({
+      dataNascimento: z
+        .string({ required_error: "Informe a data de nascimento" })
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data de nascimento")
+        .refine((valor) => !Number.isNaN(new Date(valor).getTime()), "Data de nascimento inválida")
+        .refine((valor) => {
+          const idade = idadeEm(valor, dataReferencia);
+          return idade >= 10 && idade <= 110;
+        }, "Data de nascimento inválida"),
+      pronome: z
+        .string({ required_error: "Informe como prefere ser tratado(a)" })
+        .trim()
+        .min(1, "Informe como prefere ser tratado(a)")
+        .max(100, "Use no máximo 100 caracteres"),
+      telefone: z
+        .string({ required_error: "Informe um telefone com DDD" })
+        .trim()
+        .refine((valor) => {
+          const digitos = valor.replace(/\D/g, "");
+          return digitos.length >= 10 && digitos.length <= 13;
+        }, "Informe um telefone com DDD"),
+      cursoInstituicao: z
+        .string({ required_error: "Informe o curso e a instituição" })
+        .trim()
+        .min(3, "Informe o curso e a instituição")
+        .max(300, "Use no máximo 300 caracteres"),
+      experienciaAnterior: z.boolean({
+        required_error: "Responda se já teve experiência como monitor(a)",
+        invalid_type_error: "Responda se já teve experiência como monitor(a)",
+      }),
+      funcoes: z
+        .array(z.string(), { required_error: "Selecione ao menos uma atividade" })
+        .min(1, "Selecione ao menos uma atividade")
+        .refine((lista) => lista.every((funcao) => funcoesPermitidas.includes(funcao)), "Atividade inválida"),
+      precisaAdaptacao: z.boolean({
+        required_error: "Responda se você necessita de alguma adaptação ou recurso",
+        invalid_type_error: "Responda se você necessita de alguma adaptação ou recurso",
+      }),
+      adaptacoesNecessarias: z.string().trim().max(MAX_ADAPTACOES, `Use no máximo ${MAX_ADAPTACOES} caracteres`).nullish(),
+      cienteFormacao: cienteMonitoria("Confirme que está ciente da formação de monitores"),
+      cienteDisponibilidade: cienteMonitoria("Confirme que está ciente da disponibilidade presencial"),
+      cienteVoluntaria: cienteMonitoria("Confirme que está ciente de que a monitoria é voluntária"),
+      autorizacaoResponsavel: z
+        .string()
+        .refine(
+          (valor) => TIPOS_AUTORIZACAO_MONITORIA.some((tipo) => valor.startsWith(`data:${tipo};base64,`)),
+          "Envie a autorização em PDF, JPG ou PNG"
+        )
+        .refine((valor) => tamanhoDataUri(valor) <= TAMANHO_MAX_AUTORIZACAO_MONITORIA, "O arquivo deve ter no máximo 5MB")
+        .nullish(),
+    })
+    .superRefine((dados, ctx) => {
+      if (dados.precisaAdaptacao === true && !dados.adaptacoesNecessarias) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["adaptacoesNecessarias"],
+          message: "Indique as adaptações ou recursos de que você necessita",
+        });
+      }
+      const menor = idadeEm(dados.dataNascimento, dataReferencia) < 18;
+      if (menor && !dados.autorizacaoResponsavel && !temAutorizacaoSalva) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["autorizacaoResponsavel"],
+          message: "Anexe a autorização do(a) responsável",
+        });
+      }
+    });
+}
+
+export const configuracaoMonitoriaSchema = z
+  .object({
+    inicioInscricoesMonitoria: z.string().nullable(),
+    fimInscricoesMonitoria: z.string().nullable(),
+    vagasMonitoria: z
+      .preprocess(
+        (valor) => (valor === "" || valor === null ? null : Number(valor)),
+        z
+          .number({ invalid_type_error: "Informe um número de vagas válido" })
+          .int("Informe um número inteiro")
+          .min(1, "Informe ao menos 1 vaga")
+          .max(10000, "Número de vagas muito alto")
+          .nullable()
+      ),
+    funcoesMonitoria: z
+      .array(z.string().trim().min(1, "Preencha o nome da atividade").max(200, "Use no máximo 200 caracteres"))
+      .max(30, "Cadastre no máximo 30 atividades")
+      .refine((lista) => new Set(lista).size === lista.length, "Há atividades repetidas na lista"),
+    editalMonitoria: z.string().max(20000, "Texto muito grande").nullable(),
+  })
+  .refine(
+    (dados) =>
+      !dados.inicioInscricoesMonitoria ||
+      !dados.fimInscricoesMonitoria ||
+      new Date(dados.fimInscricoesMonitoria) > new Date(dados.inicioInscricoesMonitoria),
+    { message: "O fim das inscrições deve ser depois do início", path: ["fimInscricoesMonitoria"] }
+  );
 
 export function extrairErros(resultado) {
   const erros = {};

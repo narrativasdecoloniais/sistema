@@ -86,6 +86,19 @@ enum SecaoAdmin {
   TIPOS_PONTO_INTERESSE
   PAGINA_COMISSOES
   GRUPOS_CONTEUDO
+  // Inscrição e seleção de monitores (monitoria.service.js) — permite liberar
+  // só a Coordenação de Monitoria.
+  MONITORIA
+}
+
+// EM_ANALISE até a coordenação decidir; CANCELADA = desistência do candidato
+// ou cancelamento pela coordenação (edital, item 8).
+enum StatusInscricaoMonitoria {
+  EM_ANALISE
+  SELECIONADO
+  LISTA_ESPERA
+  NAO_SELECIONADO
+  CANCELADA
 }
 
 enum TipoAcaoContribuicao {
@@ -118,40 +131,41 @@ enum TipoFundoNav {
 }
 
 model Usuario {
-  id                  String            @id @default(uuid())
-  nome                String
-  email               String            @unique
-  cpf                 String?           @unique
+  id                   String            @id @default(uuid())
+  nome                 String
+  email                String            @unique
+  cpf                  String?           @unique
   // Estrangeiro sem CPF: número de identificação do próprio país (sem
   // validação de formato — as regras variam por país), guardado normalizado
   // (maiúsculas, só letras e dígitos) e único no sistema todo. pais é o
   // código ISO 3166-1 alfa-2. Uma conta tem CPF ou documento, nunca os dois.
-  documentoEstrangeiro String?          @unique
-  pais                String?
-  instituicao         String?
-  categoria           CategoriaUsuario?
-  foto                String?
-  senhaHash           String
-  emailConfirmado     Boolean           @default(false)
-  papeis              PapelUsuario[]    @default([PARTICIPANTE])
+  documentoEstrangeiro String?           @unique
+  pais                 String?
+  instituicao          String?
+  categoria            CategoriaUsuario?
+  foto                 String?
+  senhaHash            String
+  emailConfirmado      Boolean           @default(false)
+  papeis               PapelUsuario[]    @default([PARTICIPANTE])
   // Só têm efeito para quem tem ORGANIZADOR em papeis — ADMIN sempre tem
   // acesso total (bypass hardcoded em autorizarSecao), independente destes
   // campos. acessoCompleto=true equivale ao comportamento antigo de
   // ORGANIZADOR (acesso a tudo); quando false, o acesso é restrito às
   // seções listadas em secoesPermitidas.
-  acessoCompleto      Boolean           @default(false)
-  secoesPermitidas    SecaoAdmin[]      @default([])
-  aceiteTermosEm      DateTime?
-  aceitePrivacidadeEm DateTime?
-  ativo               Boolean           @default(true)
-  anonimizadoEm       DateTime?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  acessoCompleto       Boolean           @default(false)
+  secoesPermitidas     SecaoAdmin[]      @default([])
+  aceiteTermosEm       DateTime?
+  aceitePrivacidadeEm  DateTime?
+  ativo                Boolean           @default(true)
+  anonimizadoEm        DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   tokens              TokenVerificacao[]
   refreshTokens       RefreshToken[]
   inscricoesEdicao    InscricaoEdicao[]
   inscricoesAtividade InscricaoAtividade[]
+  inscricoesMonitoria InscricaoMonitoria[]
   submissoes          Submissao[]
   submissaoAutorias   SubmissaoAutor[]
   avaliacoesEdicao    AvaliadorEdicao[]
@@ -211,6 +225,17 @@ model Edicao {
   // só aparece na página pública da atividade e em Minhas submissões quando
   // publicada — nulo = oculta (pode voltar a ser ocultada).
   apresentacaoPublicadaEm           DateTime?
+  // Monitoria (monitoria.service.js): janela de inscrição própria — mesma
+  // regra de inscricoesAbertas.js, sem as duas datas fica fechada —, vagas
+  // (só informativo, não bloqueia), catálogo de funções que o candidato
+  // escolhe, edital em rich text (sanitizado como corpoContribuicao) e a
+  // divulgação única do resultado.
+  inicioInscricoesMonitoria         DateTime?
+  fimInscricoesMonitoria            DateTime?
+  vagasMonitoria                    Int?
+  funcoesMonitoria                  String[]             @default([])
+  editalMonitoria                   String?              @db.Text
+  resultadoMonitoriaDivulgadoEm     DateTime?
   slug                              String?              @unique
   cargaHorariaTotal                 Int?
   instagram                         String?
@@ -456,6 +481,7 @@ model Edicao {
   apoiadores            EdicaoApoiador[]
   pontosInteresse       EdicaoPontoInteresse[]
   inscricoes            InscricaoEdicao[]
+  inscricoesMonitoria   InscricaoMonitoria[]
   modalidadesSubmissao  ModalidadeSubmissao[]
   submissoes            Submissao[]
   gruposConteudo        GrupoConteudo[]
@@ -929,12 +955,12 @@ enum StatusInscricaoAtividade {
 // em novas atividades — editar/cancelar a inscrição geral em si continua
 // exigindo login (fora do escopo atual).
 model InscricaoEdicao {
-  id        String   @id @default(uuid())
-  usuarioId String
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  edicaoId  String
-  edicao    Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id                    String   @id @default(uuid())
+  usuarioId             String
+  usuario               Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  edicaoId              String
+  edicao                Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  createdAt             DateTime @default(now())
   // Acessibilidade, respondida pelo participante ao se inscrever (e editável
   // depois). null = sem resposta: inscrição feita pelo admin ou antes da
   // pergunta existir. adaptacoesNecessarias só vem preenchido quando
@@ -944,6 +970,44 @@ model InscricaoEdicao {
 
   @@unique([usuarioId, edicaoId])
   @@map("inscricoes_edicao")
+}
+
+// Candidatura à monitoria voluntária de uma edição (uma por pessoa por
+// edição). Nome, CPF/documento e e-mail vêm da conta. funcoes guarda os
+// rótulos escolhidos entre Edicao.funcoesMonitoria (cópia, pra não mudar se
+// o catálogo for editado depois). autorizacaoResponsavel é o caminho no
+// bucket PRIVADO (só para menor de 18 na data de início do evento), lido por
+// URL assinada. observacaoCoordenacao é interna e nunca vai ao candidato.
+// emailResultado*: progresso do envio do resultado (mesmo molde de
+// Submissao.emailResultado*); mudar o status depois da divulgação zera o
+// enviadoEm, e o aviso volta a ficar pendente.
+model InscricaoMonitoria {
+  id                      String                   @id @default(uuid())
+  usuarioId               String
+  usuario                 Usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  edicaoId                String
+  edicao                  Edicao                   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  dataNascimento          DateTime                 @db.Date
+  pronome                 String
+  telefone                String
+  cursoInstituicao        String
+  experienciaAnterior     Boolean
+  funcoes                 String[]
+  precisaAdaptacao        Boolean
+  adaptacoesNecessarias   String?
+  cienteEm                DateTime
+  autorizacaoResponsavel  String?
+  status                  StatusInscricaoMonitoria @default(EM_ANALISE)
+  posicaoListaEspera      Int?
+  observacaoCoordenacao   String?
+  emailResultadoEnviadoEm DateTime?
+  emailResultadoErro      String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+
+  @@unique([usuarioId, edicaoId])
+  @@index([edicaoId, status])
+  @@map("inscricoes_monitoria")
 }
 
 model InscricaoAtividade {

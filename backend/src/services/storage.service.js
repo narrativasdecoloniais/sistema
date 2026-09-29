@@ -16,6 +16,7 @@ const EXTENSOES_POR_TIPO = {
   "image/webp": "webp",
   "image/svg+xml": "svg",
   "image/gif": "gif",
+  "application/pdf": "pdf",
 };
 
 function decodificarDataUri(dataUri) {
@@ -50,6 +51,11 @@ async function salvarImagemPrivada(dataUri, pasta) {
   return caminho;
 }
 
+// Documento privado (ex. autorização de responsável da monitoria): mesmo
+// bucket e mesma leitura por URL assinada das imagens privadas — o nome só
+// deixa claro que aceita PDF. Quem chama valida tipo e tamanho antes.
+const salvarArquivoPrivado = salvarImagemPrivada;
+
 async function removerImagemPrivada(caminho) {
   if (!caminho) return;
   await bucketPrivado.file(caminho).delete({ ignoreNotFound: true });
@@ -70,5 +76,7 @@ module.exports = {
   removerImagemPublica,
   salvarImagemPrivada,
   removerImagemPrivada,
+  salvarArquivoPrivado,
+  removerArquivoPrivado: removerImagemPrivada,
   gerarUrlAssinada,
 };

@@ -24,9 +24,12 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
   const edicaoExibida = useEdicaoExibida();
   const numeroEdicao = edicaoExibida ? edicaoExibida.numeroEdicao : numeroEdicaoProp;
   const nav = edicaoExibida?.navegacao;
-  const ancoras = nav?.resultadoDivulgado
-    ? [ANCORAS[0], { href: "/trabalhos-aprovados", rotulo: "Aprovados" }, ...ANCORAS.slice(1)]
-    : ANCORAS;
+  const ancoras = [
+    ANCORAS[0],
+    ...(nav?.resultadoDivulgado ? [{ href: "/trabalhos-aprovados", rotulo: "Aprovados" }] : []),
+    ...ANCORAS.slice(1),
+    ...(nav?.temMonitoria ? [{ href: "/monitoria", rotulo: "Monitoria" }] : []),
+  ];
   const pathname = usePathname();
   const naHome = pathname === "/";
   const [rolou, setRolou] = useState(!naHome);

@@ -50,4 +50,7 @@ const selecionarAtividadesSchema = z.object({
 module.exports = {
   adaptacaoSchema,
   selecionarAtividadesSchema,
+  // Reaproveitados pela inscrição na monitoria (monitoria.validators.js).
+  camposAdaptacao,
+  validarAdaptacao,
 };

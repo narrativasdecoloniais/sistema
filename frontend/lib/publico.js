@@ -230,6 +230,8 @@ export function montarPropsNavegacao(edicao) {
     corTextoBotaoNav: edicao?.corTextoBotaoNav || "PAPEL",
     // Link "Aprovados" só depois que a organização divulga o resultado.
     resultadoDivulgado: Boolean(edicao?.resultadoDivulgadoEm),
+    // Link "Monitoria" enquanto houver edital cadastrado (seção Monitoria).
+    temMonitoria: Boolean(edicao?.editalMonitoria?.replace(/<[^>]*>/g, "").trim()),
   };
 }
 

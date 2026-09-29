@@ -1,29 +1,9 @@
 const { z } = require("zod");
+const { SecaoAdmin } = require("@prisma/client");
 
-const SECOES_ADMIN = [
-  "ATIVIDADES",
-  "PAGINA_EVENTO",
-  "PAGINA_APRESENTACAO",
-  "PAGINA_MODALIDADES",
-  "PAGINA_AGENDA",
-  "PAGINA_PUBLICACOES",
-  "PAGINA_REALIZADORES",
-  "PROGRAMACAO",
-  "SUBMISSOES_RECEBIMENTO",
-  "SUBMISSOES_AVALIACAO",
-  "SUBMISSOES_RESULTADO",
-  "SUBMISSOES_APRESENTACAO",
-  "SUBMISSOES_PUBLICACAO",
-  "INSCRICOES_GERAIS",
-  "INSCRICOES_ATIVIDADES",
-  "CREDENCIAMENTO",
-  "CERTIFICADOS",
-  "PARTICIPANTES",
-  "CONFIGURACOES_EVENTO",
-  "TIPOS_ATIVIDADE",
-  "TIPOS_PARTICIPACAO",
-  "TIPOS_PONTO_INTERESSE",
-];
+// Vem do enum SecaoAdmin do schema (via Prisma Client), pra nunca ficar
+// desatualizado quando uma seção nova é criada.
+const SECOES_ADMIN = Object.values(SecaoAdmin);
 
 const permissoesSchema = z.object({
   acessoCompleto: z.boolean().default(false),

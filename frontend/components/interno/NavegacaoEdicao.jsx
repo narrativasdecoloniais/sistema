@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Handshake,
   Home,
   Users,
   ClipboardList,
@@ -185,6 +186,7 @@ function montarGrupos(base) {
           Icone: CalendarCheck,
           secao: "INSCRICOES_ATIVIDADES",
         },
+        { href: `${base}/monitoria`, rotulo: "Monitoria", Icone: Handshake, secao: "MONITORIA" },
       ],
     },
     {

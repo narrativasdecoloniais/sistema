@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, CalendarCheck, FileText, ListChecks, Award, ClipboardCheck } from "lucide-react";
+import { User, CalendarCheck, FileText, ListChecks, Award, ClipboardCheck, Handshake } from "lucide-react";
 import { temPapel } from "@/lib/permissoes";
 import styles from "./NavegacaoEdicao.module.scss";
 
@@ -13,7 +13,10 @@ const GRUPOS = [
   },
   {
     titulo: "Inscrições",
-    itens: [{ href: "/participante/inscricoes", rotulo: "Minhas inscrições", Icone: CalendarCheck }],
+    itens: [
+      { href: "/participante/inscricoes", rotulo: "Minhas inscrições", Icone: CalendarCheck },
+      { href: "/participante/monitoria", rotulo: "Monitoria", Icone: Handshake, prefixo: true },
+    ],
   },
   {
     titulo: "Submissões",

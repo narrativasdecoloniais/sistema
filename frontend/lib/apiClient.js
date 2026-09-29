@@ -57,6 +57,7 @@ async function requisitar(caminho, { method = "GET", body } = {}, jaTentouRenova
 export const apiClient = {
   get: (caminho) => requisitar(caminho),
   post: (caminho, body) => requisitar(caminho, { method: "POST", body }),
+  put: (caminho, body) => requisitar(caminho, { method: "PUT", body }),
   patch: (caminho, body) => requisitar(caminho, { method: "PATCH", body }),
   delete: (caminho) => requisitar(caminho, { method: "DELETE" }),
 };

@@ -6,13 +6,22 @@ const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.se
 const gruposConteudoService = require("../services/gruposConteudo.service");
 const prisma = require("../config/prisma");
 const inscricoesAbertas = require("../utils/inscricoesAbertas");
+const inscricoesMonitoriaAbertas = require("../utils/inscricoesMonitoriaAbertas");
+
+// Janelas calculadas no backend pra o site público mostrar/esconder os
+// botões de inscrição sem repetir as regras.
+function comJanelas(edicao) {
+  return {
+    ...edicao,
+    inscricoesAbertas: inscricoesAbertas(edicao),
+    monitoriaAberta: inscricoesMonitoriaAbertas(edicao),
+  };
+}
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
-  // Calculado aqui pra o site público mostrar/esconder o "Inscreva-se" sem
-  // repetir a regra da janela (a inscrição em si só acontece logada).
-  return res.json({ edicao: { ...edicao, inscricoesAbertas: inscricoesAbertas(edicao) } });
+  return res.json({ edicao: comJanelas(edicao) });
 });
 
 const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
@@ -24,7 +33,7 @@ const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
 const buscarEdicaoPorSlug = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarPorSlug(req.params.slug);
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
-  return res.json({ edicao: { ...edicao, inscricoesAbertas: inscricoesAbertas(edicao) } });
+  return res.json({ edicao: comJanelas(edicao) });
 });
 
 const listarAtividadesPorEdicaoSlug = asyncHandler(async (req, res) => {

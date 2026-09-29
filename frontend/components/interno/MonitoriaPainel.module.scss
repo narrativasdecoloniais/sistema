@@ -1,0 +1,74 @@
+// Complementa AvaliacaoSubmissoesPainel.module.scss (tabelas, abas, modais e
+// estados vazios são compartilhados) e EdicaoForm.module.scss (seções do
+// formulário de configurações).
+
+.painelEstado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.estadoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.estadoAcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.semMargem {
+  margin: 0;
+  color: var(--texto);
+}
+
+.textoErro {
+  margin: 0;
+  color: var(--erro);
+  font-size: 0.875rem;
+}
+
+.listaFuncoes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linhaFuncao {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.campoFuncao {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.rodapeFormulario {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--borda);
+
+  @media (max-width: 600px) {
+    > * {
+      flex: 1 1 100%;
+    }
+  }
+}

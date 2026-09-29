@@ -10,6 +10,7 @@ const avaliacoesAdminRoutes = require("./avaliacoesAdmin.routes");
 const resultadoSubmissoesRoutes = require("./resultadoSubmissoes.routes");
 const apresentacaoSubmissoesRoutes = require("./apresentacaoSubmissoes.routes");
 const usuariosEdicaoRoutes = require("./usuariosEdicao.routes");
+const monitoriaRoutes = require("./monitoria.routes");
 const autenticar = require("../middlewares/autenticar");
 const autorizar = require("../middlewares/autorizar");
 const autorizarSecao = require("../middlewares/autorizarSecao");
@@ -38,5 +39,6 @@ router.use("/:edicaoId/avaliacoes", avaliacoesAdminRoutes);
 router.use("/:edicaoId/resultado", resultadoSubmissoesRoutes);
 router.use("/:edicaoId/apresentacao", apresentacaoSubmissoesRoutes);
 router.use("/:edicaoId/usuarios", usuariosEdicaoRoutes);
+router.use("/:edicaoId/monitoria", monitoriaRoutes);
 
 module.exports = router;
