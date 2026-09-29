@@ -62,6 +62,7 @@ async function listar(edicaoId) {
         inicioAtividade: true,
         fimAtividade: true,
         areaSubmissaoId: true,
+        tipoAtividade: { select: { id: true, nome: true } },
         _count: { select: { trabalhosApresentados: true } },
       },
       orderBy: [{ inicioAtividade: "asc" }, { nome: "asc" }],
@@ -176,46 +177,98 @@ async function reordenar(edicaoId, atividadeId, submissaoIds) {
   });
 }
 
-// Vincula automaticamente os aprovados sem atividade cuja área tem exatamente
-// uma atividade na edição. Com simular, só conta.
+// Vincula automaticamente os aprovados ainda sem atividade às atividades da
+// própria área. Área com várias atividades (ex. as sessões de um mesmo
+// conversatório): cada trabalho vai para a atividade menos carregada naquele
+// momento — contando o que ela já tem —, empate pela que começa mais cedo e
+// depois pelo nome. Resultado: cargas finais niveladas (10 em 3 vazias =
+// 4/3/3). Trabalhos entram em ordem de título, no fim de cada atividade.
+// Com simular, só calcula (mesma ordem estável, então a prévia bate com a
+// aplicação).
 async function distribuirPelaArea(edicaoId, { simular }) {
   await buscarEdicao(prisma, edicaoId);
   const [pendentes, atividades] = await Promise.all([
     prisma.submissao.findMany({
       where: { edicaoId, decisaoFinal: { in: DECISOES_APROVADAS }, atividadeApresentacaoId: null },
-      select: { id: true, areaSubmissaoId: true, titulo: true },
-      orderBy: { titulo: "asc" },
+      select: { id: true, areaSubmissaoId: true, areaSubmissao: { select: { titulo: true } } },
+      orderBy: [{ titulo: "asc" }, { id: "asc" }],
     }),
     prisma.atividade.findMany({
       where: { edicaoId, areaSubmissaoId: { not: null } },
-      select: { id: true, areaSubmissaoId: true },
+      select: {
+        id: true,
+        nome: true,
+        areaSubmissaoId: true,
+        inicioAtividade: true,
+        _count: { select: { trabalhosApresentados: true } },
+      },
     }),
   ]);
 
   const atividadesPorArea = new Map();
   for (const atividade of atividades) {
-    atividadesPorArea.set(atividade.areaSubmissaoId, [...(atividadesPorArea.get(atividade.areaSubmissaoId) || []), atividade.id]);
+    const lista = atividadesPorArea.get(atividade.areaSubmissaoId) || [];
+    lista.push({ ...atividade, carga: atividade._count.trabalhosApresentados, novos: [] });
+    atividadesPorArea.set(atividade.areaSubmissaoId, lista);
   }
 
-  const destinos = new Map();
+  const compararCarga = (a, b) =>
+    a.carga - b.carga ||
+    new Date(a.inicioAtividade) - new Date(b.inicioAtividade) ||
+    a.nome.localeCompare(b.nome, "pt-BR");
+
   let semAtividade = 0;
-  let variasAtividades = 0;
+  const areasComNovos = new Map();
   for (const submissao of pendentes) {
-    const opcoes = submissao.areaSubmissaoId ? atividadesPorArea.get(submissao.areaSubmissaoId) || [] : [];
-    if (opcoes.length === 1) destinos.set(opcoes[0], [...(destinos.get(opcoes[0]) || []), submissao.id]);
-    else if (opcoes.length === 0) semAtividade += 1;
-    else variasAtividades += 1;
+    const opcoes = submissao.areaSubmissaoId ? atividadesPorArea.get(submissao.areaSubmissaoId) : null;
+    if (!opcoes || opcoes.length === 0) {
+      semAtividade += 1;
+      continue;
+    }
+    const destino = [...opcoes].sort(compararCarga)[0];
+    destino.carga += 1;
+    destino.novos.push(submissao.id);
+    areasComNovos.set(submissao.areaSubmissaoId, submissao.areaSubmissao?.titulo || "Sem título");
   }
 
-  const vinculados = [...destinos.values()].reduce((soma, ids) => soma + ids.length, 0);
+  const porArea = [...areasComNovos.entries()]
+    .map(([areaId, titulo]) => {
+      const lista = atividadesPorArea
+        .get(areaId)
+        .slice()
+        .sort((a, b) => new Date(a.inicioAtividade) - new Date(b.inicioAtividade) || a.nome.localeCompare(b.nome, "pt-BR"));
+      return {
+        area: titulo,
+        totalNovos: lista.reduce((soma, atividade) => soma + atividade.novos.length, 0),
+        atividades: lista.map((atividade) => ({
+          id: atividade.id,
+          nome: atividade.nome,
+          novos: atividade.novos.length,
+          totalFinal: atividade.carga,
+        })),
+      };
+    })
+    .sort((a, b) => a.area.localeCompare(b.area, "pt-BR", { numeric: true }));
+
+  const vinculados = porArea.reduce((soma, area) => soma + area.totalNovos, 0);
+
   if (!simular && vinculados > 0) {
-    await prisma.$transaction(async (tx) => {
-      for (const [atividadeId, submissaoIds] of destinos) {
-        await vincularNaTransacao(tx, edicaoId, { atividadeId, submissaoIds });
-      }
-    });
+    await prisma.$transaction(
+      async (tx) => {
+        for (const lista of atividadesPorArea.values()) {
+          for (const atividade of lista) {
+            if (atividade.novos.length > 0) {
+              await vincularNaTransacao(tx, edicaoId, { atividadeId: atividade.id, submissaoIds: atividade.novos });
+            }
+          }
+        }
+      },
+      // Centenas de updates numa transação só — folga além dos 5 s padrão.
+      { timeout: 60_000 }
+    );
   }
-  return { vinculados, semAtividade, variasAtividades };
+
+  return { vinculados, semAtividade, porArea };
 }
 
 async function publicar(edicaoId, publicarDistribuicao) {

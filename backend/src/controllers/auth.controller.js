@@ -4,6 +4,7 @@ const {
   cadastroSchema,
   loginSchema,
   recuperarSenhaSchema,
+  recuperarSenhaCpfSchema,
   redefinirSenhaSchema,
   definirSenhaSchema,
 } = require("../validators/auth.validators");
@@ -12,18 +13,27 @@ const tokenService = require("../services/token.service");
 const emailService = require("../services/email.service");
 const authService = require("../services/auth.service");
 const { conferirHash } = require("../utils/senha");
+const mascararEmail = require("../utils/mascararEmail");
 
 const cadastrar = asyncHandler(async (req, res) => {
   const dados = cadastroSchema.parse(req.body);
 
   const emailExistente = await usuariosService.buscarPorEmail(dados.email);
   if (emailExistente) {
-    throw new ErroHttp(409, "Já existe um cadastro com esse e-mail.");
+    throw new ErroHttp(
+      409,
+      `Já existe um cadastro com o e-mail ${emailExistente.email}. Entre com ele ou use "Esqueci minha senha".`
+    );
   }
 
+  // Cadastro pode ser específico (ver CLAUDE.md), mas quem digitou só o CPF
+  // vê o e-mail da conta mascarado — o bastante pra reconhecer qual é.
   const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
   if (cpfExistente) {
-    throw new ErroHttp(409, "Já existe um cadastro com esse CPF.");
+    throw new ErroHttp(
+      409,
+      `Já existe um cadastro com esse CPF, com o e-mail ${mascararEmail(cpfExistente.email)}. Entre com ele ou use "Esqueci minha senha".`
+    );
   }
 
   const usuario = await usuariosService.criarUsuario(dados);
@@ -131,6 +141,27 @@ const recuperarSenha = asyncHandler(async (req, res) => {
   });
 });
 
+// Exceção consciente à regra de não revelar se a conta existe: o login é por
+// CPF e muita gente não lembra com qual e-mail se cadastrou. Responde se o
+// CPF tem conta e para qual e-mail (mascarado) o link foi — o limitador
+// sensível da rota segura a enumeração.
+const recuperarSenhaPorCpf = asyncHandler(async (req, res) => {
+  const { cpf } = recuperarSenhaCpfSchema.parse(req.body);
+  const usuario = await usuariosService.buscarPorCpf(cpf);
+
+  if (!usuario || !usuario.ativo) {
+    throw new ErroHttp(
+      404,
+      "Não encontramos cadastro com esse CPF. Contas trazidas do Even3 podem não ter CPF — tente recuperar pelo e-mail ou use a página \"Regularizar cadastro\" para vincular o seu CPF."
+    );
+  }
+
+  const token = await tokenService.criarTokenRecuperacaoSenha(usuario.id);
+  await emailService.enviarEmailRecuperacaoSenha(usuario, token);
+
+  return res.json({ emailMascarado: mascararEmail(usuario.email) });
+});
+
 const redefinirSenha = asyncHandler(async (req, res) => {
   const dados = redefinirSenhaSchema.parse(req.body);
   const registro = await tokenService.consumirToken(dados.token, "RECUPERACAO_SENHA");
@@ -178,6 +209,7 @@ module.exports = {
   refresh,
   logout,
   recuperarSenha,
+  recuperarSenhaPorCpf,
   redefinirSenha,
   definirSenha,
 };

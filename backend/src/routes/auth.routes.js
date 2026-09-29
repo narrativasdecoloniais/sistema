@@ -11,6 +11,7 @@ router.post("/login", limitadorSensivel, authController.login);
 router.post("/refresh", limitadorPadrao, authController.refresh);
 router.post("/logout", limitadorPadrao, authController.logout);
 router.post("/recuperar-senha", limitadorSensivel, authController.recuperarSenha);
+router.post("/recuperar-senha/cpf", limitadorSensivel, authController.recuperarSenhaPorCpf);
 router.post("/redefinir-senha", limitadorPadrao, authController.redefinirSenha);
 router.post("/definir-senha", limitadorPadrao, authController.definirSenha);
 

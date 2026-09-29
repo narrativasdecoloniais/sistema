@@ -2,6 +2,7 @@ const { Router } = require("express");
 const publicoController = require("../controllers/publico.controller");
 const inscricoesRoutes = require("./inscricoes.routes");
 const submissoesPublicoRoutes = require("./submissoesPublico.routes");
+const regularizacaoContasRoutes = require("./regularizacaoContas.routes");
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.get(
 );
 router.use("/inscricao", inscricoesRoutes);
 router.use("/submissao", submissoesPublicoRoutes);
+router.use("/regularizacao", regularizacaoContasRoutes);
 
 module.exports = router;

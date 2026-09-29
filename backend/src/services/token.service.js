@@ -111,6 +111,17 @@ async function criarCodigoVinculoConta(usuarioId) {
   return codigo;
 }
 
+// Confere sem consumir — a regularização de cadastro valida os códigos de
+// duas contas antes de gastar qualquer um deles.
+async function codigoVinculoContaValido(usuarioId, codigo) {
+  const registro = await prisma.tokenVerificacao.findUnique({
+    where: { token: chaveCodigoVinculo(usuarioId, codigo) },
+  });
+  return Boolean(
+    registro && registro.tipo === "VINCULAR_CONTA" && !registro.usadoEm && registro.expiraEm >= new Date()
+  );
+}
+
 async function consumirCodigoVinculoConta(usuarioId, codigo) {
   return consumirToken(chaveCodigoVinculo(usuarioId, codigo), "VINCULAR_CONTA");
 }
@@ -188,6 +199,7 @@ module.exports = {
   criarTokenEntrarSubmissao,
   criarCodigoVinculoConta,
   consumirCodigoVinculoConta,
+  codigoVinculoContaValido,
   criarCodigoTrocaEmail,
   consumirCodigoTrocaEmail,
   consumirToken,

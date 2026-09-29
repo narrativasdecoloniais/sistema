@@ -43,6 +43,10 @@ const recuperarSenhaSchema = z.object({
   email: z.string().trim().email("E-mail inválido"),
 });
 
+const recuperarSenhaCpfSchema = z.object({
+  cpf: z.string().transform(apenasDigitos).refine(cpfValido, "CPF inválido"),
+});
+
 const redefinirSenhaSchema = z.object({
   token: z.string().min(1, "Token ausente"),
   senha: senhaForte,
@@ -78,6 +82,7 @@ module.exports = {
   cadastroSchema,
   loginSchema,
   recuperarSenhaSchema,
+  recuperarSenhaCpfSchema,
   redefinirSenhaSchema,
   definirSenhaSchema,
 };
