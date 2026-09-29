@@ -935,6 +935,12 @@ model InscricaoEdicao {
   edicaoId  String
   edicao    Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  // Acessibilidade, respondida pelo participante ao se inscrever (e editável
+  // depois). null = sem resposta: inscrição feita pelo admin ou antes da
+  // pergunta existir. adaptacoesNecessarias só vem preenchido quando
+  // precisaAdaptacao = true.
+  precisaAdaptacao      Boolean?
+  adaptacoesNecessarias String?
 
   @@unique([usuarioId, edicaoId])
   @@map("inscricoes_edicao")

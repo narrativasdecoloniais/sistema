@@ -1,5 +1,5 @@
 const asyncHandler = require("../utils/asyncHandler");
-const { selecionarAtividadesSchema } = require("../validators/inscricoes.validators");
+const { selecionarAtividadesSchema, adaptacaoSchema } = require("../validators/inscricoes.validators");
 const participanteInscricoesService = require("../services/participanteInscricoes.service");
 const edicoesService = require("../services/edicoes.service");
 const usuariosService = require("../services/usuarios.service");
@@ -21,7 +21,8 @@ const inscrever = asyncHandler(async (req, res) => {
   const resultado = await participanteInscricoesService.inscreverOuAtualizar(
     req.usuario.id,
     req.params.edicaoId,
-    dados.atividadeIds
+    dados.atividadeIds,
+    dados.adaptacao
   );
 
   const usuario = await usuariosService.buscarCompletoPorId(req.usuario.id);
@@ -44,6 +45,16 @@ const inscrever = asyncHandler(async (req, res) => {
   return res.status(201).json(resultado);
 });
 
+const atualizarAdaptacao = asyncHandler(async (req, res) => {
+  const dados = adaptacaoSchema.parse(req.body);
+  const inscricaoEdicao = await participanteInscricoesService.atualizarAdaptacao(
+    req.usuario.id,
+    req.params.edicaoId,
+    dados
+  );
+  return res.json({ inscricaoEdicao });
+});
+
 const cancelarAtividade = asyncHandler(async (req, res) => {
   await participanteInscricoesService.cancelarAtividade(
     req.usuario.id,
@@ -62,6 +73,7 @@ module.exports = {
   listar,
   buscarEstado,
   inscrever,
+  atualizarAdaptacao,
   cancelarAtividade,
   cancelarGeral,
 };

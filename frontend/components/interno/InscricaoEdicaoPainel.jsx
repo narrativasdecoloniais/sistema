@@ -7,6 +7,8 @@ import CardAjudaInscricao from "./CardAjudaInscricao";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CartaoInscricaoParticipante from "./CartaoInscricaoParticipante";
 import CardContribuicaoParticipante from "./CardContribuicaoParticipante";
+import CamposAdaptacao, { ADAPTACAO_VAZIA } from "./CamposAdaptacao";
+import Modal from "./Modal";
 import DetalhesAtividadeModal from "./DetalhesAtividadeModal";
 import NavegacaoDiasParticipante, {
   idAbaDiaParticipante,
@@ -15,9 +17,11 @@ import NavegacaoDiasParticipante, {
 import { useToast } from "./ToastProvider";
 import { formatarPeriodoAtividade, formatarDiaAtividade } from "@/lib/publico";
 import { haSobreposicao, agruparAtividadesPorDia } from "@/lib/inscricao";
+import { adaptacaoInscricaoSchema, extrairErros } from "@/lib/validacao";
 import {
   buscarInscricaoEdicao,
   salvarInscricao,
+  atualizarAdaptacao,
   cancelarInscricaoAtividade,
   cancelarInscricaoGeral,
 } from "@/lib/participanteInscricoes";
@@ -36,6 +40,13 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
   const [detalheAtividade, setDetalheAtividade] = useState(null);
   const [diaAtivo, setDiaAtivo] = useState(null);
   const idDias = useId();
+  // Pergunta de acessibilidade: `adaptacao` é o formulário da primeira
+  // inscrição; `editandoAdaptacao` é o modal de alterar a resposta depois.
+  const [adaptacao, setAdaptacao] = useState(ADAPTACAO_VAZIA);
+  const [errosAdaptacao, setErrosAdaptacao] = useState({});
+  const [editandoAdaptacao, setEditandoAdaptacao] = useState(null);
+  const [errosEdicaoAdaptacao, setErrosEdicaoAdaptacao] = useState({});
+  const [salvandoAdaptacao, setSalvandoAdaptacao] = useState(false);
 
   async function carregar() {
     try {
@@ -52,10 +63,18 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edicaoId]);
 
-  async function confirmarInscricaoGeral() {
+  async function confirmarInscricaoGeral(evento) {
+    evento.preventDefault();
+    const resultado = adaptacaoInscricaoSchema.safeParse(adaptacao);
+    if (!resultado.success) {
+      setErrosAdaptacao(extrairErros(resultado));
+      return;
+    }
+    setErrosAdaptacao({});
+
     setProcessandoGeral(true);
     try {
-      await salvarInscricao(edicaoId, []);
+      await salvarInscricao(edicaoId, [], resultado.data);
       notificar("Inscrição confirmada com sucesso.");
       await carregar();
       router.refresh();
@@ -77,6 +96,35 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
       notificar(erroRequisicao.message, "erro");
     } finally {
       setProcessandoAtividadeId(null);
+    }
+  }
+
+  function abrirEdicaoAdaptacao(inscricaoEdicao) {
+    setErrosEdicaoAdaptacao({});
+    setEditandoAdaptacao({
+      precisaAdaptacao: inscricaoEdicao?.precisaAdaptacao ?? null,
+      adaptacoesNecessarias: inscricaoEdicao?.adaptacoesNecessarias || "",
+    });
+  }
+
+  async function salvarEdicaoAdaptacao(evento) {
+    evento.preventDefault();
+    const resultado = adaptacaoInscricaoSchema.safeParse(editandoAdaptacao);
+    if (!resultado.success) {
+      setErrosEdicaoAdaptacao(extrairErros(resultado));
+      return;
+    }
+
+    setSalvandoAdaptacao(true);
+    try {
+      await atualizarAdaptacao(edicaoId, resultado.data);
+      notificar("Resposta sobre adaptações atualizada.");
+      setEditandoAdaptacao(null);
+      await carregar();
+    } catch (erroRequisicao) {
+      notificar(erroRequisicao.message, "erro");
+    } finally {
+      setSalvandoAdaptacao(false);
     }
   }
 
@@ -120,6 +168,7 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
 
   const { edicao, aberta, jaInscritoNaEdicao, inscricaoAtual, atividades } = estado;
   const inscricoesAtividade = inscricaoAtual?.inscricoesAtividade || [];
+  const inscricaoEdicao = inscricaoAtual?.inscricaoEdicao;
   const dias = agruparAtividadesPorDia(atividades || []);
   const chaveAtiva = diaAtivo && dias.some((dia) => dia.chave === diaAtivo) ? diaAtivo : (dias[0]?.chave ?? null);
   const diaAtual = dias.find((dia) => dia.chave === chaveAtiva) ?? null;
@@ -146,6 +195,23 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
               aberta ? (item) => setConfirmando({ tipo: "atividade", item }) : undefined
             }
           />
+          <section className={styles.adaptacao} aria-labelledby="titulo-adaptacao">
+            <div className={styles.adaptacaoTexto}>
+              <h2 id="titulo-adaptacao" className={styles.subtitulo}>
+                Adaptações e recursos
+              </h2>
+              <p className={styles.adaptacaoResposta}>
+                {inscricaoEdicao?.precisaAdaptacao === true
+                  ? inscricaoEdicao.adaptacoesNecessarias
+                  : inscricaoEdicao?.precisaAdaptacao === false
+                    ? "Você informou que não necessita de adaptação ou recurso específico."
+                    : "Você ainda não informou se necessita de alguma adaptação ou recurso específico."}
+              </p>
+            </div>
+            <Botao type="button" variante="secundario" onClick={() => abrirEdicaoAdaptacao(inscricaoEdicao)}>
+              {inscricaoEdicao?.precisaAdaptacao == null ? "Responder" : "Alterar"}
+            </Botao>
+          </section>
           <CardContribuicaoParticipante edicao={edicao} />
           {aberta && (
             <div className={styles.cancelarGeral}>
@@ -157,16 +223,27 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
         </>
       ) : (
         aberta && (
-          <div className={styles.confirmarGeral}>
-            <p>Você ainda não está inscrito(a) nesta edição.</p>
-            <Botao type="button" carregando={processandoGeral} onClick={confirmarInscricaoGeral}>
-              Confirmar inscrição no evento
-            </Botao>
-          </div>
+          <form className={styles.confirmarGeral} onSubmit={confirmarInscricaoGeral} noValidate>
+            <p>
+              Você ainda não está inscrito(a) nesta edição. Depois de confirmar, você poderá escolher as
+              atividades específicas.
+            </p>
+            <CamposAdaptacao
+              id="adaptacao-inscricao"
+              valor={adaptacao}
+              onChange={setAdaptacao}
+              erros={errosAdaptacao}
+            />
+            <div className={styles.acoesFormulario}>
+              <Botao type="submit" carregando={processandoGeral}>
+                Confirmar inscrição no evento
+              </Botao>
+            </div>
+          </form>
         )
       )}
 
-      {aberta && dias.length > 0 && (
+      {aberta && jaInscritoNaEdicao && dias.length > 0 && (
         <div className={styles.secaoAtividades}>
           <h2 className={styles.subtitulo}>Atividades específicas</h2>
 
@@ -246,6 +323,27 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
 
       {detalheAtividade && (
         <DetalhesAtividadeModal atividade={detalheAtividade} onFechar={() => setDetalheAtividade(null)} />
+      )}
+
+      {editandoAdaptacao && (
+        <Modal titulo="Adaptações e recursos" onFechar={() => setEditandoAdaptacao(null)}>
+          <form className={styles.formularioModal} onSubmit={salvarEdicaoAdaptacao} noValidate>
+            <CamposAdaptacao
+              id="adaptacao-edicao"
+              valor={editandoAdaptacao}
+              onChange={setEditandoAdaptacao}
+              erros={errosEdicaoAdaptacao}
+            />
+            <div className={styles.acoesFormulario}>
+              <Botao type="button" variante="secundario" onClick={() => setEditandoAdaptacao(null)}>
+                Cancelar
+              </Botao>
+              <Botao type="submit" carregando={salvandoAdaptacao}>
+                Salvar
+              </Botao>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {confirmando && (

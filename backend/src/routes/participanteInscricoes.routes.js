@@ -6,6 +6,7 @@ const router = Router();
 router.get("/", participanteInscricoesController.listar);
 router.get("/:edicaoId", participanteInscricoesController.buscarEstado);
 router.post("/:edicaoId", participanteInscricoesController.inscrever);
+router.patch("/:edicaoId/adaptacao", participanteInscricoesController.atualizarAdaptacao);
 router.delete(
   "/:edicaoId/atividades/:inscricaoAtividadeId",
   participanteInscricoesController.cancelarAtividade

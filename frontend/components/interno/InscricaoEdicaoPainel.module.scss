@@ -36,19 +36,65 @@
 
 .confirmarGeral {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 1.1rem;
   padding: 1.1rem 1.25rem;
   border: 1px solid var(--borda);
   border-radius: 8px;
   background: var(--superficie);
 
-  p {
+  > p {
     margin: 0;
     color: var(--texto);
     font-size: 0.9375rem;
   }
+}
+
+.acoesFormulario {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  @media (max-width: 600px) {
+    > * {
+      flex: 1 1 100%;
+    }
+  }
+}
+
+.formularioModal {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.adaptacao {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.adaptacaoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.adaptacaoResposta {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+  white-space: pre-line;
+  overflow-wrap: break-word;
 }
 
 .cancelarGeral {

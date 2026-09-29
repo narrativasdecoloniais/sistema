@@ -48,10 +48,28 @@ function exigirAberta(edicao) {
   }
 }
 
-async function inscreverOuAtualizar(usuarioId, edicaoId, atividadeIds) {
+async function inscreverOuAtualizar(usuarioId, edicaoId, atividadeIds, adaptacao) {
   const edicao = await buscarPorId(edicaoId);
   exigirAberta(edicao);
-  return inscricoesService.finalizarInscricao({ usuarioId, edicaoId, atividadeIds });
+
+  // A pergunta de acessibilidade é obrigatória na primeira inscrição (a que
+  // cria a inscrição geral); depois disso a resposta muda por atualizarAdaptacao.
+  const jaInscrito = await inscricoesService.buscarInscricaoEdicao(usuarioId, edicaoId);
+  if (!jaInscrito && !adaptacao) {
+    throw new ErroHttp(400, "Responda se você necessita de alguma adaptação ou recurso para participar.");
+  }
+
+  return inscricoesService.finalizarInscricao({ usuarioId, edicaoId, atividadeIds, adaptacao });
+}
+
+// Sem o gate da janela de inscrições: é informação de acessibilidade, que a
+// pessoa pode corrigir até o evento mesmo com as inscrições encerradas.
+async function atualizarAdaptacao(usuarioId, edicaoId, adaptacao) {
+  await buscarPorId(edicaoId);
+  const inscricao = await inscricoesService.buscarInscricaoEdicao(usuarioId, edicaoId);
+  if (!inscricao) throw new ErroHttp(404, "Inscrição não encontrada.");
+
+  return prisma.inscricaoEdicao.update({ where: { id: inscricao.id }, data: adaptacao });
 }
 
 async function cancelarAtividade(usuarioId, edicaoId, inscricaoAtividadeId) {
@@ -71,6 +89,7 @@ async function cancelarGeral(usuarioId, edicaoId) {
 }
 
 module.exports = {
+  atualizarAdaptacao,
   listarParaUsuario,
   buscarEstado,
   inscreverOuAtualizar,

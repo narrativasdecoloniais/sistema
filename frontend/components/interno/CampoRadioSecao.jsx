@@ -7,11 +7,24 @@ import styles from "./EdicaoForm.module.scss";
 // Grupo de rádio genérico ({ valor, rotulo }) — mesmas classes de
 // EdicaoForm.module.scss já usadas em SecaoLocal.jsx (modalidade), só que
 // reutilizável em vez de hardcoded pras 3 opções de modalidade.
-export default function CampoRadioSecao({ id, rotulo, valor, onChange, opcoes }) {
+export default function CampoRadioSecao({ id, rotulo, valor, onChange, opcoes, erro }) {
+  const idRotulo = `${id}-rotulo`;
+  const idErro = `${id}-erro`;
+
   return (
     <div className={stylesCampo.grupo}>
-      {rotulo && <span className={stylesCampo.rotulo}>{rotulo}</span>}
-      <div className={styles.grupoRadio}>
+      {rotulo && (
+        <span id={idRotulo} className={stylesCampo.rotulo}>
+          {rotulo}
+        </span>
+      )}
+      <div
+        className={styles.grupoRadio}
+        role="radiogroup"
+        aria-labelledby={rotulo ? idRotulo : undefined}
+        aria-invalid={erro ? "true" : undefined}
+        aria-describedby={erro ? idErro : undefined}
+      >
         {opcoes.map((opcao) => (
           <label key={opcao.valor} className={styles.opcaoRadio} htmlFor={`${id}-${opcao.valor}`}>
             <RadioButton
@@ -30,6 +43,11 @@ export default function CampoRadioSecao({ id, rotulo, valor, onChange, opcoes })
           </label>
         ))}
       </div>
+      {erro && (
+        <p id={idErro} className={stylesCampo.mensagemErro}>
+          {erro}
+        </p>
+      )}
     </div>
   );
 }

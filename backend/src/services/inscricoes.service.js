@@ -107,7 +107,9 @@ function validarSemConflitos(atividades) {
   }
 }
 
-async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds }) {
+// `adaptacao` ({ precisaAdaptacao, adaptacoesNecessarias }) só é gravada ao
+// criar a inscrição geral — alterar depois é atualizarAdaptacao.
+async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds, adaptacao }) {
   const jaEstavaInscrito = Boolean(await buscarInscricaoEdicao(usuarioId, edicaoId));
 
   const atividadesSelecionadas =
@@ -149,7 +151,7 @@ async function finalizarInscricao({ usuarioId, edicaoId, atividadeIds }) {
     await tx.inscricaoEdicao.upsert({
       where: { usuarioId_edicaoId: { usuarioId, edicaoId } },
       update: {},
-      create: { usuarioId, edicaoId },
+      create: { usuarioId, edicaoId, ...(adaptacao || {}) },
     });
 
     const criados = [];

@@ -106,6 +106,36 @@ export const confirmarTrocaEmailSchema = z.object({
 });
 
 // Extrai a primeira mensagem de erro de um resultado zod, indexada por campo.
+// Pergunta de acessibilidade da inscrição geral — espelha adaptacaoSchema em
+// backend/src/validators/inscricoes.validators.js (mudou um, muda o outro).
+const MAX_ADAPTACOES = 2000;
+
+export const adaptacaoInscricaoSchema = z
+  .object({
+    precisaAdaptacao: z.boolean({
+      required_error: "Responda se você necessita de alguma adaptação ou recurso",
+      invalid_type_error: "Responda se você necessita de alguma adaptação ou recurso",
+    }),
+    adaptacoesNecessarias: z
+      .string()
+      .trim()
+      .max(MAX_ADAPTACOES, `Use no máximo ${MAX_ADAPTACOES} caracteres`)
+      .nullish(),
+  })
+  .superRefine((dados, ctx) => {
+    if (dados.precisaAdaptacao === true && !dados.adaptacoesNecessarias) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["adaptacoesNecessarias"],
+        message: "Indique as adaptações ou recursos de que você necessita",
+      });
+    }
+  })
+  .transform(({ precisaAdaptacao, adaptacoesNecessarias }) => ({
+    precisaAdaptacao,
+    adaptacoesNecessarias: precisaAdaptacao ? adaptacoesNecessarias : null,
+  }));
+
 export function extrairErros(resultado) {
   const erros = {};
   if (resultado.success) return erros;

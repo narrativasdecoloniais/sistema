@@ -22,6 +22,16 @@ function formatarData(valor) {
   });
 }
 
+// Resposta à pergunta de acessibilidade da inscrição (null = não respondeu:
+// inscrição feita pelo admin ou antes de a pergunta existir).
+const ROTULOS_ADAPTACAO = { SIM: "Sim", NAO: "Não", SEM_RESPOSTA: "Sem resposta" };
+
+function respostaAdaptacao(inscricao) {
+  if (inscricao.precisaAdaptacao === true) return "SIM";
+  if (inscricao.precisaAdaptacao === false) return "NAO";
+  return "SEM_RESPOSTA";
+}
+
 const COLUNAS = [
   { chave: "nome", rotulo: "Nome", valor: (inscricao) => inscricao.usuario.nome },
   { chave: "email", rotulo: "E-mail", valor: (inscricao) => inscricao.usuario.email },
@@ -42,6 +52,19 @@ const COLUNAS = [
     rotulo: "Inscrito em",
     valor: (inscricao) => new Date(inscricao.createdAt).getTime(),
     texto: (inscricao) => formatarData(inscricao.createdAt),
+  },
+  {
+    chave: "precisaAdaptacao",
+    rotulo: "Precisa de adaptação",
+    valor: respostaAdaptacao,
+    filtro: "select",
+    opcoes: Object.entries(ROTULOS_ADAPTACAO).map(([valor, rotulo]) => ({ valor, rotulo })),
+    exportar: (inscricao) => ROTULOS_ADAPTACAO[respostaAdaptacao(inscricao)],
+  },
+  {
+    chave: "adaptacoesNecessarias",
+    rotulo: "Adaptações ou recursos",
+    valor: (inscricao) => inscricao.adaptacoesNecessarias || null,
   },
 ];
 
@@ -105,8 +128,8 @@ export default function InscricoesEdicaoPainel({ edicaoId, inscricoesIniciais })
         <div className={styles.vazio}>
           <p>Nenhuma inscrição geral ainda.</p>
           <p className={styles.vazioApoio}>
-            As inscrições aparecem aqui conforme as pessoas se inscrevem pelo site público, ou
-            você pode adicionar uma manualmente.
+            As inscrições aparecem aqui conforme as pessoas se inscrevem pela área do participante,
+            ou você pode adicionar uma manualmente.
           </p>
         </div>
       ) : (
@@ -127,6 +150,16 @@ export default function InscricoesEdicaoPainel({ edicaoId, inscricoesIniciais })
                   </td>
                   <td data-rotulo="Instituição">{inscricao.usuario.instituicao || "—"}</td>
                   <td data-rotulo="Inscrito em">{formatarData(inscricao.createdAt)}</td>
+                  <td data-rotulo="Precisa de adaptação">
+                    {inscricao.precisaAdaptacao == null ? (
+                      <span className={styles.textoSuave}>Sem resposta</span>
+                    ) : (
+                      ROTULOS_ADAPTACAO[respostaAdaptacao(inscricao)]
+                    )}
+                  </td>
+                  <td data-rotulo="Adaptações ou recursos" className={styles.textoLongo}>
+                    {inscricao.adaptacoesNecessarias || "—"}
+                  </td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
                     <div className={styles.acoesLinha}>
                       <button

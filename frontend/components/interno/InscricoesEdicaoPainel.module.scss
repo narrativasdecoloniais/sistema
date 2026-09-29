@@ -158,3 +158,12 @@
     }
   }
 }
+
+.textoSuave {
+  color: var(--texto-suave);
+}
+
+// Resposta livre de acessibilidade: mantém as quebras de linha digitadas.
+.textoLongo {
+  white-space: pre-line;
+}

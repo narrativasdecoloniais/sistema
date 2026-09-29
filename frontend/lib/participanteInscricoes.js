@@ -9,8 +9,13 @@ export function buscarInscricaoEdicao(edicaoId) {
   return apiClient.get(`/participante/inscricoes/${edicaoId}`);
 }
 
-export function salvarInscricao(edicaoId, atividadeIds) {
-  return apiClient.post(`/participante/inscricoes/${edicaoId}`, { atividadeIds });
+// `adaptacao` só é exigida na primeira inscrição (a que cria a inscrição geral).
+export function salvarInscricao(edicaoId, atividadeIds, adaptacao) {
+  return apiClient.post(`/participante/inscricoes/${edicaoId}`, { atividadeIds, adaptacao });
+}
+
+export function atualizarAdaptacao(edicaoId, adaptacao) {
+  return apiClient.patch(`/participante/inscricoes/${edicaoId}/adaptacao`, adaptacao);
 }
 
 export function cancelarInscricaoAtividade(edicaoId, inscricaoAtividadeId) {
