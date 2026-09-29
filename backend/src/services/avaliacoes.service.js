@@ -4,6 +4,7 @@ const INCLUDE_SUBMISSAO = require("../utils/submissaoIncludePadrao");
 const usuariosService = require("./usuarios.service");
 const tokenService = require("./token.service");
 const emailService = require("./email.service");
+const { temIdentificacao } = require("../utils/identificacao");
 const { garantirResultadoNaoDivulgado } = require("./resultadoSubmissoes.service");
 const { removerSeNaoAprovada } = require("./apresentacaoSubmissoes.service");
 
@@ -12,7 +13,7 @@ const { removerSeNaoAprovada } = require("./apresentacaoSubmissoes.service");
 // nova, áreas do avaliador alteradas, troca de área aprovada). Assim uma
 // atribuição removida manualmente pela organização não volta sozinha.
 
-const SELECT_USUARIO_AVALIADOR = { id: true, nome: true, email: true, cpf: true };
+const SELECT_USUARIO_AVALIADOR = { id: true, nome: true, email: true, cpf: true, documentoEstrangeiro: true };
 
 // Conflito de interesse: avaliador nunca recebe automaticamente trabalho do
 // qual é autor/coautor — nem pela conta vinculada nem pelo e-mail (coautor
@@ -102,9 +103,10 @@ function formatarAvaliador(avaliador) {
       nome: avaliador.usuario.nome,
       email: avaliador.usuario.email,
     },
-    // Conta criada por convite só ganha CPF quando o convite é aceito (ver
-    // definirSenha) — mesmo critério de "Convite pendente" da aba Equipe.
-    convitePendente: !avaliador.usuario.cpf,
+    // Conta criada por convite só ganha CPF (ou documento de estrangeiro)
+    // quando o convite é aceito (ver definirSenha) — mesmo critério de
+    // "Convite pendente" da aba Equipe.
+    convitePendente: !temIdentificacao(avaliador.usuario),
     areas: avaliador.areas,
     totalAtribuidas: total,
     totalAvaliadas: avaliadas,

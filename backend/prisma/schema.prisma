@@ -122,6 +122,12 @@ model Usuario {
   nome                String
   email               String            @unique
   cpf                 String?           @unique
+  // Estrangeiro sem CPF: número de identificação do próprio país (sem
+  // validação de formato — as regras variam por país), guardado normalizado
+  // (maiúsculas, só letras e dígitos) e único no sistema todo. pais é o
+  // código ISO 3166-1 alfa-2. Uma conta tem CPF ou documento, nunca os dois.
+  documentoEstrangeiro String?          @unique
+  pais                String?
   instituicao         String?
   categoria           CategoriaUsuario?
   foto                String?

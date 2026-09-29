@@ -13,18 +13,20 @@ const edicoesService = require("../services/edicoes.service");
 const inscricoesService = require("../services/inscricoes.service");
 const emailService = require("../services/email.service");
 const tokenService = require("../services/token.service");
+const { identificacaoDe, rotuloIdentificacao, temIdentificacao } = require("../utils/identificacao");
 
 const buscarPorCpf = asyncHandler(async (req, res) => {
   const dados = cpfLookupSchema.parse(req.body);
-  const usuario = await usuariosService.buscarPorCpf(dados.cpf);
+  const usuario = await usuariosService.buscarPorIdentificacao(identificacaoDe(dados));
   return res.json({ existe: Boolean(usuario && usuario.ativo) });
 });
 
 const confirmarEmailExistente = asyncHandler(async (req, res) => {
   const dados = confirmarEmailExistenteSchema.parse(req.body);
-  const usuario = await usuariosService.buscarPorCpf(dados.cpf);
+  const identificacao = identificacaoDe(dados);
+  const usuario = await usuariosService.buscarPorIdentificacao(identificacao);
 
-  const mensagemInvalida = "CPF ou e-mail não conferem.";
+  const mensagemInvalida = `${identificacao.cpf ? "CPF" : "Documento"} ou e-mail não conferem.`;
   if (!usuario || !usuario.ativo || usuario.email.toLowerCase() !== dados.email.toLowerCase()) {
     throw new ErroHttp(400, mensagemInvalida);
   }
@@ -35,19 +37,20 @@ const confirmarEmailExistente = asyncHandler(async (req, res) => {
 
 const cadastrar = asyncHandler(async (req, res) => {
   const dados = cadastroInscricaoSchema.parse(req.body);
+  const identificacao = identificacaoDe(dados);
+  const rotulo = rotuloIdentificacao(identificacao);
 
   const emailExistente = await usuariosService.buscarPorEmail(dados.email);
   if (emailExistente && emailExistente.ativo) {
-    if (emailExistente.cpf) {
-      throw new ErroHttp(409, "Já existe um cadastro com esse e-mail, associado a outro CPF.");
+    if (temIdentificacao(emailExistente)) {
+      throw new ErroHttp(409, "Já existe um cadastro com esse e-mail, associado a outro CPF ou documento.");
     }
 
-    const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
-    if (cpfExistente) {
-      throw new ErroHttp(409, "Já existe um cadastro com esse CPF.");
+    if (await usuariosService.buscarPorIdentificacao(identificacao)) {
+      throw new ErroHttp(409, `Já existe um cadastro com esse ${rotulo}.`);
     }
 
-    const usuario = await usuariosService.vincularCpfAoUsuario(emailExistente.id, dados.cpf);
+    const usuario = await usuariosService.vincularIdentificacaoAoUsuario(emailExistente.id, identificacao);
     const token = inscricoesService.gerarTokenInscricao(usuario.id);
     return res.json({ token, nome: usuario.nome });
   }
@@ -56,12 +59,11 @@ const cadastrar = asyncHandler(async (req, res) => {
     throw new ErroHttp(409, "Já existe um cadastro com esse e-mail.");
   }
 
-  const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
-  if (cpfExistente) {
-    throw new ErroHttp(409, "Já existe um cadastro com esse CPF.");
+  if (await usuariosService.buscarPorIdentificacao(identificacao)) {
+    throw new ErroHttp(409, `Já existe um cadastro com esse ${rotulo}.`);
   }
 
-  const usuario = await usuariosService.criarUsuarioViaInscricao(dados);
+  const usuario = await usuariosService.criarUsuarioViaInscricao({ ...dados, identificacao });
   const token = inscricoesService.gerarTokenInscricao(usuario.id);
   return res.status(201).json({ token, nome: usuario.nome });
 });
@@ -78,8 +80,8 @@ const MENSAGEM_VINCULO_ENVIADO =
 const solicitarVinculo = asyncHandler(async (req, res) => {
   const dados = vinculoSolicitarSchema.parse(req.body);
 
-  const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
-  const conta = cpfExistente ? null : await usuariosService.buscarContaSemCpfPorEmail(dados.email);
+  const identificacaoExistente = await usuariosService.buscarPorIdentificacao(identificacaoDe(dados));
+  const conta = identificacaoExistente ? null : await usuariosService.buscarContaSemCpfPorEmail(dados.email);
 
   if (conta) {
     const codigo = await tokenService.criarCodigoVinculoConta(conta.id);
@@ -100,13 +102,15 @@ const confirmarVinculo = asyncHandler(async (req, res) => {
   const conta = await usuariosService.buscarContaSemCpfPorEmail(dados.email);
   if (!conta) throw new ErroHttp(400, mensagemInvalida);
 
-  const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
-  if (cpfExistente) throw new ErroHttp(409, "Já existe um cadastro com esse CPF.");
+  const identificacao = identificacaoDe(dados);
+  if (await usuariosService.buscarPorIdentificacao(identificacao)) {
+    throw new ErroHttp(409, `Já existe um cadastro com esse ${rotuloIdentificacao(identificacao)}.`);
+  }
 
   const registro = await tokenService.consumirCodigoVinculoConta(conta.id, dados.codigo);
   if (!registro) throw new ErroHttp(400, mensagemInvalida);
 
-  const usuario = await usuariosService.vincularCpfAoUsuario(conta.id, dados.cpf, {
+  const usuario = await usuariosService.vincularIdentificacaoAoUsuario(conta.id, identificacao, {
     confirmarEmail: true,
   });
   const token = inscricoesService.gerarTokenInscricao(usuario.id);

@@ -75,7 +75,17 @@ async function listar(edicaoId) {
     decisaoFinal: submissao.decisaoFinal,
     modalidadeSubmissao: submissao.modalidadeSubmissao,
     areaSubmissao: submissao.areaSubmissao,
-    autores: submissao.autores.map((autor) => ({ id: autor.id, nome: autor.nome, email: autor.email, principal: autor.principal })),
+    autores: submissao.autores.map((autor) => ({
+      id: autor.id,
+      nome: autor.nome,
+      email: autor.email,
+      orcid: autor.orcid,
+      principal: autor.principal,
+    })),
+    // Para o modal de detalhe (o mesmo do Recebimento, que troca a área).
+    resumo: submissao.resumo,
+    referenciaBibliografica: submissao.referenciaBibliografica,
+    createdAt: submissao.createdAt,
     atividadeApresentacaoId: submissao.atividadeApresentacaoId,
     ordemApresentacao: submissao.ordemApresentacao,
     statusAviso: statusAviso(submissao),

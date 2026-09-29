@@ -14,6 +14,7 @@ const emailService = require("../services/email.service");
 const authService = require("../services/auth.service");
 const { conferirHash } = require("../utils/senha");
 const mascararEmail = require("../utils/mascararEmail");
+const { identificacaoDe, rotuloIdentificacao } = require("../utils/identificacao");
 
 const cadastrar = asyncHandler(async (req, res) => {
   const dados = cadastroSchema.parse(req.body);
@@ -27,16 +28,17 @@ const cadastrar = asyncHandler(async (req, res) => {
   }
 
   // Cadastro pode ser específico (ver CLAUDE.md), mas quem digitou só o CPF
-  // vê o e-mail da conta mascarado — o bastante pra reconhecer qual é.
-  const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
-  if (cpfExistente) {
+  // (ou documento) vê o e-mail da conta mascarado — o bastante pra reconhecer.
+  const identificacao = identificacaoDe(dados);
+  const contaExistente = await usuariosService.buscarPorIdentificacao(identificacao);
+  if (contaExistente) {
     throw new ErroHttp(
       409,
-      `Já existe um cadastro com esse CPF, com o e-mail ${mascararEmail(cpfExistente.email)}. Entre com ele ou use "Esqueci minha senha".`
+      `Já existe um cadastro com esse ${rotuloIdentificacao(identificacao)}, com o e-mail ${mascararEmail(contaExistente.email)}. Entre com ele ou use "Esqueci minha senha".`
     );
   }
 
-  const usuario = await usuariosService.criarUsuario(dados);
+  const usuario = await usuariosService.criarUsuario({ ...dados, identificacao });
   const token = await tokenService.criarTokenConfirmacaoEmail(usuario.id);
   await emailService.enviarEmailConfirmacao(usuario, token);
 
@@ -73,9 +75,10 @@ const reenviarConfirmacao = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const dados = loginSchema.parse(req.body);
-  const usuario = await usuariosService.buscarPorCpf(dados.cpf);
+  const identificacao = identificacaoDe(dados);
+  const usuario = await usuariosService.buscarPorIdentificacao(identificacao);
 
-  const mensagemInvalida = "CPF ou senha inválidos.";
+  const mensagemInvalida = identificacao.cpf ? "CPF ou senha inválidos." : "Documento ou senha inválidos.";
   if (!usuario || !usuario.ativo) {
     throw new ErroHttp(401, mensagemInvalida);
   }
@@ -142,17 +145,20 @@ const recuperarSenha = asyncHandler(async (req, res) => {
 });
 
 // Exceção consciente à regra de não revelar se a conta existe: o login é por
-// CPF e muita gente não lembra com qual e-mail se cadastrou. Responde se o
-// CPF tem conta e para qual e-mail (mascarado) o link foi — o limitador
-// sensível da rota segura a enumeração.
+// CPF (ou documento, para estrangeiros) e muita gente não lembra com qual
+// e-mail se cadastrou. Responde se o CPF/documento tem conta e para qual
+// e-mail (mascarado) o link foi — o limitador sensível da rota segura a
+// enumeração.
 const recuperarSenhaPorCpf = asyncHandler(async (req, res) => {
-  const { cpf } = recuperarSenhaCpfSchema.parse(req.body);
-  const usuario = await usuariosService.buscarPorCpf(cpf);
+  const identificacao = identificacaoDe(recuperarSenhaCpfSchema.parse(req.body));
+  const usuario = await usuariosService.buscarPorIdentificacao(identificacao);
 
   if (!usuario || !usuario.ativo) {
     throw new ErroHttp(
       404,
-      "Não encontramos cadastro com esse CPF. Contas trazidas do Even3 podem não ter CPF — tente recuperar pelo e-mail ou use a página \"Regularizar cadastro\" para vincular o seu CPF."
+      identificacao.cpf
+        ? "Não encontramos cadastro com esse CPF. Contas trazidas do Even3 podem não ter CPF — tente recuperar pelo e-mail ou use a página \"Regularizar cadastro\" para vincular o seu CPF."
+        : "Não encontramos cadastro com esse documento. Tente recuperar pelo e-mail ou use a página \"Regularizar cadastro\" para vincular o seu documento."
     );
   }
 
@@ -185,15 +191,16 @@ const definirSenha = asyncHandler(async (req, res) => {
     throw new ErroHttp(400, "Link de convite inválido ou expirado.");
   }
 
-  const cpfExistente = await usuariosService.buscarPorCpf(dados.cpf);
-  if (cpfExistente && cpfExistente.id !== registro.usuarioId) {
-    throw new ErroHttp(409, "Já existe um cadastro com esse CPF.");
+  const identificacao = identificacaoDe(dados);
+  const contaExistente = await usuariosService.buscarPorIdentificacao(identificacao);
+  if (contaExistente && contaExistente.id !== registro.usuarioId) {
+    throw new ErroHttp(409, `Já existe um cadastro com esse ${rotuloIdentificacao(identificacao)}.`);
   }
 
   const agora = new Date();
   await usuariosService.definirSenhaEAceites(registro.usuarioId, {
     senha: dados.senha,
-    cpf: dados.cpf,
+    identificacao,
     aceiteTermosEm: agora,
     aceitePrivacidadeEm: agora,
   });

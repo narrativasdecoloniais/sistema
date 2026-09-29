@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { cpfValido, apenasDigitos } = require("../utils/cpf");
+const { camposIdentificacao, validarIdentificacao } = require("./identificacao.validators");
 
 const senhaForte = z
   .string()
@@ -12,10 +12,7 @@ const cadastroSchema = z
   .object({
     nome: z.string().trim().min(3, "Informe o nome completo"),
     email: z.string().trim().email("E-mail inválido"),
-    cpf: z
-      .string()
-      .transform(apenasDigitos)
-      .refine(cpfValido, "CPF inválido"),
+    ...camposIdentificacao,
     instituicao: z.string().trim().min(2, "Informe a instituição"),
     categoria: z.enum(["ESTUDANTE", "DOCENTE", "PESQUISADOR", "COMUNIDADE_EXTERNA"], {
       errorMap: () => ({ message: "Categoria inválida" }),
@@ -29,23 +26,24 @@ const cadastroSchema = z
       errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
     }),
   })
+  .superRefine(validarIdentificacao)
   .refine((dados) => dados.senha === dados.confirmarSenha, {
     message: "As senhas não coincidem",
     path: ["confirmarSenha"],
   });
 
-const loginSchema = z.object({
-  cpf: z.string().transform(apenasDigitos),
-  senha: z.string().min(1, "Informe a senha"),
-});
+const loginSchema = z
+  .object({
+    ...camposIdentificacao,
+    senha: z.string().min(1, "Informe a senha"),
+  })
+  .superRefine(validarIdentificacao);
 
 const recuperarSenhaSchema = z.object({
   email: z.string().trim().email("E-mail inválido"),
 });
 
-const recuperarSenhaCpfSchema = z.object({
-  cpf: z.string().transform(apenasDigitos).refine(cpfValido, "CPF inválido"),
-});
+const recuperarSenhaCpfSchema = z.object({ ...camposIdentificacao }).superRefine(validarIdentificacao);
 
 const redefinirSenhaSchema = z.object({
   token: z.string().min(1, "Token ausente"),
@@ -59,10 +57,7 @@ const redefinirSenhaSchema = z.object({
 const definirSenhaSchema = z
   .object({
     token: z.string().min(1, "Token ausente"),
-    cpf: z
-      .string()
-      .transform(apenasDigitos)
-      .refine(cpfValido, "CPF inválido"),
+    ...camposIdentificacao,
     senha: senhaForte,
     confirmarSenha: z.string(),
     aceiteTermos: z.literal(true, {
@@ -72,6 +67,7 @@ const definirSenhaSchema = z
       errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
     }),
   })
+  .superRefine(validarIdentificacao)
   .refine((dados) => dados.senha === dados.confirmarSenha, {
     message: "As senhas não coincidem",
     path: ["confirmarSenha"],

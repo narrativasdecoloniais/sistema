@@ -6,7 +6,12 @@ const router = Router({ mergeParams: true });
 
 router.get("/", autorizarSecao("SUBMISSOES_RECEBIMENTO"), submissoesAdminController.listar);
 router.delete("/:id", autorizarSecao("SUBMISSOES_RECEBIMENTO"), submissoesAdminController.excluir);
-router.patch("/:id/area", autorizarSecao("SUBMISSOES_RECEBIMENTO"), submissoesAdminController.alterarArea);
+// Troca de área pelo modal de detalhe — usado no Recebimento e na Apresentação.
+router.patch(
+  "/:id/area",
+  autorizarSecao("SUBMISSOES_RECEBIMENTO", "SUBMISSOES_APRESENTACAO"),
+  submissoesAdminController.alterarArea
+);
 
 // Editor em tela cheia — aberto pelo botão Editar das tabelas de Recebimento,
 // Avaliação, Resultado e Apresentação, então vale para qualquer uma delas.

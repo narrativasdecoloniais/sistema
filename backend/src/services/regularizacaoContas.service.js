@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
 const { mascararEmailParcial } = require("../utils/mascararEmail");
+const { identificacaoDe, temIdentificacao, rotuloIdentificacao } = require("../utils/identificacao");
 const usuariosService = require("./usuarios.service");
 const tokenService = require("./token.service");
 const emailService = require("./email.service");
@@ -13,6 +14,7 @@ const { previaUnificacao, unificarUsuarios } = require("./unificacaoUsuarios.ser
 // (o único verificado: Even3 ou link mágico da submissão — o da inscrição
 // não é validado) e vincula o CPF ou unifica. Exceção consciente às regras de
 // não vazar contas: a busca é pública (e-mail sempre mascarado pela metade).
+// "CPF" aqui vale também para o documento de estrangeiro (sem CPF).
 // Remover (este arquivo, controller, routes, validators e a página) quando não
 // houver mais contas importadas sem CPF.
 
@@ -79,7 +81,10 @@ async function buscarContasPorNome(nome) {
 
   const ids = encontradas.map((conta) => conta.id);
   const [contas, enviadas, autorias] = await Promise.all([
-    prisma.usuario.findMany({ where: { id: { in: ids } }, select: { id: true, nome: true, email: true, cpf: true } }),
+    prisma.usuario.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, nome: true, email: true, cpf: true, documentoEstrangeiro: true },
+    }),
     prisma.submissao.findMany({ where: { usuarioId: { in: ids } }, select: { usuarioId: true, titulo: true } }),
     prisma.submissaoAutor.findMany({
       where: { usuarioId: { in: ids } },
@@ -99,7 +104,7 @@ async function buscarContasPorNome(nome) {
       id: conta.id,
       nome: conta.nome,
       email: mascararEmailParcial(conta.email),
-      temCpf: Boolean(conta.cpf),
+      temIdentificacao: temIdentificacao(conta),
       titulos: [...titulosPorConta.get(conta.id)].slice(0, MAX_TITULOS),
     }));
 }
@@ -107,7 +112,7 @@ async function buscarContasPorNome(nome) {
 async function carregarContas(contaIds) {
   const contas = await prisma.usuario.findMany({
     where: { id: { in: contaIds }, ...WHERE_ELEGIVEL },
-    select: { id: true, nome: true, email: true, cpf: true },
+    select: { id: true, nome: true, email: true, cpf: true, documentoEstrangeiro: true },
   });
   if (contas.length !== contaIds.length) {
     throw new ErroHttp(404, "Alguma das contas selecionadas não foi encontrada. Faça a busca de novo.");
@@ -115,38 +120,49 @@ async function carregarContas(contaIds) {
   return contaIds.map((id) => contas.find((conta) => conta.id === id));
 }
 
-async function garantirCpfLivre(cpf) {
-  if (await usuariosService.buscarPorCpf(cpf)) {
-    throw new ErroHttp(409, "Esse CPF já está em outra conta. Busque e selecione também essa conta para unificar.");
+async function garantirIdentificacaoLivre(identificacao) {
+  if (await usuariosService.buscarPorIdentificacao(identificacao)) {
+    throw new ErroHttp(
+      409,
+      `Esse ${rotuloIdentificacao(identificacao)} já está em outra conta. Busque e selecione também essa conta para unificar.`
+    );
   }
+}
+
+function mesmaIdentificacao(conta, identificacao) {
+  return identificacao.cpf
+    ? conta.cpf === identificacao.cpf
+    : conta.documentoEstrangeiro === identificacao.documentoEstrangeiro;
 }
 
 // Decide o que fazer com a seleção. Só as contas sem CPF recebem código: o
 // e-mail delas é o verificado. A conta com CPF (criada pela inscrição, e-mail
 // possivelmente errado) é provada pelo CPF digitado, que tem de ser o dela.
-async function montarPlano({ contaIds, cpf, manterId }) {
+async function montarPlano(dados) {
+  const { contaIds, manterId } = dados;
+  const identificacao = identificacaoDe(dados);
   const contas = await carregarContas(contaIds);
 
   if (contas.length === 1) {
     const [conta] = contas;
-    if (conta.cpf) {
-      throw new ErroHttp(409, 'Esta conta já tem CPF. Entre com ele ou use "Esqueci minha senha".');
+    if (temIdentificacao(conta)) {
+      throw new ErroHttp(409, 'Esta conta já tem CPF ou documento. Entre com ele ou use "Esqueci minha senha".');
     }
-    await garantirCpfLivre(cpf);
-    return { tipo: "VINCULAR", manter: conta, remover: null, contasComCodigo: [conta], bloqueios: [], avisos: [] };
+    await garantirIdentificacaoLivre(identificacao);
+    return { tipo: "VINCULAR", identificacao, manter: conta, remover: null, contasComCodigo: [conta], bloqueios: [], avisos: [] };
   }
 
-  const comCpf = contas.filter((conta) => conta.cpf);
-  const semCpf = contas.filter((conta) => !conta.cpf);
+  const comCpf = contas.filter((conta) => temIdentificacao(conta));
+  const semCpf = contas.filter((conta) => !temIdentificacao(conta));
   let manter;
   let remover;
 
   if (comCpf.length === 2) {
-    throw new ErroHttp(409, "As duas contas já têm CPF. Fale com a organização do evento para unificá-las.");
+    throw new ErroHttp(409, "As duas contas já têm CPF ou documento. Fale com a organização do evento para unificá-las.");
   }
   if (comCpf.length === 1) {
-    if (comCpf[0].cpf !== cpf) {
-      throw new ErroHttp(400, "O CPF informado não é o da conta com CPF selecionada.");
+    if (!mesmaIdentificacao(comCpf[0], identificacao)) {
+      throw new ErroHttp(400, `O ${rotuloIdentificacao(identificacao)} informado não é o da conta com CPF/documento selecionada.`);
     }
     // Fica a conta do Even3: o e-mail dela é o verificado; o CPF vem da outra.
     [manter] = semCpf;
@@ -155,12 +171,13 @@ async function montarPlano({ contaIds, cpf, manterId }) {
     manter = contas.find((conta) => conta.id === manterId);
     if (!manter) throw new ErroHttp(400, "Escolha qual e-mail vai continuar valendo.");
     remover = contas.find((conta) => conta.id !== manterId);
-    await garantirCpfLivre(cpf);
+    await garantirIdentificacaoLivre(identificacao);
   }
 
   const previa = await previaUnificacao(manter.id, remover.id);
   return {
     tipo: "UNIFICAR",
+    identificacao,
     manter,
     remover,
     contasComCodigo: semCpf,
@@ -217,15 +234,17 @@ async function confirmar({ codigos, ...dados }) {
   }
 
   if (plano.tipo === "VINCULAR") {
-    await usuariosService.vincularCpfAoUsuario(plano.manter.id, dados.cpf, { confirmarEmail: true });
+    await usuariosService.vincularIdentificacaoAoUsuario(plano.manter.id, plano.identificacao, { confirmarEmail: true });
   } else {
     const { usuario } = await unificarUsuarios({
       manterId: plano.manter.id,
       removerId: plano.remover.id,
       confirmarEmail: true,
     });
-    if (!usuario.cpf) {
-      await usuariosService.vincularCpfAoUsuario(plano.manter.id, dados.cpf, { confirmarEmail: true });
+    if (!temIdentificacao(usuario)) {
+      await usuariosService.vincularIdentificacaoAoUsuario(plano.manter.id, plano.identificacao, {
+        confirmarEmail: true,
+      });
     }
   }
 

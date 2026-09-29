@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
 const { operacoesAnonimizacao } = require("./usuarios.service");
+const { temIdentificacao } = require("../utils/identificacao");
 
 // Unifica duas contas da mesma pessoa (caso típico: conta importada do Even3,
 // sem CPF e com as submissões, mais uma conta nova criada pela inscrição com
@@ -15,6 +16,8 @@ const SELECT_CONTA = {
   nome: true,
   email: true,
   cpf: true,
+  documentoEstrangeiro: true,
+  pais: true,
   emailConfirmado: true,
   ativo: true,
   anonimizadoEm: true,
@@ -46,6 +49,8 @@ function resumirConta(conta, vinculos) {
     nome: conta.nome,
     email: conta.email,
     cpf: conta.cpf,
+    documentoEstrangeiro: conta.documentoEstrangeiro,
+    pais: conta.pais,
     emailConfirmado: conta.emailConfirmado,
     criadaEm: conta.createdAt,
     vinculos,
@@ -72,9 +77,17 @@ async function analisar(db, manterId, removerId) {
     bloqueios.push("Contas de administradores e organizadores não podem ser unificadas por aqui.");
   }
 
-  // Dois CPFs diferentes quase certamente são duas pessoas — não junta.
-  if (manter.cpf && remover.cpf && manter.cpf !== remover.cpf) {
-    bloqueios.push("As duas contas têm CPFs diferentes, então provavelmente são pessoas diferentes.");
+  // Dois CPFs (ou documentos de estrangeiro) diferentes quase certamente são
+  // duas pessoas — não junta.
+  if (temIdentificacao(manter) && temIdentificacao(remover)) {
+    const iguais = manter.cpf
+      ? manter.cpf === remover.cpf
+      : manter.documentoEstrangeiro === remover.documentoEstrangeiro;
+    if (!iguais) {
+      bloqueios.push(
+        "As duas contas têm CPFs ou documentos diferentes, então provavelmente são pessoas diferentes."
+      );
+    }
   }
 
   const [atividadesManter, atividadesRemover, edicoesManter, edicoesRemover] = await Promise.all([
@@ -110,8 +123,10 @@ async function analisar(db, manterId, removerId) {
   ]);
 
   const cpfFinal = manter.cpf || remover.cpf || null;
-  if (!manter.cpf && remover.cpf) {
-    avisos.push("O CPF da conta unificada passará para a conta que permanece.");
+  if (!temIdentificacao(manter) && temIdentificacao(remover)) {
+    avisos.push(
+      `O ${remover.cpf ? "CPF" : "documento"} da conta unificada passará para a conta que permanece.`
+    );
   }
   if (!manter.emailConfirmado) {
     avisos.push("O e-mail da conta que permanece ainda não está confirmado — sem isso a pessoa não consegue fazer login.");
@@ -182,13 +197,24 @@ async function unificarUsuarios({ manterId, removerId, confirmarEmail = false })
       }
 
       const dadosMantida = {};
-      if (!manter.cpf && remover.cpf) dadosMantida.cpf = remover.cpf;
+      if (!temIdentificacao(manter) && temIdentificacao(remover)) {
+        if (remover.cpf) dadosMantida.cpf = remover.cpf;
+        else Object.assign(dadosMantida, { documentoEstrangeiro: remover.documentoEstrangeiro, pais: remover.pais });
+      }
       if (confirmarEmail) dadosMantida.emailConfirmado = true;
 
       const atualizada = await tx.usuario.update({
         where: { id: manterId },
         data: dadosMantida,
-        select: { id: true, nome: true, email: true, cpf: true, emailConfirmado: true },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          cpf: true,
+          documentoEstrangeiro: true,
+          pais: true,
+          emailConfirmado: true,
+        },
       });
 
       const vinculos = await contarVinculos(tx, manterId);

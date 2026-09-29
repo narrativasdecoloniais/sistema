@@ -3,12 +3,15 @@ const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
 const { gerarHash } = require("../utils/senha");
 const storageService = require("./storage.service");
+const { temIdentificacao } = require("../utils/identificacao");
 
 const CAMPOS_PUBLICOS = {
   id: true,
   nome: true,
   email: true,
   cpf: true,
+  documentoEstrangeiro: true,
+  pais: true,
   instituicao: true,
   categoria: true,
   foto: true,
@@ -30,6 +33,18 @@ async function buscarPorCpf(cpf) {
   return prisma.usuario.findUnique({ where: { cpf } });
 }
 
+// documento já normalizado (ver utils/identificacao.js).
+async function buscarPorDocumento(documentoEstrangeiro) {
+  return prisma.usuario.findUnique({ where: { documentoEstrangeiro } });
+}
+
+// identificacao: { cpf } ou { documentoEstrangeiro, pais } (identificacaoDe).
+async function buscarPorIdentificacao(identificacao) {
+  return identificacao.cpf
+    ? buscarPorCpf(identificacao.cpf)
+    : buscarPorDocumento(identificacao.documentoEstrangeiro);
+}
+
 function normalizarEmail(email) {
   return String(email).trim().toLowerCase();
 }
@@ -49,19 +64,19 @@ async function buscarPorEmail(email) {
   });
   return (
     candidatos.find((usuario) => usuario.email === alvo) ||
-    candidatos.find((usuario) => usuario.cpf) ||
+    candidatos.find((usuario) => temIdentificacao(usuario)) ||
     candidatos[0] ||
     null
   );
 }
 
-// Conta que ainda pode receber um CPF: ativa e sem CPF (importada do Even3 ou
-// criada por submissão). mode: "insensitive" porque o e-mail não é
+// Conta que ainda pode receber um CPF (ou documento de estrangeiro): ativa e
+// sem nenhum dos dois (importada do Even3 ou criada por submissão). mode: "insensitive" porque o e-mail não é
 // normalizado no cadastro e o da importação veio como digitado no Even3
 // (ex. "Ana@x.com") — a mesma pessoa digita "ana@x.com" e não bateria.
 async function buscarContaSemCpfPorEmail(email) {
   return prisma.usuario.findFirst({
-    where: { email: { equals: email, mode: "insensitive" }, cpf: null, ativo: true },
+    where: { email: { equals: email, mode: "insensitive" }, cpf: null, documentoEstrangeiro: null, ativo: true },
   });
 }
 
@@ -90,9 +105,19 @@ async function buscarPorTermo(termo) {
         { nome: { contains: termo, mode: "insensitive" } },
         { email: { contains: termo, mode: "insensitive" } },
         { cpf: { contains: termo, mode: "insensitive" } },
+        { documentoEstrangeiro: { contains: termo, mode: "insensitive" } },
       ],
     },
-    select: { id: true, nome: true, email: true, cpf: true, instituicao: true, categoria: true },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      cpf: true,
+      documentoEstrangeiro: true,
+      pais: true,
+      instituicao: true,
+      categoria: true,
+    },
     take: 10,
     orderBy: { nome: "asc" },
   });
@@ -116,6 +141,7 @@ async function associarAutoriasPendentes(usuarioId, email) {
   });
 }
 
+// dados.identificacao: { cpf } ou { documentoEstrangeiro, pais }.
 async function criarUsuario(dados) {
   const senhaHash = await gerarHash(dados.senha);
   const agora = new Date();
@@ -124,7 +150,7 @@ async function criarUsuario(dados) {
     data: {
       nome: dados.nome,
       email: normalizarEmail(dados.email),
-      cpf: dados.cpf,
+      ...dados.identificacao,
       instituicao: dados.instituicao,
       categoria: dados.categoria,
       senhaHash,
@@ -166,7 +192,7 @@ async function criarUsuarioConvidado({
 // auto-inscrição em eventos: a pessoa preenche os dados de cadastro sem
 // definir senha (nem confirmar e-mail) e só define uma senha real depois,
 // via "esqueci minha senha", se quiser fazer login.
-async function criarUsuarioViaInscricao({ nome, email, cpf, instituicao, categoria }) {
+async function criarUsuarioViaInscricao({ nome, email, identificacao, instituicao, categoria }) {
   const senhaHash = await gerarHash(crypto.randomBytes(32).toString("hex"));
   const agora = new Date();
 
@@ -174,7 +200,7 @@ async function criarUsuarioViaInscricao({ nome, email, cpf, instituicao, categor
     data: {
       nome,
       email: normalizarEmail(email),
-      cpf,
+      ...identificacao,
       instituicao,
       categoria,
       senhaHash,
@@ -210,18 +236,18 @@ async function criarUsuarioViaSubmissao({ nome, email, instituicao, categoria })
 }
 
 // Conta já existia (criada via submissão de trabalho ou convite de
-// organizador, sem CPF) e a pessoa está se inscrevendo agora com um CPF
-// novo — completa o cadastro nessa mesma conta em vez de tentar criar uma
+// organizador, sem CPF) e a pessoa está se inscrevendo agora com um CPF (ou
+// documento de estrangeiro) novo — completa o cadastro nessa mesma conta em vez de tentar criar uma
 // segunda com o mesmo e-mail (que violaria o @unique).
 // confirmarEmail: só quando a posse do e-mail já foi provada (código enviado
 // pra caixa de entrada da conta) — o vínculo direto por e-mail digitado
 // (cadastrar em inscricoes.controller.js) não prova nada e não confirma.
-async function vincularCpfAoUsuario(id, cpf, { confirmarEmail = false } = {}) {
+async function vincularIdentificacaoAoUsuario(id, identificacao, { confirmarEmail = false } = {}) {
   const agora = new Date();
   return prisma.usuario.update({
     where: { id },
     data: {
-      cpf,
+      ...identificacao,
       aceiteTermosEm: agora,
       aceitePrivacidadeEm: agora,
       ...(confirmarEmail ? { emailConfirmado: true } : {}),
@@ -229,14 +255,14 @@ async function vincularCpfAoUsuario(id, cpf, { confirmarEmail = false } = {}) {
   });
 }
 
-async function definirSenhaEAceites(id, { senha, cpf, aceiteTermosEm, aceitePrivacidadeEm }) {
+async function definirSenhaEAceites(id, { senha, identificacao, aceiteTermosEm, aceitePrivacidadeEm }) {
   const senhaHash = await gerarHash(senha);
 
   return prisma.usuario.update({
     where: { id },
     data: {
       senhaHash,
-      cpf,
+      ...identificacao,
       emailConfirmado: true,
       aceiteTermosEm,
       aceitePrivacidadeEm,
@@ -337,6 +363,8 @@ function operacoesAnonimizacao(id, cliente = prisma) {
         nome: "Usuário removido",
         email: `anon-${id}@anonimizado.local`,
         cpf: `anon-${id}`,
+        documentoEstrangeiro: null,
+        pais: null,
         instituicao: "",
         papeis: [],
         acessoCompleto: false,
@@ -359,6 +387,8 @@ async function anonimizarUsuario(id) {
 module.exports = {
   CAMPOS_PUBLICOS,
   buscarPorCpf,
+  buscarPorDocumento,
+  buscarPorIdentificacao,
   buscarPorEmail,
   buscarContaSemCpfPorEmail,
   buscarNomePublicoPorEmail,
@@ -369,7 +399,7 @@ module.exports = {
   criarUsuarioConvidado,
   criarUsuarioViaInscricao,
   criarUsuarioViaSubmissao,
-  vincularCpfAoUsuario,
+  vincularIdentificacaoAoUsuario,
   definirSenhaEAceites,
   atualizarPerfil,
   atualizarSenha,

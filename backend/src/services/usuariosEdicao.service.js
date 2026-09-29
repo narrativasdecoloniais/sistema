@@ -19,6 +19,8 @@ async function listarComSituacaoNaEdicao(edicaoId) {
         nome: true,
         email: true,
         cpf: true,
+        documentoEstrangeiro: true,
+        pais: true,
         instituicao: true,
         papeis: true,
         createdAt: true,

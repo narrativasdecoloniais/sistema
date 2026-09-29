@@ -7,6 +7,8 @@ const CAMPOS_USUARIO = {
   nome: true,
   email: true,
   cpf: true,
+  documentoEstrangeiro: true,
+  pais: true,
 };
 
 const INCLUDE_PADRAO = {

@@ -9,6 +9,8 @@ const CAMPOS_ORGANIZADOR = {
   nome: true,
   email: true,
   cpf: true,
+  documentoEstrangeiro: true,
+  pais: true,
   papeis: true,
   acessoCompleto: true,
   secoesPermitidas: true,
