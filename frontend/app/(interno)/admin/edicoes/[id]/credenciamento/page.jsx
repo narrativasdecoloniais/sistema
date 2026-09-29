@@ -1,6 +1,8 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import { buscarEdicaoPorId } from "@/lib/edicoes";
+import { buscarCredenciamento } from "@/lib/credenciamentoAdmin";
+import CredenciamentoPainel from "@/components/interno/CredenciamentoPainel";
 
 export default async function PaginaCredenciamento({ params }) {
   const usuario = await obterUsuarioAtual();
@@ -8,10 +10,10 @@ export default async function PaginaCredenciamento({ params }) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
-  return (
-    <PaginaEmBreve
-      titulo="Credenciamento"
-      descricao="Em breve você vai poder acompanhar o credenciamento por QR code desta edição por aqui."
-    />
-  );
+  const edicao = await buscarEdicaoPorId(params.id);
+  if (!edicao) notFound();
+
+  const dados = await buscarCredenciamento(params.id);
+
+  return <CredenciamentoPainel edicaoId={params.id} dadosIniciais={dados} />;
 }

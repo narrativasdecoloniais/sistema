@@ -240,7 +240,7 @@ export const configuracaoMonitoriaSchema = z
       .array(z.string().trim().min(1, "Preencha o nome da atividade").max(200, "Use no máximo 200 caracteres"))
       .max(30, "Cadastre no máximo 30 atividades")
       .refine((lista) => new Set(lista).size === lista.length, "Há atividades repetidas na lista"),
-    editalMonitoria: z.string().max(20000, "Texto muito grande").nullable(),
+    editalMonitoria: z.string().max(300000, "O edital está grande demais").nullable(),
   })
   .refine(
     (dados) =>

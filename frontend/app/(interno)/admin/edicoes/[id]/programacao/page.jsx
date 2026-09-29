@@ -23,7 +23,7 @@ export default async function PaginaProgramacao({ params }) {
 
   return (
     <ProgramacaoPainel
-      edicaoId={params.id}
+      edicao={edicao}
       atividadesIniciais={atividades}
       tiposAtividade={tiposAtividade}
       tiposParticipacao={tiposParticipacao}

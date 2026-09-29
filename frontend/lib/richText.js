@@ -24,6 +24,12 @@ export const CONFIG_TEXTO = {
   ALLOWED_ATTR: ["href", "target", "rel"],
 };
 
+// Edital da monitoria: título/subtítulo (h2/h3), listas e tabela, sem imagem.
+export const CONFIG_EDITAL = {
+  ALLOWED_TAGS: [...TAGS_TEXTO, "h2", "h3", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td", "colgroup", "col"],
+  ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "colwidth"],
+};
+
 // O front não conhece o nome do bucket — aceita qualquer objeto do GCS
 // público; o backend (que conhece) restringe ao nosso bucket ao salvar.
 const PREFIXO_GCS = "https://storage.googleapis.com/";

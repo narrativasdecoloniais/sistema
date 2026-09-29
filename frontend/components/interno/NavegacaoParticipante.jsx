@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, CalendarCheck, FileText, ListChecks, Award, ClipboardCheck, Handshake } from "lucide-react";
+import { User, CalendarCheck, FileText, ListChecks, Award, ClipboardCheck, Handshake, QrCode } from "lucide-react";
 import { temPapel } from "@/lib/permissoes";
 import styles from "./NavegacaoEdicao.module.scss";
 
@@ -16,6 +16,7 @@ const GRUPOS = [
     itens: [
       { href: "/participante/inscricoes", rotulo: "Minhas inscrições", Icone: CalendarCheck },
       { href: "/participante/monitoria", rotulo: "Monitoria", Icone: Handshake, prefixo: true },
+      { href: "/participante/credenciamento", rotulo: "Credenciamento", Icone: QrCode, prefixo: true },
     ],
   },
   {

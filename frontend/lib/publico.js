@@ -1,3 +1,5 @@
+import { hojeIngenuo } from "@/lib/horarioBrasilia";
+
 // Fallback de título/corpo das dobras sem customização até dez/2026 —
 // reproduz o texto que era hardcoded em PaginaInicialConteudo.jsx antes de
 // virar campo do model Edicao, pra migrar sem apagar o texto institucional
@@ -424,8 +426,9 @@ export function formatarPeriodoSubmissao(dataInicioIso, dataFimIso) {
 // Date(dataFimIso)` direto fecha o prazo já na meia-noite UTC do próprio
 // dataFimIso — ou seja, o último dia do prazo aparecia fechado o dia
 // inteiro em vez de só depois dele.
+// "Hoje" é o dia de Brasília (lib/horarioBrasilia.js).
 export function prazoSubmissaoAberto(dataInicioIso, dataFimIso) {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeIngenuo();
   const inicio = new Date(dataInicioIso).toISOString().slice(0, 10);
   const fim = new Date(dataFimIso).toISOString().slice(0, 10);
   return hoje >= inicio && hoje <= fim;

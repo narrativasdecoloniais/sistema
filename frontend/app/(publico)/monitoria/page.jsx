@@ -2,6 +2,7 @@ import Link from "next/link";
 import Divisor from "@/components/graficos/Divisor";
 import ConteudoRichText from "@/components/ConteudoRichText";
 import { buscarEdicaoAtual, formatarPeriodoEdicao } from "@/lib/publico";
+import { agoraIngenuo } from "@/lib/horarioBrasilia";
 import styles from "./page.module.scss";
 
 export const metadata = { title: "Monitoria" };
@@ -18,7 +19,7 @@ export default async function PaginaMonitoria() {
       ? formatarPeriodoEdicao(edicao.inicioInscricoesMonitoria, edicao.fimInscricoesMonitoria)
       : null;
   const antesDoInicio =
-    edicao?.inicioInscricoesMonitoria && new Date() < new Date(edicao.inicioInscricoesMonitoria);
+    edicao?.inicioInscricoesMonitoria && agoraIngenuo() < new Date(edicao.inicioInscricoesMonitoria);
 
   return (
     <article className={styles.pagina}>
@@ -52,7 +53,7 @@ export default async function PaginaMonitoria() {
             )}
           </div>
 
-          <ConteudoRichText className={styles.edital} html={edicao.editalMonitoria} tipo="texto" />
+          <ConteudoRichText className={styles.edital} html={edicao.editalMonitoria} tipo="edital" />
         </>
       )}
     </article>

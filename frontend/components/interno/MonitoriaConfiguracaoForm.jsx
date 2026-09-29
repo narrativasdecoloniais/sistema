@@ -52,7 +52,8 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
       fimInscricoesMonitoria: fim || null,
       vagasMonitoria: vagas,
       funcoesMonitoria: funcoes.map((funcao) => funcao.trim()),
-      editalMonitoria: edital.replace(/<[^>]*>/g, "").trim() ? edital : null,
+      // Tabela sem texto ainda conta como conteúdo.
+      editalMonitoria: edital.replace(/<[^>]*>/g, "").trim() || edital.includes("<table") ? edital : null,
     };
     const resultado = configuracaoMonitoriaSchema.safeParse(dados);
     if (!resultado.success) {
@@ -199,7 +200,7 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
         <CabecalhoSecao
           Icone={FileText}
           titulo="Edital"
-          descricao="Texto da chamada mostrado na página pública /monitoria. O link “Monitoria” aparece no menu do site assim que houver texto."
+          descricao="Texto da chamada mostrado na página pública /monitoria, com títulos, listas e tabelas. O link “Monitoria” aparece no menu do site assim que houver texto. Texto colado entra sem formatação: aplique títulos, listas e tabelas pelos botões."
         />
         <div className={styles.camposSecao}>
           <CampoRichText
@@ -208,6 +209,8 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
             value={edital}
             onChange={setEdital}
             erro={erros.editalMonitoria}
+            ferramentas={["titulos", "negrito", "italico", "lista", "listaNumerada", "link"]}
+            permitirTabela
             alto
           />
         </div>

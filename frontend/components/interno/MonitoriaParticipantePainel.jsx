@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Botao from "@/components/forms/Botao";
 import ModalConfirmacao from "./ModalConfirmacao";
+import CardAjudaInscricao from "./CardAjudaInscricao";
 import FormularioMonitoria from "./FormularioMonitoria";
 import { useToast } from "./ToastProvider";
 import { formatarPeriodoEdicao } from "@/lib/publico";
@@ -112,6 +113,8 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
 
   return (
     <div className={styles.pagina}>
+      <CardAjudaInscricao />
+
       <div>
         <h1 className={styles.titulo}>Monitoria — {edicao.nome}</h1>
         <p className={styles.descricao}>

@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/apiClient";
 import { idadeEm } from "@/lib/idade";
+import { agoraIngenuo } from "@/lib/horarioBrasilia";
 
 export { idadeEm };
 
@@ -28,7 +29,7 @@ export const ROTULOS_STATUS_MONITORIA = {
 // exibição; quem decide é o backend.
 export function monitoriaAberta(edicao) {
   if (!edicao?.inicioInscricoesMonitoria || !edicao?.fimInscricoesMonitoria) return false;
-  const agora = new Date();
+  const agora = agoraIngenuo();
   return agora >= new Date(edicao.inicioInscricoesMonitoria) && agora <= new Date(edicao.fimInscricoesMonitoria);
 }
 

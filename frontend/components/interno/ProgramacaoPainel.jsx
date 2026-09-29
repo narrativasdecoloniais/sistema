@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Ticket } from "lucide-react";
+import { FileDown, Plus, Ticket } from "lucide-react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -16,6 +16,7 @@ import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { agruparAtividadesPorDia } from "@/lib/inscricao";
 import { criarMapaCores, corPorMapa } from "@/lib/coresAtividade";
+import { baixarPdfProgramacao } from "@/lib/pdfProgramacao";
 import styles from "./ProgramacaoPainel.module.scss";
 
 // Faixa de horas visível na grade, calculada a partir das próprias
@@ -95,9 +96,10 @@ function renderizarEvento(arg) {
   );
 }
 
-export default function ProgramacaoPainel({ edicaoId, atividadesIniciais, tiposAtividade, tiposParticipacao }) {
+export default function ProgramacaoPainel({ edicao, atividadesIniciais, tiposAtividade, tiposParticipacao }) {
   const router = useRouter();
   const { notificar } = useToast();
+  const edicaoId = edicao.id;
 
   const [atividades, setAtividades] = useState(atividadesIniciais);
   const [chaveDiaSelecionado, setChaveDiaSelecionado] = useState(null);
@@ -105,6 +107,7 @@ export default function ProgramacaoPainel({ edicaoId, atividadesIniciais, tiposA
   const [modalAberto, setModalAberto] = useState(false);
   const [duplicandoAtividade, setDuplicandoAtividade] = useState(null);
   const [duplicataCriada, setDuplicataCriada] = useState(null);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   const dias = useMemo(() => agruparAtividadesPorDia(atividades), [atividades]);
   const diaAtivo = dias.find((dia) => dia.chave === chaveDiaSelecionado) ?? dias[0] ?? null;
@@ -166,6 +169,17 @@ export default function ProgramacaoPainel({ edicaoId, atividadesIniciais, tiposA
     }
   }
 
+  async function baixarPdf() {
+    setGerandoPdf(true);
+    try {
+      await baixarPdfProgramacao(edicao, atividades);
+    } catch {
+      notificar("Não foi possível gerar o PDF. Tente novamente.", "erro");
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
+
   async function aoMudarHorario(info) {
     try {
       const resposta = await apiClient.patch(`/edicoes/${edicaoId}/atividades/${info.event.id}/horario`, {
@@ -193,10 +207,21 @@ export default function ProgramacaoPainel({ edicaoId, atividadesIniciais, tiposA
             clique para editar todos os campos.
           </p>
         </div>
-        <Botao type="button" onClick={abrirCriacao}>
-          <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
-          Nova atividade
-        </Botao>
+        <div className={styles.acoesCabecalho}>
+          <Botao
+            type="button"
+            variante="secundario"
+            onClick={baixarPdf}
+            disabled={gerandoPdf || dias.length === 0}
+          >
+            <FileDown size={18} strokeWidth={1.5} aria-hidden="true" />
+            {gerandoPdf ? "Gerando PDF..." : "Baixar PDF"}
+          </Botao>
+          <Botao type="button" onClick={abrirCriacao}>
+            <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
+            Nova atividade
+          </Botao>
+        </div>
       </div>
 
       {dias.length === 0 ? (

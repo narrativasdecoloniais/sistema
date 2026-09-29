@@ -1,0 +1,113 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 720px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--texto);
+  overflow-wrap: break-word;
+}
+
+.descricao {
+  margin: 0.35rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.texto {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.9375rem;
+}
+
+.apoio {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.sucesso,
+.aviso {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  background: var(--fundo);
+  color: var(--texto);
+  font-size: 0.9375rem;
+}
+
+.sucesso {
+  border-left: 3px solid var(--sucesso);
+}
+
+.aviso {
+  border-left: 3px solid var(--alerta);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    color: var(--texto);
+  }
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  @media (max-width: 600px) {
+    > * {
+      flex: 1 1 100%;
+    }
+  }
+}
+
+.link {
+  align-self: flex-start;
+  color: var(--acento);
+  font-weight: 600;
+  font-size: 0.9375rem;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}

@@ -10,6 +10,7 @@ import { redimensionarLogoParaDataUri } from "@/lib/imagem";
 import stylesCampo from "./Campo.module.scss";
 import styles from "./CampoRichText.module.scss";
 
+// Também disponíveis: "titulos" (título h2 + subtítulo h3) e "listaNumerada".
 const FERRAMENTAS_PADRAO = ["negrito", "italico", "lista", "link"];
 
 // O Word (e o resto do Office) manda o texto de "text/html" com o
@@ -59,6 +60,8 @@ export default function CampoRichText({
   // mudança de seleção pra mostrar/esconder as ações de tabela.
   const [, atualizarBarra] = useReducer((contador) => contador + 1, 0);
 
+  const temTitulos = ferramentas.includes("titulos");
+  const temListaNumerada = ferramentas.includes("listaNumerada");
   const temNegrito = ferramentas.includes("negrito");
   const temItalico = ferramentas.includes("italico");
   const temLista = ferramentas.includes("lista");
@@ -67,12 +70,13 @@ export default function CampoRichText({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false,
+        // "titulos": título (h2) e subtítulo (h3) — o h1 é o da própria página.
+        heading: temTitulos ? { levels: [2, 3] } : false,
         bold: temNegrito,
         italic: temItalico,
         bulletList: temLista,
-        orderedList: temLista,
-        listItem: temLista,
+        orderedList: temLista || temListaNumerada,
+        listItem: temLista || temListaNumerada,
       }),
       ...(temLink
         ? [
@@ -236,6 +240,22 @@ export default function CampoRichText({
       </label>
       <div className={`${styles.caixa} ${erro ? styles.invalido : ""}`}>
         <div className={styles.barra} role="toolbar" aria-label="Formatação do texto">
+          {temTitulos &&
+            [
+              { nivel: 2, rotulo: "Título" },
+              { nivel: 3, rotulo: "Subtítulo" },
+            ].map(({ nivel, rotulo: rotuloTitulo }) => (
+              <button
+                key={nivel}
+                type="button"
+                className={`${styles.botao} ${editor?.isActive("heading", { level: nivel }) ? styles.ativo : ""}`}
+                onClick={() => editor.chain().focus().toggleHeading({ level: nivel }).run()}
+                aria-label={rotuloTitulo}
+                aria-pressed={editor?.isActive("heading", { level: nivel }) ?? false}
+              >
+                {rotuloTitulo}
+              </button>
+            ))}
           {temNegrito && (
             <button
               type="button"
@@ -267,6 +287,17 @@ export default function CampoRichText({
               aria-pressed={editor?.isActive("bulletList") ?? false}
             >
               Lista
+            </button>
+          )}
+          {temListaNumerada && (
+            <button
+              type="button"
+              className={`${styles.botao} ${editor?.isActive("orderedList") ? styles.ativo : ""}`}
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              aria-label="Lista numerada"
+              aria-pressed={editor?.isActive("orderedList") ?? false}
+            >
+              Lista numerada
             </button>
           )}
           {temLink && (

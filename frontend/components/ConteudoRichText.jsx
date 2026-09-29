@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CONFIG_RESUMO, CONFIG_REFERENCIA, CONFIG_TEXTO, sanitizarRichText } from "@/lib/richText";
+import { CONFIG_RESUMO, CONFIG_REFERENCIA, CONFIG_TEXTO, CONFIG_EDITAL, sanitizarRichText } from "@/lib/richText";
 
-const CONFIGS = { resumo: CONFIG_RESUMO, referencia: CONFIG_REFERENCIA, texto: CONFIG_TEXTO };
+const CONFIGS = { resumo: CONFIG_RESUMO, referencia: CONFIG_REFERENCIA, texto: CONFIG_TEXTO, edital: CONFIG_EDITAL };
 
 // ÚNICA forma permitida de exibir resumo/referência de submissão (e textos
 // rich text da organização): sanitiza de novo no navegador, com a mesma
