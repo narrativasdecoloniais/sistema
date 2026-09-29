@@ -8,6 +8,7 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CampoTexto from "./CampoTexto";
+import CampoSelecao from "./CampoSelecao";
 import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
@@ -316,19 +317,6 @@ function AbaTrabalhos({ edicaoId, dados, modalidades, recarregar }) {
   }
 
   const previa = modal?.distribuir;
-  const mensagemDistribuir = previa
-    ? [
-        previa.vinculados === 0
-          ? "Nenhum trabalho pode ser vinculado automaticamente."
-          : `${previa.vinculados} ${previa.vinculados === 1 ? "trabalho será vinculado" : "trabalhos serão vinculados"} à atividade da própria área, no fim da ordem.`,
-        previa.variasAtividades > 0 &&
-          `${previa.variasAtividades} ficam de fora porque a área tem mais de uma atividade — vincule manualmente.`,
-        previa.semAtividade > 0 &&
-          `${previa.semAtividade} ficam de fora porque a área (ou o trabalho) não tem atividade vinculada.`,
-      ]
-        .filter(Boolean)
-        .join(" ")
-    : "";
 
   return (
     <>
@@ -459,25 +447,20 @@ function AbaTrabalhos({ edicaoId, dados, modalidades, recarregar }) {
       )}
 
       {previa && (
-        <ModalConfirmacao
-          titulo="Distribuir pela área"
-          mensagem={mensagemDistribuir}
-          rotuloConfirmar={previa.vinculados > 0 ? "Distribuir" : "Entendi"}
-          perigo={false}
-          confirmando={processando}
+        <ModalDistribuir
+          previa={previa}
+          processando={processando}
+          onFechar={() => setModal(null)}
           onConfirmar={() =>
-            previa.vinculados > 0
-              ? executar(async () => {
-                  const resultado = await apiClient.post(`/edicoes/${edicaoId}/apresentacao/distribuir-por-area`, {
-                    simular: false,
-                  });
-                  return {
-                    mensagem: `${resultado.vinculados} ${resultado.vinculados === 1 ? "trabalho vinculado" : "trabalhos vinculados"} pela área.`,
-                  };
-                })
-              : setModal(null)
+            executar(async () => {
+              const resultado = await apiClient.post(`/edicoes/${edicaoId}/apresentacao/distribuir-por-area`, {
+                simular: false,
+              });
+              return {
+                mensagem: `${resultado.vinculados} ${resultado.vinculados === 1 ? "trabalho vinculado" : "trabalhos vinculados"} pela área.`,
+              };
+            })
           }
-          onCancelar={() => setModal(null)}
         />
       )}
     </>
@@ -487,11 +470,85 @@ function AbaTrabalhos({ edicaoId, dados, modalidades, recarregar }) {
 // Estado da escolha fica aqui (e não no pai) para que marcar uma opção não
 // recrie o onFechar do Modal — o Modal refoca o primeiro elemento quando isso
 // acontece.
+// Prévia de "Distribuir pela área": quantos entram em cada atividade de cada
+// área (divisão equilibrada feita no backend) antes de confirmar.
+function ModalDistribuir({ previa, processando, onFechar, onConfirmar }) {
+  const { vinculados, semAtividade, porArea } = previa;
+  return (
+    <Modal titulo="Distribuir pela área" onFechar={onFechar}>
+      <div className={styles.formulario}>
+        <p className={estilos.semMargem}>
+          {vinculados === 0
+            ? "Nenhum trabalho sem atividade pode ser vinculado automaticamente."
+            : `${vinculados} ${vinculados === 1 ? "trabalho será vinculado" : "trabalhos serão vinculados"}, divididos igualmente entre as atividades de cada área (quem já tem trabalhos recebe menos), sempre no fim da ordem.`}
+          {semAtividade > 0 &&
+            ` ${semAtividade} ${semAtividade === 1 ? "fica" : "ficam"} de fora porque a área (ou o trabalho) não tem atividade vinculada — vincule manualmente.`}
+        </p>
+        {porArea.length > 0 && (
+          <div className={estilos.listaOpcoes}>
+            {porArea.map((area) => (
+              <section key={area.area} className={estilos.previaArea}>
+                <h3 className={styles.rotuloBloco}>
+                  {area.area} · {area.totalNovos} {area.totalNovos === 1 ? "trabalho" : "trabalhos"}
+                </h3>
+                <ul className={estilos.previaAtividades}>
+                  {area.atividades.map((atividade) => (
+                    <li key={atividade.id}>
+                      <span>{atividade.nome}</span>
+                      <span className={styles.textoSuave}>
+                        +{atividade.novos} → {atividade.totalFinal}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        )}
+        <div className={styles.acoesFormulario}>
+          <Botao type="button" variante="secundario" onClick={onFechar}>
+            {vinculados > 0 ? "Cancelar" : "Fechar"}
+          </Botao>
+          {vinculados > 0 && (
+            <Botao type="button" carregando={processando} onClick={onConfirmar}>
+              Distribuir
+            </Botao>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// Busca sem acento/caixa ("sessao 1" acha "Sessão 1 –").
+function normalizar(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 function ModalVincular({ atividades, selecionados, processando, onFechar, onConfirmar }) {
   const [atividadeId, setAtividadeId] = useState("");
+  const [busca, setBusca] = useState("");
+  const [tipoId, setTipoId] = useState("");
   const areasSelecionadas = new Set(selecionados.map((t) => t.areaSubmissao?.id).filter(Boolean));
-  const sugeridas = atividades.filter((atividade) => areasSelecionadas.has(atividade.areaSubmissaoId));
-  const outras = atividades.filter((atividade) => !areasSelecionadas.has(atividade.areaSubmissaoId));
+
+  // Filtra por nome, dia/horário e local; a atividade já marcada continua
+  // visível mesmo fora do filtro, pra não "sumir" a escolha feita.
+  const tipos = [
+    ...new Map(atividades.filter((a) => a.tipoAtividade).map((a) => [a.tipoAtividade.id, a.tipoAtividade])).values(),
+  ].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  const termo = normalizar(busca.trim());
+  const filtrando = Boolean(termo || tipoId);
+  const visiveis = atividades.filter(
+    (atividade) =>
+      atividade.id === atividadeId ||
+      ((!tipoId || atividade.tipoAtividade?.id === tipoId) &&
+        (!termo || normalizar(`${atividade.nome} ${detalheAtividade(atividade)}`).includes(termo)))
+  );
+  const sugeridas = visiveis.filter((atividade) => areasSelecionadas.has(atividade.areaSubmissaoId));
+  const outras = visiveis.filter((atividade) => !areasSelecionadas.has(atividade.areaSubmissaoId));
 
   function grupo(titulo, lista) {
     if (lista.length === 0) return null;
@@ -509,6 +566,7 @@ function ModalVincular({ atividades, selecionados, processando, onFechar, onConf
             />
             <span>
               <span className={styles.nome}>{atividade.nome}</span>
+              {atividade.tipoAtividade && <span className={styles.textoSuave}> · {atividade.tipoAtividade.nome}</span>}
               <span className={styles.textoSuave}>
                 {" "}
                 · {detalheAtividade(atividade)} · {atividade.totalTrabalhos}{" "}
@@ -532,10 +590,46 @@ function ModalVincular({ atividades, selecionados, processando, onFechar, onConf
         {atividades.length === 0 ? (
           <p className={styles.textoApoio}>Nenhuma atividade cadastrada nesta edição.</p>
         ) : (
-          <div className={estilos.listaOpcoes}>
-            {grupo("Sugeridas para a área", sugeridas)}
-            {grupo(sugeridas.length ? "Outras atividades" : "Atividades", outras)}
-          </div>
+          <>
+            <div className={estilos.filtrosModal}>
+              <CampoTexto
+                id="buscaAtividadeVincular"
+                rotulo="Buscar atividade (nome, dia ou local)"
+                type="search"
+                value={busca}
+                onChange={(evento) => setBusca(evento.target.value)}
+                placeholder="Ex.: Conversatório 7, 04/12, Auditório..."
+              />
+              {tipos.length > 1 && (
+                <CampoSelecao
+                  id="tipoAtividadeVincular"
+                  rotulo="Tipo de atividade"
+                  value={tipoId}
+                  onChange={(evento) => setTipoId(evento.target.value)}
+                >
+                  <option value="">Todos os tipos</option>
+                  {tipos.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.nome}
+                    </option>
+                  ))}
+                </CampoSelecao>
+              )}
+            </div>
+            <p className={styles.textoApoio} aria-live="polite">
+              {filtrando
+                ? `${visiveis.length} de ${atividades.length} atividades`
+                : `${atividades.length} atividades`}
+            </p>
+            {visiveis.length === 0 ? (
+              <p className={styles.textoApoio}>Nenhuma atividade encontrada com esses filtros.</p>
+            ) : (
+              <div className={estilos.listaOpcoes}>
+                {grupo("Sugeridas para a área", sugeridas)}
+                {grupo(sugeridas.length ? "Outras atividades" : "Atividades", outras)}
+              </div>
+            )}
+          </>
         )}
         <div className={styles.acoesFormulario}>
           <Botao type="button" variante="secundario" onClick={onFechar}>

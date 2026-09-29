@@ -83,6 +83,10 @@ export default function LoginForm() {
         Não recebeu o e-mail de confirmação?{" "}
         <Link href="/cadastro/confirme-seu-email">Reenviar</Link>
       </p>
+      <p className={styles.rodape}>
+        Conta vinda do Even3 ou duas contas?{" "}
+        <Link href="/regularizar-cadastro">Regularize seu cadastro</Link>
+      </p>
     </form>
   );
 }

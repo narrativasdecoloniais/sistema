@@ -88,6 +88,23 @@ export const recuperarSenhaSchema = z.object({
   email: z.string().trim().email("E-mail inválido"),
 });
 
+// Espelha recuperarSenhaCpfSchema em backend/src/validators/auth.validators.js.
+export const recuperarSenhaCpfSchema = z.object({
+  cpf: z.string().refine((valor) => cpfValido(valor), "CPF inválido"),
+});
+
+// Espelham backend/src/validators/regularizacaoContas.validators.js
+// (regularização pública de cadastro — temporária, edição V).
+export const buscaRegularizacaoSchema = z.object({
+  nome: z.string().trim().min(5, "Digite seu nome completo").max(200),
+});
+
+export const planoRegularizacaoSchema = z.object({
+  contaIds: z.array(z.string()).min(1, "Selecione a sua conta").max(2, "Selecione no máximo duas contas"),
+  cpf: z.string().refine((valor) => cpfValido(valor), "CPF inválido"),
+  manterId: z.string().optional(),
+});
+
 export const redefinirSenhaSchema = z
   .object({
     senha: senhaForte,

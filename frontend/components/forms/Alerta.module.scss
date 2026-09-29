@@ -3,6 +3,8 @@
   border-radius: 6px;
   font-size: 0.875rem;
   line-height: 1.5;
+  // E-mail longo na mensagem não pode estourar a largura no celular.
+  overflow-wrap: anywhere;
 }
 
 .erro {

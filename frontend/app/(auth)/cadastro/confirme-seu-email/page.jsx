@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import Campo from "@/components/forms/Campo";
 import Alerta from "@/components/forms/Alerta";
@@ -9,8 +10,18 @@ import { apiClient } from "@/lib/apiClient";
 import { recuperarSenhaSchema, extrairErros } from "@/lib/validacao";
 import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
+// useSearchParams exige Suspense para a página poder ser pré-renderizada.
 export default function PaginaConfirmeSeuEmail() {
-  const [email, setEmail] = useState("");
+  return (
+    <Suspense>
+      <ConfirmeSeuEmail />
+    </Suspense>
+  );
+}
+
+function ConfirmeSeuEmail() {
+  const emailCadastrado = useSearchParams().get("email") || "";
+  const [email, setEmail] = useState(emailCadastrado);
   const [erros, setErros] = useState({});
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -28,8 +39,10 @@ export default function PaginaConfirmeSeuEmail() {
     setCarregando(true);
 
     try {
-      const resposta = await apiClient.post("/auth/reenviar-confirmacao", resultado.data);
-      setMensagem(resposta.mensagem);
+      await apiClient.post("/auth/reenviar-confirmacao", resultado.data);
+      setMensagem(
+        `Se ${resultado.data.email} estiver cadastrado e pendente de confirmação, reenviamos o link para esse endereço.`
+      );
     } catch (erro) {
       setMensagem(erro.message);
     } finally {
@@ -41,14 +54,18 @@ export default function PaginaConfirmeSeuEmail() {
     <TelaAutenticacao
       eyebrow="Área do participante"
       titulo="Confirme seu e-mail"
-      subtitulo="Enviamos um link de confirmação para o e-mail informado no cadastro. Clique nele para ativar sua conta."
+      subtitulo={
+        emailCadastrado
+          ? `Enviamos um link de confirmação para ${emailCadastrado}. Clique nele para ativar sua conta.`
+          : "Enviamos um link de confirmação para o e-mail informado no cadastro. Clique nele para ativar sua conta."
+      }
     >
       <form onSubmit={reenviar} className={styles.formulario}>
         <p className={styles.rodape}>Não encontrou o e-mail? Verifique também a caixa de spam ou lixo eletrônico.</p>
         <Alerta tipo="sucesso">{mensagem}</Alerta>
         <Campo
           id="email"
-          rotulo="Não recebeu? Informe seu e-mail para reenviarmos"
+          rotulo="Não recebeu? Confira o e-mail e reenvie"
           type="email"
           variante="minimal"
           value={email}

@@ -51,7 +51,7 @@ export default function PaginaCadastro() {
 
     try {
       await apiClient.post("/auth/cadastro", resultado.data);
-      router.push("/cadastro/confirme-seu-email");
+      router.push(`/cadastro/confirme-seu-email?email=${encodeURIComponent(resultado.data.email)}`);
     } catch (erro) {
       setErroGeral(erro.message);
     } finally {
