@@ -16,7 +16,7 @@ import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
-import { formatarCpf } from "@/lib/cpf";
+import { formatarIdentificacao } from "@/lib/identificacao";
 import { temPapel } from "@/lib/permissoes";
 import { GRUPOS_SECOES_ADMIN, ROTULOS_SECOES_ADMIN } from "@/lib/secoesAdmin";
 import styles from "./ParticipantesPainel.module.scss";
@@ -56,15 +56,14 @@ const COLUNAS = [
   { chave: "email", rotulo: "E-mail", valor: (participante) => participante.email },
   {
     chave: "cpf",
-    rotulo: "CPF",
-    valor: (participante) => participante.cpf || null,
+    rotulo: "CPF / Documento",
+    valor: (participante) => participante.cpf || participante.documentoEstrangeiro || null,
     // Aceita busca com ou sem pontuação; "convite" encontra os pendentes.
     texto: (participante) =>
-      participante.cpf
-        ? `${formatarCpf(participante.cpf)} ${participante.cpf}`
+      formatarIdentificacao(participante)
+        ? `${formatarIdentificacao(participante)} ${participante.cpf || ""}`
         : "Convite pendente",
-    exportar: (participante) =>
-      participante.cpf ? formatarCpf(participante.cpf) : "Convite pendente",
+    exportar: (participante) => formatarIdentificacao(participante) || "Convite pendente",
   },
   {
     chave: "papel",
@@ -302,8 +301,8 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
                       <tr key={participante.id}>
                         <td data-rotulo="Nome">{participante.nome}</td>
                         <td data-rotulo="E-mail">{participante.email}</td>
-                        <td data-rotulo="CPF">
-                          {participante.cpf ? formatarCpf(participante.cpf) : "Convite pendente"}
+                        <td data-rotulo="CPF / Documento">
+                          {formatarIdentificacao(participante) || "Convite pendente"}
                         </td>
                         <td data-rotulo="Papel">
                           <span className={`${styles.tag} ${eAdmin ? styles.tagAdmin : ""}`}>

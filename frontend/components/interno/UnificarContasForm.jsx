@@ -6,7 +6,7 @@ import ModalConfirmacao from "./ModalConfirmacao";
 import Botao from "@/components/forms/Botao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
-import { formatarCpf } from "@/lib/cpf";
+import { formatarIdentificacao } from "@/lib/identificacao";
 import { useToast } from "./ToastProvider";
 import formStyles from "./ParticipanteForm.module.scss";
 import styles from "./UnificarContasForm.module.scss";
@@ -20,7 +20,7 @@ function CartaoConta({ titulo, conta }) {
       <p className={styles.cartaoNome}>{conta.nome}</p>
       <p className={styles.cartaoDetalhe}>{conta.email}</p>
       <p className={styles.cartaoDetalhe}>
-        {conta.cpf ? formatarCpf(conta.cpf) : "Sem CPF"} ·{" "}
+        {formatarIdentificacao(conta) || "Sem CPF/documento"} ·{" "}
         {conta.emailConfirmado ? "E-mail confirmado" : "E-mail não confirmado"}
       </p>
       <ul className={styles.vinculos}>

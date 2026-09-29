@@ -3,7 +3,7 @@
 import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
-import { formatarCpf } from "@/lib/cpf";
+import { formatarIdentificacao } from "@/lib/identificacao";
 import styles from "./ParticipantesPainel.module.scss";
 
 const ROTULO_PAPEL = {
@@ -24,11 +24,12 @@ const COLUNAS = [
   { chave: "email", rotulo: "E-mail", valor: (usuario) => usuario.email },
   {
     chave: "cpf",
-    rotulo: "CPF",
-    valor: (usuario) => usuario.cpf || null,
-    // Aceita busca com ou sem pontuação.
-    texto: (usuario) => (usuario.cpf ? `${formatarCpf(usuario.cpf)} ${usuario.cpf}` : ""),
-    exportar: (usuario) => (usuario.cpf ? formatarCpf(usuario.cpf) : ""),
+    rotulo: "CPF / Documento",
+    valor: (usuario) => usuario.cpf || usuario.documentoEstrangeiro || null,
+    // Aceita busca com ou sem pontuação (e pelo país, no caso de estrangeiro).
+    texto: (usuario) =>
+      formatarIdentificacao(usuario) ? `${formatarIdentificacao(usuario)} ${usuario.cpf || ""}` : "",
+    exportar: (usuario) => formatarIdentificacao(usuario) || "",
   },
   { chave: "instituicao", rotulo: "Instituição", valor: (usuario) => usuario.instituicao || null },
   {
@@ -105,7 +106,7 @@ export default function UsuariosEdicaoTabela({ usuarios }) {
               <tr key={usuario.id}>
                 <td data-rotulo="Nome">{usuario.nome}</td>
                 <td data-rotulo="E-mail">{usuario.email}</td>
-                <td data-rotulo="CPF">{usuario.cpf ? formatarCpf(usuario.cpf) : "—"}</td>
+                <td data-rotulo="CPF / Documento">{formatarIdentificacao(usuario) || "—"}</td>
                 <td data-rotulo="Instituição">{usuario.instituicao || "—"}</td>
                 <td data-rotulo="Papel">
                   {papel === "PARTICIPANTE" ? (

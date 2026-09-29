@@ -4,7 +4,8 @@ import { Fragment, Suspense, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Campo from "@/components/forms/Campo";
-import CampoCPF from "@/components/forms/CampoCPF";
+import CampoIdentificacao from "@/components/forms/CampoIdentificacao";
+import { IDENTIFICACAO_INICIAL, payloadIdentificacao } from "@/lib/identificacao";
 import CampoSelect from "@/components/forms/CampoSelect";
 import Checkbox from "@/components/forms/Checkbox";
 import { useToast } from "@/components/publico/ToastProvider";
@@ -91,7 +92,9 @@ function InscricaoConteudo() {
   const { notificar } = useToast();
 
   const [etapa, setEtapa] = useState("carregando");
-  const [cpf, setCpf] = useState("");
+  // CPF ou, para estrangeiros, documento + país (lib/identificacao.js).
+  const [identificacao, setIdentificacao] = useState(IDENTIFICACAO_INICIAL);
+  const rotuloDocumento = identificacao.tipoDocumento === "ESTRANGEIRO" ? "documento" : "CPF";
   const [emailIdentidade, setEmailIdentidade] = useState("");
   const [emailVinculo, setEmailVinculo] = useState("");
   const [camposVinculo, setCamposVinculo] = useState(VINCULO_INICIAL);
@@ -213,7 +216,7 @@ function InscricaoConteudo() {
   async function aoSubmeterCpf(evento) {
     evento.preventDefault();
 
-    const resultadoValidacao = inscricaoCpfSchema.safeParse({ cpf });
+    const resultadoValidacao = inscricaoCpfSchema.safeParse(payloadIdentificacao(identificacao));
     if (!resultadoValidacao.success) {
       setErros(extrairErros(resultadoValidacao));
       return;
@@ -222,7 +225,7 @@ function InscricaoConteudo() {
     setCarregando(true);
 
     try {
-      const dados = await buscarCpf(cpf);
+      const dados = await buscarCpf(payloadIdentificacao(identificacao));
       setEtapa(dados.existe ? "identidade" : "cadastro");
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -243,7 +246,10 @@ function InscricaoConteudo() {
     setCarregando(true);
 
     try {
-      const dados = await confirmarEmailExistente({ cpf, email: emailIdentidade });
+      const dados = await confirmarEmailExistente({
+        identificacao: payloadIdentificacao(identificacao),
+        email: emailIdentidade,
+      });
       setTokenInscricao(dados.token);
       setNomeUsuario(dados.nome);
       await buscarEstadoEAvancar(dados.token);
@@ -257,7 +263,7 @@ function InscricaoConteudo() {
   async function aoSubmeterCadastro(evento) {
     evento.preventDefault();
 
-    const resultadoValidacao = inscricaoCadastroSchema.safeParse({ ...camposCadastro, cpf });
+    const resultadoValidacao = inscricaoCadastroSchema.safeParse(camposCadastro);
     if (!resultadoValidacao.success) {
       setErros(extrairErros(resultadoValidacao));
       return;
@@ -266,7 +272,10 @@ function InscricaoConteudo() {
     setCarregando(true);
 
     try {
-      const dados = await cadastrarParaInscricao(resultadoValidacao.data);
+      const dados = await cadastrarParaInscricao({
+        ...resultadoValidacao.data,
+        ...payloadIdentificacao(identificacao),
+      });
       setTokenInscricao(dados.token);
       setNomeUsuario(dados.nome);
       notificar("Cadastro realizado.", "sucesso");
@@ -294,7 +303,10 @@ function InscricaoConteudo() {
     setCarregando(true);
 
     try {
-      const dados = await solicitarVinculoConta({ cpf, email: resultadoValidacao.data.email });
+      const dados = await solicitarVinculoConta({
+        identificacao: payloadIdentificacao(identificacao),
+        email: resultadoValidacao.data.email,
+      });
       notificar(dados.mensagem, "sucesso");
       setEtapa("vinculo-codigo");
     } catch (erro) {
@@ -317,13 +329,13 @@ function InscricaoConteudo() {
 
     try {
       const dados = await confirmarVinculoConta({
-        cpf,
+        identificacao: payloadIdentificacao(identificacao),
         email: emailVinculo.trim(),
         ...resultadoValidacao.data,
       });
       setTokenInscricao(dados.token);
       setNomeUsuario(dados.nome);
-      notificar("Cadastro vinculado ao seu CPF.", "sucesso");
+      notificar("Cadastro vinculado ao seu CPF ou documento.", "sucesso");
       await buscarEstadoEAvancar(dados.token);
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -485,13 +497,14 @@ function InscricaoConteudo() {
 
       {etapa === "cpf" && (
         <form onSubmit={aoSubmeterCpf} className={styles.formulario}>
-          <p className={styles.instrucao}>Informe seu CPF para começar.</p>
-          <CampoCPF
-            id="cpf"
-            rotulo="CPF"
-            value={cpf}
-            onChange={(evento) => setCpf(evento.target.value)}
-            erro={erros.cpf}
+          <p className={styles.instrucao}>
+            Informe seu CPF para começar. Se você é estrangeiro(a) e não tem CPF, use o documento do seu país.
+          </p>
+          <CampoIdentificacao
+            id="inscricao"
+            valor={identificacao}
+            onChange={setIdentificacao}
+            erros={erros}
           />
           <button type="submit" className={styles.cta} disabled={carregando}>
             {carregando ? "Aguarde..." : "Continuar"}
@@ -502,7 +515,7 @@ function InscricaoConteudo() {
       {etapa === "identidade" && (
         <form onSubmit={aoSubmeterIdentidade} className={styles.formulario}>
           <p className={styles.instrucao}>
-            Esse CPF já tem cadastro. Confirme o e-mail cadastrado para continuar.
+            Esse {rotuloDocumento} já tem cadastro. Confirme o e-mail cadastrado para continuar.
           </p>
           <Campo
             id="email"
@@ -516,7 +529,7 @@ function InscricaoConteudo() {
             {carregando ? "Aguarde..." : "Continuar"}
           </button>
           <button type="button" className={styles.link} onClick={() => setEtapa("cpf")}>
-            Voltar e informar outro CPF
+            Voltar e informar outro {rotuloDocumento}
           </button>
         </form>
       )}
@@ -524,7 +537,7 @@ function InscricaoConteudo() {
       {etapa === "cadastro" && (
         <form onSubmit={aoSubmeterCadastro} className={styles.formulario}>
           <p className={styles.instrucao}>
-            Esse CPF ainda não tem cadastro. Preencha seus dados para continuar.
+            Esse {rotuloDocumento} ainda não tem cadastro. Preencha seus dados para continuar.
           </p>
           <p className={styles.instrucao}>
             Já submeteu um trabalho (inclusive pelo Even3) ou tem cadastro com outro e-mail?{" "}
@@ -596,7 +609,7 @@ function InscricaoConteudo() {
             {carregando ? "Aguarde..." : "Continuar"}
           </button>
           <button type="button" className={styles.link} onClick={() => setEtapa("cpf")}>
-            Voltar e informar outro CPF
+            Voltar e informar outro {rotuloDocumento}
           </button>
         </form>
       )}
@@ -628,7 +641,7 @@ function InscricaoConteudo() {
         <form onSubmit={aoConfirmarVinculo} className={styles.formulario}>
           <p className={styles.instrucao}>
             Se houver um cadastro com o e-mail <strong>{emailVinculo}</strong>, enviamos um código
-            para ele. Digite o código abaixo para usar esse cadastro com o seu CPF. O código vale
+            para ele. Digite o código abaixo para usar esse cadastro com o seu {rotuloDocumento}. O código vale
             por 30 minutos.
           </p>
           <Campo

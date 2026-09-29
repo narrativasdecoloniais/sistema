@@ -13,7 +13,7 @@ import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
-import { formatarCpf } from "@/lib/cpf";
+import { formatarIdentificacao } from "@/lib/identificacao";
 import styles from "./InscricoesEdicaoPainel.module.scss";
 
 function formatarData(valor) {
@@ -27,12 +27,14 @@ const COLUNAS = [
   { chave: "email", rotulo: "E-mail", valor: (inscricao) => inscricao.usuario.email },
   {
     chave: "cpf",
-    rotulo: "CPF",
-    valor: (inscricao) => inscricao.usuario.cpf || null,
-    // Aceita busca com ou sem pontuação.
+    rotulo: "CPF / Documento",
+    valor: (inscricao) => inscricao.usuario.cpf || inscricao.usuario.documentoEstrangeiro || null,
+    // Aceita busca com ou sem pontuação (e pelo país, no caso de estrangeiro).
     texto: (inscricao) =>
-      inscricao.usuario.cpf ? `${formatarCpf(inscricao.usuario.cpf)} ${inscricao.usuario.cpf}` : "",
-    exportar: (inscricao) => (inscricao.usuario.cpf ? formatarCpf(inscricao.usuario.cpf) : ""),
+      formatarIdentificacao(inscricao.usuario)
+        ? `${formatarIdentificacao(inscricao.usuario)} ${inscricao.usuario.cpf || ""}`
+        : "",
+    exportar: (inscricao) => formatarIdentificacao(inscricao.usuario) || "",
   },
   { chave: "instituicao", rotulo: "Instituição", valor: (inscricao) => inscricao.usuario.instituicao || null },
   {
@@ -120,8 +122,8 @@ export default function InscricoesEdicaoPainel({ edicaoId, inscricoesIniciais })
                 <tr key={inscricao.id}>
                   <td data-rotulo="Nome">{inscricao.usuario.nome}</td>
                   <td data-rotulo="E-mail">{inscricao.usuario.email}</td>
-                  <td data-rotulo="CPF">
-                    {inscricao.usuario.cpf ? formatarCpf(inscricao.usuario.cpf) : "—"}
+                  <td data-rotulo="CPF / Documento">
+                    {formatarIdentificacao(inscricao.usuario) || "—"}
                   </td>
                   <td data-rotulo="Instituição">{inscricao.usuario.instituicao || "—"}</td>
                   <td data-rotulo="Inscrito em">{formatarData(inscricao.createdAt)}</td>

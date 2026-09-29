@@ -4,23 +4,25 @@ import { useState } from "react";
 import Link from "next/link";
 import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import Campo from "@/components/forms/Campo";
-import CampoCPF from "@/components/forms/CampoCPF";
+import CampoIdentificacao from "@/components/forms/CampoIdentificacao";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { buscaRegularizacaoSchema, planoRegularizacaoSchema, extrairErros } from "@/lib/validacao";
 import styles from "@/components/publico/TelaAutenticacao.module.scss";
+import { IDENTIFICACAO_INICIAL, payloadIdentificacao } from "@/lib/identificacao";
 import estilos from "./page.module.scss";
 
 // Temporária (edição V): quem tem conta importada do Even3 (sem CPF) acha a
 // conta pelo nome e vincula o CPF, ou unifica com a conta criada pela
 // inscrição. O código vai só para o e-mail da conta sem CPF — ver
-// backend/src/services/regularizacaoContas.service.js.
+// backend/src/services/regularizacaoContas.service.js. "CPF" aqui vale também
+// para o documento de estrangeiro.
 export default function PaginaRegularizarCadastro() {
   const [etapa, setEtapa] = useState("busca"); // busca → selecao → codigo → concluido
   const [nome, setNome] = useState("");
   const [contas, setContas] = useState([]);
   const [selecionadas, setSelecionadas] = useState([]);
-  const [cpf, setCpf] = useState("");
+  const [identificacao, setIdentificacao] = useState(IDENTIFICACAO_INICIAL);
   const [manterId, setManterId] = useState("");
   const [plano, setPlano] = useState(null);
   const [codigos, setCodigos] = useState({});
@@ -30,8 +32,8 @@ export default function PaginaRegularizarCadastro() {
   const [carregando, setCarregando] = useState(false);
 
   const contasSelecionadas = contas.filter((conta) => selecionadas.includes(conta.id));
-  const duasSemCpf = contasSelecionadas.length === 2 && contasSelecionadas.every((conta) => !conta.temCpf);
-  const umaComCpf = contasSelecionadas.length === 1 && contasSelecionadas[0].temCpf;
+  const duasSemCpf = contasSelecionadas.length === 2 && contasSelecionadas.every((conta) => !conta.temIdentificacao);
+  const umaComCpf = contasSelecionadas.length === 1 && contasSelecionadas[0].temIdentificacao;
 
   async function executar(acao) {
     setMensagem("");
@@ -71,7 +73,11 @@ export default function PaginaRegularizarCadastro() {
   }
 
   function dadosDoPlano() {
-    return { contaIds: selecionadas, cpf, ...(duasSemCpf ? { manterId } : {}) };
+    return {
+      contaIds: selecionadas,
+      ...payloadIdentificacao(identificacao),
+      ...(duasSemCpf ? { manterId } : {}),
+    };
   }
 
   function validarPlano() {
@@ -138,7 +144,7 @@ export default function PaginaRegularizarCadastro() {
     <TelaAutenticacao
       eyebrow="Área do participante"
       titulo="Regularizar cadastro"
-      subtitulo="Para quem tem conta vinda do Even3 (sem CPF) ou ficou com duas contas: encontre as suas pelo nome e deixe tudo numa conta só, com o seu CPF."
+      subtitulo="Para quem tem conta vinda do Even3 (sem CPF) ou ficou com duas contas: encontre as suas pelo nome e deixe tudo numa conta só, com o seu CPF (ou documento, se for estrangeiro)."
     >
       {etapa === "busca" && (
         <form onSubmit={buscar} className={styles.formulario}>
@@ -187,7 +193,7 @@ export default function PaginaRegularizarCadastro() {
                         <span className={estilos.cartaoCorpo}>
                           <span className={estilos.cartaoNome}>{conta.nome}</span>
                           <span className={estilos.cartaoEmail}>{conta.email}</span>
-                          <span className={estilos.selo}>{conta.temCpf ? "Com CPF" : "Sem CPF (Even3)"}</span>
+                          <span className={estilos.selo}>{conta.temIdentificacao ? "Com CPF/documento" : "Sem CPF (Even3)"}</span>
                           {conta.titulos.length > 0 && (
                             <span className={estilos.titulos}>
                               {conta.titulos.map((titulo) => (
@@ -206,7 +212,7 @@ export default function PaginaRegularizarCadastro() {
 
           {umaComCpf && (
             <p className={estilos.texto}>
-              Essa conta já tem CPF — é só <Link href="/login">entrar</Link> ou{" "}
+              Essa conta já tem CPF ou documento — é só <Link href="/login">entrar</Link> ou{" "}
               <Link href="/recuperar-senha">recuperar a senha</Link>. Se você também tem uma conta sem CPF, marque as
               duas.
             </p>
@@ -214,16 +220,16 @@ export default function PaginaRegularizarCadastro() {
 
           {selecionadas.length > 0 && !umaComCpf && (
             <>
-              <CampoCPF
-                id="cpf"
-                rotulo="Seu CPF"
+              <CampoIdentificacao
+                id="regularizacao"
+                rotuloCpf="Seu CPF"
                 variante="minimal"
-                value={cpf}
-                onChange={(evento) => {
-                  setCpf(evento.target.value);
+                valor={identificacao}
+                onChange={(novo) => {
+                  setIdentificacao(novo);
                   setPlano(null);
                 }}
-                erro={erros.cpf}
+                erros={erros}
               />
               {duasSemCpf && (
                 <fieldset className={estilos.escolha}>
@@ -300,11 +306,11 @@ export default function PaginaRegularizarCadastro() {
       {etapa === "concluido" && concluido && (
         <div className={styles.formulario}>
           <Alerta tipo="sucesso">
-            {concluido.tipo === "UNIFICAR" ? "Contas unificadas" : "CPF vinculado"} com sucesso. Sua conta agora usa o
-            e-mail {concluido.email} e o seu CPF.
+            {concluido.tipo === "UNIFICAR" ? "Contas unificadas" : "Identificação vinculada"} com sucesso. Sua conta agora usa o
+            e-mail {concluido.email} e o seu CPF (ou documento).
           </Alerta>
           <p className={estilos.texto}>
-            Entre com o seu CPF. Se ainda não tem senha, use &quot;Esqueci minha senha&quot; para criar uma.
+            Entre com o seu CPF (ou documento). Se ainda não tem senha, use &quot;Esqueci minha senha&quot; para criar uma.
           </p>
           <Link href="/login" className={`${styles.cta} ${estilos.ctaLink}`}>
             Entrar
@@ -326,8 +332,8 @@ function ResumoPlano({ plano }) {
       ) : (
         <p className={estilos.texto}>
           {plano.tipo === "UNIFICAR"
-            ? `As duas contas vão virar uma só, com o e-mail ${plano.emailFinal} e o seu CPF.`
-            : `O seu CPF será vinculado à conta com o e-mail ${plano.emailFinal}.`}{" "}
+            ? `As duas contas vão virar uma só, com o e-mail ${plano.emailFinal} e o seu CPF (ou documento).`
+            : `O seu CPF (ou documento) será vinculado à conta com o e-mail ${plano.emailFinal}.`}{" "}
           Para confirmar, vamos enviar um código para {plano.contasComCodigo.map((conta) => conta.email).join(" e ")}.
         </p>
       )}

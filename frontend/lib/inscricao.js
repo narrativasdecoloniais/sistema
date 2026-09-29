@@ -24,26 +24,28 @@ async function requisitar(caminho, { method = "GET", body, token } = {}) {
   return dados;
 }
 
-export function buscarCpf(cpf) {
-  return requisitar("/publico/inscricao/cpf", { method: "POST", body: { cpf } });
+// identificacao = payloadIdentificacao(...) de lib/identificacao.js: CPF ou,
+// para estrangeiros, documento + país.
+export function buscarCpf(identificacao) {
+  return requisitar("/publico/inscricao/cpf", { method: "POST", body: identificacao });
 }
 
-export function confirmarEmailExistente({ cpf, email }) {
-  return requisitar("/publico/inscricao/confirmar-email", { method: "POST", body: { cpf, email } });
+export function confirmarEmailExistente({ identificacao, email }) {
+  return requisitar("/publico/inscricao/confirmar-email", { method: "POST", body: { ...identificacao, email } });
 }
 
 export function cadastrarParaInscricao(dados) {
   return requisitar("/publico/inscricao/cadastro", { method: "POST", body: dados });
 }
 
-export function solicitarVinculoConta({ cpf, email }) {
-  return requisitar("/publico/inscricao/vinculo/solicitar", { method: "POST", body: { cpf, email } });
+export function solicitarVinculoConta({ identificacao, email }) {
+  return requisitar("/publico/inscricao/vinculo/solicitar", { method: "POST", body: { ...identificacao, email } });
 }
 
-export function confirmarVinculoConta({ cpf, email, codigo, aceiteTermos, aceitePrivacidade }) {
+export function confirmarVinculoConta({ identificacao, email, codigo, aceiteTermos, aceitePrivacidade }) {
   return requisitar("/publico/inscricao/vinculo/confirmar", {
     method: "POST",
-    body: { cpf, email, codigo, aceiteTermos, aceitePrivacidade },
+    body: { ...identificacao, email, codigo, aceiteTermos, aceitePrivacidade },
   });
 }
 

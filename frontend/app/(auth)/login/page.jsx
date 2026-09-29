@@ -15,7 +15,7 @@ export default async function PaginaLogin() {
     <TelaAutenticacao
       eyebrow="Área do participante"
       titulo="Entrar"
-      subtitulo="Acesse com o CPF cadastrado no Narrativas."
+      subtitulo="Acesse com o CPF (ou, para estrangeiros, o documento) cadastrado no Narrativas."
     >
       <Suspense fallback={null}>
         <LoginForm />

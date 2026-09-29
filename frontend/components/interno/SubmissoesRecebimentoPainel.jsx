@@ -4,19 +4,17 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Trash2 } from "lucide-react";
 import Botao from "@/components/forms/Botao";
-import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CampoTexto from "./CampoTexto";
-import CampoSelecao from "./CampoSelecao";
 import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
-import { modalidadeSubmissaoSchema, areaSubmissaoAdminSchema, extrairErros } from "@/lib/validacao";
+import { modalidadeSubmissaoSchema, extrairErros } from "@/lib/validacao";
 import { paraData } from "@/lib/dataHoraIngenua";
 import styles from "./SubmissoesRecebimentoPainel.module.scss";
-import ConteudoRichText from "@/components/ConteudoRichText";
+import DetalheSubmissaoModal from "./DetalheSubmissaoModal";
 import LinkEditarSubmissao from "./LinkEditarSubmissao";
 
 function formatarData(valor) {
@@ -262,61 +260,15 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
       )}
 
       {submissaoEmDetalhe && (
-        <Modal titulo={submissaoEmDetalhe.titulo} onFechar={() => setDetalheId(null)}>
-          <div className={styles.detalhe}>
-            <dl className={styles.metadados}>
-              <div>
-                <dt>Modalidade</dt>
-                <dd>{submissaoEmDetalhe.modalidadeSubmissao.nome}</dd>
-              </div>
-              <div>
-                <dt>Enviado em</dt>
-                <dd>{formatarData(submissaoEmDetalhe.createdAt)}</dd>
-              </div>
-            </dl>
-
-            <AlterarArea
-              key={submissaoEmDetalhe.id}
-              edicaoId={edicaoId}
-              submissao={submissaoEmDetalhe}
-              areas={
-                modalidades.find((modalidade) => modalidade.id === submissaoEmDetalhe.modalidadeSubmissao.id)
-                  ?.areas || []
-              }
-              onAlterada={(atualizada) =>
-                setSubmissoes((atual) => atual.map((item) => (item.id === atualizada.id ? atualizada : item)))
-              }
-            />
-
-            <div className={styles.blocoDetalhe}>
-              <span className={styles.rotuloBloco}>Autores</span>
-              <ul className={styles.listaAutores}>
-                {submissaoEmDetalhe.autores.map((autor) => (
-                  <li key={autor.id}>
-                    <span className={styles.autorNome}>{autor.nome}</span>
-                    {autor.principal && <span className={styles.tag}>Principal</span>}
-                    <span className={styles.autorEmail}>{autor.email}</span>
-                    {autor.orcid && <span className={styles.autorOrcid}>ORCID: {autor.orcid}</span>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className={styles.blocoDetalhe}>
-              <span className={styles.rotuloBloco}>Resumo</span>
-              <ConteudoRichText className={styles.corpo} html={submissaoEmDetalhe.resumo} tipo="resumo" />
-            </div>
-
-            <div className={styles.blocoDetalhe}>
-              <span className={styles.rotuloBloco}>Referência bibliográfica</span>
-              <ConteudoRichText
-                className={styles.corpo}
-                html={submissaoEmDetalhe.referenciaBibliografica}
-                tipo="referencia"
-              />
-            </div>
-          </div>
-        </Modal>
+        <DetalheSubmissaoModal
+          edicaoId={edicaoId}
+          submissao={submissaoEmDetalhe}
+          modalidades={modalidades}
+          onFechar={() => setDetalheId(null)}
+          onAlterada={(atualizada) =>
+            setSubmissoes((atual) => atual.map((item) => (item.id === atualizada.id ? atualizada : item)))
+          }
+        />
       )}
 
       {confirmandoId && (
@@ -329,75 +281,6 @@ function AbaSubmissoes({ edicaoId, submissoes, setSubmissoes, modalidades }) {
         />
       )}
     </>
-  );
-}
-
-// Correção de enquadramento: só áreas da mesma modalidade. Sem decisão final,
-// o backend redistribui a avaliação para os avaliadores da nova área.
-function AlterarArea({ edicaoId, submissao, areas, onAlterada }) {
-  const router = useRouter();
-  const { notificar } = useToast();
-  const [areaId, setAreaId] = useState(submissao.areaSubmissao?.id || "");
-  const [erro, setErro] = useState("");
-  const [salvando, setSalvando] = useState(false);
-
-  const alterada = areaId !== (submissao.areaSubmissao?.id || "");
-
-  async function salvar() {
-    const resultado = areaSubmissaoAdminSchema.safeParse({ areaSubmissaoId: areaId });
-    if (!resultado.success) {
-      setErro(extrairErros(resultado).areaSubmissaoId);
-      return;
-    }
-
-    setErro("");
-    setSalvando(true);
-    try {
-      const resposta = await apiClient.patch(`/edicoes/${edicaoId}/submissoes/${submissao.id}/area`, resultado.data);
-      onAlterada(resposta.submissao);
-      notificar("Área alterada com sucesso.");
-      router.refresh();
-    } catch (erroApi) {
-      notificar(erroApi.message, "erro");
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  return (
-    <div className={styles.alterarArea}>
-      <CampoSelecao
-        id={`area-${submissao.id}`}
-        rotulo="Área"
-        value={areaId}
-        erro={erro}
-        onChange={(evento) => setAreaId(evento.target.value)}
-      >
-        {!submissao.areaSubmissao && <option value="">Sem área</option>}
-        {areas.map((area) => (
-          <option key={area.id} value={area.id}>
-            {area.titulo}
-          </option>
-        ))}
-      </CampoSelecao>
-      {alterada && (
-        <>
-          <p className={styles.avisoArea}>
-            {submissao.decisaoFinal
-              ? "O trabalho já tem decisão final — só a área muda, as avaliações registradas ficam como estão."
-              : "As atribuições de avaliação atuais serão descartadas e o trabalho vai para os avaliadores da nova área."}
-          </p>
-          <div className={styles.acoesArea}>
-            <Botao type="button" variante="secundario" onClick={() => setAreaId(submissao.areaSubmissao?.id || "")}>
-              Cancelar
-            </Botao>
-            <Botao type="button" onClick={salvar} carregando={salvando}>
-              Salvar área
-            </Botao>
-          </div>
-        </>
-      )}
-    </div>
   );
 }
 

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import Campo from "@/components/forms/Campo";
+import CampoIdentificacao from "@/components/forms/CampoIdentificacao";
 import CampoSenha from "@/components/forms/CampoSenha";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { loginSchema, extrairErros } from "@/lib/validacao";
 import { formatarCpf } from "@/lib/cpf";
+import { IDENTIFICACAO_INICIAL, payloadIdentificacao } from "@/lib/identificacao";
 import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 export default function LoginForm() {
@@ -16,7 +17,10 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   // Pré-preenche quando o usuário chega aqui já tendo digitado o CPF antes
   // (ex.: modal "você já está inscrito(a)" do fluxo de inscrição).
-  const [cpf, setCpf] = useState(() => formatarCpf(searchParams.get("cpf") || ""));
+  const [identificacao, setIdentificacao] = useState(() => ({
+    ...IDENTIFICACAO_INICIAL,
+    cpf: formatarCpf(searchParams.get("cpf") || ""),
+  }));
   const [senha, setSenha] = useState("");
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
@@ -26,7 +30,7 @@ export default function LoginForm() {
     evento.preventDefault();
     setErroGeral("");
 
-    const resultado = loginSchema.safeParse({ cpf, senha });
+    const resultado = loginSchema.safeParse({ ...payloadIdentificacao(identificacao), senha });
     if (!resultado.success) {
       setErros(extrairErros(resultado));
       return;
@@ -51,16 +55,12 @@ export default function LoginForm() {
   return (
     <form onSubmit={aoSubmeter} className={styles.formulario}>
       <Alerta>{erroGeral}</Alerta>
-      <Campo
-        id="cpf"
-        rotulo="CPF"
+      <CampoIdentificacao
+        id="login"
         variante="minimal"
-        inputMode="numeric"
-        placeholder="000.000.000-00"
-        maxLength={14}
-        value={cpf}
-        onChange={(evento) => setCpf(formatarCpf(evento.target.value))}
-        erro={erros.cpf}
+        valor={identificacao}
+        onChange={setIdentificacao}
+        erros={erros}
       />
       <CampoSenha
         id="senha"

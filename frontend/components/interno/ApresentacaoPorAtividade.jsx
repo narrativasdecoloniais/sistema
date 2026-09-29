@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowRightLeft, Eye, Trash2 } from "lucide-react";
 import ModalConfirmacao from "./ModalConfirmacao";
-import LinkEditarSubmissao from "./LinkEditarSubmissao";
+import DetalheSubmissaoModal from "./DetalheSubmissaoModal";
+import ModalVincularAtividade from "./ModalVincularAtividade";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { detalheAtividade } from "@/lib/apresentacao";
@@ -12,10 +13,12 @@ import estilos from "./ApresentacaoSubmissoesPainel.module.scss";
 
 // Uma lista por atividade, na ordem de apresentação. ↑/↓ salva a nova ordem
 // na hora (PATCH com a lista completa da atividade).
-export default function AbaPorAtividade({ edicaoId, dados, recarregar }) {
+export default function AbaPorAtividade({ edicaoId, dados, modalidades, recarregar }) {
   const { notificar } = useToast();
   const [ocupadoId, setOcupadoId] = useState(null);
   const [removendo, setRemovendo] = useState(null);
+  const [detalheId, setDetalheId] = useState(null);
+  const [movendo, setMovendo] = useState(null);
 
   const trabalhosPorAtividade = useMemo(() => {
     const mapa = new Map();
@@ -65,6 +68,27 @@ export default function AbaPorAtividade({ edicaoId, dados, recarregar }) {
       setRemovendo(null);
     }
   }
+
+  async function moverPara(atividadeId) {
+    setOcupadoId(movendo.id);
+    try {
+      await apiClient.post(`/edicoes/${edicaoId}/apresentacao/vincular`, {
+        atividadeId,
+        submissaoIds: [movendo.id],
+      });
+      const destino = dados.atividades.find((atividade) => atividade.id === atividadeId);
+      notificar(`Trabalho movido para "${destino?.nome}".`);
+      setMovendo(null);
+      await recarregar();
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setOcupadoId(null);
+    }
+  }
+
+  // Sempre a versão mais recente (a lista recarrega depois de trocar a área).
+  const trabalhoEmDetalhe = dados.trabalhos.find((trabalho) => trabalho.id === detalheId);
 
   if (dados.atividades.length === 0) {
     return (
@@ -137,7 +161,25 @@ export default function AbaPorAtividade({ edicaoId, dados, recarregar }) {
                     >
                       <ArrowDown size={16} strokeWidth={1.5} aria-hidden="true" />
                     </button>
-                    <LinkEditarSubmissao edicaoId={edicaoId} submissao={trabalho} className={styles.botaoIcone} />
+                    <button
+                      type="button"
+                      className={styles.botaoIcone}
+                      aria-label={`Ver detalhes de "${trabalho.titulo}"`}
+                      title="Ver detalhes e alterar a área"
+                      onClick={() => setDetalheId(trabalho.id)}
+                    >
+                      <Eye size={16} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.botaoIcone}
+                      aria-label={`Mover "${trabalho.titulo}" para outra atividade`}
+                      title="Mover para outra atividade"
+                      disabled={ocupado}
+                      onClick={() => setMovendo(trabalho)}
+                    >
+                      <ArrowRightLeft size={16} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
                     <button
                       type="button"
                       className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
@@ -167,6 +209,29 @@ export default function AbaPorAtividade({ edicaoId, dados, recarregar }) {
             ))}
           </ul>
         </details>
+      )}
+
+      {trabalhoEmDetalhe && (
+        <DetalheSubmissaoModal
+          edicaoId={edicaoId}
+          submissao={trabalhoEmDetalhe}
+          modalidades={modalidades}
+          onFechar={() => setDetalheId(null)}
+          onAlterada={recarregar}
+        />
+      )}
+
+      {movendo && (
+        <ModalVincularAtividade
+          titulo="Mover para outra atividade"
+          descricao={`"${movendo.titulo}" sai da atividade atual (a ordem dos demais é refeita) e entra no fim da ordem da atividade escolhida.`}
+          atividades={dados.atividades}
+          atividadeAtualId={movendo.atividadeApresentacaoId}
+          selecionados={[movendo]}
+          processando={ocupadoId === movendo.id}
+          onFechar={() => setMovendo(null)}
+          onConfirmar={moverPara}
+        />
       )}
 
       {removendo && (

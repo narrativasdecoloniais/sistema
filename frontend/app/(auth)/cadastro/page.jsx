@@ -5,19 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
 import Campo from "@/components/forms/Campo";
-import CampoCPF from "@/components/forms/CampoCPF";
+import CampoIdentificacao from "@/components/forms/CampoIdentificacao";
 import CampoSelect from "@/components/forms/CampoSelect";
 import CampoSenha from "@/components/forms/CampoSenha";
 import Checkbox from "@/components/forms/Checkbox";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { cadastroSchema, extrairErros, categorias } from "@/lib/validacao";
+import { IDENTIFICACAO_INICIAL } from "@/lib/identificacao";
 import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 const valoresIniciais = {
   nome: "",
   email: "",
-  cpf: "",
+  ...IDENTIFICACAO_INICIAL,
   instituicao: "",
   categoria: "",
   senha: "",
@@ -84,13 +85,12 @@ export default function PaginaCadastro() {
           onChange={(evento) => atualizarCampo("email", evento.target.value)}
           erro={erros.email}
         />
-        <CampoCPF
-          id="cpf"
-          rotulo="CPF"
+        <CampoIdentificacao
+          id="identificacao"
           variante="minimal"
-          value={dados.cpf}
-          onChange={(evento) => atualizarCampo("cpf", evento.target.value)}
-          erro={erros.cpf}
+          valor={dados}
+          onChange={(novo) => setDados((atual) => ({ ...atual, ...novo }))}
+          erros={erros}
         />
         <Campo
           id="instituicao"

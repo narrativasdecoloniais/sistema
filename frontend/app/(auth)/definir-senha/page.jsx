@@ -4,16 +4,17 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import TelaAutenticacao from "@/components/publico/TelaAutenticacao";
-import CampoCPF from "@/components/forms/CampoCPF";
+import CampoIdentificacao from "@/components/forms/CampoIdentificacao";
 import CampoSenha from "@/components/forms/CampoSenha";
 import Checkbox from "@/components/forms/Checkbox";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { definirSenhaSchema, extrairErros } from "@/lib/validacao";
+import { IDENTIFICACAO_INICIAL } from "@/lib/identificacao";
 import styles from "@/components/publico/TelaAutenticacao.module.scss";
 
 const valoresIniciais = {
-  cpf: "",
+  ...IDENTIFICACAO_INICIAL,
   senha: "",
   confirmarSenha: "",
   aceiteTermos: false,
@@ -64,13 +65,12 @@ function FormularioDefinirSenha() {
   return (
     <form onSubmit={aoSubmeter} className={styles.formulario}>
       <Alerta>{erroGeral}</Alerta>
-      <CampoCPF
-        id="cpf"
-        rotulo="CPF"
+      <CampoIdentificacao
+        id="convite"
         variante="minimal"
-        value={dados.cpf}
-        onChange={(evento) => atualizarCampo("cpf", evento.target.value)}
-        erro={erros.cpf}
+        valor={dados}
+        onChange={(novo) => setDados((atual) => ({ ...atual, ...novo }))}
+        erros={erros}
       />
       <CampoSenha
         id="senha"

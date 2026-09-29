@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import CampoTexto from "./CampoTexto";
 import { apiClient } from "@/lib/apiClient";
-import { formatarCpf } from "@/lib/cpf";
+import { formatarIdentificacao } from "@/lib/identificacao";
 import styles from "./BuscaUsuario.module.scss";
 
 export default function BuscaUsuario({ id = "busca-usuario", rotulo = "Buscar participante", usuarioSelecionado, onSelecionar, erro }) {
@@ -49,7 +49,7 @@ export default function BuscaUsuario({ id = "busca-usuario", rotulo = "Buscar pa
           <p className={styles.selecionadoNome}>{usuarioSelecionado.nome}</p>
           <p className={styles.selecionadoDetalhe}>
             {usuarioSelecionado.email}
-            {usuarioSelecionado.cpf ? ` · ${formatarCpf(usuarioSelecionado.cpf)}` : ""}
+            {formatarIdentificacao(usuarioSelecionado) ? ` · ${formatarIdentificacao(usuarioSelecionado)}` : ""}
           </p>
         </div>
         <button type="button" className={styles.botaoTrocar} onClick={() => onSelecionar(null)}>
@@ -81,7 +81,7 @@ export default function BuscaUsuario({ id = "busca-usuario", rotulo = "Buscar pa
                 <span className={styles.resultadoNome}>{usuario.nome}</span>
                 <span className={styles.resultadoDetalhe}>
                   {usuario.email}
-                  {usuario.cpf ? ` · ${formatarCpf(usuario.cpf)}` : ""}
+                  {formatarIdentificacao(usuario) ? ` · ${formatarIdentificacao(usuario)}` : ""}
                 </span>
               </button>
             </li>

@@ -18,6 +18,7 @@ import {
   categorias,
 } from "@/lib/validacao";
 import { useToast } from "./ToastProvider";
+import { formatarIdentificacao } from "@/lib/identificacao";
 import styles from "./PerfilForm.module.scss";
 
 export default function PerfilForm({ usuarioInicial }) {
@@ -121,8 +122,8 @@ export default function PerfilForm({ usuarioInicial }) {
           <span>{usuario?.email}</span>
         </div>
         <div className={styles.linhaDados}>
-          <span>CPF</span>
-          <span>{usuario?.cpf}</span>
+          <span>{usuario?.documentoEstrangeiro ? "Documento" : "CPF"}</span>
+          <span>{formatarIdentificacao(usuario) || "—"}</span>
         </div>
       </section>
 
