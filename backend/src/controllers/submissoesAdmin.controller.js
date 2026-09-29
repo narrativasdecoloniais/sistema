@@ -2,6 +2,11 @@ const asyncHandler = require("../utils/asyncHandler");
 const ErroHttp = require("../utils/erroHttp");
 const edicoesService = require("../services/edicoes.service");
 const submissoesAdminService = require("../services/submissoesAdmin.service");
+const {
+  conteudoSubmissaoSchema,
+  imagemSubmissaoSchema,
+  areaSubmissaoAdminSchema,
+} = require("../validators/submissoesAdmin.validators");
 
 async function garantirEdicao(edicaoId) {
   const edicao = await edicoesService.buscarPorId(edicaoId);
@@ -31,4 +36,41 @@ const excluir = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Submissão excluída com sucesso." });
 });
 
-module.exports = { listar, excluir };
+const alterarArea = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const { areaSubmissaoId } = areaSubmissaoAdminSchema.parse(req.body);
+  const submissao = await submissoesAdminService.alterarArea(
+    req.params.edicaoId,
+    req.params.id,
+    areaSubmissaoId,
+    req.usuario.id
+  );
+  return res.json({ submissao });
+});
+
+const buscarConteudo = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const submissao = await submissoesAdminService.buscarParaEdicao(req.params.edicaoId, req.params.id);
+  return res.json({ submissao });
+});
+
+const salvarConteudo = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const dados = conteudoSubmissaoSchema.parse(req.body);
+  const submissao = await submissoesAdminService.salvarConteudo(
+    req.params.edicaoId,
+    req.params.id,
+    dados,
+    req.usuario.id
+  );
+  return res.json({ submissao });
+});
+
+const enviarImagem = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const { imagem } = imagemSubmissaoSchema.parse(req.body);
+  const url = await submissoesAdminService.enviarImagem(req.params.edicaoId, req.params.id, imagem);
+  return res.status(201).json({ url });
+});
+
+module.exports = { listar, excluir, alterarArea, buscarConteudo, salvarConteudo, enviarImagem };

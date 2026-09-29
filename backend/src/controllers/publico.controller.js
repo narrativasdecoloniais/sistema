@@ -32,13 +32,34 @@ const listarAtividadesPorEdicaoSlug = asyncHandler(async (req, res) => {
   return res.json({ atividades });
 });
 
+// Trabalhos apresentados na atividade — só depois que a organização publica
+// a distribuição da edição. Autores só com nome (sem e-mail).
+async function anexarTrabalhosApresentados(atividade, edicao) {
+  if (!edicao?.apresentacaoPublicadaEm) return { ...atividade, trabalhos: [] };
+  const trabalhos = await prisma.submissao.findMany({
+    where: { atividadeApresentacaoId: atividade.id },
+    select: {
+      id: true,
+      titulo: true,
+      resumo: true,
+      referenciaBibliografica: true,
+      ordemApresentacao: true,
+      modalidadeSubmissao: { select: { id: true, nome: true } },
+      areaSubmissao: { select: { id: true, titulo: true } },
+      autores: { select: { nome: true, principal: true }, orderBy: { ordem: "asc" } },
+    },
+    orderBy: [{ ordemApresentacao: "asc" }, { titulo: "asc" }],
+  });
+  return { ...atividade, trabalhos };
+}
+
 const buscarAtividadePorEdicaoSlug = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarPorSlug(req.params.edicaoSlug);
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
 
   const atividade = await atividadesService.buscarPorSlug(edicao.id, req.params.atividadeSlug);
   if (!atividade) throw new ErroHttp(404, "Atividade não encontrada.");
-  return res.json({ atividade });
+  return res.json({ atividade: await anexarTrabalhosApresentados(atividade, edicao) });
 });
 
 const listarAtividades = asyncHandler(async (req, res) => {
@@ -56,7 +77,7 @@ const buscarAtividadePorSlug = asyncHandler(async (req, res) => {
 
   const atividade = await atividadesService.buscarPorSlug(edicao.id, req.params.slug);
   if (!atividade) throw new ErroHttp(404, "Atividade não encontrada.");
-  return res.json({ atividade });
+  return res.json({ atividade: await anexarTrabalhosApresentados(atividade, edicao) });
 });
 
 const listarModalidadesSubmissao = asyncHandler(async (req, res) => {

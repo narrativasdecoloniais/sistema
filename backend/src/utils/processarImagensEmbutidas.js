@@ -2,7 +2,9 @@ const { JSDOM } = require("jsdom");
 const storageService = require("../services/storage.service");
 const ErroHttp = require("./erroHttp");
 
-const LIMITE_IMAGENS = 8;
+// Só as novas (data URI) — o total de imagens já é limitado em
+// sanitizarResumoSubmissao.js.
+const LIMITE_IMAGENS = 15;
 
 // Depois que o HTML do resumo já foi sanitizado (sanitizarResumoSubmissao.js),
 // troca cada <img src="data:image/..."> por uma URL do GCS — mesmo padrão já

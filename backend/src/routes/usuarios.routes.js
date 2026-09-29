@@ -2,6 +2,7 @@ const { Router } = require("express");
 const usuariosController = require("../controllers/usuarios.controller");
 const autenticar = require("../middlewares/autenticar");
 const autorizarSecao = require("../middlewares/autorizarSecao");
+const { limitadorSensivel } = require("../middlewares/rateLimiter");
 
 const router = Router();
 
@@ -20,6 +21,8 @@ router.post("/unificacao", autorizarSecao("PARTICIPANTES"), usuariosController.u
 router.get("/me", usuariosController.meuPerfil);
 router.patch("/me", usuariosController.atualizarMeuPerfil);
 router.patch("/me/senha", usuariosController.alterarMinhaSenha);
+router.post("/me/email/solicitar", limitadorSensivel, usuariosController.solicitarTrocaEmail);
+router.post("/me/email/confirmar", limitadorSensivel, usuariosController.confirmarTrocaEmail);
 router.delete("/me", usuariosController.excluirMinhaConta);
 
 module.exports = router;

@@ -31,6 +31,16 @@ const atualizarEmailSchema = z.object({
   email: z.string().trim().email("E-mail inválido"),
 });
 
+const solicitarTrocaEmailSchema = z.object({
+  novoEmail: z.string().trim().email("E-mail inválido"),
+  senhaAtual: z.string().min(1, "Informe a senha atual"),
+});
+
+const confirmarTrocaEmailSchema = z.object({
+  novoEmail: z.string().trim().email("E-mail inválido"),
+  codigo: z.string().trim().min(1, "Informe o código"),
+});
+
 const previaUnificacaoSchema = z.object({
   manterId: z.string().uuid("Conta inválida"),
   removerId: z.string().uuid("Conta inválida"),
@@ -44,6 +54,8 @@ module.exports = {
   atualizarPerfilSchema,
   alterarSenhaSchema,
   atualizarEmailSchema,
+  solicitarTrocaEmailSchema,
+  confirmarTrocaEmailSchema,
   previaUnificacaoSchema,
   unificarUsuariosSchema,
 };

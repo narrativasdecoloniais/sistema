@@ -301,6 +301,32 @@ async function atualizarEmail(id, novoEmail) {
   });
 }
 
+// Troca feita pelo próprio usuário, depois de digitar o código enviado para o
+// novo endereço (posse provada, então já fica confirmado). As autorias
+// ligadas à conta passam a usar o novo e-mail — é para ele que saem os
+// e-mails de resultado —, e autorias soltas com o novo e-mail são associadas.
+async function trocarProprioEmail(id, novoEmail) {
+  const email = normalizarEmail(novoEmail);
+  const emailExistente = await buscarPorEmail(email);
+  if (emailExistente && emailExistente.id !== id) {
+    throw new ErroHttp(409, "Já existe um cadastro com esse e-mail.");
+  }
+
+  const [usuario] = await prisma.$transaction([
+    prisma.usuario.update({
+      where: { id },
+      data: { email, emailConfirmado: true },
+      select: CAMPOS_PUBLICOS,
+    }),
+    prisma.submissaoAutor.updateMany({ where: { usuarioId: id }, data: { email } }),
+    prisma.submissaoAutor.updateMany({
+      where: { usuarioId: null, email: { equals: email, mode: "insensitive" } },
+      data: { usuarioId: id },
+    }),
+  ]);
+  return anexarUrlFoto(usuario);
+}
+
 // Operações (ainda não executadas) que anonimizam a conta — separadas pra
 // unificarUsuarios poder rodá-las dentro da sua própria transação.
 function operacoesAnonimizacao(id, cliente = prisma) {
@@ -349,6 +375,8 @@ module.exports = {
   atualizarSenha,
   confirmarEmail,
   atualizarEmail,
+  trocarProprioEmail,
+  normalizarEmail,
   anonimizarUsuario,
   operacoesAnonimizacao,
 };

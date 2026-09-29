@@ -233,6 +233,11 @@ async function excluirAtividade(id) {
     throw new ErroHttp(409, "Não é possível excluir uma atividade com inscrições.");
   }
 
+  const totalTrabalhos = await prisma.submissao.count({ where: { atividadeApresentacaoId: id } });
+  if (totalTrabalhos > 0) {
+    throw new ErroHttp(409, "Não é possível excluir uma atividade com trabalhos vinculados à apresentação.");
+  }
+
   const atividade = await prisma.atividade.findUnique({ where: { id }, select: { areaSubmissaoId: true } });
   if (atividade?.areaSubmissaoId) {
     throw new ErroHttp(409, "Não é possível excluir uma atividade vinculada a uma área temática de submissão.");

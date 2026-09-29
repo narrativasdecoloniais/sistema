@@ -35,6 +35,10 @@ enum TipoToken {
   // Convite de avaliador de submissões para quem ainda não tem conta —
   // consumido no mesmo /definir-senha do convite de organizador.
   CONVITE_AVALIADOR
+  // Código enviado para o novo endereço quando o próprio usuário troca o
+  // e-mail no perfil — a troca só vale depois de digitado (ver
+  // usuarios.service.js, solicitarTrocaEmail/confirmarTrocaEmail).
+  ALTERAR_EMAIL
 }
 
 // Seções administráveis do site, usadas para restringir o que um
@@ -197,6 +201,10 @@ model Edicao {
   // (APROVADO_COM_RESSALVAS e APROVADO_FORMATACAO).
   resultadoDivulgadoEm              DateTime?
   prazoCorrecaoSubmissao            DateTime?
+  // Distribuição dos trabalhos nas atividades (apresentacaoSubmissoes.service.js)
+  // só aparece na página pública da atividade e em Minhas submissões quando
+  // publicada — nulo = oculta (pode voltar a ser ocultada).
+  apresentacaoPublicadaEm           DateTime?
   slug                              String?              @unique
   cargaHorariaTotal                 Int?
   instagram                         String?
@@ -479,8 +487,9 @@ model Atividade {
   createdAt              DateTime       @default(now())
   updatedAt              DateTime       @updatedAt
 
-  pessoas    AtividadePessoa[]
-  inscricoes InscricaoAtividade[]
+  pessoas               AtividadePessoa[]
+  inscricoes            InscricaoAtividade[]
+  trabalhosApresentados Submissao[]
 
   @@unique([edicaoId, slug])
   @@map("atividades")
@@ -701,43 +710,54 @@ model AreaSubmissao {
 // submissoes.service.js) é sempre o autor principal — nunca escolhido pelo
 // client, ver SubmissaoAutor.principal.
 model Submissao {
-  id                      String                @id @default(uuid())
-  edicaoId                String
-  edicao                  Edicao                @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  modalidadeSubmissaoId   String
-  modalidadeSubmissao     ModalidadeSubmissao   @relation(fields: [modalidadeSubmissaoId], references: [id])
-  areaSubmissaoId         String?
-  areaSubmissao           AreaSubmissao?        @relation(fields: [areaSubmissaoId], references: [id])
-  titulo                  String
+  id                           String                @id @default(uuid())
+  edicaoId                     String
+  edicao                       Edicao                @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  modalidadeSubmissaoId        String
+  modalidadeSubmissao          ModalidadeSubmissao   @relation(fields: [modalidadeSubmissaoId], references: [id])
+  areaSubmissaoId              String?
+  areaSubmissao                AreaSubmissao?        @relation(fields: [areaSubmissaoId], references: [id])
+  titulo                       String
   // HTML sanitizado (ver sanitizarResumoSubmissao.js) — imagens embutidas já
   // trocadas de data URI por URL do GCS antes de salvar.
-  resumo                  String                @db.Text
+  resumo                       String                @db.Text
   // HTML sanitizado (ver sanitizarReferenciaBibliografica.js) — só permite
   // <strong>, sem link/itálico/imagem.
-  referenciaBibliografica String                @db.Text
-  usuarioId               String
-  usuario                 Usuario               @relation(fields: [usuarioId], references: [id])
-  autores                 SubmissaoAutor[]
+  referenciaBibliografica      String                @db.Text
+  usuarioId                    String
+  usuario                      Usuario               @relation(fields: [usuarioId], references: [id])
+  autores                      SubmissaoAutor[]
   // Decisão consolidada pela organização depois de ver as decisões dos
   // avaliadores (AtribuicaoAvaliacao.decisao) — travada a partir daqui, o
   // avaliador não altera mais a própria decisão.
-  decisaoFinal            DecisaoAvaliacao?
-  decisaoFinalEm          DateTime?
-  decisaoFinalPorId       String?
-  atribuicoesAvaliacao    AtribuicaoAvaliacao[]
-  sugestoesTrocaArea      SugestaoTrocaArea[]
+  decisaoFinal                 DecisaoAvaliacao?
+  decisaoFinalEm               DateTime?
+  decisaoFinalPorId            String?
+  atribuicoesAvaliacao         AtribuicaoAvaliacao[]
+  sugestoesTrocaArea           SugestaoTrocaArea[]
   // Resultado: observação da organização enviada junto com a decisão, e o
   // fluxo de correção pedido ao autor principal (só ressalvas/formatação).
-  observacaoResultado     String?               @db.Text
-  statusCorrecao          StatusCorrecao?
-  correcaoEnviadaEm       DateTime?
-  motivoDevolucao         String?               @db.Text
-  emailResultadoEnviadoEm DateTime?
-  emailResultadoErro      String?
-  versoes                 SubmissaoVersao[]
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
+  observacaoResultado          String?               @db.Text
+  statusCorrecao               StatusCorrecao?
+  correcaoEnviadaEm            DateTime?
+  motivoDevolucao              String?               @db.Text
+  emailResultadoEnviadoEm      DateTime?
+  emailResultadoErro           String?
+  versoes                      SubmissaoVersao[]
+  // Apresentação: uma atividade por trabalho aprovado, com ordem dentro
+  // dela. emailApresentacaoAtividadeId = atividade sobre a qual os autores
+  // foram avisados; diferente da atual = aviso pendente (trabalho novo ou
+  // que mudou de atividade).
+  atividadeApresentacaoId      String?
+  atividadeApresentacao        Atividade?            @relation(fields: [atividadeApresentacaoId], references: [id], onDelete: Restrict)
+  ordemApresentacao            Int?
+  emailApresentacaoAtividadeId String?
+  emailApresentacaoEnviadoEm   DateTime?
+  emailApresentacaoErro        String?
+  createdAt                    DateTime              @default(now())
+  updatedAt                    DateTime              @updatedAt
 
+  @@index([atividadeApresentacaoId])
   @@map("submissoes")
 }
 
@@ -760,15 +780,24 @@ enum StatusCorrecao {
   CONCLUIDA
 }
 
-// Cópia do texto de uma submissão antes de cada correção do autor.
+enum OrigemVersao {
+  CORRECAO_AUTOR
+  ORGANIZACAO
+}
+
+// Cópia do texto de uma submissão antes de uma alteração: cada correção do
+// autor (comparada lado a lado no Resultado) ou, no máximo a cada 30 min,
+// uma sessão de edição da organização no editor (autosave).
 model SubmissaoVersao {
-  id                      String    @id @default(uuid())
+  id                      String       @id @default(uuid())
   submissaoId             String
-  submissao               Submissao @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+  submissao               Submissao    @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
   titulo                  String
-  resumo                  String    @db.Text
-  referenciaBibliografica String    @db.Text
-  createdAt               DateTime  @default(now())
+  resumo                  String       @db.Text
+  referenciaBibliografica String       @db.Text
+  origem                  OrigemVersao @default(CORRECAO_AUTOR)
+  editadoPorId            String?
+  createdAt               DateTime     @default(now())
 
   @@index([submissaoId])
   @@map("submissao_versoes")

@@ -5,6 +5,7 @@ const usuariosService = require("./usuarios.service");
 const tokenService = require("./token.service");
 const emailService = require("./email.service");
 const { garantirResultadoNaoDivulgado } = require("./resultadoSubmissoes.service");
+const { removerSeNaoAprovada } = require("./apresentacaoSubmissoes.service");
 
 // A distribuição é materializada em AtribuicaoAvaliacao: o vínculo
 // avaliador↔área só cria/remove atribuições em eventos pontuais (submissão
@@ -300,12 +301,16 @@ async function definirDecisaoFinal(edicaoId, submissaoId, decisao, usuarioId) {
   const submissao = await prisma.submissao.findUnique({ where: { id: submissaoId }, select: { edicaoId: true } });
   if (!submissao || submissao.edicaoId !== edicaoId) throw new ErroHttp(404, "Submissão não encontrada.");
 
-  return prisma.submissao.update({
-    where: { id: submissaoId },
-    data: decisao
-      ? { decisaoFinal: decisao, decisaoFinalEm: new Date(), decisaoFinalPorId: usuarioId }
-      : { decisaoFinal: null, decisaoFinalEm: null, decisaoFinalPorId: null },
-    select: { id: true, decisaoFinal: true, decisaoFinalEm: true },
+  return prisma.$transaction(async (tx) => {
+    // Deixou de ser aprovado → sai da atividade de apresentação.
+    await removerSeNaoAprovada(tx, submissaoId, decisao);
+    return tx.submissao.update({
+      where: { id: submissaoId },
+      data: decisao
+        ? { decisaoFinal: decisao, decisaoFinalEm: new Date(), decisaoFinalPorId: usuarioId }
+        : { decisaoFinal: null, decisaoFinalEm: null, decisaoFinalPorId: null },
+      select: { id: true, decisaoFinal: true, decisaoFinalEm: true },
+    });
   });
 }
 

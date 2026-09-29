@@ -95,6 +95,24 @@ async function enviarEmailVinculoConta(usuario, codigo) {
   });
 }
 
+async function enviarEmailCodigoTrocaEmail(usuario, novoEmail, codigo) {
+  await enviarEmail({
+    para: novoEmail,
+    assunto: "Seu código para alterar o e-mail — Narrativas",
+    html: `<p>Olá, ${usuario.nome}.</p><p>Recebemos um pedido para passar a usar este endereço na sua conta do Narrativas. Digite o código abaixo na sua área do participante para confirmar:</p><p style="font-size:1.6rem;font-weight:700;letter-spacing:0.2em;">${codigo}</p><p>O código vale por 30 minutos. Se não foi você, ignore este e-mail — nada será alterado.</p>`,
+  });
+}
+
+// Aviso para o endereço antigo — se a troca não foi feita pela própria
+// pessoa, é por aqui que ela fica sabendo.
+async function enviarEmailAvisoTrocaEmail(usuario, emailAntigo, novoEmail) {
+  await enviarEmail({
+    para: emailAntigo,
+    assunto: "O e-mail da sua conta foi alterado — Narrativas",
+    html: `<p>Olá, ${usuario.nome}.</p><p>O e-mail da sua conta do Narrativas foi alterado para <strong>${novoEmail}</strong>. A partir de agora, use esse endereço para entrar.</p><p>Se não foi você, responda a este e-mail ou fale com a organização do evento.</p>`,
+  });
+}
+
 async function enviarEmailConviteOrganizador(usuario, token) {
   const link = `${env.frontendUrl}/definir-senha?token=${token}`;
   await enviarEmail({
@@ -255,11 +273,38 @@ async function enviarEmailCorrecaoDevolvida(usuario, { edicao, titulo, motivo, p
   });
 }
 
+// Aviso de onde/quando o trabalho será apresentado (apresentacaoSubmissoes.service.js).
+async function enviarEmailApresentacao(autor, { edicao, trabalho, atividade, ordem }) {
+  // Rota por edição quando ela tem slug (funciona também para edições
+  // passadas); senão, a rota da edição atual.
+  const link = edicao.slug
+    ? `${env.frontendUrl}/edicoes/${edicao.slug}/atividades/${atividade.slug}`
+    : `${env.frontendUrl}/atividades/${atividade.slug}`;
+  const corpoHtml = `
+    <p style="margin: 0 0 16px;">Olá, ${escaparHtml(autor.nome)}.</p>
+    <p style="margin: 0 0 16px;">O trabalho <strong>${escaparHtml(trabalho.titulo)}</strong> será apresentado na atividade:</p>
+    <p style="margin: 0 0 4px; font-size: 18px; font-weight: 700;">${escaparHtml(atividade.nome)}</p>
+    <p style="margin: 0 0 4px;">${escaparHtml(formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade))}</p>
+    ${atividade.local ? `<p style="margin: 0 0 4px;">Local: ${escaparHtml(atividade.local)}</p>` : ""}
+    ${ordem ? `<p style="margin: 0 0 16px;">Ordem de apresentação: <strong>${ordem}º</strong></p>` : ""}
+    <p style="margin: 16px 0 0;"><a href="${link}" style="color: ${CORES_EMAIL.barro};">Ver a atividade e os trabalhos apresentados</a></p>
+    <p style="margin: 20px 0 0; font-size: 13px;">Essas informações também ficam em Minhas submissões, na sua área do participante.</p>
+  `;
+  await enviarEmail({
+    para: autor.email,
+    assunto: `Apresentação do seu trabalho — ${edicao.nome}`,
+    html: layoutEmailPublico({ eyebrow: "Apresentação de trabalho", titulo: escaparHtml(edicao.nome), corpoHtml }),
+  });
+}
+
 module.exports = {
+  enviarEmailApresentacao,
   enviarEmailConfirmacao,
   enviarEmailRecuperacaoSenha,
   enviarEmailEntrarSubmissao,
   enviarEmailVinculoConta,
+  enviarEmailCodigoTrocaEmail,
+  enviarEmailAvisoTrocaEmail,
   enviarEmailConviteOrganizador,
   enviarEmailNotificacaoOrganizador,
   enviarEmailConviteAvaliador,

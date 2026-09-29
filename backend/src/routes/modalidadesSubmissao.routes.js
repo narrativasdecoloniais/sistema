@@ -4,11 +4,17 @@ const autorizarSecao = require("../middlewares/autorizarSecao");
 
 const router = Router({ mergeParams: true });
 
-// Leitura também liberada pras telas de Recebimento, Avaliação e Resultado, que filtram
+// Leitura também liberada pras telas de Recebimento, Avaliação, Resultado e Apresentação, que filtram
 // e distribuem por modalidade/área mas não editam o catálogo.
 router.get(
   "/",
-  autorizarSecao("SUBMISSOES_MODALIDADES", "SUBMISSOES_RECEBIMENTO", "SUBMISSOES_AVALIACAO", "SUBMISSOES_RESULTADO"),
+  autorizarSecao(
+    "SUBMISSOES_MODALIDADES",
+    "SUBMISSOES_RECEBIMENTO",
+    "SUBMISSOES_AVALIACAO",
+    "SUBMISSOES_RESULTADO",
+    "SUBMISSOES_APRESENTACAO"
+  ),
   modalidadesSubmissaoController.listar
 );
 router.get("/:id", autorizarSecao("SUBMISSOES_MODALIDADES"), modalidadesSubmissaoController.buscarPorId);

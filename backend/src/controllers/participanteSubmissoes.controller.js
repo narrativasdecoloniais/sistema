@@ -15,7 +15,18 @@ const submissoesService = require("../services/submissoes.service");
 const INCLUDE_PARTICIPANTE = {
   ...INCLUDE_PADRAO,
   edicao: {
-    select: { id: true, nome: true, numero: true, resultadoDivulgadoEm: true, prazoCorrecaoSubmissao: true },
+    select: {
+      id: true,
+      nome: true,
+      numero: true,
+      slug: true,
+      resultadoDivulgadoEm: true,
+      prazoCorrecaoSubmissao: true,
+      apresentacaoPublicadaEm: true,
+    },
+  },
+  atividadeApresentacao: {
+    select: { id: true, nome: true, slug: true, local: true, inicioAtividade: true, fimAtividade: true },
   },
 };
 
@@ -31,12 +42,17 @@ function formatarParaParticipante(submissao, usuarioId, { completa = false } = {
     id: submissao.id,
     titulo: submissao.titulo,
     createdAt: submissao.createdAt,
-    edicao: { id: edicao.id, nome: edicao.nome, numero: edicao.numero },
+    edicao: { id: edicao.id, nome: edicao.nome, numero: edicao.numero, slug: edicao.slug },
     modalidadeSubmissao: submissao.modalidadeSubmissao,
     areaSubmissao: submissao.areaSubmissao,
     autores: submissao.autores.map((autor) => ({ id: autor.id, nome: autor.nome, principal: autor.principal })),
     ehAutorPrincipal,
     ...(completa ? { resumo: submissao.resumo, referenciaBibliografica: submissao.referenciaBibliografica } : {}),
+    // Onde/quando apresenta — só depois que a distribuição é publicada.
+    apresentacao:
+      edicao.apresentacaoPublicadaEm && submissao.atividadeApresentacao
+        ? { atividade: submissao.atividadeApresentacao, ordem: submissao.ordemApresentacao }
+        : null,
     resultado: divulgado
       ? {
           decisao: submissao.decisaoFinal,

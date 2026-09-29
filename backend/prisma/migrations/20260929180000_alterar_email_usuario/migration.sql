@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TipoToken" ADD VALUE 'ALTERAR_EMAIL';

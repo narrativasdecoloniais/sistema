@@ -8,6 +8,7 @@ const modalidadesSubmissaoRoutes = require("./modalidadesSubmissao.routes");
 const submissoesAdminRoutes = require("./submissoesAdmin.routes");
 const avaliacoesAdminRoutes = require("./avaliacoesAdmin.routes");
 const resultadoSubmissoesRoutes = require("./resultadoSubmissoes.routes");
+const apresentacaoSubmissoesRoutes = require("./apresentacaoSubmissoes.routes");
 const usuariosEdicaoRoutes = require("./usuariosEdicao.routes");
 const autenticar = require("../middlewares/autenticar");
 const autorizar = require("../middlewares/autorizar");
@@ -35,6 +36,7 @@ router.use("/:edicaoId/modalidades-submissao", modalidadesSubmissaoRoutes);
 router.use("/:edicaoId/submissoes", submissoesAdminRoutes);
 router.use("/:edicaoId/avaliacoes", avaliacoesAdminRoutes);
 router.use("/:edicaoId/resultado", resultadoSubmissoesRoutes);
+router.use("/:edicaoId/apresentacao", apresentacaoSubmissoesRoutes);
 router.use("/:edicaoId/usuarios", usuariosEdicaoRoutes);
 
 module.exports = router;

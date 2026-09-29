@@ -84,8 +84,9 @@ async function listarTrabalhos(edicaoId) {
     where: { edicaoId },
     include: {
       ...INCLUDE_SUBMISSAO,
-      // Versão imediatamente anterior à correção atual, para comparar.
-      versoes: { orderBy: { createdAt: "desc" }, take: 1 },
+      // Versão imediatamente anterior à última correção do autor, para
+      // comparar — edições da organização no editor não entram aqui.
+      versoes: { where: { origem: "CORRECAO_AUTOR" }, orderBy: { createdAt: "desc" }, take: 1 },
     },
     orderBy: { titulo: "asc" },
   });

@@ -6,6 +6,7 @@ const VALIDADE_RECUPERACAO_SENHA_HORAS = 2;
 const VALIDADE_CONVITE_ORGANIZADOR_HORAS = 24 * 7;
 const VALIDADE_ENTRAR_SUBMISSAO_MINUTOS = 30;
 const VALIDADE_VINCULAR_CONTA_MINUTOS = 30;
+const VALIDADE_ALTERAR_EMAIL_MINUTOS = 30;
 
 // Sem 0/O/1/I/L — o código é digitado à mão a partir do e-mail.
 const ALFABETO_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -87,11 +88,15 @@ function chaveCodigoVinculo(usuarioId, codigo) {
   return `vinculo.${usuarioId}.${normalizarCodigoVinculo(codigo)}`;
 }
 
-async function criarCodigoVinculoConta(usuarioId) {
-  const codigo = Array.from(
+function gerarCodigoCurto() {
+  return Array.from(
     { length: TAMANHO_CODIGO },
     () => ALFABETO_CODIGO[crypto.randomInt(ALFABETO_CODIGO.length)]
   ).join("");
+}
+
+async function criarCodigoVinculoConta(usuarioId) {
+  const codigo = gerarCodigoCurto();
   const expiraEm = new Date(Date.now() + VALIDADE_VINCULAR_CONTA_MINUTOS * 60 * 1000);
 
   await prisma.$transaction([
@@ -108,6 +113,32 @@ async function criarCodigoVinculoConta(usuarioId) {
 
 async function consumirCodigoVinculoConta(usuarioId, codigo) {
   return consumirToken(chaveCodigoVinculo(usuarioId, codigo), "VINCULAR_CONTA");
+}
+
+// O novo e-mail vai dentro da chave: o código só vale para o endereço que
+// recebeu, sem precisar guardar o e-mail pendente em outra coluna.
+function chaveCodigoTrocaEmail(usuarioId, novoEmail, codigo) {
+  return `email.${usuarioId}.${novoEmail}.${normalizarCodigoVinculo(codigo)}`;
+}
+
+async function criarCodigoTrocaEmail(usuarioId, novoEmail) {
+  const codigo = gerarCodigoCurto();
+  const expiraEm = new Date(Date.now() + VALIDADE_ALTERAR_EMAIL_MINUTOS * 60 * 1000);
+
+  await prisma.$transaction([
+    prisma.tokenVerificacao.deleteMany({
+      where: { usuarioId, tipo: "ALTERAR_EMAIL", usadoEm: null },
+    }),
+    prisma.tokenVerificacao.create({
+      data: { usuarioId, tipo: "ALTERAR_EMAIL", token: chaveCodigoTrocaEmail(usuarioId, novoEmail, codigo), expiraEm },
+    }),
+  ]);
+
+  return codigo;
+}
+
+async function consumirCodigoTrocaEmail(usuarioId, novoEmail, codigo) {
+  return consumirToken(chaveCodigoTrocaEmail(usuarioId, novoEmail, codigo), "ALTERAR_EMAIL");
 }
 
 // tipo pode ser uma lista — o /definir-senha aceita tanto convite de
@@ -157,6 +188,8 @@ module.exports = {
   criarTokenEntrarSubmissao,
   criarCodigoVinculoConta,
   consumirCodigoVinculoConta,
+  criarCodigoTrocaEmail,
+  consumirCodigoTrocaEmail,
   consumirToken,
   buscarTokenConfirmacaoEmailValido,
 };
