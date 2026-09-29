@@ -90,7 +90,7 @@ async function enviarEmailEntrarSubmissao(usuario, token, destino) {
 async function enviarEmailVinculoConta(usuario, codigo) {
   await enviarEmail({
     para: usuario.email,
-    assunto: "Seu código para vincular o CPF — Narrativas",
+    assunto: "Seu código para vincular o CPF ou documento — Narrativas",
     html: `<p>Olá, ${usuario.nome}.</p><p>Alguém pediu, na página de inscrição do Narrativas, para usar este cadastro (o mesmo e-mail da sua submissão de trabalho) em vez de criar um novo. Digite o código abaixo na tela de inscrição para confirmar:</p><p style="font-size:1.6rem;font-weight:700;letter-spacing:0.2em;">${codigo}</p><p>O código vale por 30 minutos. Se não foi você, ignore este e-mail — nada será alterado.</p>`,
   });
 }
@@ -99,7 +99,7 @@ async function enviarEmailCodigoRegularizacao(usuario, codigo) {
   await enviarEmail({
     para: usuario.email,
     assunto: "Seu código para regularizar o cadastro — Narrativas",
-    html: `<p>Olá, ${usuario.nome}.</p><p>Alguém pediu, na página "Regularizar cadastro" do Narrativas, para vincular um CPF a este cadastro ou unificá-lo com outra conta da mesma pessoa. Digite o código abaixo na página para confirmar:</p><p style="font-size:1.6rem;font-weight:700;letter-spacing:0.2em;">${codigo}</p><p>O código vale por 30 minutos. Se não foi você, ignore este e-mail — nada será alterado.</p>`,
+    html: `<p>Olá, ${usuario.nome}.</p><p>Alguém pediu, na página "Regularizar cadastro" do Narrativas, para vincular um CPF (ou documento de estrangeiro) a este cadastro ou unificá-lo com outra conta da mesma pessoa. Digite o código abaixo na página para confirmar:</p><p style="font-size:1.6rem;font-weight:700;letter-spacing:0.2em;">${codigo}</p><p>O código vale por 30 minutos. Se não foi você, ignore este e-mail — nada será alterado.</p>`,
   });
 }
 

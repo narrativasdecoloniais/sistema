@@ -44,6 +44,18 @@ async function renumerar(db, atividadeId) {
   }
 }
 
+// Início → `ordem` (sem ordem por último) → nome, igual ao `orderBy` de
+// `listar` e à programação pública.
+function compararAtividades(a, b) {
+  const ordemA = a.ordem ?? Infinity;
+  const ordemB = b.ordem ?? Infinity;
+  return (
+    new Date(a.inicioAtividade) - new Date(b.inicioAtividade) ||
+    (ordemA === ordemB ? 0 : ordemA < ordemB ? -1 : 1) ||
+    a.nome.localeCompare(b.nome, "pt-BR", { numeric: true })
+  );
+}
+
 async function listar(edicaoId) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   const [submissoes, atividades] = await Promise.all([
@@ -65,7 +77,9 @@ async function listar(edicaoId) {
         tipoAtividade: { select: { id: true, nome: true } },
         _count: { select: { trabalhosApresentados: true } },
       },
-      orderBy: [{ inicioAtividade: "asc" }, { nome: "asc" }],
+      // Mesma sequência da programação pública: no mesmo horário vale a
+      // `ordem` da atividade (sem ordem por último).
+      orderBy: [{ inicioAtividade: "asc" }, { ordem: { sort: "asc", nulls: "last" } }, { nome: "asc" }],
     }),
   ]);
 
@@ -210,6 +224,7 @@ async function distribuirPelaArea(edicaoId, { simular }) {
         nome: true,
         areaSubmissaoId: true,
         inicioAtividade: true,
+        ordem: true,
         _count: { select: { trabalhosApresentados: true } },
       },
     }),
@@ -222,10 +237,7 @@ async function distribuirPelaArea(edicaoId, { simular }) {
     atividadesPorArea.set(atividade.areaSubmissaoId, lista);
   }
 
-  const compararCarga = (a, b) =>
-    a.carga - b.carga ||
-    new Date(a.inicioAtividade) - new Date(b.inicioAtividade) ||
-    a.nome.localeCompare(b.nome, "pt-BR");
+  const compararCarga = (a, b) => a.carga - b.carga || compararAtividades(a, b);
 
   let semAtividade = 0;
   const areasComNovos = new Map();
@@ -246,7 +258,7 @@ async function distribuirPelaArea(edicaoId, { simular }) {
       const lista = atividadesPorArea
         .get(areaId)
         .slice()
-        .sort((a, b) => new Date(a.inicioAtividade) - new Date(b.inicioAtividade) || a.nome.localeCompare(b.nome, "pt-BR"));
+        .sort(compararAtividades);
       return {
         area: titulo,
         totalNovos: lista.reduce((soma, atividade) => soma + atividade.novos.length, 0),
