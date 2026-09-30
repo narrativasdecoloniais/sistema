@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useReducer, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -38,20 +38,25 @@ function recortarFragmentoHtml(html) {
 // (opcional) recebe o data URI já redimensionado e devolve a URL final —
 // usado pelo editor da organização, que salva sozinho e não pode ficar
 // reenviando data URI a cada autosave. HTML sempre sanitizado de novo no
-// backend antes de salvar — nunca confiar só no editor.
-export default function CampoRichText({
-  id,
-  rotulo,
-  value,
-  onChange,
-  onBlur,
-  erro,
-  ferramentas = FERRAMENTAS_PADRAO,
-  permitirImagem = false,
-  permitirTabela = false,
-  aoEnviarImagem,
-  alto = false,
-}) {
+// backend antes de salvar — nunca confiar só no editor. O ref expõe
+// inserirTexto(texto), que insere na posição do cursor (usado pelos campos
+// dinâmicos {{...}} do modelo de certificado).
+export default forwardRef(function CampoRichText(
+  {
+    id,
+    rotulo,
+    value,
+    onChange,
+    onBlur,
+    erro,
+    ferramentas = FERRAMENTAS_PADRAO,
+    permitirImagem = false,
+    permitirTabela = false,
+    aoEnviarImagem,
+    alto = false,
+  },
+  ref
+) {
   const idErro = `${id}-erro`;
   const inputImagemRef = useRef(null);
   const [enviandoImagem, setEnviandoImagem] = useState(false);
@@ -174,6 +179,16 @@ export default function CampoRichText({
       },
     },
   });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      inserirTexto(texto) {
+        editor?.chain().focus().insertContent(texto).run();
+      },
+    }),
+    [editor]
+  );
 
   // Resincroniza só quando o campo não está focado — durante a digitação,
   // nunca sobrescreve o que a pessoa está escrevendo.
@@ -372,4 +387,4 @@ export default function CampoRichText({
       )}
     </div>
   );
-}
+});

@@ -1,10 +1,5 @@
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import CertificadosParticipantePainel from "@/components/interno/CertificadosParticipantePainel";
 
 export default function PaginaCertificadosParticipante() {
-  return (
-    <PaginaEmBreve
-      titulo="Emissão de certificado"
-      descricao="Em breve você vai poder emitir seu certificado de participação por aqui."
-    />
-  );
+  return <CertificadosParticipantePainel />;
 }

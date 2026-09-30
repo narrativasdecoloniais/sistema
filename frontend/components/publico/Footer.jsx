@@ -1,6 +1,6 @@
 import Link from "next/link";
 import MarcaRodape from "@/components/graficos/MarcaRodape";
-import { listarEdicoesAnteriores } from "@/lib/publico";
+import { linkAnaisDaEdicao, listarEdicoesAnteriores } from "@/lib/publico";
 import { paraNumeroRomano } from "@/lib/romanos";
 import styles from "./Footer.module.scss";
 
@@ -8,6 +8,7 @@ const ANCORAS = [
   { href: "/#submissao", rotulo: "Submissão" },
   { href: "/#programacao", rotulo: "Programação" },
   { href: "/#anais", rotulo: "Anais" },
+  { href: "/validar-certificado", rotulo: "Validar certificado" },
 ];
 
 export default async function Footer({ edicao }) {
@@ -21,7 +22,9 @@ export default async function Footer({ edicao }) {
           <ul className={styles.lista}>
             {ANCORAS.map((ancora) => (
               <li key={ancora.href}>
-                <Link href={ancora.href}>{ancora.rotulo}</Link>
+                <Link href={ancora.href === "/#anais" ? linkAnaisDaEdicao(edicao) || ancora.href : ancora.href}>
+                  {ancora.rotulo}
+                </Link>
               </li>
             ))}
           </ul>

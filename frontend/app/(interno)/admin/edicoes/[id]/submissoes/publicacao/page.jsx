@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import { buscarPainelAnais, listarArtigosAnaisAdmin, listarComentariosAnaisAdmin } from "@/lib/anaisAdmin";
+import AnaisPainel from "@/components/interno/anais/AnaisPainel";
+
+export const metadata = { title: "Anais" };
 
 export default async function PaginaSubmissoesPublicacao({ params }) {
   const usuario = await obterUsuarioAtual();
@@ -8,10 +11,19 @@ export default async function PaginaSubmissoesPublicacao({ params }) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
+  // O painel sincroniza os trabalhos que entraram no critério antes de listar.
+  const painel = await buscarPainelAnais(params.id);
+  const [artigos, comentarios] = await Promise.all([
+    listarArtigosAnaisAdmin(params.id),
+    listarComentariosAnaisAdmin(params.id),
+  ]);
+
   return (
-    <PaginaEmBreve
-      titulo="Publicação dos trabalhos"
-      descricao="Em breve você vai poder publicar os trabalhos e anais desta edição por aqui."
+    <AnaisPainel
+      edicaoId={params.id}
+      painelInicial={painel}
+      artigosIniciais={artigos}
+      comentariosIniciais={comentarios}
     />
   );
 }

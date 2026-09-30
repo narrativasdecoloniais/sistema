@@ -1,0 +1,91 @@
+// Prévia do certificado: a página é o container (cqw = % da largura), então
+// tudo escala junto com a largura disponível.
+.moldura {
+  container-type: inline-size;
+  width: 100%;
+}
+
+.pagina {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 297 / 210;
+  overflow: hidden;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+}
+
+.fundo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  // Mesmo "cover" centralizado do PDF.
+  object-fit: cover;
+  object-position: center;
+}
+
+// Área do texto (página menos as margens), tracejada pra facilitar o ajuste.
+.caixa {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  outline: 1px dashed color-mix(in srgb, var(--acento) 70%, transparent);
+  outline-offset: 0;
+}
+
+// Mesmo modelo de parágrafo do PDF: sem margem, meia linha entre parágrafos
+// e parágrafo vazio ocupando uma linha.
+.texto {
+  overflow-wrap: break-word;
+
+  p {
+    margin: 0;
+  }
+
+  p + p {
+    margin-top: 0.5em;
+  }
+
+  p:empty::after {
+    content: "\00a0";
+  }
+}
+
+.qr {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--tamanho-rotulo) * 0.3);
+}
+
+.qrDireita {
+  align-items: flex-end;
+
+  .qrRotulo {
+    text-align: right;
+  }
+}
+
+.qrCodigo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tamanho-qr);
+  aspect-ratio: 1;
+  background: var(--superficie);
+  border: 1px solid var(--texto);
+  color: var(--texto-suave);
+  font-size: calc(var(--tamanho-qr) * 0.25);
+  font-weight: 600;
+}
+
+.qrRotulo {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--tamanho-rotulo);
+  line-height: 1.3;
+  color: var(--texto);
+  white-space: nowrap;
+}

@@ -1,6 +1,8 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
-import PaginaEmBreve from "@/components/interno/PaginaEmBreve";
+import { buscarEdicaoPorId } from "@/lib/edicoes";
+import { buscarCertificados } from "@/lib/certificadosAdmin";
+import CertificadosPainel from "@/components/interno/CertificadosPainel";
 
 export default async function PaginaCertificados({ params }) {
   const usuario = await obterUsuarioAtual();
@@ -8,10 +10,10 @@ export default async function PaginaCertificados({ params }) {
     redirect(`/admin/edicoes/${params.id}`);
   }
 
-  return (
-    <PaginaEmBreve
-      titulo="Certificados"
-      descricao="Em breve você vai poder emitir e configurar os certificados desta edição por aqui."
-    />
-  );
+  const edicao = await buscarEdicaoPorId(params.id);
+  if (!edicao) notFound();
+
+  const dados = await buscarCertificados(params.id);
+
+  return <CertificadosPainel edicaoId={params.id} dadosIniciais={dados} />;
 }

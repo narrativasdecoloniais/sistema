@@ -1,0 +1,198 @@
+// Complementos da tela de Anais — a base (página, abas, tabela, botões de
+// ícone) vem de AvaliacaoSubmissoesPainel.module.scss.
+
+.acoesCabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+
+  @media (max-width: 700px) {
+    justify-content: flex-start;
+  }
+}
+
+.tagNeutra {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.linkPublico,
+.linkDownload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  color: var(--acento);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.aviso {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--alerta);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 0.875rem;
+}
+
+.erro {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--erro);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 0.875rem;
+}
+
+// Configurações
+.listaOrganizadores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.linhaOrganizador {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+}
+
+.campoOrganizador {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.grupoCampos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: none;
+
+  legend {
+    margin-bottom: 0.5rem;
+    padding: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--texto);
+  }
+}
+
+// Ficha catalográfica: alinhamento por espaços, precisa de fonte monoespaçada.
+.campoMonoespacado textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  white-space: pre;
+}
+
+.rodapeFormulario {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--borda);
+
+  @media (max-width: 600px) {
+    > * {
+      flex: 1 1 100%;
+    }
+  }
+}
+
+// Comentários
+.textoComentario {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-line;
+}
+
+// Arquivos
+.gradeArquivos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1rem;
+}
+
+.cartaoArquivo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.cabecalhoArquivo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--texto);
+}
+
+.tituloArquivo {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.statusArquivo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.acoesArquivo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: auto;
+}
+
+.girando {
+  animation: girar 1s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}

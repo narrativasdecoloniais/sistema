@@ -657,6 +657,47 @@ export const modeloEmailResultadoSchema = z.object({
   corpo: z.string().trim().min(1, "Informe o texto do e-mail"),
 });
 
+// Espelha modeloCertificadoSchema em backend/src/validators/certificados.validators.js
+// (imagemFundo fica de fora: o próprio campo de upload valida o arquivo).
+const numeroCertificado = (min, max, rotulo) =>
+  z
+    .number({ invalid_type_error: `Informe ${rotulo}`, required_error: `Informe ${rotulo}` })
+    .min(min, `${rotulo[0].toUpperCase()}${rotulo.slice(1)} deve ser no mínimo ${min}`)
+    .max(max, `${rotulo[0].toUpperCase()}${rotulo.slice(1)} deve ser no máximo ${max}`);
+
+export const modeloCertificadoSchema = z
+  .object({
+    texto: z.string().trim().min(1, "Escreva o texto do certificado"),
+    margemSuperior: numeroCertificado(0, 180, "a margem superior"),
+    margemInferior: numeroCertificado(0, 180, "a margem inferior"),
+    margemEsquerda: numeroCertificado(0, 260, "a margem esquerda"),
+    margemDireita: numeroCertificado(0, 260, "a margem direita"),
+    alinhamento: z.enum(["ESQUERDA", "CENTRO", "DIREITA", "JUSTIFICADO"]),
+    alinhamentoVertical: z.enum(["TOPO", "CENTRO"]),
+    fonte: z.enum(["ARCHIVO", "TIMES", "HELVETICA"]),
+    tamanhoFonte: numeroCertificado(6, 72, "o tamanho da fonte"),
+    entrelinha: numeroCertificado(1, 3, "o espaçamento entre linhas"),
+    corTexto: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida"),
+    posicaoQr: z.enum(["INFERIOR_DIREITO", "INFERIOR_ESQUERDO", "SUPERIOR_DIREITO", "SUPERIOR_ESQUERDO"]),
+    tamanhoQr: numeroCertificado(15, 60, "o tamanho do QR code"),
+    margemQr: numeroCertificado(0, 60, "a distância do QR code até a borda"),
+    cargaHoraria: z
+      .number({ invalid_type_error: "Carga horária inválida" })
+      .int("A carga horária deve ser um número inteiro")
+      .min(1, "A carga horária deve ser de pelo menos 1 hora")
+      .max(2000, "Carga horária grande demais")
+      .nullable()
+      .optional(),
+  })
+  .refine((d) => d.margemSuperior + d.margemInferior <= 190, {
+    message: "As margens superior e inferior somadas deixam pouco espaço para o texto",
+    path: ["margemInferior"],
+  })
+  .refine((d) => d.margemEsquerda + d.margemDireita <= 277, {
+    message: "As margens esquerda e direita somadas deixam pouco espaço para o texto",
+    path: ["margemDireita"],
+  });
+
 export const conferirCorrecaoSchema = z
   .object({
     aceitar: z.boolean(),
@@ -706,6 +747,86 @@ export const submissaoSchema = z.object({
   aceiteDeclaracao: z.literal(true, {
     errorMap: () => ({ message: "É necessário declarar concordância com as regras de submissão" }),
   }),
+});
+
+// Espelho de criarSubmissaoAdminSchema (backend/src/validators/submissoesAdmin.validators.js).
+export const submissaoAdminSchema = submissaoSchema
+  .omit({ aceiteDeclaracao: true })
+  .extend({
+    usuarioId: z.string().optional(),
+    nome: z.string().trim().optional(),
+    email: z.string().trim().optional(),
+    referenciaBibliografica: z.string().trim().default(""),
+  })
+  .superRefine((dados, ctx) => {
+    if (dados.usuarioId) return;
+    if (!dados.nome || dados.nome.length < 3) {
+      ctx.addIssue({ code: "custom", path: ["nome"], message: "Informe o nome completo" });
+    }
+    if (!dados.email || !z.string().email().safeParse(dados.email).success) {
+      ctx.addIssue({ code: "custom", path: ["email"], message: "E-mail inválido" });
+    }
+  });
+
+// ---------------------------------------------------------------------------
+// Anais — espelho de backend/src/validators/anais.validators.js e de
+// backend/src/utils/validarIssnIsbn.js (mudou lá, muda aqui).
+// ---------------------------------------------------------------------------
+
+export function normalizarIssn(valor) {
+  const limpo = String(valor || "").toUpperCase().replace(/[^0-9X]/g, "");
+  if (!/^\d{7}[\dX]$/.test(limpo)) return null;
+  const soma = [...limpo.slice(0, 7)].reduce((total, digito, i) => total + Number(digito) * (8 - i), 0);
+  const resto = (11 - (soma % 11)) % 11;
+  if ((resto === 10 ? "X" : String(resto)) !== limpo[7]) return null;
+  return `${limpo.slice(0, 4)}-${limpo.slice(4)}`;
+}
+
+export function isbnValido(valor) {
+  const digitos = String(valor || "").toUpperCase().replace(/^ISBN[:\s]*/, "").replace(/[^0-9X]/g, "");
+  if (/^\d{13}$/.test(digitos)) {
+    return [...digitos].reduce((total, d, i) => total + Number(d) * (i % 2 === 0 ? 1 : 3), 0) % 10 === 0;
+  }
+  if (/^\d{9}[\dX]$/.test(digitos)) {
+    return [...digitos].reduce((total, d, i) => total + (d === "X" ? 10 : Number(d)) * (10 - i), 0) % 11 === 0;
+  }
+  return false;
+}
+
+const textoOpcionalAnais = (maximo) => z.string().trim().max(maximo, `Use no máximo ${maximo} caracteres`).optional().or(z.literal(""));
+
+export const anaisConfiguracaoSchema = z.object({
+  titulo: z.string().trim().min(3, "Informe o título dos Anais").max(300, "Use no máximo 300 caracteres"),
+  subtitulo: textoOpcionalAnais(300),
+  nomeEvento: textoOpcionalAnais(300),
+  issn: z
+    .string()
+    .trim()
+    .optional()
+    .refine((valor) => !valor || normalizarIssn(valor), "ISSN inválido — confira os 8 dígitos (ex. 1234-5679)"),
+  isbn: z
+    .string()
+    .trim()
+    .optional()
+    .refine((valor) => !valor || isbnValido(valor), "ISBN inválido — confira os 10 ou 13 dígitos"),
+  editora: textoOpcionalAnais(200),
+  localPublicacao: textoOpcionalAnais(120),
+  anoPublicacao: z
+    .union([z.literal(""), z.null(), z.coerce.number().int("Informe um ano válido").min(1900, "Informe um ano válido").max(2200, "Informe um ano válido")])
+    .optional(),
+  organizadores: z.array(z.string().trim().min(1, "Preencha o nome").max(200, "Use no máximo 200 caracteres")).max(30, "Cadastre no máximo 30 pessoas"),
+  licenca: z.string().min(1, "Escolha a licença"),
+  apresentacao: z.string().optional().nullable(),
+  fichaCatalografica: textoOpcionalAnais(4000),
+  gruposConteudoIds: z.array(z.string()),
+});
+
+export const comentarioAnaisSchema = z.object({
+  texto: z
+    .string()
+    .trim()
+    .min(2, "Escreva o comentário")
+    .max(2000, "O comentário pode ter no máximo 2000 caracteres"),
 });
 
 export const categorias = [

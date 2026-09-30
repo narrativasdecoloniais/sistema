@@ -27,7 +27,9 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
   const ancoras = [
     ANCORAS[0],
     ...(nav?.resultadoDivulgado ? [{ href: "/trabalhos-aprovados", rotulo: "Aprovados" }] : []),
-    ...ANCORAS.slice(1),
+    ...ANCORAS.slice(1).map((ancora) =>
+      ancora.href === "/#anais" && nav?.linkAnais ? { ...ancora, href: nav.linkAnais } : ancora
+    ),
     ...(nav?.temMonitoria ? [{ href: "/monitoria", rotulo: "Monitoria" }] : []),
   ];
   const pathname = usePathname();

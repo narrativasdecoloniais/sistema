@@ -1,0 +1,276 @@
+// Tela de Certificados (admin): seletor de tipo, formulário do modelo com a
+// prévia ao lado, e os cartões por tipo da aba Emitidos.
+
+.seletorTipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.opcaoTipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--texto);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.opcaoTipoAtiva {
+  border-color: var(--acento);
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.indicadorAlterado {
+  color: var(--alerta);
+  font-weight: 700;
+}
+
+// Controles à esquerda, prévia fixa à direita (acompanha a rolagem) — no
+// celular empilha, com a prévia no topo pra ver o efeito dos ajustes.
+.gradeModelo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.controles {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.lateral {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.tituloSecao {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.descricaoSecao {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.gradeCampos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+  align-items: start;
+}
+
+.campoCurto {
+  max-width: 220px;
+}
+
+.rotuloLista {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texto-suave);
+}
+
+// Orientação de tamanho do fundo — sempre visível abaixo do campo.
+.orientacaoFundo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--borda);
+  background: var(--fundo);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+
+  p {
+    margin: 0;
+  }
+
+  strong {
+    color: var(--texto);
+  }
+}
+
+.aviso {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--alerta);
+  background: var(--fundo);
+  color: var(--texto);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.textoApoio {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+}
+
+.linhaCor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+
+.seletorCor {
+  width: 44px;
+  height: 44px;
+  padding: 2px;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.valorCor {
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+.acoesModelo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.copiarLayout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--borda);
+
+  > :first-child {
+    flex: 1 1 220px;
+  }
+}
+
+// Aba Emitidos: um cartão por tipo.
+.gradeTipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.cartaoTipo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.cabecalhoCartao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tituloCartao {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.tagNeutra {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.numeros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+
+  dt {
+    font-size: 0.75rem;
+    color: var(--texto-suave);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--texto);
+  }
+}
+
+.acoesCartao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+@media (max-width: 1000px) {
+  .gradeModelo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lateral {
+    position: static;
+    order: -1;
+  }
+}

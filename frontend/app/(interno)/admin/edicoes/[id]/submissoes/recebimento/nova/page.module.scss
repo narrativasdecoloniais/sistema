@@ -1,0 +1,18 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  color: var(--texto);
+  margin: 0 0 0.35rem;
+}
+
+.descricao {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+}

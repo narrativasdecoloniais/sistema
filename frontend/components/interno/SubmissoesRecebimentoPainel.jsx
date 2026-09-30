@@ -22,6 +22,7 @@ function formatarData(valor) {
 }
 
 export default function SubmissoesRecebimentoPainel({ edicaoId, submissoesIniciais, modalidadesIniciais }) {
+  const router = useRouter();
   const [abaAtiva, setAbaAtiva] = useState("submissoes");
   const [submissoes, setSubmissoes] = useState(submissoesIniciais);
   const [modalidades, setModalidades] = useState(modalidadesIniciais);
@@ -35,6 +36,9 @@ export default function SubmissoesRecebimentoPainel({ edicaoId, submissoesInicia
             Trabalhos enviados pelo site público nesta edição, organizados por modalidade e área.
           </p>
         </div>
+        <Botao type="button" onClick={() => router.push(`/admin/edicoes/${edicaoId}/submissoes/recebimento/nova`)}>
+          Inserir submissão
+        </Botao>
       </div>
 
       <div className={styles.abas} role="tablist" aria-label="Seções de recebimento">

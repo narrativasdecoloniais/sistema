@@ -18,6 +18,8 @@ const sairaStencilOne = Saira_Stencil_One({
 });
 
 export const metadata = {
+  // Base das URLs relativas de canonical/Open Graph (páginas dos Anais etc.).
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "Narrativas — GPDES/UnB",
   description:
     "Narrativas Interculturais, Decoloniais e Antirracistas em Educação — GPDES/UnB",

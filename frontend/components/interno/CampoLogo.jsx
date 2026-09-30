@@ -23,6 +23,9 @@ export default function CampoLogo({
   dimensaoMax = DIMENSAO_MAX_PADRAO,
   tamanhoMaxArquivo = TAMANHO_MAX_ARQUIVO_PADRAO,
   textoItem = "logo",
+  // Fundo de certificado não precisa de transparência — JPEG deixa o upload
+  // de uma arte de 3508 px bem mais leve que o PNG equivalente.
+  forcarJpeg = false,
 }) {
   const inputRef = useRef(null);
   const [processando, setProcessando] = useState(false);
@@ -46,7 +49,7 @@ export default function CampoLogo({
 
     setProcessando(true);
     try {
-      onChange(await redimensionarLogoParaDataUri(arquivo, dimensaoMax));
+      onChange(await redimensionarLogoParaDataUri(arquivo, dimensaoMax, 0.92, forcarJpeg));
     } catch {
       setErroLocal("Não foi possível processar essa imagem. Tente outro arquivo.");
     } finally {

@@ -30,6 +30,13 @@ export const CONFIG_EDITAL = {
   ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "colwidth"],
 };
 
+// Texto de certificado: parágrafo, quebra de linha, negrito e itálico (o que o
+// gerador de PDF desenha).
+export const CONFIG_CERTIFICADO = {
+  ALLOWED_TAGS: ["p", "br", "strong", "em"],
+  ALLOWED_ATTR: [],
+};
+
 // O front não conhece o nome do bucket — aceita qualquer objeto do GCS
 // público; o backend (que conhece) restringe ao nosso bucket ao salvar.
 const PREFIXO_GCS = "https://storage.googleapis.com/";

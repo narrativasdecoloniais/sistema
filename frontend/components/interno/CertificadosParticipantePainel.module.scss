@@ -1,0 +1,17 @@
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tituloGrupo {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.acoes {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}

@@ -1,0 +1,10 @@
+.formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+
+  > :first-child {
+    flex: 1 1 260px;
+  }
+}

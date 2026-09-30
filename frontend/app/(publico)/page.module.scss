@@ -1345,3 +1345,31 @@
     margin-top: 0;
   }
 }
+
+// "Acessar os Anais" (dobra Publicações, depois dos Anais publicados) — botão
+// de contorno na cor de texto da própria seção, que já passa no contraste
+// sobre o fundo escolhido no admin.
+.anaisCta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 0.5rem;
+  padding: 0.8rem 1.6rem;
+  border: 1.5px solid var(--cor-texto-secao, var(--tinta));
+  border-radius: 6px;
+  color: var(--cor-texto-secao, var(--tinta));
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}

@@ -13,7 +13,8 @@ export default async function PaginaEditorSubmissao({ params }) {
     "SUBMISSOES_RECEBIMENTO",
     "SUBMISSOES_AVALIACAO",
     "SUBMISSOES_RESULTADO",
-    "SUBMISSOES_APRESENTACAO"
+    "SUBMISSOES_APRESENTACAO",
+    "SUBMISSOES_PUBLICACAO"
   );
 
   if (!podeEditar) {

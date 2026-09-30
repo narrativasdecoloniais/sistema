@@ -35,6 +35,12 @@ export async function buscarEdicaoAtual() {
   return dados?.edicao || null;
 }
 
+// Validação pública de certificado (QR code do PDF). null = não encontrado.
+export async function buscarCertificadoPublico(codigo) {
+  const dados = await requisitarPublico(`/publico/certificados/${encodeURIComponent(codigo)}`);
+  return dados?.certificado || null;
+}
+
 export async function listarEdicoesAnteriores() {
   const dados = await requisitarPublico("/publico/edicoes-anteriores");
   return dados?.edicoes || [];
@@ -153,6 +159,7 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
     corAcentoCardAgenda: edicao?.corAcentoCardAgenda || "BARRO",
     tituloPublicacoes: edicao?.tituloPublicacoes || TITULO_PUBLICACOES_PADRAO,
     corpoPublicacoes: edicao?.corpoPublicacoes || CORPO_PUBLICACOES_PADRAO,
+    linkAnais: linkAnaisDaEdicao(edicao),
     corFundoPublicacoes: edicao?.corFundoPublicacoes || "PAPEL",
     opacidadeFundoPublicacoes: edicao?.opacidadeFundoPublicacoes ?? 100,
     corTextoPublicacoes: edicao?.corTextoPublicacoes || "TINTA",
@@ -200,6 +207,10 @@ export async function listarTrabalhosAprovados() {
   return dados?.trabalhos || [];
 }
 
+export function linkAnaisDaEdicao(edicao) {
+  return edicao?.anaisPublicados && edicao?.slug ? `/anais/${edicao.slug}` : null;
+}
+
 export function montarPropsNavegacao(edicao) {
   const mostrarFaixaHero = edicao?.mostrarFaixaHero ?? true;
   const faixaHeroTipoMobile = edicao?.faixaHeroTipoMobile || "COR";
@@ -234,6 +245,8 @@ export function montarPropsNavegacao(edicao) {
     resultadoDivulgado: Boolean(edicao?.resultadoDivulgadoEm),
     // Link "Monitoria" enquanto houver edital cadastrado (seção Monitoria).
     temMonitoria: Boolean(edicao?.editalMonitoria?.replace(/<[^>]*>/g, "").trim()),
+    // "Anais" leva à página dos Anais depois de publicados; antes, à dobra da home.
+    linkAnais: linkAnaisDaEdicao(edicao),
   };
 }
 

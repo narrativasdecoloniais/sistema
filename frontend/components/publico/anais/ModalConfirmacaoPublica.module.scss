@@ -1,0 +1,79 @@
+@use "../../../styles/tokens-publico" as pub;
+
+// Portal em document.body: fora da .wrapper do layout público, então os
+// tokens são declarados aqui.
+.fundo {
+  @include pub.tokens;
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: color-mix(in srgb, var(--tinta) 45%, transparent);
+}
+
+.painel {
+  width: 100%;
+  max-width: 440px;
+  padding: 1.5rem;
+  border: 1px solid var(--ocre);
+  border-radius: 6px;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--font-archivo), sans-serif;
+}
+
+.titulo {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.mensagem {
+  margin: 0 0 1.4rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--texto-suave);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.cancelar,
+.confirmar {
+  min-height: 44px;
+  padding: 0.55rem 1.2rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.cancelar {
+  border: 1.5px solid var(--tinta);
+  background: transparent;
+  color: var(--tinta);
+}
+
+.confirmar {
+  border: 1.5px solid var(--cor-erro);
+  background: var(--cor-erro);
+  color: var(--papel);
+}

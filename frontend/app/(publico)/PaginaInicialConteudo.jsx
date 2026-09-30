@@ -316,6 +316,7 @@ export default function PaginaInicialConteudo({
   corAcentoCardAgenda = "BARRO",
   tituloPublicacoes = "Anais e Memória",
   corpoPublicacoes = "",
+  linkAnais = null,
   corFundoPublicacoes = "PAPEL",
   opacidadeFundoPublicacoes = 100,
   corTextoPublicacoes = "TINTA",
@@ -1010,7 +1011,7 @@ export default function PaginaInicialConteudo({
           <Eyebrow>Publicações</Eyebrow>
           <motion.div className={styles.tituloLinha} variants={itemVariants}>
             <h2 className={styles.tituloSecundario}>{tituloPublicacoes}</h2>
-            <SeloEmBreve />
+            {!linkAnais && <SeloEmBreve />}
           </motion.div>
           {dividirParagrafos(corpoPublicacoes).map((paragrafo, indice) => (
             <motion.p
@@ -1021,6 +1022,13 @@ export default function PaginaInicialConteudo({
               {paragrafo}
             </motion.p>
           ))}
+          {linkAnais && (
+            <motion.div variants={itemVariants}>
+              <Link href={linkAnais} className={styles.anaisCta}>
+                Acessar os Anais →
+              </Link>
+            </motion.div>
+          )}
         </motion.div>
       </motion.section>
 

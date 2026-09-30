@@ -1,0 +1,492 @@
+@use "../../../styles/conteudo-rich-text" as rt;
+
+// Casca das páginas dos Anais — mesma das páginas de Trabalhos aprovados e
+// Submissão (largura de leitura, respiro sob a navbar fixa).
+.pagina {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: calc(3rem + 70px) 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  @media (max-width: 700px) {
+    padding: calc(2rem + 70px) 1rem 3.5rem;
+  }
+}
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.eyebrow {
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.titulo {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tinta);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  line-height: 1.1;
+}
+
+.tituloAnais {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--tinta);
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.divisor {
+  width: 100%;
+  color: var(--ocre);
+}
+
+.aviso {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--tinta);
+  line-height: 1.6;
+}
+
+// Dados da publicação (ISSN/ISBN, organização, licença…).
+.ficha {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.5rem 0 0;
+
+  div {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    gap: 1rem;
+
+    @media (max-width: 560px) {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.1rem;
+    }
+  }
+
+  dt {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    padding-top: 0.15rem;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--tinta);
+    overflow-wrap: anywhere;
+  }
+
+  a {
+    color: var(--barro);
+    text-underline-offset: 3px;
+
+    &:focus-visible {
+      outline: 2px solid var(--barro);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.botaoPrimario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border: 1.5px solid var(--barro);
+  border-radius: 6px;
+  background: var(--barro);
+  color: var(--papel);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--tinta);
+    border-color: var(--tinta);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.apresentacao {
+  border-top: 1px solid var(--areia);
+  border-bottom: 1px solid var(--areia);
+
+  summary {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    color: var(--barro);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--barro);
+      outline-offset: 2px;
+    }
+  }
+
+  .textoRico {
+    padding-bottom: 1.25rem;
+  }
+}
+
+// HTML do resumo/referência/apresentação (ConteudoRichText) — tipografia,
+// imagens e tabelas (rolagem horizontal no celular) no mixin compartilhado.
+.textoRico {
+  @include rt.conteudo-rich-text(var(--tinta), var(--barro), var(--ocre), var(--areia));
+  max-width: 72ch;
+  font-size: 1.04rem;
+  line-height: 1.7;
+
+  img {
+    display: block;
+    height: auto;
+    margin: 1.25rem auto;
+  }
+}
+
+.referencias {
+  font-size: 0.95rem;
+  line-height: 1.6;
+
+  p {
+    padding-left: 1.5em;
+    text-indent: -1.5em;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Página do trabalho
+// ---------------------------------------------------------------------------
+
+.paginaArtigo {
+  gap: 1.75rem;
+}
+
+.trilha ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+
+  li + li::before {
+    content: "/";
+    margin-right: 0.3rem;
+    color: var(--ocre);
+  }
+
+  a {
+    color: var(--texto-suave);
+    text-underline-offset: 3px;
+
+    &:hover {
+      color: var(--barro);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--barro);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.cabecalhoArtigo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: 1.1rem;
+  border-left: 4px solid var(--buzio);
+}
+
+// Título de trabalho acadêmico: sem stencil nem caixa alta — conteúdo longo
+// de terceiros; o stencil fica no "ANAIS" da página da edição.
+.tituloArtigo {
+  margin: 0;
+  font-size: clamp(1.55rem, 3.6vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--tinta);
+  overflow-wrap: break-word;
+}
+
+.autores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+  }
+}
+
+.autorNome {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--tinta);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--barro);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.orcid {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cerrado);
+  text-underline-offset: 2px;
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.acoesArtigo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+
+  .botaoPrimario {
+    margin-top: 0;
+  }
+}
+
+.secaoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.rotuloSecao {
+  margin: 0;
+  font-family: var(--font-stencil), sans-serif;
+  font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta);
+}
+
+.fichaArtigo {
+  padding: 1.1rem 1.25rem;
+  background: color-mix(in srgb, var(--areia) 45%, var(--papel));
+  border-radius: 4px;
+
+  .ficha {
+    margin: 0;
+  }
+}
+
+.navegacaoArtigos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.vizinho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--areia);
+  color: var(--tinta);
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--barro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.vizinhoProximo {
+  text-align: right;
+
+  @media (max-width: 600px) {
+    text-align: left;
+  }
+}
+
+.vizinhoRotulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.vizinhoTitulo {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.relacionados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+
+  ul {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding-left: 0.9rem;
+    border-left: 3px solid var(--barro);
+  }
+
+  a {
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--tinta);
+    text-underline-offset: 3px;
+
+    &:hover {
+      color: var(--barro);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--barro);
+      outline-offset: 2px;
+    }
+  }
+
+  span {
+    font-size: 0.88rem;
+    color: var(--texto-suave);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Lista de edições (/anais)
+// ---------------------------------------------------------------------------
+
+.listaEdicoes {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cartaoEdicao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.3rem 1.4rem;
+  border: 1px solid var(--areia);
+  border-left: 4px solid var(--buzio);
+  background: var(--papel);
+  color: var(--tinta);
+  text-decoration: none;
+
+  &:hover {
+    background: var(--areia);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+}
+
+.cartaoEyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--barro);
+}
+
+.cartaoTitulo {
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.cartaoSubtitulo {
+  font-size: 0.98rem;
+  color: var(--texto-suave);
+}
+
+.cartaoMeta {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.cartaoAcao {
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--barro);
+}

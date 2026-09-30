@@ -1,0 +1,298 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ConteudoRichText from "@/components/ConteudoRichText";
+import DefinirEdicaoExibida from "@/components/publico/DefinirEdicaoExibida";
+import PainelCitacao from "@/components/publico/anais/PainelCitacao";
+import ComentariosArtigo from "@/components/publico/anais/ComentariosArtigo";
+import ContadorVisualizacao from "@/components/publico/anais/ContadorVisualizacao";
+import { obterUsuarioAtual } from "@/lib/auth";
+import { buscarArtigoDosAnais } from "@/lib/anaisServidor";
+import {
+  LICENCAS_ANAIS,
+  URL_SITE,
+  formatarDataPublicacao,
+  linhaIdentificadores,
+  rotuloPaginas,
+  urlPdfArtigo,
+} from "@/lib/anais";
+import { buscarEdicaoPorSlug, formatarPeriodoEdicao, montarPropsNavegacao } from "@/lib/publico";
+import styles from "../../anais.module.scss";
+
+function dataIso(iso) {
+  return iso ? new Date(iso).toISOString().slice(0, 10) : undefined;
+}
+
+function dataScholar(iso) {
+  return iso ? dataIso(iso).replace(/-/g, "/") : undefined;
+}
+
+// Metadados no padrão Highwire Press, lido pelo Google Acadêmico.
+function metaAcademica(dados, caminho) {
+  const { artigo, anais, edicao } = dados;
+  const meta = {
+    citation_title: artigo.titulo,
+    citation_author: artigo.autores.map((autor) => autor.nome),
+    citation_publication_date: dataScholar(anais.publicadoEm),
+    citation_online_date: dataScholar(artigo.publicadoEm),
+    citation_conference_title: edicao.nome,
+    citation_inbook_title: anais.titulo,
+    citation_publisher: anais.editora || undefined,
+    citation_language: "pt",
+    citation_abstract_html_url: `${URL_SITE}${caminho}`,
+    citation_pdf_url: urlPdfArtigo(edicao.slug, artigo.slug),
+    citation_firstpage: artigo.paginaInicial ? String(artigo.paginaInicial) : undefined,
+    citation_lastpage: artigo.paginaFinal ? String(artigo.paginaFinal) : undefined,
+    citation_issn: anais.issn || undefined,
+    citation_isbn: anais.isbn || undefined,
+  };
+  return Object.fromEntries(Object.entries(meta).filter(([, valor]) => valor !== undefined && valor !== ""));
+}
+
+export async function generateMetadata({ params }) {
+  const dados = await buscarArtigoDosAnais(params.edicao, params.artigo);
+  if (!dados) return { title: "Trabalho não encontrado" };
+  const { artigo, anais } = dados;
+  const caminho = `/anais/${params.edicao}/${params.artigo}`;
+  const autores = artigo.autores.map((autor) => autor.nome);
+  return {
+    title: `${artigo.titulo} — ${anais.titulo}`,
+    description: artigo.descricao,
+    authors: autores.map((nome) => ({ name: nome })),
+    alternates: { canonical: caminho },
+    openGraph: {
+      type: "article",
+      title: artigo.titulo,
+      description: artigo.descricao,
+      url: caminho,
+      siteName: "Narrativas — GPDES/UnB",
+      locale: "pt_BR",
+      publishedTime: artigo.publicadoEm,
+      modifiedTime: artigo.atualizadoEm,
+      authors: autores,
+      section: artigo.modalidade?.nome,
+    },
+    twitter: { card: "summary", title: artigo.titulo, description: artigo.descricao },
+    other: metaAcademica(dados, caminho),
+  };
+}
+
+function dadosEstruturados(dados, caminho) {
+  const { artigo, anais, edicao } = dados;
+  return {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    headline: artigo.titulo.slice(0, 110),
+    name: artigo.titulo,
+    description: artigo.descricao,
+    url: `${URL_SITE}${caminho}`,
+    inLanguage: "pt-BR",
+    datePublished: dataIso(artigo.publicadoEm),
+    dateModified: dataIso(artigo.atualizadoEm),
+    author: artigo.autores.map((autor) => ({
+      "@type": "Person",
+      name: autor.nome,
+      ...(autor.orcid ? { sameAs: `https://orcid.org/${autor.orcid.replace(/^https?:\/\/orcid\.org\//i, "")}` } : {}),
+    })),
+    isPartOf: {
+      "@type": "Book",
+      name: anais.titulo,
+      issn: anais.issn || undefined,
+      isbn: anais.isbn || undefined,
+      publisher: anais.editora ? { "@type": "Organization", name: anais.editora } : undefined,
+      url: `${URL_SITE}/anais/${edicao.slug}`,
+    },
+    pageStart: artigo.paginaInicial || undefined,
+    pageEnd: artigo.paginaFinal || undefined,
+    license: LICENCAS_ANAIS[anais.licenca]?.url || undefined,
+    about: artigo.area?.titulo || undefined,
+    genre: artigo.modalidade?.nome,
+    encoding: { "@type": "MediaObject", encodingFormat: "application/pdf", contentUrl: urlPdfArtigo(edicao.slug, artigo.slug) },
+  };
+}
+
+function jsonLd(objeto) {
+  return JSON.stringify(objeto).replace(/</g, "\\u003c");
+}
+
+export default async function PaginaArtigoDosAnais({ params }) {
+  const [dados, edicaoCompleta, usuario] = await Promise.all([
+    buscarArtigoDosAnais(params.edicao, params.artigo),
+    buscarEdicaoPorSlug(params.edicao),
+    obterUsuarioAtual(),
+  ]);
+  if (!dados) notFound();
+
+  const { artigo, anais, edicao, anterior, proximo, relacionados } = dados;
+  const caminho = `/anais/${params.edicao}/${params.artigo}`;
+  const licenca = LICENCAS_ANAIS[anais.licenca];
+  const paginas = rotuloPaginas(artigo.paginaInicial, artigo.paginaFinal);
+  const identificadores = linhaIdentificadores(anais);
+  const eyebrow = [artigo.modalidade?.nome, artigo.area?.titulo].filter(Boolean).join(" · ");
+
+  return (
+    <article className={`${styles.pagina} ${styles.paginaArtigo}`}>
+      <DefinirEdicaoExibida numero={edicao.numero} navegacao={montarPropsNavegacao(edicaoCompleta)} />
+      <ContadorVisualizacao artigoId={artigo.id} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(dadosEstruturados(dados, caminho)) }} />
+
+      <nav aria-label="Você está em" className={styles.trilha}>
+        <ol>
+          <li>
+            <Link href="/anais">Anais</Link>
+          </li>
+          <li>
+            <Link href={`/anais/${edicao.slug}`}>{anais.titulo}</Link>
+          </li>
+          <li aria-current="page">Trabalho</li>
+        </ol>
+      </nav>
+
+      <header className={styles.cabecalhoArtigo}>
+        {eyebrow && <span className={styles.eyebrow}>{eyebrow}</span>}
+        <h1 className={styles.tituloArtigo}>{artigo.titulo}</h1>
+        <ul className={styles.autores} aria-label="Autores">
+          {artigo.autores.map((autor, indice) => (
+            <li key={`${autor.nome}-${indice}`}>
+              <Link href={`/anais/${edicao.slug}?autor=${encodeURIComponent(autor.nome)}`} className={styles.autorNome}>
+                {autor.nome}
+              </Link>
+              {autor.orcid && (
+                <a
+                  href={`https://orcid.org/${autor.orcid.replace(/^https?:\/\/orcid\.org\//i, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.orcid}
+                >
+                  ORCID
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </header>
+
+      <div className={styles.acoesArtigo}>
+        <a href={urlPdfArtigo(edicao.slug, artigo.slug)} className={styles.botaoPrimario} rel="nofollow">
+          Baixar PDF
+        </a>
+        <PainelCitacao citacao={artigo.citacao} slug={artigo.slug} />
+      </div>
+
+      <section className={styles.secaoTexto} aria-labelledby="titulo-resumo">
+        <h2 id="titulo-resumo" className={styles.rotuloSecao}>
+          Resumo
+        </h2>
+        <ConteudoRichText html={artigo.resumo} tipo="resumo" className={styles.textoRico} sanitizadoNoServidor />
+      </section>
+
+      {artigo.referenciaBibliografica && (
+        <section className={styles.secaoTexto} aria-labelledby="titulo-referencias">
+          <h2 id="titulo-referencias" className={styles.rotuloSecao}>
+            Referências
+          </h2>
+          <ConteudoRichText
+            html={artigo.referenciaBibliografica}
+            tipo="referencia"
+            className={`${styles.textoRico} ${styles.referencias}`}
+            sanitizadoNoServidor
+          />
+        </section>
+      )}
+
+      <section className={styles.fichaArtigo} aria-label="Dados da publicação">
+        <dl className={styles.ficha}>
+          <div>
+            <dt>Publicado em</dt>
+            <dd>
+              <Link href={`/anais/${edicao.slug}`}>{anais.titulo}</Link>
+              {paginas ? `, ${paginas}` : ""}
+            </dd>
+          </div>
+          <div>
+            <dt>Evento</dt>
+            <dd>
+              {edicao.nome}
+              {edicao.dataInicio ? ` · ${formatarPeriodoEdicao(edicao.dataInicio, edicao.dataFim)}` : ""}
+              {edicao.cidade ? ` · ${edicao.cidade}` : ""}
+            </dd>
+          </div>
+          {identificadores && (
+            <div>
+              <dt>Registro</dt>
+              <dd>{identificadores}</dd>
+            </div>
+          )}
+          {formatarDataPublicacao(artigo.publicadoEm) && (
+            <div>
+              <dt>Data de publicação</dt>
+              <dd>{formatarDataPublicacao(artigo.publicadoEm)}</dd>
+            </div>
+          )}
+          {licenca && (
+            <div>
+              <dt>Licença</dt>
+              <dd>
+                {licenca.url ? (
+                  <a href={licenca.url} target="_blank" rel="noopener noreferrer license">
+                    {licenca.nome} ({licenca.sigla})
+                  </a>
+                ) : (
+                  licenca.nome
+                )}
+              </dd>
+            </div>
+          )}
+          {artigo.apresentacao && (
+            <div>
+              <dt>Apresentado em</dt>
+              <dd>
+                <Link href={`/edicoes/${edicao.slug}/atividades/${artigo.apresentacao.slug}`}>{artigo.apresentacao.nome}</Link>
+              </dd>
+            </div>
+          )}
+        </dl>
+      </section>
+
+      {(anterior || proximo) && (
+        <nav className={styles.navegacaoArtigos} aria-label="Outros trabalhos destes Anais">
+          {anterior ? (
+            <Link href={`/anais/${edicao.slug}/${anterior.slug}`} className={styles.vizinho} rel="prev">
+              <span className={styles.vizinhoRotulo}>← Anterior</span>
+              <span className={styles.vizinhoTitulo}>{anterior.titulo}</span>
+            </Link>
+          ) : (
+            <span />
+          )}
+          {proximo && (
+            <Link href={`/anais/${edicao.slug}/${proximo.slug}`} className={`${styles.vizinho} ${styles.vizinhoProximo}`} rel="next">
+              <span className={styles.vizinhoRotulo}>Próximo →</span>
+              <span className={styles.vizinhoTitulo}>{proximo.titulo}</span>
+            </Link>
+          )}
+        </nav>
+      )}
+
+      {relacionados.length > 0 && (
+        <section className={styles.relacionados} aria-labelledby="titulo-relacionados">
+          <h2 id="titulo-relacionados" className={styles.rotuloSecao}>
+            Da mesma área
+          </h2>
+          <ul>
+            {relacionados.map((item) => (
+              <li key={item.slug}>
+                <Link href={`/anais/${edicao.slug}/${item.slug}`}>{item.titulo}</Link>
+                <span>{item.autores.join("; ")}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <ComentariosArtigo
+        artigoId={artigo.id}
+        usuario={usuario ? { id: usuario.id, nome: usuario.nome } : null}
+        caminho={caminho}
+      />
+    </article>
+  );
+}

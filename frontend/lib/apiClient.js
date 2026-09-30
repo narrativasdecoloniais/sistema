@@ -54,7 +54,46 @@ async function requisitar(caminho, { method = "GET", body } = {}, jaTentouRenova
   return dados;
 }
 
+// Resposta binária (ex. PDF de certificado): mesma sessão/renovação de
+// requisitar, mas devolve o Blob; erro continua vindo em JSON { mensagem }.
+async function requisitarBlob(caminho, { method = "GET", body } = {}, jaTentouRenovar = false) {
+  const resposta = await fetch(`${API_URL}${caminho}`, {
+    method,
+    credentials: "include",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+
+  if (resposta.status === 401 && !jaTentouRenovar && !caminho.startsWith("/auth/")) {
+    const renovou = await renovarSessao();
+    if (renovou) return requisitarBlob(caminho, { method, body }, true);
+  }
+
+  if (!resposta.ok) {
+    const dados = await resposta.json().catch(() => null);
+    const erro = new Error(dados?.mensagem || "Ocorreu um erro. Tente novamente.");
+    erro.status = resposta.status;
+    throw erro;
+  }
+
+  return resposta.blob();
+}
+
+// Dispara o download de um Blob no navegador.
+export function salvarBlob(blob, nomeArquivo) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nomeArquivo;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export const apiClient = {
+  blob: (caminho, opcoes) => requisitarBlob(caminho, opcoes),
   get: (caminho) => requisitar(caminho),
   post: (caminho, body) => requisitar(caminho, { method: "POST", body }),
   put: (caminho, body) => requisitar(caminho, { method: "PUT", body }),
