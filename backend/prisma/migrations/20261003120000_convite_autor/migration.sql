@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TipoToken" ADD VALUE 'CONVITE_AUTOR';

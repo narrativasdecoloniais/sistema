@@ -8,8 +8,9 @@ const { temIdentificacao } = require("../utils/identificacao");
 // outro e-mail). Tudo da conta "removida" vai pra conta "mantida" e a removida
 // é anonimizada (nunca DELETE — LGPD/integridade referencial, ver
 // anonimizarUsuario). Só mexe nos vínculos que existem hoje no schema:
-// inscrição geral, inscrição em atividade, submissão e autoria de submissão —
-// se um model novo passar a referenciar Usuario, precisa entrar aqui.
+// inscrição geral, inscrição em atividade, submissão, autoria de submissão,
+// certificados e comentários nos Anais — se um model novo passar a referenciar Usuario, precisa
+// entrar aqui.
 
 const SELECT_CONTA = {
   id: true,
@@ -187,8 +188,31 @@ async function unificarUsuarios({ manterId, removerId, confirmarEmail = false })
           data: { principal: true },
         });
       }
+      // Certificados ligados à removida passam pra mantida, com a chave
+      // recalculada (u:<usuario>...). Os que a mantida já tem, e os da autoria
+      // duplicada descartada abaixo, ficam na removida e são revogados pela
+      // anonimização.
+      const idsAutoriasDuplicadas = new Set(autoriasDuplicadas.map((a) => a.id));
+      const certificadosRemovida = await tx.certificado.findMany({
+        where: { usuarioId: removerId },
+        select: { id: true, edicaoId: true, tipo: true, chave: true, submissaoAutorId: true },
+      });
+      for (const certificado of certificadosRemovida) {
+        if (certificado.submissaoAutorId && idsAutoriasDuplicadas.has(certificado.submissaoAutorId)) continue;
+        const chave = certificado.chave.startsWith(`u:${removerId}`)
+          ? `u:${manterId}${certificado.chave.slice(`u:${removerId}`.length)}`
+          : certificado.chave;
+        const jaExiste = await tx.certificado.findUnique({
+          where: { edicaoId_tipo_chave: { edicaoId: certificado.edicaoId, tipo: certificado.tipo, chave } },
+          select: { id: true },
+        });
+        if (jaExiste && jaExiste.id !== certificado.id) continue;
+        await tx.certificado.update({ where: { id: certificado.id }, data: { usuarioId: manterId, chave } });
+      }
+
       await tx.submissaoAutor.deleteMany({ where: { id: { in: autoriasDuplicadas.map((a) => a.id) } } });
       await tx.submissaoAutor.updateMany({ where: { usuarioId: removerId }, data: { usuarioId: manterId } });
+      await tx.comentarioAnais.updateMany({ where: { usuarioId: removerId }, data: { usuarioId: manterId } });
 
       // Anonimiza antes de gravar o CPF na mantida: o campo é único, e só
       // depois disso o CPF da removida fica livre.

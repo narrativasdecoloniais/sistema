@@ -39,6 +39,9 @@ enum TipoToken {
   // e-mail no perfil — a troca só vale depois de digitado (ver
   // usuarios.service.js, solicitarTrocaEmail/confirmarTrocaEmail).
   ALTERAR_EMAIL
+  // Autor principal sem conta de uma submissão inserida pela organização no
+  // Recebimento — consumido no mesmo /definir-senha dos outros convites.
+  CONVITE_AUTOR
 }
 
 // Seções administráveis do site, usadas para restringir o que um
@@ -106,6 +109,47 @@ enum StatusInscricaoMonitoria {
   LISTA_ESPERA
   NAO_SELECIONADO
   CANCELADA
+}
+
+// Certificados (certificados.service.js): um modelo (fundo + texto + layout)
+// por tipo e por edição; cada certificado emitido guarda um código público de
+// validação e um snapshot dos valores dos marcadores.
+enum TipoCertificado {
+  PARTICIPACAO_EVENTO
+  PRESENCA_ATIVIDADE
+  APRESENTACAO_TRABALHO
+  AVALIADOR
+  MONITOR
+}
+
+enum OrigemCertificado {
+  REGRA
+  MANUAL
+}
+
+enum PosicaoQrCertificado {
+  INFERIOR_DIREITO
+  INFERIOR_ESQUERDO
+  SUPERIOR_DIREITO
+  SUPERIOR_ESQUERDO
+}
+
+enum AlinhamentoCertificado {
+  ESQUERDA
+  CENTRO
+  DIREITA
+  JUSTIFICADO
+}
+
+enum AlinhamentoVerticalCertificado {
+  TOPO
+  CENTRO
+}
+
+enum FonteCertificado {
+  ARCHIVO
+  TIMES
+  HELVETICA
 }
 
 enum TipoAcaoContribuicao {
@@ -179,6 +223,8 @@ model Usuario {
   submissoes                 Submissao[]
   submissaoAutorias          SubmissaoAutor[]
   avaliacoesEdicao           AvaliadorEdicao[]
+  certificados               Certificado[]
+  comentariosAnais           ComentarioAnais[]
 
   @@map("usuarios")
 }
@@ -500,6 +546,10 @@ model Edicao {
   gruposConteudo        GrupoConteudo[]
   avaliadores           AvaliadorEdicao[]
   modelosEmailResultado ModeloEmailResultado[]
+  modelosCertificado    ModeloCertificado[]
+  certificados          Certificado[]
+  anais                 AnaisEdicao?
+  artigosAnais          ArtigoAnais[]
 
   @@map("edicoes")
 }
@@ -538,6 +588,7 @@ model Atividade {
   pessoas               AtividadePessoa[]
   inscricoes            InscricaoAtividade[]
   trabalhosApresentados Submissao[]
+  certificados          Certificado[]
 
   @@unique([edicaoId, slug])
   @@map("atividades")
@@ -802,6 +853,9 @@ model Submissao {
   emailApresentacaoAtividadeId String?
   emailApresentacaoEnviadoEm   DateTime?
   emailApresentacaoErro        String?
+  // Página própria do trabalho nos Anais (slug, contadores, páginas no PDF)
+  // — criada por anais.service.js quando a submissão entra no critério.
+  artigoAnais                  ArtigoAnais?
   createdAt                    DateTime              @default(now())
   updatedAt                    DateTime              @updatedAt
 
@@ -955,8 +1009,82 @@ model SubmissaoAutor {
   ordem       Int       @default(0)
   createdAt   DateTime  @default(now())
 
+  certificados Certificado[]
+
   @@index([usuarioId])
   @@map("submissao_autores")
+}
+
+// Layout de um tipo de certificado numa edição. Sem registro, vale o modelo
+// padrão de certificados.service.js. Medidas em mm sobre a página A4 paisagem
+// (297 × 210); tamanhoFonte em pt. imagemFundo é a URL pública no GCS
+// (normalizada pra JPEG no upload) — o mesmo arquivo pode ser compartilhado
+// por vários tipos ("Copiar layout"), então só sai do bucket quando nenhum
+// modelo usa mais. liberadoEm nulo = participantes ainda não veem nem baixam
+// os certificados desse tipo.
+model ModeloCertificado {
+  id                  String                         @id @default(uuid())
+  edicaoId            String
+  edicao              Edicao                         @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipo                TipoCertificado
+  imagemFundo         String?
+  larguraFundo        Int?
+  alturaFundo         Int?
+  texto               String                         @db.Text
+  margemSuperior      Float
+  margemInferior      Float
+  margemEsquerda      Float
+  margemDireita       Float
+  alinhamento         AlinhamentoCertificado         @default(CENTRO)
+  alinhamentoVertical AlinhamentoVerticalCertificado @default(CENTRO)
+  fonte               FonteCertificado               @default(ARCHIVO)
+  tamanhoFonte        Float                          @default(16)
+  entrelinha          Float                          @default(1.4)
+  corTexto            String                         @default("#2B2622")
+  posicaoQr           PosicaoQrCertificado           @default(INFERIOR_DIREITO)
+  tamanhoQr           Float                          @default(24)
+  margemQr            Float                          @default(12)
+  // Sobrescreve a carga horária natural do tipo (edição, atividade…) — ex.
+  // as 60 h da monitoria, que não vêm de nenhum outro lugar.
+  cargaHoraria        Int?
+  liberadoEm          DateTime?
+  updatedAt           DateTime                       @updatedAt
+
+  @@unique([edicaoId, tipo])
+  @@map("modelos_certificado")
+}
+
+// Certificado emitido. chave identifica "o mesmo certificado" entre uma
+// geração e outra (u:<usuario>, u:<usuario>:a:<atividade> ou sa:<autoria>),
+// pra "Gerar" de novo só criar os que faltam e atualizar o snapshot dos
+// existentes — o código nunca muda. dados é o snapshot dos marcadores (nome,
+// atividade, carga…), usado no PDF e na validação pública mesmo que a
+// presença/atividade mude depois. usuarioId é nulo para coautor sem conta (a
+// conta é resolvida pela autoria quando a pessoa se cadastrar).
+model Certificado {
+  id               String            @id @default(uuid())
+  edicaoId         String
+  edicao           Edicao            @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipo             TipoCertificado
+  chave            String
+  codigo           String            @unique
+  usuarioId        String?
+  usuario          Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  submissaoAutorId String?
+  submissaoAutor   SubmissaoAutor?   @relation(fields: [submissaoAutorId], references: [id], onDelete: SetNull)
+  atividadeId      String?
+  atividade        Atividade?        @relation(fields: [atividadeId], references: [id], onDelete: SetNull)
+  origem           OrigemCertificado @default(REGRA)
+  dados            Json
+  revogadoEm       DateTime?
+  motivoRevogacao  String?
+  emitidoEm        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([edicaoId, tipo, chave])
+  @@index([usuarioId])
+  @@index([submissaoAutorId])
+  @@map("certificados")
 }
 
 enum StatusInscricaoAtividade {
@@ -1054,4 +1182,105 @@ model InscricaoAtividade {
   @@unique([usuarioId, atividadeId])
   @@index([atividadeId, status])
   @@map("inscricoes_atividade")
+}
+
+// ---------------------------------------------------------------------------
+// Anais (módulo 11)
+// ---------------------------------------------------------------------------
+
+enum LicencaAnais {
+  CC_BY
+  CC_BY_SA
+  CC_BY_NC
+  CC_BY_NC_SA
+  CC_BY_ND
+  CC_BY_NC_ND
+  TODOS_DIREITOS_RESERVADOS
+}
+
+// Dados da publicação dos Anais de uma edição (1:1). Sem registro = Anais
+// ainda não configurados. publicadoEm nulo = páginas públicas fora do ar.
+// apresentacao é rich text (sanitizarApresentacaoAnais.js, mesma allowlist
+// do edital da monitoria); fichaCatalografica é texto puro, com quebras de
+// linha preservadas. gruposConteudoIds = grupos de "Comissões e Programas"
+// (GrupoConteudo) listados no expediente do PDF/Word. Os campos de arquivo
+// guardam a última geração em segundo plano (geracaoAnais.service.js):
+// geracaoIniciadaEm preenchido = gerando agora.
+model AnaisEdicao {
+  id                 String       @id @default(uuid())
+  edicaoId           String       @unique
+  edicao             Edicao       @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  titulo             String
+  subtitulo          String?
+  // Nome do evento sem o número da edição, como entra na referência ABNT
+  // ("In: NOME DO EVENTO, 5., 2026, Brasília").
+  nomeEvento         String?
+  issn               String?
+  isbn               String?
+  editora            String?
+  localPublicacao    String?
+  anoPublicacao      Int?
+  organizadores      String[]     @default([])
+  licenca            LicencaAnais @default(CC_BY)
+  apresentacao       String?      @db.Text
+  fichaCatalografica String?      @db.Text
+  gruposConteudoIds  String[]     @default([])
+  publicadoEm        DateTime?
+  pdfUrl             String?
+  pdfGeradoEm        DateTime?
+  docxUrl            String?
+  docxGeradoEm       DateTime?
+  geracaoFormato     String?
+  geracaoIniciadaEm  DateTime?
+  erroGeracao        String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@map("anais_edicao")
+}
+
+// Um trabalho publicado nos Anais. Materializado para toda submissão que
+// entra no critério (utils/criterioAnais.js) — o slug fica fixo depois de
+// criado, mesmo que o título mude. Se a submissão sair do critério o
+// registro fica (contadores e comentários preservados), mas some das
+// consultas públicas. paginaInicial/paginaFinal vêm da última geração do PDF
+// completo.
+model ArtigoAnais {
+  id            String            @id @default(uuid())
+  edicaoId      String
+  edicao        Edicao            @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  submissaoId   String            @unique
+  submissao     Submissao         @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+  slug          String
+  ocultoEm      DateTime?
+  paginaInicial Int?
+  paginaFinal   Int?
+  visualizacoes Int               @default(0)
+  downloads     Int               @default(0)
+  comentarios   ComentarioAnais[]
+  createdAt     DateTime          @default(now())
+
+  @@unique([edicaoId, slug])
+  @@map("artigos_anais")
+}
+
+// Comentário público num artigo dos Anais — só de quem tem conta, aparece
+// na hora; a organização oculta (ocultoEm) ou exclui. respostaAId aponta
+// sempre para um comentário raiz (um nível de resposta só).
+model ComentarioAnais {
+  id            String            @id @default(uuid())
+  artigoAnaisId String
+  artigoAnais   ArtigoAnais       @relation(fields: [artigoAnaisId], references: [id], onDelete: Cascade)
+  usuarioId     String
+  usuario       Usuario           @relation(fields: [usuarioId], references: [id])
+  respostaAId   String?
+  respostaA     ComentarioAnais?  @relation("RespostasComentarioAnais", fields: [respostaAId], references: [id], onDelete: Cascade)
+  respostas     ComentarioAnais[] @relation("RespostasComentarioAnais")
+  texto         String            @db.Text
+  ocultoEm      DateTime?
+  ocultoPorId   String?
+  createdAt     DateTime          @default(now())
+
+  @@index([artigoAnaisId, createdAt])
+  @@map("comentarios_anais")
 }

@@ -185,6 +185,7 @@ const definirSenha = asyncHandler(async (req, res) => {
   const registro = await tokenService.consumirToken(dados.token, [
     "CONVITE_ORGANIZADOR",
     "CONVITE_AVALIADOR",
+    "CONVITE_AUTOR",
   ]);
 
   if (!registro) {

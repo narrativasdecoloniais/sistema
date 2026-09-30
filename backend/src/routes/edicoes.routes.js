@@ -12,6 +12,8 @@ const apresentacaoSubmissoesRoutes = require("./apresentacaoSubmissoes.routes");
 const usuariosEdicaoRoutes = require("./usuariosEdicao.routes");
 const monitoriaRoutes = require("./monitoria.routes");
 const credenciamentoRoutes = require("./credenciamento.routes");
+const anaisRoutes = require("./anais.routes");
+const certificadosRoutes = require("./certificados.routes");
 const autenticar = require("../middlewares/autenticar");
 const autorizar = require("../middlewares/autorizar");
 const autorizarSecao = require("../middlewares/autorizarSecao");
@@ -42,5 +44,7 @@ router.use("/:edicaoId/apresentacao", apresentacaoSubmissoesRoutes);
 router.use("/:edicaoId/usuarios", usuariosEdicaoRoutes);
 router.use("/:edicaoId/monitoria", monitoriaRoutes);
 router.use("/:edicaoId/credenciamento", credenciamentoRoutes);
+router.use("/:edicaoId/anais", anaisRoutes);
+router.use("/:edicaoId/certificados", certificadosRoutes);
 
 module.exports = router;

@@ -2,6 +2,8 @@ const { Router } = require("express");
 const publicoController = require("../controllers/publico.controller");
 const submissoesPublicoRoutes = require("./submissoesPublico.routes");
 const regularizacaoContasRoutes = require("./regularizacaoContas.routes");
+const anaisPublicoRoutes = require("./anaisPublico.routes");
+const { limitadorPadrao } = require("../middlewares/rateLimiter");
 
 const router = Router();
 
@@ -22,7 +24,11 @@ router.get(
   "/edicoes/:edicaoSlug/atividades/:atividadeSlug",
   publicoController.buscarAtividadePorEdicaoSlug
 );
+// Validação de certificado (QR code impresso no PDF) — limite por IP contra
+// varredura de códigos.
+router.get("/certificados/:codigo", limitadorPadrao, publicoController.validarCertificado);
 router.use("/submissao", submissoesPublicoRoutes);
 router.use("/regularizacao", regularizacaoContasRoutes);
+router.use("/anais", anaisPublicoRoutes);
 
 module.exports = router;

@@ -26,22 +26,45 @@ function decodificarDataUri(dataUri) {
   return { buffer: Buffer.from(base64, "base64"), contentType, extensao };
 }
 
-async function salvarImagemPublica(dataUri, pasta) {
-  const { buffer, contentType, extensao } = decodificarDataUri(dataUri);
+const PREFIXO_PUBLICO = `https://storage.googleapis.com/${bucketPublico.name}/`;
+
+// Arquivo já processado no servidor (ex. fundo de certificado convertido pelo
+// sharp) — mesmo destino e cache de salvarImagemPublica.
+// nomeDownload (opcional) vira o nome sugerido ao baixar (Content-Disposition)
+// — ex. os Anais em PDF/Word, que senão baixariam com o uuid como nome.
+async function salvarBufferPublico(buffer, contentType, extensao, pasta, { nomeDownload } = {}) {
   const nomeArquivo = `${pasta}/${crypto.randomUUID()}.${extensao}`;
   await bucketPublico.file(nomeArquivo).save(buffer, {
     contentType,
-    metadata: { cacheControl: "public, max-age=31536000" },
+    metadata: {
+      cacheControl: "public, max-age=31536000",
+      ...(nomeDownload ? { contentDisposition: `attachment; filename="${nomeDownload.replace(/"/g, "")}"` } : {}),
+    },
   });
-  return `https://storage.googleapis.com/${bucketPublico.name}/${nomeArquivo}`;
+  return `${PREFIXO_PUBLICO}${nomeArquivo}`;
+}
+
+async function salvarImagemPublica(dataUri, pasta) {
+  const { buffer, contentType, extensao } = decodificarDataUri(dataUri);
+  return salvarBufferPublico(buffer, contentType, extensao, pasta);
+}
+
+function ehUrlPublica(url) {
+  return typeof url === "string" && url.startsWith(PREFIXO_PUBLICO);
 }
 
 async function removerImagemPublica(url) {
-  if (!url) return;
-  const prefixo = `https://storage.googleapis.com/${bucketPublico.name}/`;
-  if (!url.startsWith(prefixo)) return;
-  const caminho = url.slice(prefixo.length);
+  if (!ehUrlPublica(url)) return;
+  const caminho = url.slice(PREFIXO_PUBLICO.length);
   await bucketPublico.file(caminho).delete({ ignoreNotFound: true });
+}
+
+// Lê um arquivo do bucket público pelo client (credenciais do servidor), sem
+// passar por HTTP — usado pra montar PDFs com imagens já enviadas.
+async function lerArquivoPublico(url) {
+  if (!ehUrlPublica(url)) throw new Error("URL fora do bucket público.");
+  const [buffer] = await bucketPublico.file(url.slice(PREFIXO_PUBLICO.length)).download();
+  return buffer;
 }
 
 async function salvarImagemPrivada(dataUri, pasta) {
@@ -72,8 +95,12 @@ async function gerarUrlAssinada(caminho) {
 }
 
 module.exports = {
+  decodificarDataUri,
+  salvarBufferPublico,
   salvarImagemPublica,
   removerImagemPublica,
+  lerArquivoPublico,
+  ehUrlPublica,
   salvarImagemPrivada,
   removerImagemPrivada,
   salvarArquivoPrivado,

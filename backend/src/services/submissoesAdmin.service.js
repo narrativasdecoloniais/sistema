@@ -7,6 +7,10 @@ const processarImagensEmbutidas = require("../utils/processarImagensEmbutidas");
 const { DATA_URI_IMAGEM } = require("../utils/sanitizadorRichText");
 const storageService = require("./storage.service");
 const { distribuirSubmissao } = require("./avaliacoes.service");
+const submissoesService = require("./submissoes.service");
+const usuariosService = require("./usuarios.service");
+const tokenService = require("./token.service");
+const emailService = require("./email.service");
 
 // Autosave do editor salva a cada poucos segundos — guarda uma cópia do
 // texto anterior no máximo uma vez por janela, não uma por salvamento.
@@ -23,6 +27,68 @@ async function listarPorEdicao(edicaoId, { modalidadeSubmissaoId, areaSubmissaoI
     include: INCLUDE_PADRAO,
     orderBy: { createdAt: "desc" },
   });
+}
+
+// Autor principal: conta escolhida na busca ou, pelo e-mail, a conta que já
+// existe; sem conta, cria uma sem CPF e sem senha utilizável (convidado) —
+// CPF, senha e aceites vêm quando a pessoa aceita o convite em /definir-senha.
+async function resolverAutorPrincipal({ usuarioId, nome, email }) {
+  const usuario = usuarioId
+    ? await prisma.usuario.findUnique({ where: { id: usuarioId } })
+    : await usuariosService.buscarPorEmail(email);
+
+  if (usuario) {
+    if (!usuario.ativo || usuario.anonimizadoEm) {
+      throw new ErroHttp(409, usuarioId ? "Usuário não encontrado." : "Este e-mail pertence a uma conta desativada.");
+    }
+    return { usuario, convidado: false };
+  }
+  if (usuarioId) throw new ErroHttp(404, "Usuário não encontrado.");
+
+  const novo = await usuariosService.criarUsuarioConvidado({ nome, email, papeis: ["PARTICIPANTE"] });
+  return { usuario: novo, convidado: true };
+}
+
+// Inserção manual pela organização: mesmo caminho do envio pelo autor
+// (autores, vínculo de contas, distribuição aos avaliadores), mas sem prazo.
+// Depois do resultado divulgado as decisões ficam travadas — o trabalho nunca
+// teria decisão final, então a inserção é bloqueada.
+async function criarPelaOrganizacao(edicaoId, { usuarioId, nome, email, ...dados }) {
+  const edicao = await prisma.edicao.findUnique({ where: { id: edicaoId }, select: { resultadoDivulgadoEm: true } });
+  if (edicao?.resultadoDivulgadoEm) {
+    throw new ErroHttp(409, "O resultado desta edição já foi divulgado — não é possível inserir novas submissões.");
+  }
+
+  const { usuario, convidado } = await resolverAutorPrincipal({ usuarioId, nome, email });
+
+  let submissao;
+  try {
+    submissao = await submissoesService.criarSubmissao(usuario.id, edicaoId, dados, { ignorarPrazo: true });
+  } catch (erro) {
+    // Conta criada nesta mesma requisição e ainda sem nenhum vínculo — se a
+    // submissão falhou (área inválida etc.), desfaz em vez de deixar uma
+    // conta órfã que bloquearia o e-mail na próxima tentativa.
+    if (convidado) await prisma.usuario.delete({ where: { id: usuario.id } }).catch(() => {});
+    throw erro;
+  }
+
+  let conviteEnviado = null;
+  if (convidado) {
+    await usuariosService.associarAutoriasPendentes(usuario.id, usuario.email);
+    // Falha no e-mail não desfaz a submissão (já criada e distribuída) — o
+    // gestor é avisado; sem o convite, a pessoa vincula o CPF à conta pela
+    // página "Regularizar cadastro".
+    try {
+      const token = await tokenService.criarTokenConviteAutor(usuario.id);
+      await emailService.enviarEmailConviteAutor(usuario, token, submissao.titulo);
+      conviteEnviado = true;
+    } catch (erro) {
+      console.error("Falha ao enviar convite de autor:", erro);
+      conviteEnviado = false;
+    }
+  }
+
+  return { submissao: await buscarPorId(submissao.id), conviteEnviado };
 }
 
 async function buscarPorId(id) {
@@ -165,4 +231,13 @@ async function enviarImagem(edicaoId, id, dataUri) {
   return storageService.salvarImagemPublica(dataUri, "submissoes-resumo");
 }
 
-module.exports = { listarPorEdicao, buscarPorId, excluir, alterarArea, buscarParaEdicao, salvarConteudo, enviarImagem };
+module.exports = {
+  listarPorEdicao,
+  criarPelaOrganizacao,
+  buscarPorId,
+  excluir,
+  alterarArea,
+  buscarParaEdicao,
+  salvarConteudo,
+  enviarImagem,
+};

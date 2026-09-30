@@ -30,14 +30,16 @@ function verificarTokenSubmissao(token) {
   }
 }
 
-async function criarSubmissao(usuarioId, edicaoId, dados) {
+// ignorarPrazo: inserção pela organização (Recebimento), que pode incluir um
+// trabalho fora do prazo da modalidade.
+async function criarSubmissao(usuarioId, edicaoId, dados, { ignorarPrazo = false } = {}) {
   const modalidade = await prisma.modalidadeSubmissao.findFirst({
     where: { id: dados.modalidadeSubmissaoId, edicaoId },
     include: { areas: true },
   });
   if (!modalidade) throw new ErroHttp(404, "Modalidade de submissão não encontrada.");
 
-  if (!prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim)) {
+  if (!ignorarPrazo && !prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim)) {
     throw new ErroHttp(400, "O prazo de submissão desta modalidade não está aberto.");
   }
 

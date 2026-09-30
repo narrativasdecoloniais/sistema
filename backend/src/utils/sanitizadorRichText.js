@@ -25,6 +25,13 @@ const CONFIG_EDITAL = {
   ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "colwidth"],
 };
 
+// Texto de certificado (certificados.service.js): só parágrafo, quebra de
+// linha, negrito e itálico — é tudo o que o gerador de PDF sabe desenhar.
+const CONFIG_CERTIFICADO = {
+  ALLOWED_TAGS: ["p", "br", "strong", "em"],
+  ALLOWED_ATTR: [],
+};
+
 // Imagem só pode ser data URI de imagem raster (vira URL do GCS logo depois,
 // ver processarImagensEmbutidas.js) ou já estar no nosso bucket público —
 // nunca um domínio externo (rastreamento, conteúdo misto, hotlink).
@@ -100,6 +107,7 @@ module.exports = {
   CONFIG_RESUMO,
   CONFIG_REFERENCIA,
   CONFIG_EDITAL,
+  CONFIG_CERTIFICADO,
   PREFIXO_BUCKET,
   DATA_URI_IMAGEM,
   criarPurificador,

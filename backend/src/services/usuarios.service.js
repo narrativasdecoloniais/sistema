@@ -342,6 +342,17 @@ function operacoesAnonimizacao(id, cliente = prisma) {
       where: { usuarioId: id, revogadoEm: null },
       data: { revogadoEm: new Date() },
     }),
+    // Certificados da conta: revogados e sem nome/documento no snapshot (a
+    // validação pública passa a mostrar só "revogado"). Na unificação, os que
+    // não eram duplicados já foram movidos pra conta mantida antes daqui.
+    cliente.certificado.updateMany({
+      where: { OR: [{ usuarioId: id }, { submissaoAutor: { usuarioId: id } }] },
+      data: {
+        dados: { nome: "Usuário removido" },
+        revogadoEm: new Date(),
+        motivoRevogacao: "Conta removida",
+      },
+    }),
   ];
 }
 
@@ -362,6 +373,7 @@ module.exports = {
   criarUsuario,
   criarUsuarioConvidado,
   criarUsuarioViaSubmissao,
+  associarAutoriasPendentes,
   vincularIdentificacaoAoUsuario,
   definirSenhaEAceites,
   atualizarPerfil,

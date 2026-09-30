@@ -3,6 +3,7 @@ const ErroHttp = require("../utils/erroHttp");
 const edicoesService = require("../services/edicoes.service");
 const submissoesAdminService = require("../services/submissoesAdmin.service");
 const {
+  criarSubmissaoAdminSchema,
   conteudoSubmissaoSchema,
   imagemSubmissaoSchema,
   areaSubmissaoAdminSchema,
@@ -24,6 +25,13 @@ const listar = asyncHandler(async (req, res) => {
     areaSubmissaoId,
   });
   return res.json({ submissoes });
+});
+
+const criar = asyncHandler(async (req, res) => {
+  await garantirEdicao(req.params.edicaoId);
+  const dados = criarSubmissaoAdminSchema.parse(req.body);
+  const { submissao, conviteEnviado } = await submissoesAdminService.criarPelaOrganizacao(req.params.edicaoId, dados);
+  return res.status(201).json({ submissao, conviteEnviado });
 });
 
 const excluir = asyncHandler(async (req, res) => {
@@ -73,4 +81,4 @@ const enviarImagem = asyncHandler(async (req, res) => {
   return res.status(201).json({ url });
 });
 
-module.exports = { listar, excluir, alterarArea, buscarConteudo, salvarConteudo, enviarImagem };
+module.exports = { listar, criar, excluir, alterarArea, buscarConteudo, salvarConteudo, enviarImagem };

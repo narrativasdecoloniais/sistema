@@ -4,24 +4,39 @@ const edicoesService = require("../services/edicoes.service");
 const atividadesService = require("../services/atividades.service");
 const modalidadesSubmissaoService = require("../services/modalidadesSubmissao.service");
 const gruposConteudoService = require("../services/gruposConteudo.service");
+const certificadosService = require("../services/certificados.service");
 const prisma = require("../config/prisma");
 const inscricoesAbertas = require("../utils/inscricoesAbertas");
 const inscricoesMonitoriaAbertas = require("../utils/inscricoesMonitoriaAbertas");
 
+// Link "Anais" da navegação aponta para /anais/<slug> quando os Anais da
+// edição estão publicados. Consulta à parte (e tolerante a falha) pra nunca
+// derrubar a página da edição por causa dos Anais.
+async function anaisPublicados(edicaoId) {
+  try {
+    const anais = await prisma.anaisEdicao.findUnique({ where: { edicaoId }, select: { publicadoEm: true } });
+    return Boolean(anais?.publicadoEm);
+  } catch (erro) {
+    console.error("[publico] falha ao consultar os Anais da edição:", erro.message);
+    return false;
+  }
+}
+
 // Janelas calculadas no backend pra o site público mostrar/esconder os
 // botões de inscrição sem repetir as regras.
-function comJanelas(edicao) {
+async function comJanelas(edicao) {
   return {
     ...edicao,
     inscricoesAbertas: inscricoesAbertas(edicao),
     monitoriaAberta: inscricoesMonitoriaAbertas(edicao),
+    anaisPublicados: await anaisPublicados(edicao.id),
   };
 }
 
 const buscarEdicaoAtual = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
-  return res.json({ edicao: comJanelas(edicao) });
+  return res.json({ edicao: await comJanelas(edicao) });
 });
 
 const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
@@ -33,7 +48,7 @@ const listarEdicoesAnteriores = asyncHandler(async (req, res) => {
 const buscarEdicaoPorSlug = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarPorSlug(req.params.slug);
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
-  return res.json({ edicao: comJanelas(edicao) });
+  return res.json({ edicao: await comJanelas(edicao) });
 });
 
 const listarAtividadesPorEdicaoSlug = asyncHandler(async (req, res) => {
@@ -147,7 +162,13 @@ const listarTrabalhosAprovados = asyncHandler(async (req, res) => {
   return res.json({ trabalhos });
 });
 
+const validarCertificado = asyncHandler(async (req, res) => {
+  const certificado = await certificadosService.validar(req.params.codigo);
+  return res.json({ certificado });
+});
+
 module.exports = {
+  validarCertificado,
   listarTrabalhosAprovados,
   buscarEdicaoAtual,
   listarEdicoesAnteriores,

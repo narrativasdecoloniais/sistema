@@ -137,6 +137,15 @@ async function enviarEmailConviteAvaliador(usuario, token) {
   });
 }
 
+async function enviarEmailConviteAutor(usuario, token, titulo) {
+  const link = `${env.frontendUrl}/definir-senha?token=${token}`;
+  await enviarEmail({
+    para: usuario.email,
+    assunto: "Seu trabalho foi registrado no Narrativas",
+    html: `<p>Olá, ${escaparHtml(usuario.nome)}.</p><p>A organização do Narrativas registrou o trabalho <strong>${escaparHtml(titulo)}</strong> em seu nome e criou uma conta para você. Clique no link abaixo para definir sua senha e completar o cadastro; depois, o trabalho fica em "Minhas submissões", na sua área do participante:</p><p><a href="${link}">${link}</a></p><p>Se você não reconhece este trabalho, responda a este e-mail ou fale com a organização do evento.</p>`,
+  });
+}
+
 async function enviarEmailNotificacaoAvaliador(usuario) {
   const link = `${env.frontendUrl}/participante/avaliacoes`;
   await enviarEmail({
@@ -294,7 +303,26 @@ async function enviarEmailApresentacao(autor, { edicao, trabalho, atividade, ord
   });
 }
 
+// Novo comentário num trabalho publicado nos Anais (anais.service.js) — vai
+// para cada autor/coautor, menos quem comentou.
+async function enviarEmailNovoComentarioAnais(autor, { edicao, titulo, comentario, link }) {
+  const texto = escaparHtml(comentario.texto).replace(/\n/g, "<br />");
+  const corpoHtml = `
+    <p style="margin: 0 0 16px;">Olá, ${escaparHtml(autor.nome)}.</p>
+    <p style="margin: 0 0 16px;"><strong>${escaparHtml(comentario.nome)}</strong> comentou o trabalho <strong>${escaparHtml(titulo)}</strong>, publicado nos Anais:</p>
+    <p style="margin: 0 0 16px; padding: 12px 16px; background: ${CORES_EMAIL.papel};">${texto}</p>
+    <p style="margin: 0;"><a href="${link}" style="color: ${CORES_EMAIL.barro};">Ver o comentário e responder</a></p>
+    <p style="margin: 20px 0 0; font-size: 12px;">Para responder, entre com a sua conta no site do evento.</p>
+  `;
+  await enviarEmail({
+    para: autor.email,
+    assunto: `Novo comentário no seu trabalho — ${edicao.nome}`,
+    html: layoutEmailPublico({ eyebrow: "Anais", titulo: escaparHtml(edicao.nome), corpoHtml }),
+  });
+}
+
 module.exports = {
+  enviarEmailNovoComentarioAnais,
   enviarEmailApresentacao,
   enviarEmailConfirmacao,
   enviarEmailRecuperacaoSenha,
@@ -305,6 +333,7 @@ module.exports = {
   enviarEmailConviteOrganizador,
   enviarEmailNotificacaoOrganizador,
   enviarEmailConviteAvaliador,
+  enviarEmailConviteAutor,
   enviarEmailNotificacaoAvaliador,
   enviarEmailPromocaoAdmin,
   enviarEmailConfirmacaoInscricao,
