@@ -1,5 +1,5 @@
-const path = require("path");
 const pdfmake = require("pdfmake");
+const { FONTES, PASTAS_FONTES, aplicarFontes } = require("../utils/fontesPdf");
 const { citacaoAbnt } = require("../utils/citacao");
 const { linhaIdentificadores, periodoEvento, localEvento } = require("../utils/formatacaoAnais");
 
@@ -33,35 +33,9 @@ const MARGENS = [64, 78, 64, 72]; // esquerda, topo, direita, base
 const LARGURA_CONTEUDO = A4.largura - MARGENS[0] - MARGENS[2];
 
 // ---------------------------------------------------------------------------
-// Fontes (WOFF via @fontsource, lidas do node_modules pelo fontkit)
+// Fontes: Archivo (títulos), Source Serif 4 (corpo) e Saira Stencil (capa),
+// fatiadas por alfabeto, com a DejaVu Sans de reserva — ver fontesPdf.js.
 // ---------------------------------------------------------------------------
-
-function arquivoFonte(pacote, arquivo) {
-  return require.resolve(`@fontsource/${pacote}/files/${arquivo}`);
-}
-
-const FONTES = {
-  Archivo: {
-    normal: arquivoFonte("archivo", "archivo-latin-400-normal.woff"),
-    bold: arquivoFonte("archivo", "archivo-latin-700-normal.woff"),
-    italics: arquivoFonte("archivo", "archivo-latin-400-italic.woff"),
-    bolditalics: arquivoFonte("archivo", "archivo-latin-700-italic.woff"),
-  },
-  Serif: {
-    normal: arquivoFonte("source-serif-4", "source-serif-4-latin-400-normal.woff"),
-    bold: arquivoFonte("source-serif-4", "source-serif-4-latin-700-normal.woff"),
-    italics: arquivoFonte("source-serif-4", "source-serif-4-latin-400-italic.woff"),
-    bolditalics: arquivoFonte("source-serif-4", "source-serif-4-latin-700-italic.woff"),
-  },
-  Stencil: {
-    normal: arquivoFonte("saira-stencil-one", "saira-stencil-one-latin-400-normal.woff"),
-    bold: arquivoFonte("saira-stencil-one", "saira-stencil-one-latin-400-normal.woff"),
-    italics: arquivoFonte("saira-stencil-one", "saira-stencil-one-latin-400-normal.woff"),
-    bolditalics: arquivoFonte("saira-stencil-one", "saira-stencil-one-latin-400-normal.woff"),
-  },
-};
-
-const PASTAS_FONTES = [...new Set(Object.values(FONTES).flatMap((familia) => Object.values(familia).map(path.dirname)))];
 
 pdfmake.setFonts(FONTES);
 // Nada de buscar recurso externo durante a geração; do disco, só as fontes.
@@ -629,7 +603,7 @@ async function renderizar(definicao, { capturarIds } = {}) {
       return false;
     };
   }
-  const buffer = await pdfmake.createPdf(definicao).getBuffer();
+  const buffer = await pdfmake.createPdf(aplicarFontes(definicao)).getBuffer();
   return { buffer, posicoes };
 }
 
