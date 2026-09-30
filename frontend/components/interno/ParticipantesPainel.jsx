@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, MailPlus, GitMerge, Trash2, ShieldPlus, Settings2 } from "lucide-react";
+import { UserPlus, MailPlus, GitMerge, Trash2, ShieldPlus, ShieldMinus, Settings2 } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
@@ -97,6 +97,27 @@ const COLUNAS = [
   },
 ];
 
+const TEXTOS_CONFIRMACAO = {
+  promover: {
+    titulo: "Promover a administrador",
+    rotulo: "Promover",
+    mensagem: (nome) =>
+      `${nome} passará a ter acesso total ao Narrativas, inclusive aos dados de todos os usuários e à gestão da equipe.`,
+  },
+  rebaixar: {
+    titulo: "Remover de administrador",
+    rotulo: "Remover de administrador",
+    mensagem: (nome) =>
+      `${nome} perderá o acesso total e continuará na equipe como organizador(a), só com as seções liberadas nas permissões — revise-as em seguida. Pode levar alguns minutos até valer para quem já está logado.`,
+  },
+  remover: {
+    titulo: "Remover organizador",
+    rotulo: "Remover",
+    mensagem: (nome) =>
+      `${nome} perderá o acesso de organizador. Essa ação não pode ser desfeita.`,
+  },
+};
+
 export default function ParticipantesPainel({ participantesIniciais, usuarios = [], usuarioLogado }) {
   const router = useRouter();
   const { notificar } = useToast();
@@ -176,6 +197,26 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
           : [...atual, resposta.organizador]
       );
       notificar(`${resposta.organizador.nome} agora é administrador(a).`);
+      router.refresh();
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setProcessandoId(null);
+      setConfirmando(null);
+    }
+  }
+
+  // O admin continua na equipe como organizador, com as permissões por seção
+  // que já tinha — a linha só troca de papel.
+  async function rebaixarAdmin(id) {
+    setProcessandoId(id);
+
+    try {
+      const resposta = await apiClient.patch(`/organizadores/${id}/rebaixar`, {});
+      setParticipantes((atual) =>
+        atual.map((item) => (item.id === id ? resposta.organizador : item))
+      );
+      notificar(`${resposta.organizador.nome} deixou de ser administrador(a) e agora é organizador(a).`);
       router.refresh();
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -319,6 +360,20 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
                         </td>
                         <td data-rotulo="Permissões">{textoPermissoes(participante)}</td>
                         <td data-rotulo="Ações" className={styles.colunaAcoes}>
+                          {eAdmin && souAdmin && participante.id !== usuarioLogado?.id && (
+                            <div className={styles.acoesLinha}>
+                              <button
+                                type="button"
+                                className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
+                                aria-label={`Remover ${participante.nome} de administrador`}
+                                onClick={() =>
+                                  setConfirmando({ id: participante.id, tipo: "rebaixar" })
+                                }
+                              >
+                                <ShieldMinus size={16} strokeWidth={1.5} aria-hidden="true" />
+                              </button>
+                            </div>
+                          )}
                           {!eAdmin && souAdmin && (
                             <div className={styles.acoesLinha}>
                               <button
@@ -407,20 +462,16 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
 
       {confirmando && (
         <ModalConfirmacao
-          titulo={confirmando.tipo === "promover" ? "Promover a administrador" : "Remover organizador"}
-          mensagem={
-            confirmando.tipo === "promover"
-              ? `${nomeEmConfirmacao} passará a ter acesso total ao Narrativas, inclusive aos dados de todos os usuários e à gestão da equipe.`
-              : `${nomeEmConfirmacao} perderá o acesso de organizador. Essa ação não pode ser desfeita.`
-          }
-          rotuloConfirmar={confirmando.tipo === "promover" ? "Promover" : "Remover"}
+          titulo={TEXTOS_CONFIRMACAO[confirmando.tipo].titulo}
+          mensagem={TEXTOS_CONFIRMACAO[confirmando.tipo].mensagem(nomeEmConfirmacao)}
+          rotuloConfirmar={TEXTOS_CONFIRMACAO[confirmando.tipo].rotulo}
           perigo={confirmando.tipo !== "promover"}
           confirmando={processandoId === confirmando.id}
-          onConfirmar={() =>
-            confirmando.tipo === "promover"
-              ? promoverAdmin(confirmando.id)
-              : removerParticipante(confirmando.id)
-          }
+          onConfirmar={() => {
+            if (confirmando.tipo === "promover") return promoverAdmin(confirmando.id);
+            if (confirmando.tipo === "rebaixar") return rebaixarAdmin(confirmando.id);
+            return removerParticipante(confirmando.id);
+          }}
           onCancelar={() => setConfirmando(null)}
         />
       )}
