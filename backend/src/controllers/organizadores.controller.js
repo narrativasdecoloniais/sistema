@@ -23,10 +23,15 @@ const promover = asyncHandler(async (req, res) => {
   return res.json({ organizador });
 });
 
+const rebaixar = asyncHandler(async (req, res) => {
+  const organizador = await organizadoresService.rebaixarAdmin(req.params.id, req.usuario.id);
+  return res.json({ organizador });
+});
+
 const atualizarPermissoes = asyncHandler(async (req, res) => {
   const dados = permissoesSchema.parse(req.body);
   const organizador = await organizadoresService.atualizarPermissoes(req.params.id, dados);
   return res.json({ organizador });
 });
 
-module.exports = { listar, criar, excluir, promover, atualizarPermissoes };
+module.exports = { listar, criar, excluir, promover, rebaixar, atualizarPermissoes };

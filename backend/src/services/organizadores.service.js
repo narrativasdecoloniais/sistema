@@ -86,6 +86,35 @@ async function promoverAdmin(id) {
   return prisma.usuario.findUnique({ where: { id }, select: CAMPOS_ORGANIZADOR });
 }
 
+// Tira o ADMIN e deixa a pessoa como ORGANIZADOR, com as permissões por seção
+// que já estavam gravadas (quem foi promovido direto da aba "Usuários" fica sem
+// nenhuma seção até o admin editar). Nunca a si mesmo nem o último admin, pra
+// ninguém perder o acesso à gestão da equipe.
+async function rebaixarAdmin(id, idSolicitante) {
+  if (id === idSolicitante) {
+    throw new ErroHttp(409, "Você não pode remover seu próprio acesso de administrador.");
+  }
+
+  const usuario = await usuariosService.buscarCompletoPorId(id);
+  if (!usuario || !usuario.papeis.includes("ADMIN")) {
+    throw new ErroHttp(404, "Administrador não encontrado.");
+  }
+
+  const totalAdmins = await prisma.usuario.count({ where: { papeis: { has: "ADMIN" } } });
+  if (totalAdmins <= 1) {
+    throw new ErroHttp(409, "É preciso manter pelo menos um administrador.");
+  }
+
+  const papeis = usuario.papeis.filter((papel) => papel !== "ADMIN");
+  if (!papeis.includes("ORGANIZADOR")) papeis.push("ORGANIZADOR");
+
+  return prisma.usuario.update({
+    where: { id },
+    data: { papeis },
+    select: CAMPOS_ORGANIZADOR,
+  });
+}
+
 async function atualizarPermissoes(id, { acessoCompleto, secoesPermitidas }) {
   const usuario = await usuariosService.buscarCompletoPorId(id);
   if (!usuario || !usuario.papeis.includes("ORGANIZADOR")) {
@@ -107,5 +136,6 @@ module.exports = {
   adicionarOrganizador,
   removerOrganizador,
   promoverAdmin,
+  rebaixarAdmin,
   atualizarPermissoes,
 };
