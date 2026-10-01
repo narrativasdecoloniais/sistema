@@ -23,7 +23,8 @@ export default async function PaginaTrabalhosAprovados() {
         <p className={styles.aviso}>O resultado das submissões ainda não foi divulgado. Volte em breve.</p>
       ) : trabalhos.length === 0 ? (
         <p className={styles.aviso}>
-          Os trabalhos aprovados aparecem aqui conforme os autores concluem os ajustes pedidos.
+          Os trabalhos aprovados aparecem aqui depois de apresentados no evento, quando algum dos autores
+          tiver feito o credenciamento.
         </p>
       ) : (
         <TrabalhosAprovados trabalhos={trabalhos} />

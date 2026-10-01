@@ -10,6 +10,7 @@ import CampoTexto from "./CampoTexto";
 import CartoesContadores from "./CartoesContadores";
 import AbaTrabalhosResultado from "./ResultadoTrabalhos";
 import AbaModelosEmail from "./ResultadoModelosEmail";
+import EnviarEmailsResultadoModal from "./EnviarEmailsResultadoModal";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { paraData } from "@/lib/dataHoraIngenua";
@@ -124,6 +125,14 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
   const [confirmando, setConfirmando] = useState(false);
   const [divulgando, setDivulgando] = useState(false);
   const [reenviando, setReenviando] = useState(false);
+  // null = fechado; senão a etapa em que o modal de e-mails abre.
+  const [modalEmails, setModalEmails] = useState(null);
+
+  const fecharModalEmails = useCallback(() => {
+    setModalEmails(null);
+    // Textos salvos no modal valem também na aba "Textos dos e-mails".
+    recarregar().catch(() => {});
+  }, [recarregar]);
 
   const divulgado = Boolean(resumo.divulgadoEm);
   const { decisoes, emails } = resumo;
@@ -157,19 +166,21 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
     try {
       const resposta = await apiClient.post(`/edicoes/${edicaoId}/resultado/divulgar`, {});
       notificar(resposta.mensagem);
+      setConfirmando(false);
+      setModalEmails("pergunta");
       await recarregar();
     } catch (erro) {
       notificar(erro.message, "erro");
+      setConfirmando(false);
     } finally {
       setDivulgando(false);
-      setConfirmando(false);
     }
   }
 
   async function reenviar() {
     setReenviando(true);
     try {
-      const resposta = await apiClient.post(`/edicoes/${edicaoId}/resultado/reenviar-emails`, {});
+      const resposta = await apiClient.post(`/edicoes/${edicaoId}/resultado/enviar-emails`, {});
       notificar(resposta.mensagem);
       await recarregar();
     } catch (erro) {
@@ -180,6 +191,7 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
   }
 
   const prazoAlterado = paraData(resumo.prazoCorrecao) !== prazo;
+  const emailsNuncaEnviados = emails.enviados === 0 && emails.comErro === 0 && !emails.enviando;
 
   return (
     <>
@@ -245,9 +257,9 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
               </div>
             ) : (
               <p className={styles.textoApoio}>
-                Tudo pronto. Ao divulgar, cada autor e coautor recebe um e-mail com a decisão do trabalho (textos na
-                aba “Textos dos e-mails”), o resultado aparece em Minhas submissões e os aprovados entram na lista
-                pública.
+                Tudo pronto. Ao divulgar, o resultado aparece em Minhas submissões e os aprovados entram na lista
+                pública. Nenhum e-mail é enviado automaticamente — em seguida você escolhe se quer avisar os autores,
+                revisando os textos antes.
               </p>
             )}
             <div>
@@ -263,29 +275,44 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
               Resultado divulgado em <strong>{formatarDataHora(resumo.divulgadoEm)}</strong>.
               {resumo.prazoCorrecao && ` Correções até ${formatarPrazoCorrecao(resumo.prazoCorrecao)}.`}
             </p>
-            <div className={estilosResultado.progresso}>
-              <p className={estilosResultado.semMargem} aria-live="polite">
-                E-mails: {emails.enviados} de {emails.total} trabalhos enviados
-                {emails.comErro > 0 && ` · ${emails.comErro} com erro`}
-                {emails.enviando && " · enviando..."}
-              </p>
-              <div
-                className={estilosResultado.barra}
-                role="progressbar"
-                aria-label="Progresso do envio dos e-mails"
-                aria-valuemin={0}
-                aria-valuemax={emails.total}
-                aria-valuenow={emails.enviados}
-              >
-                <span style={{ width: `${emails.total ? (emails.enviados / emails.total) * 100 : 0}%` }} />
-              </div>
-            </div>
-            {emails.pendentes > 0 && !emails.enviando && (
-              <div>
-                <Botao type="button" variante="secundario" onClick={reenviar} carregando={reenviando}>
-                  Reenviar pendentes ({emails.pendentes})
-                </Botao>
-              </div>
+            {emailsNuncaEnviados ? (
+              <>
+                <p className={styles.textoApoio}>Nenhum e-mail de resultado foi enviado aos autores.</p>
+                <div>
+                  <Botao type="button" variante="secundario" onClick={() => setModalEmails("revisao")}>
+                    <Send size={18} strokeWidth={1.5} aria-hidden="true" />
+                    Enviar e-mails aos autores
+                  </Botao>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={estilosResultado.progresso}>
+                  <p className={estilosResultado.semMargem} aria-live="polite">
+                    E-mails{emails.soAutorPrincipal && " (só autor principal)"}: {emails.enviados} de {emails.total}{" "}
+                    trabalhos enviados
+                    {emails.comErro > 0 && ` · ${emails.comErro} com erro`}
+                    {emails.enviando && " · enviando..."}
+                  </p>
+                  <div
+                    className={estilosResultado.barra}
+                    role="progressbar"
+                    aria-label="Progresso do envio dos e-mails"
+                    aria-valuemin={0}
+                    aria-valuemax={emails.total}
+                    aria-valuenow={emails.enviados}
+                  >
+                    <span style={{ width: `${emails.total ? (emails.enviados / emails.total) * 100 : 0}%` }} />
+                  </div>
+                </div>
+                {emails.pendentes > 0 && !emails.enviando && (
+                  <div>
+                    <Botao type="button" variante="secundario" onClick={reenviar} carregando={reenviando}>
+                      Reenviar pendentes ({emails.pendentes})
+                    </Botao>
+                  </div>
+                )}
+              </>
             )}
             <p className={styles.textoApoio}>
               As decisões ficam travadas depois da divulgação. Acompanhe e confira as correções na aba “Trabalhos”.
@@ -297,12 +324,21 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
       {confirmando && (
         <ModalConfirmacao
           titulo="Divulgar resultado"
-          mensagem={`Os e-mails de resultado serão enviados aos autores de ${resumo.total} ${resumo.total === 1 ? "trabalho" : "trabalhos"} e as decisões ficarão travadas. Essa ação não pode ser desfeita.`}
+          mensagem={`O resultado de ${resumo.total} ${resumo.total === 1 ? "trabalho" : "trabalhos"} será divulgado e as decisões ficarão travadas. Nenhum e-mail é enviado agora. Essa ação não pode ser desfeita.`}
           rotuloConfirmar="Divulgar"
           perigo={false}
           confirmando={divulgando}
           onConfirmar={divulgar}
           onCancelar={() => setConfirmando(false)}
+        />
+      )}
+
+      {modalEmails && (
+        <EnviarEmailsResultadoModal
+          edicaoId={edicaoId}
+          etapaInicial={modalEmails}
+          onFechar={fecharModalEmails}
+          onEnviado={fecharModalEmails}
         />
       )}
     </>

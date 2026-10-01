@@ -141,7 +141,7 @@ export default function AnaisPainel({ edicaoId, painelInicial, artigosIniciais, 
           <h1 className={styles.titulo}>Anais</h1>
           <p className={styles.descricao}>
             Publique os trabalhos desta edição com página própria, ISSN/ISBN, citação ABNT e comentários, e gere os
-            Anais completos em PDF e Word. Entram os trabalhos com decisão final &quot;Aprovado para formatação&quot;.
+            Anais completos em PDF e Word. Entram os trabalhos com decisão final &quot;Aprovado para formatação&quot; e algum autor credenciado no evento.
           </p>
         </div>
         <div className={estilos.acoesCabecalho}>

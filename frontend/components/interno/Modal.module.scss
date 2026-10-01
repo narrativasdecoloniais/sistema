@@ -19,6 +19,11 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
+// Para conteúdo com editores de texto lado a lado com a prévia.
+.painelLargo {
+  max-width: 840px;
+}
+
 .cabecalho {
   display: flex;
   align-items: center;

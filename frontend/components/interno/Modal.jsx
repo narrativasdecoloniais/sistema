@@ -7,7 +7,7 @@ import styles from "./Modal.module.scss";
 const SELETOR_FOCAVEIS =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-export default function Modal({ titulo, onFechar, children }) {
+export default function Modal({ titulo, onFechar, children, largo = false }) {
   const painelRef = useRef(null);
   const idTitulo = "modal-titulo";
 
@@ -58,7 +58,7 @@ export default function Modal({ titulo, onFechar, children }) {
   return (
     <div className={styles.fundo} onClick={aoClicarFundo}>
       <div
-        className={styles.painel}
+        className={`${styles.painel} ${largo ? styles.painelLargo : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
