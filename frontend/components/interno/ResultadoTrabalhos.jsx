@@ -26,7 +26,8 @@ function situacaoEmail(trabalho, divulgado) {
   if (!divulgado) return "Não divulgado";
   if (trabalho.emailResultadoEnviadoEm) return "Enviado";
   if (trabalho.emailResultadoErro) return "Com erro";
-  return "Na fila";
+  if (trabalho.emailResultadoSolicitadoEm) return "Na fila";
+  return "Não enviado";
 }
 
 export default function AbaTrabalhosResultado({ edicaoId, trabalhos, modalidades, divulgado, recarregar }) {
@@ -84,7 +85,7 @@ export default function AbaTrabalhosResultado({ edicaoId, trabalhos, modalidades
         rotulo: "E-mail",
         valor: (trabalho) => situacaoEmail(trabalho, divulgado),
         filtro: "select",
-        opcoes: ["Não divulgado", "Na fila", "Enviado", "Com erro"].map((rotulo) => ({ valor: rotulo, rotulo })),
+        opcoes: ["Não divulgado", "Não enviado", "Na fila", "Enviado", "Com erro"].map((rotulo) => ({ valor: rotulo, rotulo })),
         corresponde: (trabalho, valor) => situacaoEmail(trabalho, divulgado) === valor,
       },
     ],

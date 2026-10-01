@@ -191,7 +191,6 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
   }
 
   const prazoAlterado = paraData(resumo.prazoCorrecao) !== prazo;
-  const emailsNuncaEnviados = emails.enviados === 0 && emails.comErro === 0 && !emails.enviando;
 
   return (
     <>
@@ -275,22 +274,11 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
               Resultado divulgado em <strong>{formatarDataHora(resumo.divulgadoEm)}</strong>.
               {resumo.prazoCorrecao && ` Correções até ${formatarPrazoCorrecao(resumo.prazoCorrecao)}.`}
             </p>
-            {emailsNuncaEnviados ? (
-              <>
-                <p className={styles.textoApoio}>Nenhum e-mail de resultado foi enviado aos autores.</p>
-                <div>
-                  <Botao type="button" variante="secundario" onClick={() => setModalEmails("revisao")}>
-                    <Send size={18} strokeWidth={1.5} aria-hidden="true" />
-                    Enviar e-mails aos autores
-                  </Botao>
-                </div>
-              </>
-            ) : (
+            {emails.total > 0 && (
               <>
                 <div className={estilosResultado.progresso}>
                   <p className={estilosResultado.semMargem} aria-live="polite">
-                    E-mails{emails.soAutorPrincipal && " (só autor principal)"}: {emails.enviados} de {emails.total}{" "}
-                    trabalhos enviados
+                    E-mails: {emails.enviados} de {emails.total} {emails.total === 1 ? "trabalho enviado" : "trabalhos enviados"}
                     {emails.comErro > 0 && ` · ${emails.comErro} com erro`}
                     {emails.enviando && " · enviando..."}
                   </p>
@@ -302,7 +290,7 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
                     aria-valuemax={emails.total}
                     aria-valuenow={emails.enviados}
                   >
-                    <span style={{ width: `${emails.total ? (emails.enviados / emails.total) * 100 : 0}%` }} />
+                    <span style={{ width: `${(emails.enviados / emails.total) * 100}%` }} />
                   </div>
                 </div>
                 {emails.pendentes > 0 && !emails.enviando && (
@@ -312,6 +300,27 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
                     </Botao>
                   </div>
                 )}
+              </>
+            )}
+            {emails.naoSolicitados > 0 && (
+              <>
+                <p className={styles.textoApoio}>
+                  {emails.total === 0
+                    ? "Nenhum e-mail de resultado foi enviado aos autores."
+                    : `${emails.naoSolicitados} ${emails.naoSolicitados === 1 ? "trabalho ainda não recebeu" : "trabalhos ainda não receberam"} o e-mail de resultado.`}
+                  {emails.enviando && " Aguarde o envio em andamento terminar para enviar outros grupos."}
+                </p>
+                <div>
+                  <Botao
+                    type="button"
+                    variante="secundario"
+                    onClick={() => setModalEmails("revisao")}
+                    disabled={emails.enviando}
+                  >
+                    <Send size={18} strokeWidth={1.5} aria-hidden="true" />
+                    Enviar e-mails aos autores
+                  </Botao>
+                </div>
               </>
             )}
             <p className={styles.textoApoio}>
