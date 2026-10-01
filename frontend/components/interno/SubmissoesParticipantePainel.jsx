@@ -205,7 +205,7 @@ function CoautoresSubmissao({ submissao, setSubmissoes }) {
 
 const ACAO_CORRECAO = {
   APROVADO_COM_RESSALVAS: { botao: "Corrigir trabalho", verbo: "enviar a versão corrigida" },
-  APROVADO_FORMATACAO: { botao: "Revisar formatação", verbo: "revisar a formatação do resumo e das referências" },
+  APROVADO_FORMATACAO: { botao: "Revisar", verbo: "revisar a formatação do resumo e das referências" },
 };
 
 // Só chega preenchido depois que a organização divulga o resultado (a API
