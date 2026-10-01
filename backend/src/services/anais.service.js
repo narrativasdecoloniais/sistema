@@ -536,6 +536,51 @@ async function buscarArtigoPublico(edicaoSlug, artigoSlug) {
   };
 }
 
+// Prévia da página do trabalho nos Anais para um autor/coautor (Minhas
+// submissões), no mesmo formato de buscarArtigoPublico — mas para qualquer
+// trabalho da pessoa, publicado ou não: sem Anais configurados vale a
+// configuração padrão, e sem ArtigoAnais ainda não há slug, páginas nem link.
+// A decisão não entra (vazaria o resultado antes da divulgação).
+async function buscarPreviaArtigo(usuarioId, submissaoId) {
+  const submissao = await prisma.submissao.findFirst({
+    where: { id: submissaoId, autores: { some: { usuarioId } } },
+    select: {
+      ...SELECT_SUBMISSAO_LISTA,
+      referenciaBibliografica: true,
+      edicao: { select: { ...SELECT_EDICAO, anais: true } },
+      artigoAnais: { select: { slug: true, paginaInicial: true, paginaFinal: true } },
+      atividadeApresentacao: {
+        select: { nome: true, slug: true, inicioAtividade: true, fimAtividade: true, local: true },
+      },
+    },
+  });
+  if (!submissao) throw new ErroHttp(404, "Submissão não encontrada.");
+
+  const { anais: anaisSalvos, ...dadosEdicao } = submissao.edicao;
+  const anais = anaisSalvos || configuracaoPadrao(submissao.edicao);
+  const artigo = submissao.artigoAnais || { slug: null, paginaInicial: null, paginaFinal: null };
+  const citacao = dadosCitacao(submissao.edicao, anais, artigo, submissao);
+
+  return {
+    edicao: dadosEdicao,
+    anais: anaisPublicos(anais),
+    artigo: {
+      slug: artigo.slug,
+      titulo: submissao.titulo,
+      autores: submissao.autores,
+      modalidade: submissao.modalidadeSubmissao,
+      area: submissao.areaSubmissao,
+      resumo: DOMPurify.sanitize(submissao.resumo, CONFIG_RESUMO),
+      referenciaBibliografica: DOMPurify.sanitize(submissao.referenciaBibliografica, CONFIG_REFERENCIA),
+      paginaInicial: artigo.paginaInicial,
+      paginaFinal: artigo.paginaFinal,
+      publicadoEm: null,
+      apresentacao: dadosEdicao.apresentacaoPublicadaEm ? submissao.atividadeApresentacao : null,
+      citacao: { ...citacao, url: artigo.slug ? citacao.url : null },
+    },
+  };
+}
+
 async function listarSitemap() {
   const edicoes = await prisma.edicao.findMany({
     where: { slug: { not: null }, anais: { publicadoEm: { not: null } } },
@@ -717,6 +762,7 @@ module.exports = {
   listarEdicoesComAnais,
   buscarAnaisPublicos,
   buscarArtigoPublico,
+  buscarPreviaArtigo,
   listarSitemap,
   buscarArtigoVisivelPorId,
   registrarVisualizacao,

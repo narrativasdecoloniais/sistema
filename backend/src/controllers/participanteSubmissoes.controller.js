@@ -12,6 +12,7 @@ const usuariosService = require("../services/usuarios.service");
 const edicoesService = require("../services/edicoes.service");
 const submissoesService = require("../services/submissoes.service");
 const convitesCoautorService = require("../services/convitesCoautor.service");
+const anaisService = require("../services/anais.service");
 
 const INCLUDE_PARTICIPANTE = {
   ...INCLUDE_PADRAO,
@@ -118,6 +119,11 @@ const buscar = asyncHandler(async (req, res) => {
   return res.json({ submissao: formatarParaParticipante(submissao, req.usuario.id, { completa: true, convites }) });
 });
 
+// Prévia da página do trabalho nos Anais, com o layout público.
+const previa = asyncHandler(async (req, res) => {
+  return res.json(await anaisService.buscarPreviaArtigo(req.usuario.id, req.params.id));
+});
+
 const corrigir = asyncHandler(async (req, res) => {
   const dados = correcaoSubmissaoSchema.parse(req.body);
   await submissoesService.corrigirSubmissao(req.usuario.id, req.params.id, dados);
@@ -145,6 +151,7 @@ const verificarEmailAutor = asyncHandler(async (req, res) => {
 module.exports = {
   listarMinhas,
   buscar,
+  previa,
   corrigir,
   criar,
   verificarEmailAutor,
