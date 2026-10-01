@@ -33,8 +33,12 @@ const modeloEmailSchema = z.object({
   corpo: z.string().trim().min(1, "Informe o texto do e-mail"),
 });
 
-// Sem soAutorPrincipal (reenvio de pendentes) mantém a última escolha gravada.
-const enviarEmailsSchema = z.object({ soAutorPrincipal: z.boolean().optional() });
+// Com decisoes: pede o envio desses grupos. Sem body: retoma os pendentes,
+// cada um com a escolha de destinatários do seu pedido.
+const enviarEmailsSchema = z.object({
+  decisoes: z.array(decisaoParamSchema).min(1, "Escolha pelo menos um grupo").optional(),
+  soAutorPrincipal: z.boolean().optional(),
+});
 
 module.exports = {
   observacaoSchema,

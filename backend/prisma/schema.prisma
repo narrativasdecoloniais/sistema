@@ -280,10 +280,6 @@ model Edicao {
   // (APROVADO_COM_RESSALVAS e APROVADO_FORMATACAO).
   resultadoDivulgadoEm              DateTime?
   prazoCorrecaoSubmissao            DateTime?
-  // A divulgação não envia e-mail: o envio é disparado depois, à parte.
-  // Guarda a última escolha de destinatários (todos os autores ou só o
-  // principal) pra o "Reenviar pendentes" retomar igual, mesmo após restart.
-  emailResultadoSoAutorPrincipal    Boolean              @default(false)
   // Distribuição dos trabalhos nas atividades (apresentacaoSubmissoes.service.js)
   // só aparece na página pública da atividade e em Minhas submissões quando
   // publicada — nulo = oculta (pode voltar a ser ocultada).
@@ -850,6 +846,12 @@ model Submissao {
   motivoDevolucao              String?               @db.Text
   emailResultadoEnviadoEm      DateTime?
   emailResultadoErro           String?
+  // A divulgação não envia e-mail: a organização pede o envio depois, por
+  // grupo de decisão (resultadoSubmissoes.service.js#enviarEmails). Só entra
+  // na fila (e no "Reenviar pendentes") o que foi pedido, com a escolha de
+  // destinatários daquele pedido (todos os autores ou só o principal).
+  emailResultadoSolicitadoEm   DateTime?
+  emailResultadoSoPrincipal    Boolean               @default(false)
   versoes                      SubmissaoVersao[]
   // Apresentação: uma atividade por trabalho aprovado, com ordem dentro
   // dela. emailApresentacaoAtividadeId = atividade sobre a qual os autores

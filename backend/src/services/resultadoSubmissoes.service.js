@@ -9,6 +9,9 @@ const emailResultadoService = require("./emailResultado.service");
 // Decisões que pedem ação do autor principal depois da divulgação.
 const DECISOES_COM_CORRECAO = ["APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"];
 
+// Trabalho que ainda não recebeu o e-mail de resultado nem teve o envio pedido.
+const WHERE_EMAIL_NAO_SOLICITADO = { emailResultadoSolicitadoEm: null, emailResultadoEnviadoEm: null };
+
 // Resend aceita 2 req/s por padrão — envio sequencial com folga.
 const INTERVALO_ENVIO_MS = 600;
 
@@ -29,7 +32,6 @@ async function buscarEdicao(db, edicaoId) {
       nome: true,
       resultadoDivulgadoEm: true,
       prazoCorrecaoSubmissao: true,
-      emailResultadoSoAutorPrincipal: true,
     },
   });
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
@@ -48,19 +50,22 @@ async function garantirResultadoNaoDivulgado(db, edicaoId) {
 
 async function resumo(edicaoId) {
   const edicao = await buscarEdicao(prisma, edicaoId);
-  const [porDecisao, porCorrecao, emailsEnviados, emailsComErro, total] = await Promise.all([
-    prisma.submissao.groupBy({ by: ["decisaoFinal"], where: { edicaoId }, _count: { _all: true } }),
-    prisma.submissao.groupBy({
-      by: ["statusCorrecao"],
-      where: { edicaoId, statusCorrecao: { not: null } },
-      _count: { _all: true },
-    }),
-    prisma.submissao.count({ where: { edicaoId, emailResultadoEnviadoEm: { not: null } } }),
-    prisma.submissao.count({
-      where: { edicaoId, emailResultadoEnviadoEm: null, emailResultadoErro: { not: null } },
-    }),
-    prisma.submissao.count({ where: { edicaoId } }),
-  ]);
+  const [porDecisao, porCorrecao, emailsSolicitados, emailsEnviados, emailsComErro, emailsNaoSolicitados, total] =
+    await Promise.all([
+      prisma.submissao.groupBy({ by: ["decisaoFinal"], where: { edicaoId }, _count: { _all: true } }),
+      prisma.submissao.groupBy({
+        by: ["statusCorrecao"],
+        where: { edicaoId, statusCorrecao: { not: null } },
+        _count: { _all: true },
+      }),
+      prisma.submissao.count({ where: { edicaoId, emailResultadoSolicitadoEm: { not: null } } }),
+      prisma.submissao.count({ where: { edicaoId, emailResultadoEnviadoEm: { not: null } } }),
+      prisma.submissao.count({
+        where: { edicaoId, emailResultadoEnviadoEm: null, emailResultadoErro: { not: null } },
+      }),
+      prisma.submissao.count({ where: { edicaoId, decisaoFinal: { not: null }, ...WHERE_EMAIL_NAO_SOLICITADO } }),
+      prisma.submissao.count({ where: { edicaoId } }),
+    ]);
 
   const decisoes = Object.fromEntries(porDecisao.map((item) => [item.decisaoFinal || "SEM_DECISAO", item._count._all]));
   const correcoes = Object.fromEntries(porCorrecao.map((item) => [item.statusCorrecao, item._count._all]));
@@ -75,13 +80,15 @@ async function resumo(edicaoId) {
     prazoCorrecao: edicao.prazoCorrecaoSubmissao,
     prazoCorrecaoAberto: prazoCorrecaoAberto(edicao.prazoCorrecaoSubmissao),
     divulgadoEm: edicao.resultadoDivulgadoEm,
+    // total/pendentes contam só o que a organização pediu para enviar;
+    // naoSolicitados são os trabalhos de grupos que ainda não foram pedidos.
     emails: {
-      total: edicao.resultadoDivulgadoEm ? total : 0,
+      total: emailsSolicitados,
       enviados: emailsEnviados,
       comErro: emailsComErro,
-      pendentes: edicao.resultadoDivulgadoEm ? total - emailsEnviados : 0,
+      pendentes: Math.max(emailsSolicitados - emailsEnviados, 0),
+      naoSolicitados: edicao.resultadoDivulgadoEm ? emailsNaoSolicitados : 0,
       enviando: enviosEmAndamento.has(edicaoId),
-      soAutorPrincipal: edicao.emailResultadoSoAutorPrincipal,
     },
   };
 }
@@ -164,14 +171,21 @@ function iniciarEnvioEmSegundoPlano(edicaoId) {
   });
 }
 
-// Primeiro envio e retomada de pendentes. soAutorPrincipal undefined mantém
-// a escolha gravada (reenvio).
-async function enviarEmails(edicaoId, { soAutorPrincipal } = {}) {
+// Com decisoes: pede o envio para os trabalhos desses grupos que ainda não
+// receberam nem foram pedidos, com a escolha de destinatários gravada em
+// cada um. Sem decisoes: só retoma os já pedidos que ficaram pendentes.
+async function enviarEmails(edicaoId, { decisoes, soAutorPrincipal = false } = {}) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (!edicao.resultadoDivulgadoEm) throw new ErroHttp(409, "O resultado ainda não foi divulgado.");
-  if (enviosEmAndamento.has(edicaoId)) throw new ErroHttp(409, "O envio dos e-mails já está em andamento.");
-  if (typeof soAutorPrincipal === "boolean") {
-    await prisma.edicao.update({ where: { id: edicaoId }, data: { emailResultadoSoAutorPrincipal: soAutorPrincipal } });
+  if (enviosEmAndamento.has(edicaoId)) {
+    throw new ErroHttp(409, "Há um envio de e-mails em andamento. Aguarde terminar para pedir outro.");
+  }
+  if (decisoes) {
+    const { count } = await prisma.submissao.updateMany({
+      where: { edicaoId, decisaoFinal: { in: decisoes }, ...WHERE_EMAIL_NAO_SOLICITADO },
+      data: { emailResultadoSolicitadoEm: new Date(), emailResultadoSoPrincipal: soAutorPrincipal },
+    });
+    if (!count) throw new ErroHttp(409, "Todos os trabalhos dos grupos escolhidos já receberam o e-mail.");
   }
   iniciarEnvioEmSegundoPlano(edicaoId);
 }
@@ -199,14 +213,15 @@ function valoresEmail(edicao, submissao, autor) {
   };
 }
 
-// Prévia do envio: por decisão, quantos trabalhos ainda sem e-mail e os
-// dados reais do primeiro (com o autor principal) para pré-visualizar.
+// Prévia do envio: por decisão, quantos trabalhos ainda não receberam nem
+// foram pedidos e os dados reais do primeiro (com o autor principal) para
+// pré-visualizar.
 async function previaEmails(edicaoId) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (!edicao.resultadoDivulgadoEm) throw new ErroHttp(409, "O resultado ainda não foi divulgado.");
 
   const submissoes = await prisma.submissao.findMany({
-    where: { edicaoId, emailResultadoEnviadoEm: null, decisaoFinal: { not: null } },
+    where: { edicaoId, decisaoFinal: { not: null }, ...WHERE_EMAIL_NAO_SOLICITADO },
     include: INCLUDE_SUBMISSAO,
     orderBy: { titulo: "asc" },
   });
@@ -234,9 +249,10 @@ async function previaEmails(edicaoId) {
   };
 }
 
-// Envia um e-mail por autor (principal e coautores) de cada submissão ainda
-// sem emailResultadoEnviadoEm. Falha num autor marca a submissão com erro e
-// segue para a próxima — no reenvio, a submissão inteira é reprocessada.
+// Envia o e-mail de cada submissão pedida (emailResultadoSolicitadoEm) e
+// ainda sem emailResultadoEnviadoEm — a todos os autores ou só ao principal,
+// conforme o pedido. Falha num autor marca a submissão com erro e segue para
+// a próxima — no reenvio, a submissão inteira é reprocessada.
 async function enviarEmailsPendentes(edicaoId) {
   if (enviosEmAndamento.has(edicaoId)) return;
   enviosEmAndamento.add(edicaoId);
@@ -247,7 +263,12 @@ async function enviarEmailsPendentes(edicaoId) {
 
     const modelos = await emailResultadoService.listarModelos(edicaoId);
     const submissoes = await prisma.submissao.findMany({
-      where: { edicaoId, emailResultadoEnviadoEm: null, decisaoFinal: { not: null } },
+      where: {
+        edicaoId,
+        emailResultadoSolicitadoEm: { not: null },
+        emailResultadoEnviadoEm: null,
+        decisaoFinal: { not: null },
+      },
       include: INCLUDE_SUBMISSAO,
       orderBy: { createdAt: "asc" },
     });
@@ -255,7 +276,7 @@ async function enviarEmailsPendentes(edicaoId) {
     for (const submissao of submissoes) {
       const modelo = modelos.find((item) => item.decisao === submissao.decisaoFinal);
       try {
-        for (const autor of destinatariosEmail(submissao, edicao.emailResultadoSoAutorPrincipal)) {
+        for (const autor of destinatariosEmail(submissao, submissao.emailResultadoSoPrincipal)) {
           const { assunto, html } = emailResultadoService.renderizar(modelo, valoresEmail(edicao, submissao, autor));
           await emailService.enviarEmail({ para: autor.email, assunto, html });
           await esperar(INTERVALO_ENVIO_MS);
