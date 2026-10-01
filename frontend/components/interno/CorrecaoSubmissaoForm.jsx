@@ -151,7 +151,7 @@ function Formulario({ submissao }) {
             erro={erros.titulo}
           />
         )}
-        <CampoRichText id="resumoCorrecao" rotulo="Resumo" value={resumo} onChange={setResumo} erro={erros.resumo} permitirImagem permitirTabela />
+        <CampoRichText id="resumoCorrecao" rotulo="Resumo" value={resumo} onChange={setResumo} erro={erros.resumo} permitirImagem permitirTabela contarCaracteres />
         <CampoRichText
           id="referenciaCorrecao"
           rotulo="Referência bibliográfica"

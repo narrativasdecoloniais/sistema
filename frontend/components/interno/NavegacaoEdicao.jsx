@@ -7,6 +7,7 @@ import {
   Handshake,
   Home,
   Users,
+  Mail,
   ClipboardList,
   Globe,
   Info,
@@ -38,7 +39,7 @@ import {
   Landmark,
   Users2,
 } from "lucide-react";
-import { temPermissaoSecao } from "@/lib/permissoes";
+import { temPapel, temPermissaoSecao } from "@/lib/permissoes";
 import styles from "./NavegacaoEdicao.module.scss";
 
 function montarGrupos(base) {
@@ -53,6 +54,7 @@ function montarGrupos(base) {
           Icone: Users,
           secao: "PARTICIPANTES",
         },
+        { href: `${base}/emails`, rotulo: "E-mails", Icone: Mail, apenasAdmin: true },
       ],
     },
     {
@@ -241,6 +243,7 @@ function filtrarPorPermissao(grupos, usuario) {
             );
             return subitens.length > 0 ? { ...item, subitens } : null;
           }
+          if (item.apenasAdmin) return temPapel(usuario, "ADMIN") ? item : null;
           return !item.secao || temPermissaoSecao(usuario, item.secao) ? item : null;
         })
         .filter(Boolean);

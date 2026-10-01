@@ -201,6 +201,7 @@ export default function EditorSubmissao({ edicaoId, submissaoInicial }) {
           onChange={setResumo}
           erro={erros.resumo}
           permitirImagem
+          contarCaracteres
           permitirTabela
           aoEnviarImagem={enviarImagem}
           alto

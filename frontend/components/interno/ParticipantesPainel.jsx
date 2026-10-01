@@ -118,7 +118,7 @@ const TEXTOS_CONFIRMACAO = {
   },
 };
 
-export default function ParticipantesPainel({ participantesIniciais, usuarios = [], usuarioLogado }) {
+export default function ParticipantesPainel({ participantesIniciais, usuarios = [], usuarioLogado, edicaoId, edicaoNome }) {
   const router = useRouter();
   const { notificar } = useToast();
   const souAdmin = temPapel(usuarioLogado, "ADMIN");
@@ -323,6 +323,8 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
       {abaAtiva === "usuarios" ? (
         <UsuariosEdicaoTabela
           usuarios={usuarios}
+          edicaoId={edicaoId}
+          edicaoNome={edicaoNome}
           aoPromover={(usuario) => setConfirmando({ id: usuario.id, nome: usuario.nome, tipo: "promover" })}
         />
       ) : (

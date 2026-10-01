@@ -27,6 +27,8 @@ export default async function PaginaParticipantes({ params }) {
       participantesIniciais={participantes}
       usuarios={usuarios}
       usuarioLogado={usuario}
+      edicaoId={params.id}
+      edicaoNome={edicao.nome}
     />
   );
 }

@@ -66,7 +66,7 @@ export default function MenuConta({ usuario, variante }) {
           id={idPainel}
           className={`${styles.painel} ${variante === "mobile" ? styles.painelMobile : styles.painelDesktop}`}
         >
-          <Link href="/participante" className={styles.item}>
+          <Link href="/participante/perfil" className={styles.item}>
             Meu Perfil
           </Link>
           {podeAdministrar && (

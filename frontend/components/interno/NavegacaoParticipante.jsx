@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, CalendarCheck, FileText, ListChecks, Award, ClipboardCheck, Handshake, QrCode } from "lucide-react";
+import { House, User, CalendarCheck, FileText, ListChecks, Award, ClipboardCheck, Handshake, QrCode } from "lucide-react";
 import { temPapel } from "@/lib/permissoes";
 import styles from "./NavegacaoEdicao.module.scss";
 
 const GRUPOS = [
   {
     titulo: "Conta",
-    itens: [{ href: "/participante", rotulo: "Meu perfil", Icone: User }],
+    itens: [
+      { href: "/participante", rotulo: "Início", Icone: House },
+      { href: "/participante/perfil", rotulo: "Meu perfil", Icone: User },
+    ],
   },
   {
     titulo: "Inscrições",

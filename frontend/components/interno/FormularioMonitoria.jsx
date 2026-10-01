@@ -127,7 +127,7 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
         </dl>
         <p className={styles.apoio}>
           Esses dados vêm da sua conta. Para corrigir o nome (ou usar o nome social), acesse{" "}
-          <Link href="/participante" className={styles.link}>
+          <Link href="/participante/perfil" className={styles.link}>
             Meu perfil
           </Link>
           .

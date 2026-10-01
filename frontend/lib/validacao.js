@@ -660,6 +660,16 @@ export const correcaoSubmissaoSchema = z.object({
 });
 
 // Espelha backend/src/validators/resultadoSubmissoes.validators.js.
+// E-mails em massa — espelho de backend/src/validators/emailsMassa.validators.js.
+export const textoEmailSchema = z.object({
+  assunto: z.string().trim().min(3, "Informe o assunto").max(200, "Máximo de 200 caracteres"),
+  corpo: z.string().trim().min(1, "Escreva o texto do e-mail"),
+});
+
+export const modeloEmailSchema = textoEmailSchema.extend({
+  nome: z.string().trim().min(3, "Informe um nome para o modelo").max(120, "Máximo de 120 caracteres"),
+});
+
 export const modeloEmailResultadoSchema = z.object({
   assunto: z.string().trim().min(3, "Informe o assunto").max(200, "Máximo de 200 caracteres"),
   corpo: z.string().trim().min(1, "Informe o texto do e-mail"),

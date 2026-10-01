@@ -167,6 +167,7 @@ export default function FormularioSubmissaoParticipante({ nomeUsuario }) {
         onChange={setResumo}
         erro={erros.resumo}
         permitirImagem
+        contarCaracteres
         permitirTabela
       />
 

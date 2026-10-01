@@ -183,6 +183,7 @@ export default function FormularioSubmissao({
         onChange={setResumo}
         erro={erros.resumo}
         permitirImagem
+        contarCaracteres
         permitirTabela
       />
 

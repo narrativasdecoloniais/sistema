@@ -111,3 +111,17 @@
 .entradaAlta {
   min-height: 55vh;
 }
+
+// Contador de caracteres e palavras (prop contarCaracteres) — discreto,
+// alinhado à direita; quebra em duas linhas no celular se faltar espaço.
+.contador {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  align-self: flex-end;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+  font-variant-numeric: tabular-nums;
+}

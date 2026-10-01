@@ -236,6 +236,7 @@ export default function NovaSubmissaoAdminForm({ edicaoId, modalidades }) {
         onChange={setResumo}
         erro={erros.resumo}
         permitirImagem
+        contarCaracteres
         permitirTabela
       />
 

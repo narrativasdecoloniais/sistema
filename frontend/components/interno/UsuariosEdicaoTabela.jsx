@@ -1,9 +1,12 @@
 "use client";
 
-import { ShieldPlus } from "lucide-react";
-import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
-import BotaoExportarTabela from "./BotaoExportarTabela";
+import { useState } from "react";
+import { Mail, ShieldPlus } from "lucide-react";
+import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
+import EnviarEmailModal from "./EnviarEmailModal";
 import useTabela from "./useTabela";
+import useSelecaoLinhas from "./useSelecaoLinhas";
 import { formatarIdentificacao } from "@/lib/identificacao";
 import styles from "./ParticipantesPainel.module.scss";
 
@@ -78,11 +81,16 @@ const COLUNAS = [
 ];
 
 // Aba "Usuários" da tela de Participantes (ADMIN-only): todas as contas da
-// base, com a situação de cada uma na edição aberta. A única ação é promover
-// a administrador (a confirmação e a chamada ficam no ParticipantesPainel,
-// as mesmas da aba "Equipe"); o resto da gestão da equipe continua lá.
-export default function UsuariosEdicaoTabela({ usuarios, aoPromover }) {
+// base, com a situação de cada uma na edição aberta. Ações: promover a
+// administrador (a confirmação e a chamada ficam no ParticipantesPainel, as
+// mesmas da aba "Equipe") e enviar e-mail às linhas selecionadas
+// (EnviarEmailModal).
+export default function UsuariosEdicaoTabela({ usuarios, aoPromover, edicaoId, edicaoNome }) {
   const tabela = useTabela(usuarios, COLUNAS);
+  const selecao = useSelecaoLinhas(tabela);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
+  // Na ordem da tabela — o primeiro alimenta a pré-visualização.
+  const selecionados = tabela.linhasVisiveis.filter((usuario) => selecao.estaSelecionado(usuario.id));
 
   if (usuarios.length === 0) {
     return (
@@ -94,18 +102,31 @@ export default function UsuariosEdicaoTabela({ usuarios, aoPromover }) {
 
   return (
     <div className={styles.tabelaWrapper}>
-      <BotaoExportarTabela tabela={tabela} nomeArquivo="usuarios" nomeAba="Usuários" />
+      <BotaoExportarTabela tabela={tabela} nomeArquivo="usuarios" nomeAba="Usuários">
+        {selecao.quantidade > 0 && (
+          <BotaoAcaoTabela onClick={() => setEnviandoEmail(true)}>
+            <Mail size={16} strokeWidth={1.5} aria-hidden="true" />
+            Enviar e-mail ({selecao.quantidade})
+          </BotaoAcaoTabela>
+        )}
+      </BotaoExportarTabela>
       <table className={styles.tabela}>
-        <CabecalhoTabela tabela={tabela} idTabela="usuarios-edicao" classeAcoes={styles.colunaAcoes} />
+        <CabecalhoTabela
+          tabela={tabela}
+          idTabela="usuarios-edicao"
+          classeAcoes={styles.colunaAcoes}
+          selecao={selecao}
+        />
         <tbody>
           {tabela.linhasVisiveis.length === 0 && (
-            <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />
+            <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 2} />
           )}
           {tabela.linhasVisiveis.map((usuario) => {
             const papel = papelPrincipal(usuario);
 
             return (
               <tr key={usuario.id}>
+                <CelulaSelecao selecao={selecao} id={usuario.id} rotulo={`Selecionar ${usuario.nome}`} />
                 <td data-rotulo="Nome">{usuario.nome}</td>
                 <td data-rotulo="E-mail">{usuario.email}</td>
                 <td data-rotulo="CPF / Documento">{formatarIdentificacao(usuario) || "—"}</td>
@@ -143,6 +164,15 @@ export default function UsuariosEdicaoTabela({ usuarios, aoPromover }) {
           })}
         </tbody>
       </table>
+      {enviandoEmail && (
+        <EnviarEmailModal
+          edicaoId={edicaoId}
+          edicaoNome={edicaoNome}
+          destinatarios={selecionados.map(({ id, nome, email }) => ({ id, nome, email }))}
+          onFechar={() => setEnviandoEmail(false)}
+          onEnviado={selecao.limpar}
+        />
+      )}
     </div>
   );
 }

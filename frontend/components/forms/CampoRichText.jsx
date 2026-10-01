@@ -25,6 +25,22 @@ function recortarFragmentoHtml(html) {
   return html.slice(inicio + "<!--StartFragment-->".length, fim);
 }
 
+// Conta só o texto visível: getText() já descarta tags/entidades HTML e
+// imagens; espaços, quebras de linha e &nbsp; (\s cobre o U+00A0) ficam de
+// fora. Array.from conta por code point, então acento e emoji valem 1.
+// Palavra = trecho entre espaços com ao menos uma letra ou dígito — travessão
+// ou pontuação solta não contam; "sócio-cultural" vale 1. O getText() separa
+// parágrafos e células de tabela com quebra de linha, então palavras de
+// blocos vizinhos nunca grudam.
+function contarTextoVisivel(editor) {
+  if (!editor) return { caracteres: 0, palavras: 0 };
+  const texto = editor.getText();
+  return {
+    caracteres: Array.from(texto.replace(/\s/g, "")).length,
+    palavras: texto.split(/\s+/).filter((trecho) => /[\p{L}\p{N}]/u.test(trecho)).length,
+  };
+}
+
 // Editor rico compartilhado entre admin e público (headless — TipTap não tem
 // CSS/tema próprio), estilizado só com os tokens semânticos --cor-* (ver
 // _tokens-publico.scss/_tokens-interno.scss), igual aos outros forms/*.
@@ -40,7 +56,9 @@ function recortarFragmentoHtml(html) {
 // reenviando data URI a cada autosave. HTML sempre sanitizado de novo no
 // backend antes de salvar — nunca confiar só no editor. O ref expõe
 // inserirTexto(texto), que insere na posição do cursor (usado pelos campos
-// dinâmicos {{...}} do modelo de certificado).
+// dinâmicos {{...}} do modelo de certificado). `contarCaracteres` mostra
+// abaixo da caixa quantos caracteres (sem espaços nem HTML) e quantas
+// palavras o texto tem.
 export default forwardRef(function CampoRichText(
   {
     id,
@@ -54,6 +72,7 @@ export default forwardRef(function CampoRichText(
     permitirTabela = false,
     aoEnviarImagem,
     alto = false,
+    contarCaracteres = false,
   },
   ref
 ) {
@@ -61,6 +80,7 @@ export default forwardRef(function CampoRichText(
   const inputImagemRef = useRef(null);
   const [enviandoImagem, setEnviandoImagem] = useState(false);
   const [erroImagem, setErroImagem] = useState("");
+  const [contagem, setContagem] = useState({ caracteres: 0, palavras: 0 });
   // A barra depende de "o cursor está numa tabela?" — re-renderiza a cada
   // mudança de seleção pra mostrar/esconder as ações de tabela.
   const [, atualizarBarra] = useReducer((contador) => contador + 1, 0);
@@ -97,7 +117,11 @@ export default forwardRef(function CampoRichText(
     ],
     content: value || "",
     immediatelyRender: false,
-    onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),
+    onCreate: ({ editor }) => setContagem(contarTextoVisivel(editor)),
+    onUpdate: ({ editor }) => {
+      setContagem(contarTextoVisivel(editor));
+      onChange(editor.isEmpty ? "" : editor.getHTML());
+    },
     onBlur: () => onBlur?.(),
     onSelectionUpdate: () => atualizarBarra(),
     editorProps: {
@@ -196,6 +220,7 @@ export default forwardRef(function CampoRichText(
     if (!editor || editor.isFocused) return;
     if ((value || "") !== editor.getHTML()) {
       editor.commands.setContent(value || "", { emitUpdate: false });
+      setContagem(contarTextoVisivel(editor));
     }
   }, [value, editor]);
 
@@ -379,6 +404,17 @@ export default forwardRef(function CampoRichText(
           <EditorContent editor={editor} />
         </div>
       </div>
+      {contarCaracteres && (
+        <p className={styles.contador}>
+          <span>
+            {contagem.caracteres.toLocaleString("pt-BR")} {contagem.caracteres === 1 ? "caractere" : "caracteres"}{" "}
+            (sem espaços)
+          </span>
+          <span>
+            {contagem.palavras.toLocaleString("pt-BR")} {contagem.palavras === 1 ? "palavra" : "palavras"}
+          </span>
+        </p>
+      )}
       {erroImagem && <p className={stylesCampo.mensagemErro}>{erroImagem}</p>}
       {erro && (
         <p id={idErro} className={stylesCampo.mensagemErro}>
