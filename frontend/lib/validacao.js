@@ -2,6 +2,7 @@ import { z } from "zod";
 import { corSchema } from "@/lib/cores";
 import { camposIdentificacao, validarIdentificacao } from "@/lib/identificacao";
 import { idadeEm } from "@/lib/idade";
+import { validarBlocos } from "@/lib/emailResultado";
 
 export const senhaForte = z
   .string()
@@ -670,9 +671,26 @@ export const modeloEmailSchema = textoEmailSchema.extend({
   nome: z.string().trim().min(3, "Informe um nome para o modelo").max(120, "Máximo de 120 caracteres"),
 });
 
+// Trechos condicionais ({{#comCpf}}/{{#semCpf}}) conferidos aqui para o erro
+// sair inline; o backend repete a conferência em emailResultado.service.js.
 export const modeloEmailResultadoSchema = z.object({
-  assunto: z.string().trim().min(3, "Informe o assunto").max(200, "Máximo de 200 caracteres"),
-  corpo: z.string().trim().min(1, "Informe o texto do e-mail"),
+  assunto: z
+    .string()
+    .trim()
+    .min(3, "Informe o assunto")
+    .max(200, "Máximo de 200 caracteres")
+    .superRefine((valor, ctx) => {
+      const erro = validarBlocos(valor);
+      if (erro) ctx.addIssue({ code: z.ZodIssueCode.custom, message: erro });
+    }),
+  corpo: z
+    .string()
+    .trim()
+    .min(1, "Informe o texto do e-mail")
+    .superRefine((valor, ctx) => {
+      const erro = validarBlocos(valor);
+      if (erro) ctx.addIssue({ code: z.ZodIssueCode.custom, message: erro });
+    }),
 });
 
 // Espelha modeloCertificadoSchema em backend/src/validators/certificados.validators.js

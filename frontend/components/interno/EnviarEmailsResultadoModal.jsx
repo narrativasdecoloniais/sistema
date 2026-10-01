@@ -50,6 +50,7 @@ export default function EnviarEmailsResultadoModal({ edicaoId, etapaInicial = "r
 
   const grupos = (previa?.decisoes || []).filter((item) => escolhidas.includes(item.decisao));
   const emailsDoGrupo = (item) => (soAutorPrincipal ? item.destinatariosPrincipal : item.destinatarios);
+  const emailsComCpf = (item) => (soAutorPrincipal ? item.destinatariosPrincipalComCpf : item.destinatariosComCpf);
   const totalEmails = grupos.reduce((soma, item) => soma + emailsDoGrupo(item), 0);
   const totalTrabalhos = grupos.reduce((soma, item) => soma + item.trabalhos, 0);
   // Texto não salvo só bloqueia o envio nos grupos escolhidos.
@@ -195,14 +196,15 @@ export default function EnviarEmailsResultadoModal({ edicaoId, etapaInicial = "r
           const modelo = modelos.find((candidato) => candidato.decisao === item.decisao);
           if (!modelo) return null;
           const emails = emailsDoGrupo(item);
+          const comCpf = emailsComCpf(item);
           return (
             <div key={item.decisao} hidden={!escolhidas.includes(item.decisao)}>
               <FormularioModelo
                 edicaoId={edicaoId}
                 modeloInicial={modelo}
-                exemplo={item.exemplo}
-                descricaoExemplo={`Com os dados de “${item.exemplo.titulo}” (primeiro trabalho deste grupo).`}
-                detalhe={`${plural(item.trabalhos, "trabalho", "trabalhos")} · ${plural(emails, "e-mail", "e-mails")}`}
+                exemplos={{ comCpf: item.exemploComCpf, semCpf: item.exemploSemCpf }}
+                descricaoExemplo={(exemplo) => `Com os dados de “${exemplo.titulo}” (${exemplo.nome}).`}
+                detalhe={`${plural(item.trabalhos, "trabalho", "trabalhos")} · ${plural(emails, "e-mail", "e-mails")} (${comCpf} com CPF, ${emails - comCpf} sem)`}
                 onAlterado={aoAlterar}
                 previaEmbutida
               />
