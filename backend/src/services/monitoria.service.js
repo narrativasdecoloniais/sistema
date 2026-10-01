@@ -32,6 +32,9 @@ const CAMPOS_EDICAO = {
   vagasMonitoria: true,
   funcoesMonitoria: true,
   editalMonitoria: true,
+  cienteFormacaoMonitoria: true,
+  cienteDisponibilidadeMonitoria: true,
+  cienteVoluntariaMonitoria: true,
   resultadoMonitoriaDivulgadoEm: true,
 };
 
@@ -99,6 +102,12 @@ function projetarEdicaoParaCandidato(edicao) {
     inicioInscricoesMonitoria: edicao.inicioInscricoesMonitoria,
     fimInscricoesMonitoria: edicao.fimInscricoesMonitoria,
     funcoesMonitoria: edicao.funcoesMonitoria,
+    // Já sanitizado ao salvar e público em /monitoria; o painel do candidato
+    // abre a chamada num modal.
+    editalMonitoria: edicao.editalMonitoria,
+    cienteFormacaoMonitoria: edicao.cienteFormacaoMonitoria,
+    cienteDisponibilidadeMonitoria: edicao.cienteDisponibilidadeMonitoria,
+    cienteVoluntariaMonitoria: edicao.cienteVoluntariaMonitoria,
     resultadoDivulgado: Boolean(edicao.resultadoMonitoriaDivulgadoEm),
   };
 }

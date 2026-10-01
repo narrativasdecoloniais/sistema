@@ -50,11 +50,13 @@ function criarInscricaoMonitoriaSchema({ funcoesPermitidas, dataReferencia, temA
           const idade = idadeEm(valor, dataReferencia);
           return idade >= 10 && idade <= 110;
         }, "Data de nascimento inválida"),
+      // Opcional: vazio vira null.
       pronome: z
-        .string({ required_error: "Informe como prefere ser tratado(a)" })
+        .string()
         .trim()
-        .min(1, "Informe como prefere ser tratado(a)")
-        .max(100, "Use no máximo 100 caracteres"),
+        .max(100, "Use no máximo 100 caracteres")
+        .nullish()
+        .transform((valor) => valor || null),
       telefone: z
         .string({ required_error: "Informe um telefone com DDD" })
         .trim()
@@ -106,6 +108,8 @@ const dataOpcional = (mensagem) =>
     z.coerce.date({ errorMap: () => ({ message: mensagem }) }).nullable()
   );
 
+const textoCiente = z.string().trim().min(1, "Preencha o texto").max(500, "Use no máximo 500 caracteres");
+
 const configuracaoMonitoriaSchema = z
   .object({
     inicioInscricoesMonitoria: dataOpcional("Informe uma data de início válida").optional(),
@@ -129,6 +133,9 @@ const configuracaoMonitoriaSchema = z
     // Tabelas geram muito HTML; o limite do texto visível fica em
     // sanitizarEditalMonitoria.js.
     editalMonitoria: z.string().max(300000, "O edital está grande demais").nullish(),
+    cienteFormacaoMonitoria: textoCiente.optional(),
+    cienteDisponibilidadeMonitoria: textoCiente.optional(),
+    cienteVoluntariaMonitoria: textoCiente.optional(),
   })
   .refine(
     (dados) =>

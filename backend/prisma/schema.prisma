@@ -294,6 +294,12 @@ model Edicao {
   vagasMonitoria                    Int?
   funcoesMonitoria                  String[]             @default([])
   editalMonitoria                   String?              @db.Text
+  // Textos dos 3 "Estou ciente de que" do formulário (formação, presença nos
+  // dias do evento, trabalho voluntário) — mudam a cada edição por causa das
+  // datas. Nulo = texto genérico do frontend (TEXTOS_CIENTE_MONITORIA_PADRAO).
+  cienteFormacaoMonitoria           String?
+  cienteDisponibilidadeMonitoria    String?
+  cienteVoluntariaMonitoria         String?
   resultadoMonitoriaDivulgadoEm     DateTime?
   // Segredo do QR code de credenciamento geral (credenciamento.service.js):
   // gerado na primeira vez que o admin abre o QR; trocar invalida o impresso.
@@ -1173,7 +1179,7 @@ model InscricaoMonitoria {
   edicaoId                String
   edicao                  Edicao                   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
   dataNascimento          DateTime                 @db.Date
-  pronome                 String
+  pronome                 String?
   telefone                String
   cursoInstituicao        String
   experienciaAnterior     Boolean
