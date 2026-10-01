@@ -110,7 +110,12 @@ export default function SubmissoesParticipantePainel() {
               {submissao.ehAutorPrincipal && submissao.autores.some((autor) => autor.cadastro) && (
                 <CoautoresSubmissao submissao={submissao} setSubmissoes={setSubmissoes} />
               )}
-              <p className={styles.cartaoData}>Enviado em {formatarData(submissao.createdAt)}</p>
+              <div className={styles.cartaoRodape}>
+                <p className={styles.cartaoData}>Enviado em {formatarData(submissao.createdAt)}</p>
+                <Link href={`/participante/submissoes/${submissao.id}/previa`} className={styles.linkVerTrabalho}>
+                  Ver trabalho
+                </Link>
+              </div>
               {submissao.resultado && (
                 <ResultadoSubmissao id={submissao.id} resultado={submissao.resultado} ehAutorPrincipal={submissao.ehAutorPrincipal} />
               )}

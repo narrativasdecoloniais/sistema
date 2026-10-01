@@ -1,21 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ConteudoRichText from "@/components/ConteudoRichText";
 import DefinirEdicaoExibida from "@/components/publico/DefinirEdicaoExibida";
-import PainelCitacao from "@/components/publico/anais/PainelCitacao";
+import ArtigoAnais from "@/components/publico/anais/ArtigoAnais";
 import ComentariosArtigo from "@/components/publico/anais/ComentariosArtigo";
 import ContadorVisualizacao from "@/components/publico/anais/ContadorVisualizacao";
 import { obterUsuarioAtual } from "@/lib/auth";
 import { buscarArtigoDosAnais } from "@/lib/anaisServidor";
-import {
-  LICENCAS_ANAIS,
-  URL_SITE,
-  formatarDataPublicacao,
-  linhaIdentificadores,
-  rotuloPaginas,
-  urlPdfArtigo,
-} from "@/lib/anais";
-import { buscarEdicaoPorSlug, formatarPeriodoEdicao, montarPropsNavegacao } from "@/lib/publico";
+import { LICENCAS_ANAIS, URL_SITE, urlPdfArtigo } from "@/lib/anais";
+import { buscarEdicaoPorSlug, montarPropsNavegacao } from "@/lib/publico";
 import styles from "../../anais.module.scss";
 
 function dataIso(iso) {
@@ -124,10 +116,6 @@ export default async function PaginaArtigoDosAnais({ params }) {
 
   const { artigo, anais, edicao, anterior, proximo, relacionados } = dados;
   const caminho = `/anais/${params.edicao}/${params.artigo}`;
-  const licenca = LICENCAS_ANAIS[anais.licenca];
-  const paginas = rotuloPaginas(artigo.paginaInicial, artigo.paginaFinal);
-  const identificadores = linhaIdentificadores(anais);
-  const eyebrow = [artigo.modalidade?.nome, artigo.area?.titulo].filter(Boolean).join(" · ");
 
   return (
     <article className={`${styles.pagina} ${styles.paginaArtigo}`}>
@@ -135,123 +123,7 @@ export default async function PaginaArtigoDosAnais({ params }) {
       <ContadorVisualizacao artigoId={artigo.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(dadosEstruturados(dados, caminho)) }} />
 
-      <nav aria-label="Você está em" className={styles.trilha}>
-        <ol>
-          <li>
-            <Link href="/anais">Anais</Link>
-          </li>
-          <li>
-            <Link href={`/anais/${edicao.slug}`}>{anais.titulo}</Link>
-          </li>
-          <li aria-current="page">Trabalho</li>
-        </ol>
-      </nav>
-
-      <header className={styles.cabecalhoArtigo}>
-        {eyebrow && <span className={styles.eyebrow}>{eyebrow}</span>}
-        <h1 className={styles.tituloArtigo}>{artigo.titulo}</h1>
-        <ul className={styles.autores} aria-label="Autores">
-          {artigo.autores.map((autor, indice) => (
-            <li key={`${autor.nome}-${indice}`}>
-              <Link href={`/anais/${edicao.slug}?autor=${encodeURIComponent(autor.nome)}`} className={styles.autorNome}>
-                {autor.nome}
-              </Link>
-              {autor.orcid && (
-                <a
-                  href={`https://orcid.org/${autor.orcid.replace(/^https?:\/\/orcid\.org\//i, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.orcid}
-                >
-                  ORCID
-                </a>
-              )}
-            </li>
-          ))}
-        </ul>
-      </header>
-
-      <div className={styles.acoesArtigo}>
-        <a href={urlPdfArtigo(edicao.slug, artigo.slug)} className={styles.botaoPrimario} rel="nofollow">
-          Baixar PDF
-        </a>
-        <PainelCitacao citacao={artigo.citacao} slug={artigo.slug} />
-      </div>
-
-      <section className={styles.secaoTexto} aria-labelledby="titulo-resumo">
-        <h2 id="titulo-resumo" className={styles.rotuloSecao}>
-          Resumo
-        </h2>
-        <ConteudoRichText html={artigo.resumo} tipo="resumo" className={styles.textoRico} sanitizadoNoServidor />
-      </section>
-
-      {artigo.referenciaBibliografica && (
-        <section className={styles.secaoTexto} aria-labelledby="titulo-referencias">
-          <h2 id="titulo-referencias" className={styles.rotuloSecao}>
-            Referências
-          </h2>
-          <ConteudoRichText
-            html={artigo.referenciaBibliografica}
-            tipo="referencia"
-            className={`${styles.textoRico} ${styles.referencias}`}
-            sanitizadoNoServidor
-          />
-        </section>
-      )}
-
-      <section className={styles.fichaArtigo} aria-label="Dados da publicação">
-        <dl className={styles.ficha}>
-          <div>
-            <dt>Publicado em</dt>
-            <dd>
-              <Link href={`/anais/${edicao.slug}`}>{anais.titulo}</Link>
-              {paginas ? `, ${paginas}` : ""}
-            </dd>
-          </div>
-          <div>
-            <dt>Evento</dt>
-            <dd>
-              {edicao.nome}
-              {edicao.dataInicio ? ` · ${formatarPeriodoEdicao(edicao.dataInicio, edicao.dataFim)}` : ""}
-              {edicao.cidade ? ` · ${edicao.cidade}` : ""}
-            </dd>
-          </div>
-          {identificadores && (
-            <div>
-              <dt>Registro</dt>
-              <dd>{identificadores}</dd>
-            </div>
-          )}
-          {formatarDataPublicacao(artigo.publicadoEm) && (
-            <div>
-              <dt>Data de publicação</dt>
-              <dd>{formatarDataPublicacao(artigo.publicadoEm)}</dd>
-            </div>
-          )}
-          {licenca && (
-            <div>
-              <dt>Licença</dt>
-              <dd>
-                {licenca.url ? (
-                  <a href={licenca.url} target="_blank" rel="noopener noreferrer license">
-                    {licenca.nome} ({licenca.sigla})
-                  </a>
-                ) : (
-                  licenca.nome
-                )}
-              </dd>
-            </div>
-          )}
-          {artigo.apresentacao && (
-            <div>
-              <dt>Apresentado em</dt>
-              <dd>
-                <Link href={`/edicoes/${edicao.slug}/atividades/${artigo.apresentacao.slug}`}>{artigo.apresentacao.nome}</Link>
-              </dd>
-            </div>
-          )}
-        </dl>
-      </section>
+      <ArtigoAnais artigo={artigo} anais={anais} edicao={edicao} />
 
       {(anterior || proximo) && (
         <nav className={styles.navegacaoArtigos} aria-label="Outros trabalhos destes Anais">

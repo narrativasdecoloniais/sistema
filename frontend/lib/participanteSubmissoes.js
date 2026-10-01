@@ -19,6 +19,11 @@ export async function buscarMinhaSubmissao(id) {
   return dados?.submissao;
 }
 
+// { edicao, anais, artigo } no mesmo formato da página pública dos Anais.
+export function buscarPreviaSubmissao(id) {
+  return apiClient.get(`/participante/submissoes/${id}/previa`);
+}
+
 export async function corrigirSubmissao(id, dados) {
   const resposta = await apiClient.patch(`/participante/submissoes/${id}/correcao`, dados);
   return resposta?.submissao;
