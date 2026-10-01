@@ -9,6 +9,7 @@ const {
   decisaoParamSchema,
   modeloEmailSchema,
   enviarEmailsSchema,
+  testeEmailSchema,
 } = require("../validators/resultadoSubmissoes.validators");
 
 const resumo = asyncHandler(async (req, res) => {
@@ -60,6 +61,7 @@ const listarModelosEmail = asyncHandler(async (req, res) => {
   return res.json({
     modelos: await emailResultadoService.listarModelos(req.params.edicaoId),
     marcadores: emailResultadoService.MARCADORES,
+    blocos: emailResultadoService.BLOCOS,
   });
 });
 
@@ -72,11 +74,12 @@ const salvarModeloEmail = asyncHandler(async (req, res) => {
 
 const enviarTesteEmail = asyncHandler(async (req, res) => {
   const decisao = decisaoParamSchema.parse(req.params.decisao);
+  const { comCpf } = testeEmailSchema.parse(req.body || {});
   const usuario = await prisma.usuario.findUnique({
     where: { id: req.usuario.id },
     select: { nome: true, email: true },
   });
-  await emailResultadoService.enviarTeste(req.params.edicaoId, decisao, usuario);
+  await emailResultadoService.enviarTeste(req.params.edicaoId, decisao, usuario, { comCpf });
   return res.json({ mensagem: `E-mail de teste enviado para ${usuario.email}.` });
 });
 

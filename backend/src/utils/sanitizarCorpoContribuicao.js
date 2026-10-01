@@ -19,9 +19,11 @@ const CONFIG_SANITIZACAO = {
   ALLOWED_ATTR: ["href", "target", "rel"],
 };
 
-function sanitizarCorpoContribuicao(html) {
+// limite: Infinity quando o HTML já é o e-mail renderizado (modelo já
+// validado + valores dos marcadores), que pode passar do limite da entrada.
+function sanitizarCorpoContribuicao(html, { limite = TAMANHO_MAX_ENTRADA } = {}) {
   if (typeof html !== "string") return "";
-  if (html.length > TAMANHO_MAX_ENTRADA) {
+  if (html.length > limite) {
     throw new Error("Texto muito grande.");
   }
   return DOMPurify.sanitize(html, CONFIG_SANITIZACAO).trim();

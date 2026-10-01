@@ -3,6 +3,7 @@ const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
 const INCLUDE_SUBMISSAO = require("../utils/submissaoIncludePadrao");
 const { prazoCorrecaoAberto, formatarPrazoCorrecao } = require("../utils/prazoCorrecao");
+const { temIdentificacao } = require("../utils/identificacao");
 const emailService = require("./email.service");
 const emailResultadoService = require("./emailResultado.service");
 
@@ -11,6 +12,17 @@ const DECISOES_COM_CORRECAO = ["APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"];
 
 // Trabalho que ainda não recebeu o e-mail de resultado nem teve o envio pedido.
 const WHERE_EMAIL_NAO_SOLICITADO = { emailResultadoSolicitadoEm: null, emailResultadoEnviadoEm: null };
+
+// Para os e-mails: cada autor com o CPF/documento da conta, que decide os
+// trechos {{#comCpf}}/{{#semCpf}} do texto. Fora do include compartilhado,
+// que também serve a área do participante.
+const INCLUDE_SUBMISSAO_EMAIL = {
+  ...INCLUDE_SUBMISSAO,
+  autores: {
+    ...INCLUDE_SUBMISSAO.autores,
+    include: { usuario: { select: { cpf: true, documentoEstrangeiro: true } } },
+  },
+};
 
 // Resend aceita 2 req/s por padrão — envio sequencial com folga.
 const INTERVALO_ENVIO_MS = 600;
@@ -201,9 +213,12 @@ function destinatariosEmail(submissao, soAutorPrincipal) {
   return principal ? [principal] : [];
 }
 
+// Autor sem conta vinculada conta como sem CPF.
 function valoresEmail(edicao, submissao, autor) {
   return {
     nome: autor.nome,
+    email: autor.email || "",
+    comCpf: temIdentificacao(autor.usuario),
     titulo: submissao.titulo,
     modalidade: submissao.modalidadeSubmissao.nome,
     area: submissao.areaSubmissao?.titulo || "—",
@@ -214,15 +229,15 @@ function valoresEmail(edicao, submissao, autor) {
 }
 
 // Prévia do envio: por decisão, quantos trabalhos ainda não receberam nem
-// foram pedidos e os dados reais do primeiro (com o autor principal) para
-// pré-visualizar.
+// foram pedidos, quantos destinatários têm CPF e um destinatário real de cada
+// versão dos trechos condicionais para pré-visualizar.
 async function previaEmails(edicaoId) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (!edicao.resultadoDivulgadoEm) throw new ErroHttp(409, "O resultado ainda não foi divulgado.");
 
   const submissoes = await prisma.submissao.findMany({
     where: { edicaoId, decisaoFinal: { not: null }, ...WHERE_EMAIL_NAO_SOLICITADO },
-    include: INCLUDE_SUBMISSAO,
+    include: INCLUDE_SUBMISSAO_EMAIL,
     orderBy: { titulo: "asc" },
   });
 
@@ -230,14 +245,26 @@ async function previaEmails(edicaoId) {
   const decisoes = emailResultadoService.DECISOES.map((decisao) => {
     const daDecisao = submissoes.filter((submissao) => submissao.decisaoFinal === decisao);
     if (!daDecisao.length) return null;
-    const primeira = daDecisao[0];
-    const autor = autorPrincipal(primeira);
+    const principais = daDecisao.map((submissao) => [submissao, autorPrincipal(submissao)]).filter(([, autor]) => autor);
+    const todos = daDecisao.flatMap((submissao) => submissao.autores.map((autor) => [submissao, autor]));
+    const comCpf = (pares) => pares.filter(([, autor]) => temIdentificacao(autor.usuario)).length;
+    // Um exemplo real de cada versão dos trechos condicionais, priorizando o
+    // autor principal (é a quem a revisão é pedida).
+    const exemploDe = (temCpf) => {
+      const par =
+        principais.find(([, autor]) => temIdentificacao(autor.usuario) === temCpf) ||
+        todos.find(([, autor]) => temIdentificacao(autor.usuario) === temCpf);
+      return par ? { ...valoresEmail(edicao, par[0], par[1]), link } : null;
+    };
     return {
       decisao,
       trabalhos: daDecisao.length,
-      destinatarios: daDecisao.reduce((soma, submissao) => soma + submissao.autores.length, 0),
-      destinatariosPrincipal: daDecisao.filter((submissao) => autorPrincipal(submissao)).length,
-      exemplo: { ...valoresEmail(edicao, primeira, autor || { nome: "" }), link },
+      destinatarios: todos.length,
+      destinatariosPrincipal: principais.length,
+      destinatariosComCpf: comCpf(todos),
+      destinatariosPrincipalComCpf: comCpf(principais),
+      exemploComCpf: exemploDe(true),
+      exemploSemCpf: exemploDe(false),
     };
   }).filter(Boolean);
 
@@ -269,7 +296,7 @@ async function enviarEmailsPendentes(edicaoId) {
         emailResultadoEnviadoEm: null,
         decisaoFinal: { not: null },
       },
-      include: INCLUDE_SUBMISSAO,
+      include: INCLUDE_SUBMISSAO_EMAIL,
       orderBy: { createdAt: "asc" },
     });
 

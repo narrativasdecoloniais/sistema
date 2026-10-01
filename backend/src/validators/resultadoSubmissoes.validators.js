@@ -33,6 +33,11 @@ const modeloEmailSchema = z.object({
   corpo: z.string().trim().min(1, "Informe o texto do e-mail"),
 });
 
+// comCpf: qual versão dos trechos condicionais vai no teste (padrão: com CPF).
+const testeEmailSchema = z.object({
+  comCpf: z.boolean().optional(),
+});
+
 // Com decisoes: pede o envio desses grupos. Sem body: retoma os pendentes,
 // cada um com a escolha de destinatários do seu pedido.
 const enviarEmailsSchema = z.object({
@@ -47,4 +52,5 @@ module.exports = {
   decisaoParamSchema,
   modeloEmailSchema,
   enviarEmailsSchema,
+  testeEmailSchema,
 };

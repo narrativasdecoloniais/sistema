@@ -3,13 +3,16 @@ const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
 const escaparHtml = require("../utils/escaparHtml");
 const sanitizarCorpoContribuicao = require("../utils/sanitizarCorpoContribuicao");
+const { BLOCOS, validarBlocos, aplicarBlocos, limparVazios } = require("../utils/blocosCondicionaisEmail");
 const emailService = require("./email.service");
 
 const DECISOES = ["APROVADO", "APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO", "REPROVADO"];
 
 // Marcadores aceitos no assunto e no corpo. No corpo os valores entram com
-// escape de HTML; no assunto (texto puro) entram crus.
-const MARCADORES = ["nome", "titulo", "modalidade", "area", "edicao", "observacao", "prazo", "link"];
+// escape de HTML; no assunto (texto puro) entram crus. Os trechos
+// condicionais ({{#comCpf}}…{{/comCpf}}, {{#semCpf}}…{{/semCpf}}) vêm de
+// utils/blocosCondicionaisEmail.js.
+const MARCADORES = ["nome", "email", "titulo", "modalidade", "area", "edicao", "observacao", "prazo", "link"];
 
 // Textos usados enquanto a organização não salvar um modelo próprio.
 const MODELOS_PADRAO = {
@@ -53,6 +56,9 @@ async function listarModelos(edicaoId) {
 }
 
 async function salvarModelo(edicaoId, decisao, { assunto, corpo }) {
+  const erroBlocos = validarBlocos(assunto) || validarBlocos(corpo);
+  if (erroBlocos) throw new ErroHttp(400, erroBlocos);
+
   let corpoSanitizado;
   try {
     corpoSanitizado = sanitizarCorpoContribuicao(corpo);
@@ -79,14 +85,22 @@ function substituir(texto, valores, { html }) {
   });
 }
 
-// valores: { nome, titulo, modalidade, area, edicao, observacao, prazo }
+// valores: { nome, email, titulo, modalidade, area, edicao, observacao, prazo, comCpf }
 function renderizar(modelo, valores) {
   const completos = { ...valores, link: `${env.frontendUrl}/participante/submissoes` };
-  const corpoHtml = substituir(modelo.corpo, completos, { html: true })
-    // Parágrafo que ficou vazio (ex.: {{observacao}} sem observação) some.
-    .replace(/<p>\s*<\/p>/g, "");
+  const condicoes = { comCpf: Boolean(valores.comCpf), semCpf: !valores.comCpf };
+  // Blocos antes dos marcadores; o que ficou vazio (ex.: {{observacao}} sem
+  // observação, bloco removido) some. A sanitização final só normaliza tags
+  // desbalanceadas quando um bloco começa num parágrafo e termina em outro —
+  // os valores dos marcadores já entraram escapados.
+  const corpoHtml = sanitizarCorpoContribuicao(
+    limparVazios(substituir(aplicarBlocos(modelo.corpo, condicoes), completos, { html: true })),
+    { limite: Infinity }
+  );
   return {
-    assunto: substituir(modelo.assunto, completos, { html: false }),
+    assunto: substituir(aplicarBlocos(modelo.assunto, condicoes), completos, { html: false })
+      .replace(/\s{2,}/g, " ")
+      .trim(),
     html: emailService.layoutEmailPublico({
       eyebrow: ROTULOS_EYEBROW[modelo.decisao],
       titulo: escaparHtml(valores.edicao),
@@ -95,7 +109,7 @@ function renderizar(modelo, valores) {
   };
 }
 
-async function enviarTeste(edicaoId, decisao, usuario) {
+async function enviarTeste(edicaoId, decisao, usuario, { comCpf = true } = {}) {
   const [modelos, edicao] = await Promise.all([
     listarModelos(edicaoId),
     prisma.edicao.findUnique({ where: { id: edicaoId }, select: { nome: true } }),
@@ -103,14 +117,16 @@ async function enviarTeste(edicaoId, decisao, usuario) {
   const modelo = modelos.find((item) => item.decisao === decisao);
   const { assunto, html } = renderizar(modelo, {
     nome: usuario.nome,
+    email: usuario.email,
     titulo: "Título de exemplo do trabalho",
     modalidade: "Modalidade de exemplo",
     area: "Área de exemplo",
     edicao: edicao.nome,
     observacao: "Observação de exemplo escrita pela organização para este trabalho.",
     prazo: "31/12/2026",
+    comCpf,
   });
   await emailService.enviarEmail({ para: usuario.email, assunto: `[Teste] ${assunto}`, html });
 }
 
-module.exports = { DECISOES, MARCADORES, MODELOS_PADRAO, listarModelos, salvarModelo, renderizar, enviarTeste };
+module.exports = { DECISOES, MARCADORES, BLOCOS, MODELOS_PADRAO, listarModelos, salvarModelo, renderizar, enviarTeste };
