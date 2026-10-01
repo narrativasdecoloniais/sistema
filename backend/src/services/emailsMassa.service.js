@@ -57,7 +57,7 @@ function renderizar({ assunto, corpo }, valores) {
     '<p style="margin: 28px 0 0; font-size: 12px; opacity: 0.75;">Você recebeu este e-mail por ter cadastro na plataforma do Narrativas.</p>';
   return {
     assunto: substituir(assunto, valores, { html: false }),
-    html: emailService.layoutEmailPublico({ eyebrow: "Narrativas", titulo: escaparHtml(valores.edicao), corpoHtml }),
+    html: emailService.layoutEmailPublico({ eyebrow: "Comunicado", titulo: escaparHtml(valores.edicao), corpoHtml }),
   };
 }
 

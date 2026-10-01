@@ -1,6 +1,6 @@
 const env = require("../config/env");
 const escaparHtml = require("../utils/escaparHtml");
-const { layoutEmailPublico } = require("./email.service");
+const { layoutEmailPublico, botaoEmail } = require("./email.service");
 
 // Textos fixos do resultado da seleção de monitoria, um por situação
 // (CANCELADA e EM_ANALISE não recebem e-mail). Todo valor interpolado passa
@@ -35,7 +35,8 @@ function renderizar({ status, nome, edicao, posicao, edicaoId }) {
   const corpoHtml = `
     <p ${PARAGRAFO}>Olá, ${escaparHtml(nome)}.</p>
     <p ${PARAGRAFO}>${texto.corpo({ edicao: escaparHtml(edicao), posicao })}</p>
-    <p ${PARAGRAFO}>Você pode acompanhar a sua inscrição na área do participante: <a href="${link}">${link}</a></p>
+    <p ${PARAGRAFO}>Você pode acompanhar a sua inscrição na área do participante:</p>
+    ${botaoEmail(link, "Acompanhar inscrição")}
   `;
 
   return {
