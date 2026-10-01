@@ -372,7 +372,18 @@ function operacoesAnonimizacao(id, cliente = prisma) {
   ];
 }
 
+// Conta com autoria em submissão não pode ser excluída: a anonimização não
+// solta SubmissaoAutor/Submissao.usuarioId, então o trabalho ficaria preso à
+// conta anonimizada e um cadastro novo com o mesmo e-mail não o recuperaria
+// (associarAutoriasPendentes só pega autorias sem conta).
 async function anonimizarUsuario(id) {
+  const autorias = await prisma.submissaoAutor.count({ where: { usuarioId: id } });
+  if (autorias > 0) {
+    throw new ErroHttp(
+      409,
+      "Sua conta está vinculada a trabalhos submetidos como autor(a) ou coautor(a) e não pode ser excluída. Para usar outro e-mail, altere-o nesta página; para outras situações, fale com a organização do evento."
+    );
+  }
   await prisma.$transaction(operacoesAnonimizacao(id));
 }
 
