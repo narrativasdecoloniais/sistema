@@ -5,6 +5,7 @@ const { limitadorSensivel, limitadorPadrao } = require("../middlewares/rateLimit
 const router = Router();
 
 router.post("/cadastro", limitadorSensivel, authController.cadastrar);
+router.get("/convite-coautor", limitadorPadrao, authController.detalharConviteCoautor);
 router.get("/confirmar-email", limitadorPadrao, authController.confirmarEmail);
 router.post("/reenviar-confirmacao", limitadorSensivel, authController.reenviarConfirmacao);
 router.post("/login", limitadorSensivel, authController.login);

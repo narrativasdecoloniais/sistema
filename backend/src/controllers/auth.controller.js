@@ -12,12 +12,18 @@ const usuariosService = require("../services/usuarios.service");
 const tokenService = require("../services/token.service");
 const emailService = require("../services/email.service");
 const authService = require("../services/auth.service");
+const convitesCoautorService = require("../services/convitesCoautor.service");
 const { conferirHash } = require("../utils/senha");
 const mascararEmail = require("../utils/mascararEmail");
 const { identificacaoDe, rotuloIdentificacao } = require("../utils/identificacao");
 
 const cadastrar = asyncHandler(async (req, res) => {
   const dados = cadastroSchema.parse(req.body);
+
+  // Convite de coautor: o e-mail é o do convite (o campo vem travado na tela)
+  // e abrir o link já provou a posse dele — a conta nasce confirmada.
+  const convite = dados.convite ? await convitesCoautorService.buscarConviteValido(dados.convite) : null;
+  if (convite) dados.email = convite.email;
 
   const emailExistente = await usuariosService.buscarPorEmail(dados.email);
   if (emailExistente) {
@@ -34,17 +40,34 @@ const cadastrar = asyncHandler(async (req, res) => {
   if (contaExistente) {
     throw new ErroHttp(
       409,
-      `Já existe um cadastro com esse ${rotuloIdentificacao(identificacao)}, com o e-mail ${mascararEmail(contaExistente.email)}. Entre com ele ou use "Esqueci minha senha".`
+      convite
+        ? `Já existe um cadastro com esse ${rotuloIdentificacao(identificacao)}, com o e-mail ${mascararEmail(contaExistente.email)}. Use "Já tenho conta" para vincular os trabalhos a ela.`
+        : `Já existe um cadastro com esse ${rotuloIdentificacao(identificacao)}, com o e-mail ${mascararEmail(contaExistente.email)}. Entre com ele ou use "Esqueci minha senha".`
     );
   }
 
   const usuario = await usuariosService.criarUsuario({ ...dados, identificacao });
+
+  if (convite) {
+    await usuariosService.confirmarEmail(usuario.id);
+    await convitesCoautorService.marcarUsado(convite.id, usuario.id);
+    return res.status(201).json({
+      mensagem: "Conta criada. Você já pode entrar com seu CPF (ou documento) e senha.",
+      emailConfirmado: true,
+    });
+  }
+
   const token = await tokenService.criarTokenConfirmacaoEmail(usuario.id);
   await emailService.enviarEmailConfirmacao(usuario, token);
 
   return res.status(201).json({
     mensagem: "Cadastro realizado. Verifique seu e-mail para confirmar a conta.",
   });
+});
+
+const detalharConviteCoautor = asyncHandler(async (req, res) => {
+  const convite = await convitesCoautorService.detalharParaCadastro(req.query.token);
+  return res.json({ convite });
 });
 
 const confirmarEmail = asyncHandler(async (req, res) => {
@@ -211,6 +234,7 @@ const definirSenha = asyncHandler(async (req, res) => {
 
 module.exports = {
   cadastrar,
+  detalharConviteCoautor,
   confirmarEmail,
   reenviarConfirmacao,
   login,

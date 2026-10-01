@@ -146,6 +146,20 @@ async function enviarEmailConviteAutor(usuario, token, titulo) {
   });
 }
 
+// Convite para coautor sem conta (convitesCoautor.service.js). O mesmo link
+// serve para criar a conta com este e-mail ou, para quem já tem conta com
+// outro e-mail, vincular os trabalhos a ela ("Já tenho conta").
+async function enviarEmailConviteCoautor({ email, nome, titulos, token }) {
+  const link = `${env.frontendUrl}/cadastro?convite=${token}`;
+  const listaTitulos = titulos.map((titulo) => `<li>${escaparHtml(titulo)}</li>`).join("");
+  const plural = titulos.length > 1;
+  await enviarEmail({
+    para: email,
+    assunto: "Você consta como coautor(a) no Narrativas",
+    html: `<p>Olá, ${escaparHtml(nome)}.</p><p>Você consta como coautor(a) ${plural ? "dos trabalhos" : "do trabalho"} abaixo, ${plural ? "submetidos" : "submetido"} ao Narrativas:</p><ul>${listaTitulos}</ul><p>Crie sua conta pelo link abaixo — o cadastro já vem com este e-mail e ${plural ? "os trabalhos ficam" : "o trabalho fica"} em "Minhas submissões", na sua área do participante:</p><p><a href="${link}">${link}</a></p><p>Se você já tem conta no Narrativas com outro e-mail, abra o mesmo link e escolha "Já tenho conta" para vincular ${plural ? "os trabalhos" : "o trabalho"} a ela.</p><p>Se você não reconhece ${plural ? "esses trabalhos" : "esse trabalho"}, ignore este e-mail.</p>`,
+  });
+}
+
 async function enviarEmailNotificacaoAvaliador(usuario) {
   const link = `${env.frontendUrl}/participante/avaliacoes`;
   await enviarEmail({
@@ -334,6 +348,7 @@ module.exports = {
   enviarEmailNotificacaoOrganizador,
   enviarEmailConviteAvaliador,
   enviarEmailConviteAutor,
+  enviarEmailConviteCoautor,
   enviarEmailNotificacaoAvaliador,
   enviarEmailPromocaoAdmin,
   enviarEmailConfirmacaoInscricao,

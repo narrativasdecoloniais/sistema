@@ -225,6 +225,7 @@ model Usuario {
   avaliacoesEdicao           AvaliadorEdicao[]
   certificados               Certificado[]
   comentariosAnais           ComentarioAnais[]
+  convitesCoautor            ConviteCoautor[]
 
   @@map("usuarios")
 }
@@ -996,6 +997,31 @@ model SugestaoTrocaArea {
 // quando o e-mail bate com um Usuario (na hora de adicionar, ou associado
 // retroativamente se essa pessoa se cadastrar depois, ver
 // usuarios.service.js).
+// Convite de cadastro para coautor sem conta — um por e-mail (minúsculo),
+// compartilhado entre todas as autorias soltas com esse e-mail. Não usa
+// TokenVerificacao porque ele exige usuarioId e o coautor ainda não tem conta.
+// O token vai no link /cadastro?convite=: abrir o link prova a posse do
+// e-mail, então a conta nasce confirmada (ou, com "Já tenho conta", as
+// autorias vão para a conta logada). Reenvio estende expiraEm e mantém o
+// token, para links de e-mails anteriores continuarem valendo.
+// Ver services/convitesCoautor.service.js.
+model ConviteCoautor {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  token     String    @unique
+  expiraEm  DateTime
+  enviadoEm DateTime?
+  erroEnvio String?
+  usadoEm   DateTime?
+  // Conta criada ou vinculada ao aceitar.
+  usuarioId String?
+  usuario   Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("convites_coautor")
+}
+
 model SubmissaoAutor {
   id          String    @id @default(uuid())
   submissaoId String

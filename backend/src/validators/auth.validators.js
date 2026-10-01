@@ -25,6 +25,9 @@ const cadastroSchema = z
     aceitePrivacidade: z.literal(true, {
       errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
     }),
+    // Token do convite de coautor (/cadastro?convite=) — com ele o e-mail vem
+    // do convite, não do formulário.
+    convite: z.string().trim().max(200).optional(),
   })
   .superRefine(validarIdentificacao)
   .refine((dados) => dados.senha === dados.confirmarSenha, {

@@ -6,6 +6,7 @@ const participanteAvaliacoesRoutes = require("./participanteAvaliacoes.routes");
 const participanteMonitoriaRoutes = require("./participanteMonitoria.routes");
 const participanteCredenciamentoRoutes = require("./participanteCredenciamento.routes");
 const participanteCertificadosRoutes = require("./participanteCertificados.routes");
+const participanteCoautoriasRoutes = require("./participanteCoautorias.routes");
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.use("/submissoes", participanteSubmissoesRoutes);
 router.use("/monitoria", participanteMonitoriaRoutes);
 router.use("/credenciamento", participanteCredenciamentoRoutes);
 router.use("/certificados", participanteCertificadosRoutes);
+router.use("/coautorias", participanteCoautoriasRoutes);
 // Qualquer logado pode chamar; só vê as atribuições que são dele.
 router.use("/avaliacoes", participanteAvaliacoesRoutes);
 

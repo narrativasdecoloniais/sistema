@@ -10,6 +10,7 @@ const {
 const usuariosService = require("../services/usuarios.service");
 const edicoesService = require("../services/edicoes.service");
 const submissoesService = require("../services/submissoes.service");
+const convitesCoautorService = require("../services/convitesCoautor.service");
 const tokenService = require("../services/token.service");
 const emailService = require("../services/email.service");
 
@@ -79,6 +80,7 @@ const criar = asyncHandler(async (req, res) => {
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
 
   const submissao = await submissoesService.criarSubmissao(req.usuarioSubmissaoId, edicao.id, dados);
+  convitesCoautorService.convidarCoautoresDaSubmissao(submissao.id);
   return res.status(201).json({ submissao });
 });
 

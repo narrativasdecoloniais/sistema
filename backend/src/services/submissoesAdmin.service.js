@@ -9,6 +9,7 @@ const storageService = require("./storage.service");
 const { distribuirSubmissao } = require("./avaliacoes.service");
 const submissoesService = require("./submissoes.service");
 const usuariosService = require("./usuarios.service");
+const convitesCoautorService = require("./convitesCoautor.service");
 const tokenService = require("./token.service");
 const emailService = require("./email.service");
 
@@ -88,6 +89,7 @@ async function criarPelaOrganizacao(edicaoId, { usuarioId, nome, email, ...dados
     }
   }
 
+  convitesCoautorService.convidarCoautoresDaSubmissao(submissao.id);
   return { submissao: await buscarPorId(submissao.id), conviteEnviado };
 }
 

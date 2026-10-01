@@ -285,11 +285,22 @@ async function atualizarEmail(id, novoEmail) {
     throw new ErroHttp(409, "Já existe um cadastro com esse e-mail.");
   }
 
-  return prisma.usuario.update({
-    where: { id },
-    data: { email: normalizarEmail(novoEmail), emailConfirmado: true },
-    select: CAMPOS_PUBLICOS,
-  });
+  // Autorias seguem o novo e-mail e autorias soltas com ele são ligadas,
+  // como em trocarProprioEmail.
+  const email = normalizarEmail(novoEmail);
+  const [atualizado] = await prisma.$transaction([
+    prisma.usuario.update({
+      where: { id },
+      data: { email, emailConfirmado: true },
+      select: CAMPOS_PUBLICOS,
+    }),
+    prisma.submissaoAutor.updateMany({ where: { usuarioId: id }, data: { email } }),
+    prisma.submissaoAutor.updateMany({
+      where: { usuarioId: null, email: { equals: email, mode: "insensitive" } },
+      data: { usuarioId: id },
+    }),
+  ]);
+  return atualizado;
 }
 
 // Troca feita pelo próprio usuário, depois de digitar o código enviado para o
