@@ -27,6 +27,8 @@ export const cadastroSchema = z
     aceitePrivacidade: z.literal(true, {
       errorMap: () => ({ message: "É necessário aceitar a política de privacidade" }),
     }),
+    // Token do convite de coautor (/cadastro?convite=) — espelho do backend.
+    convite: z.string().trim().max(200).optional(),
   })
   .superRefine(validarIdentificacao)
   .refine((dados) => dados.senha === dados.confirmarSenha, {
@@ -407,6 +409,12 @@ export const participanteSchema = z
   .merge(permissoesSecoesSchema);
 
 export const alterarEmailUsuarioSchema = z.object({
+  email: z.string().trim().email("E-mail inválido"),
+});
+
+// Tela admin de Coautores — espelho de backend/src/validators/coautores.validators.js.
+export const atualizarCoautorSchema = z.object({
+  nome: z.string().trim().min(3, "Informe o nome completo").max(300),
   email: z.string().trim().email("E-mail inválido"),
 });
 

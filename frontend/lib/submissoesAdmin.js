@@ -24,3 +24,8 @@ export async function buscarConteudoSubmissao(edicaoId, submissaoId) {
   const dados = await requisitarComCookies(`/edicoes/${edicaoId}/submissoes/${submissaoId}/conteudo`);
   return dados?.submissao || null;
 }
+
+export async function listarCoautores(edicaoId) {
+  const dados = await requisitarComCookies(`/edicoes/${edicaoId}/coautores`);
+  return { coautores: dados?.coautores || [], envio: dados?.envio || { enviando: false, naFila: 0 } };
+}

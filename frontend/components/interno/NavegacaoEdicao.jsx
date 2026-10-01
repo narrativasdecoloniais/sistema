@@ -22,6 +22,7 @@ import {
   CalendarDays,
   FileText,
   Inbox,
+  UserPlus,
   CheckSquare,
   ListChecks,
   Presentation,
@@ -146,6 +147,12 @@ function montarGrupos(base) {
               href: `${base}/submissoes/recebimento`,
               rotulo: "Recebimento",
               Icone: Inbox,
+              secao: "SUBMISSOES_RECEBIMENTO",
+            },
+            {
+              href: `${base}/submissoes/coautores`,
+              rotulo: "Coautores",
+              Icone: UserPlus,
               secao: "SUBMISSOES_RECEBIMENTO",
             },
             {

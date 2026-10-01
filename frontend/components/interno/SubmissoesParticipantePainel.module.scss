@@ -99,6 +99,55 @@
   font-size: 0.875rem;
 }
 
+// Situação de cadastro dos coautores — só para o autor principal.
+.coautores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+
+.coautor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.5rem;
+  row-gap: 0.1rem;
+  color: var(--texto);
+}
+
+.coautorSituacao {
+  color: var(--texto-suave);
+}
+
+.coautorCadastrado {
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.botaoTexto {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--acento);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
 .cartaoData {
   margin-top: auto;
   padding-top: 0.4rem;

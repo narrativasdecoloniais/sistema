@@ -10,6 +10,9 @@ import { listarMinhasSubmissoes } from "@/lib/participanteSubmissoes";
 import { listarModalidadesSubmissaoPublicas, prazoSubmissaoAberto } from "@/lib/publico";
 import { ROTULOS_DECISAO, formatarPrazoCorrecao } from "@/lib/avaliacoes";
 import { detalheAtividade, linkAtividade } from "@/lib/apresentacao";
+import { ROTULOS_SITUACAO_COAUTOR, formatarDataHoraCurta } from "@/lib/coautores";
+import { apiClient } from "@/lib/apiClient";
+import { useToast } from "./ToastProvider";
 import styles from "./SubmissoesParticipantePainel.module.scss";
 
 function formatarData(iso) {
@@ -104,6 +107,9 @@ export default function SubmissoesParticipantePainel() {
               <p className={styles.cartaoAutores}>
                 {submissao.autores.map((autor) => autor.nome).join(", ")}
               </p>
+              {submissao.ehAutorPrincipal && submissao.autores.some((autor) => autor.cadastro) && (
+                <CoautoresSubmissao submissao={submissao} setSubmissoes={setSubmissoes} />
+              )}
               <p className={styles.cartaoData}>Enviado em {formatarData(submissao.createdAt)}</p>
               {submissao.resultado && (
                 <ResultadoSubmissao id={submissao.id} resultado={submissao.resultado} ehAutorPrincipal={submissao.ehAutorPrincipal} />
@@ -130,6 +136,65 @@ export default function SubmissoesParticipantePainel() {
         </div>
       )}
     </div>
+  );
+}
+
+// Só o autor principal recebe a situação de cadastro dos coautores (a API
+// omite para coautores). Reenvio: no máximo um a cada 24 h por coautor.
+function CoautoresSubmissao({ submissao, setSubmissoes }) {
+  const { notificar } = useToast();
+  const [reenviando, setReenviando] = useState(null);
+  const coautores = submissao.autores.filter((autor) => autor.cadastro);
+
+  async function reenviar(autor) {
+    setReenviando(autor.id);
+    try {
+      const resposta = await apiClient.post(`/participante/submissoes/${submissao.id}/autores/${autor.id}/convite`);
+      notificar(resposta.mensagem);
+      setSubmissoes((atuais) =>
+        atuais.map((item) =>
+          item.id !== submissao.id
+            ? item
+            : {
+                ...item,
+                autores: item.autores.map((outro) =>
+                  outro.id === autor.id ? { ...outro, cadastro: { ...outro.cadastro, situacao: "NA_FILA" } } : outro
+                ),
+              }
+        )
+      );
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setReenviando(null);
+    }
+  }
+
+  return (
+    <ul className={styles.coautores} aria-label="Cadastro dos coautores">
+      {coautores.map((autor) => {
+        const { situacao, enviadoEm } = autor.cadastro;
+        return (
+          <li key={autor.id} className={styles.coautor}>
+            <span>{autor.nome}</span>
+            <span className={situacao === "CADASTRADO" ? styles.coautorCadastrado : styles.coautorSituacao}>
+              {ROTULOS_SITUACAO_COAUTOR[situacao]}
+              {situacao === "CONVITE_ENVIADO" && enviadoEm ? ` em ${formatarDataHoraCurta(enviadoEm)}` : ""}
+            </span>
+            {situacao !== "CADASTRADO" && situacao !== "NA_FILA" && (
+              <button
+                type="button"
+                className={styles.botaoTexto}
+                onClick={() => reenviar(autor)}
+                disabled={reenviando === autor.id}
+              >
+                {reenviando === autor.id ? "Enviando..." : enviadoEm ? "Reenviar convite" : "Enviar convite"}
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

@@ -56,6 +56,9 @@ export default function LoginForm() {
   return (
     <form onSubmit={aoSubmeter} className={styles.formulario}>
       <Alerta>{erroGeral}</Alerta>
+      {searchParams.get("conta") === "criada" && !erroGeral && (
+        <Alerta tipo="sucesso">Conta criada. Entre com seu CPF (ou documento) e a senha que você escolheu.</Alerta>
+      )}
       <CampoIdentificacao
         id="login"
         variante="minimal"
