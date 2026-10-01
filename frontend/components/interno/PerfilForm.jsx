@@ -18,11 +18,13 @@ import {
   categorias,
 } from "@/lib/validacao";
 import { useToast } from "./ToastProvider";
+import ModalConfirmacao from "./ModalConfirmacao";
 import { formatarIdentificacao } from "@/lib/identificacao";
 import styles from "./PerfilForm.module.scss";
 
 export default function PerfilForm({ usuarioInicial }) {
   const router = useRouter();
+  const { notificar } = useToast();
   const usuario = usuarioInicial;
 
   const [perfil, setPerfil] = useState({
@@ -41,7 +43,6 @@ export default function PerfilForm({ usuarioInicial }) {
   const [salvandoSenha, setSalvandoSenha] = useState(false);
 
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
-  const [erroExclusao, setErroExclusao] = useState("");
   const [excluindo, setExcluindo] = useState(false);
 
   async function salvarPerfil(evento) {
@@ -100,16 +101,17 @@ export default function PerfilForm({ usuarioInicial }) {
   }
 
   async function excluirConta() {
-    setErroExclusao("");
     setExcluindo(true);
 
     try {
       await apiClient.delete("/usuarios/me");
+      notificar("Conta excluída com sucesso.");
       router.push("/");
       router.refresh();
     } catch (erro) {
-      setErroExclusao(erro.message);
+      notificar(erro.message, "erro");
       setExcluindo(false);
+      setConfirmandoExclusao(false);
     }
   }
 
@@ -217,28 +219,24 @@ export default function PerfilForm({ usuarioInicial }) {
         <h2 className={styles.secaoTitulo}>Excluir conta</h2>
         <p className={styles.perigoTexto}>
           Ao excluir sua conta, seus dados pessoais são anonimizados permanentemente,
-          conforme a LGPD. Essa ação não pode ser desfeita.
+          conforme a LGPD. Essa ação não pode ser desfeita. Contas vinculadas a trabalhos
+          submetidos (como autor(a) ou coautor(a)) não podem ser excluídas.
         </p>
-        <Alerta>{erroExclusao}</Alerta>
-        {!confirmandoExclusao ? (
-          <Botao
-            type="button"
-            variante="perigo"
-            onClick={() => setConfirmandoExclusao(true)}
-          >
-            Excluir minha conta
-          </Botao>
-        ) : (
-          <div className={styles.linha}>
-            <Botao type="button" variante="perigo" carregando={excluindo} onClick={excluirConta}>
-              Confirmar exclusão
-            </Botao>
-            <Botao type="button" variante="secundario" onClick={() => setConfirmandoExclusao(false)}>
-              Cancelar
-            </Botao>
-          </div>
-        )}
+        <Botao type="button" variante="perigo" onClick={() => setConfirmandoExclusao(true)}>
+          Excluir minha conta
+        </Botao>
       </section>
+
+      {confirmandoExclusao && (
+        <ModalConfirmacao
+          titulo="Excluir minha conta"
+          mensagem="Seus dados pessoais serão anonimizados permanentemente e você perderá o acesso a esta conta. Essa ação não pode ser desfeita."
+          rotuloConfirmar="Excluir conta"
+          confirmando={excluindo}
+          onConfirmar={excluirConta}
+          onCancelar={() => !excluindo && setConfirmandoExclusao(false)}
+        />
+      )}
     </>
   );
 }
