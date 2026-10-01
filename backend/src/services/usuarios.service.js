@@ -364,6 +364,11 @@ function operacoesAnonimizacao(id, cliente = prisma) {
         motivoRevogacao: "Conta removida",
       },
     }),
+    // Histórico de e-mails em massa guarda cópia de nome/e-mail.
+    cliente.envioEmailDestinatario.updateMany({
+      where: { usuarioId: id },
+      data: { nome: "Usuário removido", email: `anon-${id}@anonimizado.local` },
+    }),
   ];
 }
 

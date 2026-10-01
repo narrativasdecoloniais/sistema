@@ -7,6 +7,8 @@ const participanteMonitoriaRoutes = require("./participanteMonitoria.routes");
 const participanteCredenciamentoRoutes = require("./participanteCredenciamento.routes");
 const participanteCertificadosRoutes = require("./participanteCertificados.routes");
 const participanteCoautoriasRoutes = require("./participanteCoautorias.routes");
+const asyncHandler = require("../utils/asyncHandler");
+const participanteResumoService = require("../services/participanteResumo.service");
 
 const router = Router();
 
@@ -14,6 +16,14 @@ const router = Router();
 // sessão), sem token intermediário: esse token só existe pra sustentar os
 // fluxos públicos sem sessão real (CPF ou link mágico por e-mail).
 router.use(autenticar);
+
+// Tela "Início": situação em cada recurso e o que há a fazer.
+router.get(
+  "/resumo",
+  asyncHandler(async (req, res) => {
+    return res.json(await participanteResumoService.resumir(req.usuario.id));
+  })
+);
 
 router.use("/inscricoes", participanteInscricoesRoutes);
 router.use("/submissoes", participanteSubmissoesRoutes);

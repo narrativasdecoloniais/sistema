@@ -218,14 +218,16 @@ model Usuario {
   inscricoesAtividade        InscricaoAtividade[]
   inscricoesMonitoria        InscricaoMonitoria[]
   // Quem da equipe credenciou/registrou presença (credenciamento.service.js).
-  credenciamentosRegistrados InscricaoEdicao[]    @relation("CredenciadoPor")
-  presencasRegistradas       InscricaoAtividade[] @relation("PresencaRegistradaPor")
+  credenciamentosRegistrados InscricaoEdicao[]        @relation("CredenciadoPor")
+  presencasRegistradas       InscricaoAtividade[]     @relation("PresencaRegistradaPor")
   submissoes                 Submissao[]
   submissaoAutorias          SubmissaoAutor[]
   avaliacoesEdicao           AvaliadorEdicao[]
   certificados               Certificado[]
   comentariosAnais           ComentarioAnais[]
   convitesCoautor            ConviteCoautor[]
+  enviosEmailCriados         EnvioEmail[]             @relation("EnvioEmailCriadoPor")
+  enviosEmailRecebidos       EnvioEmailDestinatario[]
 
   @@map("usuarios")
 }
@@ -551,6 +553,7 @@ model Edicao {
   certificados          Certificado[]
   anais                 AnaisEdicao?
   artigosAnais          ArtigoAnais[]
+  enviosEmail           EnvioEmail[]
 
   @@map("edicoes")
 }
@@ -1309,4 +1312,61 @@ model ComentarioAnais {
 
   @@index([artigoAnaisId, createdAt])
   @@map("comentarios_anais")
+}
+
+// E-mails em massa (emailsMassa.service.js) — só ADMIN. Modelo é global
+// (vale para todas as edições); {{edicao}} vem da edição de onde parte o
+// envio. Corpo em HTML sanitizado com a allowlist de
+// sanitizarCorpoContribuicao, com {{marcadores}} de utils/marcadoresEmailMassa.js.
+model ModeloEmail {
+  id        String       @id @default(uuid())
+  // Rótulo interno, só para achar o modelo na lista.
+  nome      String
+  assunto   String
+  corpo     String       @db.Text
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  envios    EnvioEmail[]
+
+  @@map("modelos_email")
+}
+
+// Um envio em massa, com cópia do texto (o modelo pode mudar ou sumir
+// depois). Destinatários sem enviadoEm estão pendentes — "Retomar" reenfileira
+// os pendentes e os com erro (pausa por limite do Resend, restart no meio).
+model EnvioEmail {
+  id            String                   @id @default(uuid())
+  edicaoId      String?
+  edicao        Edicao?                  @relation(fields: [edicaoId], references: [id], onDelete: SetNull)
+  modeloId      String?
+  modelo        ModeloEmail?             @relation(fields: [modeloId], references: [id], onDelete: SetNull)
+  assunto       String
+  corpo         String                   @db.Text
+  criadoPorId   String?
+  criadoPor     Usuario?                 @relation("EnvioEmailCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  concluidoEm   DateTime?
+  createdAt     DateTime                 @default(now())
+  destinatarios EnvioEmailDestinatario[]
+
+  @@index([edicaoId])
+  @@map("envios_email")
+}
+
+// Nome/e-mail copiados no momento do envio (a anonimização da conta troca
+// os dois, ver usuarios.service.js operacoesAnonimizacao).
+model EnvioEmailDestinatario {
+  id        String     @id @default(uuid())
+  envioId   String
+  envio     EnvioEmail @relation(fields: [envioId], references: [id], onDelete: Cascade)
+  usuarioId String?
+  usuario   Usuario?   @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  nome      String
+  email     String
+  enviadoEm DateTime?
+  erro      String?
+
+  @@index([envioId])
+  @@index([usuarioId])
+  @@index([enviadoEm])
+  @@map("envios_email_destinatarios")
 }

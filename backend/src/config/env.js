@@ -19,6 +19,8 @@ module.exports = {
   resendApiKey: process.env.RESEND_API_KEY || "",
   cookieDomain: process.env.COOKIE_DOMAIN || undefined,
   emailFrom: process.env.EMAIL_FROM || "Narrativas <nao-responda@narrativasdecoloniais.com.br>",
+  // Cota mensal do plano do Resend — só informativo na tela de E-mails.
+  emailLimiteMensal: Number(process.env.EMAIL_LIMITE_MENSAL) || 10000,
   producao: process.env.NODE_ENV === "production",
   gcsProjectId: obrigatoria("GCS_PROJECT_ID"),
   gcsBucketPublico: obrigatoria("GCS_BUCKET_PUBLICO"),

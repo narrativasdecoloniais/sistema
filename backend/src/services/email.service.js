@@ -6,7 +6,13 @@ const escaparHtml = require("../utils/escaparHtml");
 // tráfego de saída para prevenir abuso, então em produção o envio precisa
 // ser via API HTTP do Resend. Ethereal (SMTP) só é usado em dev local, onde
 // essa porta não é bloqueada.
-async function enviarViaResend({ para, assunto, html }) {
+// 429 = acima de 2 req/s — as filas de envio em segundo plano (resultado,
+// convites de coautor, e-mails em massa) podem rodar ao mesmo tempo, então
+// espera e tenta de novo antes de desistir.
+const TENTATIVAS_LIMITE_TAXA = 2;
+const ESPERA_LIMITE_TAXA_MS = 1000;
+
+async function enviarViaResend({ para, assunto, html }, tentativa = 0) {
   const resposta = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -15,6 +21,11 @@ async function enviarViaResend({ para, assunto, html }) {
     },
     body: JSON.stringify({ from: env.emailFrom, to: para, subject: assunto, html }),
   });
+
+  if (resposta.status === 429 && tentativa < TENTATIVAS_LIMITE_TAXA) {
+    await new Promise((resolver) => setTimeout(resolver, ESPERA_LIMITE_TAXA_MS * (tentativa + 1)));
+    return enviarViaResend({ para, assunto, html }, tentativa + 1);
+  }
 
   if (!resposta.ok) {
     const erro = await resposta.text();

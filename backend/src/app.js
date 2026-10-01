@@ -12,6 +12,7 @@ const tiposParticipacaoRoutes = require("./routes/tiposParticipacao.routes");
 const tiposPontoInteresseRoutes = require("./routes/tiposPontoInteresse.routes");
 const publicoRoutes = require("./routes/publico.routes");
 const comentariosAnaisRoutes = require("./routes/comentariosAnais.routes");
+const emailsMassaRoutes = require("./routes/emailsMassa.routes");
 const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
@@ -43,6 +44,7 @@ app.use("/tipos-participacao", tiposParticipacaoRoutes);
 app.use("/tipos-ponto-interesse", tiposPontoInteresseRoutes);
 app.use("/publico", publicoRoutes);
 app.use("/anais", comentariosAnaisRoutes);
+app.use("/emails", emailsMassaRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ mensagem: "Rota não encontrada." });
