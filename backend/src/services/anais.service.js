@@ -1,7 +1,7 @@
 const prisma = require("../config/prisma");
 const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
-const { FILTRO_SUBMISSOES_ANAIS } = require("../utils/criterioAnais");
+const { filtroSubmissoesAnais } = require("../utils/criterioAnais");
 const { gerarSlug } = require("../utils/slug");
 const {
   CONFIG_RESUMO,
@@ -151,7 +151,7 @@ function compararArtigos(a, b) {
 }
 
 function whereArtigosVisiveis(edicaoId) {
-  return { edicaoId, ocultoEm: null, submissao: FILTRO_SUBMISSOES_ANAIS };
+  return { edicaoId, ocultoEm: null, submissao: filtroSubmissoesAnais(edicaoId) };
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +162,7 @@ function whereArtigosVisiveis(edicaoId) {
 // e ainda não tem. Nunca apaga: quem sai do critério só some das consultas.
 async function sincronizarArtigos(edicaoId) {
   const novas = await prisma.submissao.findMany({
-    where: { edicaoId, ...FILTRO_SUBMISSOES_ANAIS, artigoAnais: null },
+    where: { edicaoId, ...filtroSubmissoesAnais(edicaoId), artigoAnais: null },
     select: { id: true, titulo: true },
     orderBy: { createdAt: "asc" },
   });
@@ -195,7 +195,7 @@ async function obterPainel(edicaoId, { geracaoEmAndamento = null } = {}) {
 
   const [publicados, ocultos, comentarios, comentariosOcultos, grupos] = await Promise.all([
     prisma.artigoAnais.count({ where: whereArtigosVisiveis(edicaoId) }),
-    prisma.artigoAnais.count({ where: { edicaoId, ocultoEm: { not: null }, submissao: FILTRO_SUBMISSOES_ANAIS } }),
+    prisma.artigoAnais.count({ where: { edicaoId, ocultoEm: { not: null }, submissao: filtroSubmissoesAnais(edicaoId) } }),
     prisma.comentarioAnais.count({ where: { artigoAnais: { edicaoId } } }),
     prisma.comentarioAnais.count({ where: { artigoAnais: { edicaoId }, ocultoEm: { not: null } } }),
     prisma.grupoConteudo.findMany({
@@ -267,7 +267,7 @@ async function listarArtigosAdmin(edicaoId) {
   await sincronizarArtigos(edicaoId);
 
   const artigos = await prisma.artigoAnais.findMany({
-    where: { edicaoId, submissao: FILTRO_SUBMISSOES_ANAIS },
+    where: { edicaoId, submissao: filtroSubmissoesAnais(edicaoId) },
     select: {
       id: true,
       slug: true,
@@ -395,11 +395,8 @@ async function listarEdicoesComAnais() {
   });
   const contagens = await prisma.artigoAnais.groupBy({
     by: ["edicaoId"],
-    where: {
-      edicaoId: { in: edicoes.map((edicao) => edicao.id) },
-      ocultoEm: null,
-      submissao: FILTRO_SUBMISSOES_ANAIS,
-    },
+    // O critério depende da edição (credenciamento), então um OR por edição.
+    where: { OR: edicoes.map((edicao) => whereArtigosVisiveis(edicao.id)) },
     _count: { _all: true },
   });
   const totalPorEdicao = Object.fromEntries(contagens.map((item) => [item.edicaoId, item._count._all]));
@@ -604,11 +601,14 @@ async function listarSitemap() {
 // Artigo visível (Anais publicados, não oculto, no critério) — base das
 // rotas públicas por id (comentários, contadores).
 async function buscarArtigoVisivelPorId(artigoId) {
+  // O critério depende da edição do artigo (credenciamento dos autores).
+  const registro = await prisma.artigoAnais.findUnique({ where: { id: artigoId }, select: { edicaoId: true } });
+  if (!registro) throw new ErroHttp(404, "Trabalho não encontrado nos Anais.");
+
   const artigo = await prisma.artigoAnais.findFirst({
     where: {
+      ...whereArtigosVisiveis(registro.edicaoId),
       id: artigoId,
-      ocultoEm: null,
-      submissao: FILTRO_SUBMISSOES_ANAIS,
       edicao: { anais: { publicadoEm: { not: null } } },
     },
     select: {

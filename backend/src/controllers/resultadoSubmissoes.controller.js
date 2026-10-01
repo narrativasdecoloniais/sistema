@@ -8,6 +8,7 @@ const {
   conferirCorrecaoSchema,
   decisaoParamSchema,
   modeloEmailSchema,
+  enviarEmailsSchema,
 } = require("../validators/resultadoSubmissoes.validators");
 
 const resumo = asyncHandler(async (req, res) => {
@@ -41,13 +42,18 @@ const definirPrazo = asyncHandler(async (req, res) => {
 const divulgar = asyncHandler(async (req, res) => {
   await resultadoService.divulgar(req.params.edicaoId);
   return res.status(202).json({
-    mensagem: "Resultado divulgado. Os e-mails estão sendo enviados aos autores.",
+    mensagem: "Resultado divulgado. Nenhum e-mail foi enviado aos autores.",
   });
 });
 
-const reenviarEmails = asyncHandler(async (req, res) => {
-  await resultadoService.reenviarPendentes(req.params.edicaoId);
-  return res.status(202).json({ mensagem: "Reenvio dos e-mails pendentes iniciado." });
+const previaEmails = asyncHandler(async (req, res) => {
+  return res.json({ previa: await resultadoService.previaEmails(req.params.edicaoId) });
+});
+
+const enviarEmails = asyncHandler(async (req, res) => {
+  const dados = enviarEmailsSchema.parse(req.body || {});
+  await resultadoService.enviarEmails(req.params.edicaoId, dados);
+  return res.status(202).json({ mensagem: "Envio dos e-mails iniciado." });
 });
 
 const listarModelosEmail = asyncHandler(async (req, res) => {
@@ -81,7 +87,8 @@ module.exports = {
   conferirCorrecao,
   definirPrazo,
   divulgar,
-  reenviarEmails,
+  previaEmails,
+  enviarEmails,
   listarModelosEmail,
   salvarModeloEmail,
   enviarTesteEmail,

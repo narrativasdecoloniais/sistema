@@ -280,6 +280,10 @@ model Edicao {
   // (APROVADO_COM_RESSALVAS e APROVADO_FORMATACAO).
   resultadoDivulgadoEm              DateTime?
   prazoCorrecaoSubmissao            DateTime?
+  // A divulgação não envia e-mail: o envio é disparado depois, à parte.
+  // Guarda a última escolha de destinatários (todos os autores ou só o
+  // principal) pra o "Reenviar pendentes" retomar igual, mesmo após restart.
+  emailResultadoSoAutorPrincipal    Boolean              @default(false)
   // Distribuição dos trabalhos nas atividades (apresentacaoSubmissoes.service.js)
   // só aparece na página pública da atividade e em Minhas submissões quando
   // publicada — nulo = oculta (pode voltar a ser ocultada).

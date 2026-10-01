@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
 const INCLUDE_SUBMISSAO = require("../utils/submissaoIncludePadrao");
 const { prazoCorrecaoAberto, formatarPrazoCorrecao } = require("../utils/prazoCorrecao");
@@ -23,7 +24,13 @@ function esperar(ms) {
 async function buscarEdicao(db, edicaoId) {
   const edicao = await db.edicao.findUnique({
     where: { id: edicaoId },
-    select: { id: true, nome: true, resultadoDivulgadoEm: true, prazoCorrecaoSubmissao: true },
+    select: {
+      id: true,
+      nome: true,
+      resultadoDivulgadoEm: true,
+      prazoCorrecaoSubmissao: true,
+      emailResultadoSoAutorPrincipal: true,
+    },
   });
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
   return edicao;
@@ -74,6 +81,7 @@ async function resumo(edicaoId) {
       comErro: emailsComErro,
       pendentes: edicao.resultadoDivulgadoEm ? total - emailsEnviados : 0,
       enviando: enviosEmAndamento.has(edicaoId),
+      soAutorPrincipal: edicao.emailResultadoSoAutorPrincipal,
     },
   };
 }
@@ -146,8 +154,8 @@ async function divulgar(edicaoId) {
       data: { statusCorrecao: "PENDENTE" },
     });
   });
-
-  iniciarEnvioEmSegundoPlano(edicaoId);
+  // E-mail não sai aqui: a organização decide depois se envia e a quem
+  // (enviarEmails), revisando os textos antes.
 }
 
 function iniciarEnvioEmSegundoPlano(edicaoId) {
@@ -156,11 +164,74 @@ function iniciarEnvioEmSegundoPlano(edicaoId) {
   });
 }
 
-async function reenviarPendentes(edicaoId) {
+// Primeiro envio e retomada de pendentes. soAutorPrincipal undefined mantém
+// a escolha gravada (reenvio).
+async function enviarEmails(edicaoId, { soAutorPrincipal } = {}) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (!edicao.resultadoDivulgadoEm) throw new ErroHttp(409, "O resultado ainda não foi divulgado.");
   if (enviosEmAndamento.has(edicaoId)) throw new ErroHttp(409, "O envio dos e-mails já está em andamento.");
+  if (typeof soAutorPrincipal === "boolean") {
+    await prisma.edicao.update({ where: { id: edicaoId }, data: { emailResultadoSoAutorPrincipal: soAutorPrincipal } });
+  }
   iniciarEnvioEmSegundoPlano(edicaoId);
+}
+
+// Autor principal marcado; sem nenhum marcado, o primeiro pela ordem.
+function autorPrincipal(submissao) {
+  return submissao.autores.find((autor) => autor.principal) || submissao.autores[0] || null;
+}
+
+function destinatariosEmail(submissao, soAutorPrincipal) {
+  if (!soAutorPrincipal) return submissao.autores;
+  const principal = autorPrincipal(submissao);
+  return principal ? [principal] : [];
+}
+
+function valoresEmail(edicao, submissao, autor) {
+  return {
+    nome: autor.nome,
+    titulo: submissao.titulo,
+    modalidade: submissao.modalidadeSubmissao.nome,
+    area: submissao.areaSubmissao?.titulo || "—",
+    edicao: edicao.nome,
+    observacao: submissao.observacaoResultado || "",
+    prazo: formatarPrazoCorrecao(edicao.prazoCorrecaoSubmissao),
+  };
+}
+
+// Prévia do envio: por decisão, quantos trabalhos ainda sem e-mail e os
+// dados reais do primeiro (com o autor principal) para pré-visualizar.
+async function previaEmails(edicaoId) {
+  const edicao = await buscarEdicao(prisma, edicaoId);
+  if (!edicao.resultadoDivulgadoEm) throw new ErroHttp(409, "O resultado ainda não foi divulgado.");
+
+  const submissoes = await prisma.submissao.findMany({
+    where: { edicaoId, emailResultadoEnviadoEm: null, decisaoFinal: { not: null } },
+    include: INCLUDE_SUBMISSAO,
+    orderBy: { titulo: "asc" },
+  });
+
+  const link = `${env.frontendUrl}/participante/submissoes`;
+  const decisoes = emailResultadoService.DECISOES.map((decisao) => {
+    const daDecisao = submissoes.filter((submissao) => submissao.decisaoFinal === decisao);
+    if (!daDecisao.length) return null;
+    const primeira = daDecisao[0];
+    const autor = autorPrincipal(primeira);
+    return {
+      decisao,
+      trabalhos: daDecisao.length,
+      destinatarios: daDecisao.reduce((soma, submissao) => soma + submissao.autores.length, 0),
+      destinatariosPrincipal: daDecisao.filter((submissao) => autorPrincipal(submissao)).length,
+      exemplo: { ...valoresEmail(edicao, primeira, autor || { nome: "" }), link },
+    };
+  }).filter(Boolean);
+
+  return {
+    trabalhos: submissoes.length,
+    destinatarios: decisoes.reduce((soma, item) => soma + item.destinatarios, 0),
+    destinatariosPrincipal: decisoes.reduce((soma, item) => soma + item.destinatariosPrincipal, 0),
+    decisoes,
+  };
 }
 
 // Envia um e-mail por autor (principal e coautores) de cada submissão ainda
@@ -184,16 +255,8 @@ async function enviarEmailsPendentes(edicaoId) {
     for (const submissao of submissoes) {
       const modelo = modelos.find((item) => item.decisao === submissao.decisaoFinal);
       try {
-        for (const autor of submissao.autores) {
-          const { assunto, html } = emailResultadoService.renderizar(modelo, {
-            nome: autor.nome,
-            titulo: submissao.titulo,
-            modalidade: submissao.modalidadeSubmissao.nome,
-            area: submissao.areaSubmissao?.titulo || "—",
-            edicao: edicao.nome,
-            observacao: submissao.observacaoResultado || "",
-            prazo: formatarPrazoCorrecao(edicao.prazoCorrecaoSubmissao),
-          });
+        for (const autor of destinatariosEmail(submissao, edicao.emailResultadoSoAutorPrincipal)) {
+          const { assunto, html } = emailResultadoService.renderizar(modelo, valoresEmail(edicao, submissao, autor));
           await emailService.enviarEmail({ para: autor.email, assunto, html });
           await esperar(INTERVALO_ENVIO_MS);
         }
@@ -256,7 +319,8 @@ module.exports = {
   atualizarObservacao,
   definirPrazo,
   divulgar,
-  reenviarPendentes,
+  enviarEmails,
+  previaEmails,
   enviarEmailsPendentes,
   conferirCorrecao,
 };

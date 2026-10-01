@@ -12,7 +12,8 @@ router.patch("/trabalhos/:id/observacao", resultadoController.atualizarObservaca
 router.patch("/trabalhos/:id/correcao", resultadoController.conferirCorrecao);
 router.patch("/prazo", resultadoController.definirPrazo);
 router.post("/divulgar", resultadoController.divulgar);
-router.post("/reenviar-emails", resultadoController.reenviarEmails);
+router.get("/previa-emails", resultadoController.previaEmails);
+router.post("/enviar-emails", resultadoController.enviarEmails);
 router.get("/modelos-email", resultadoController.listarModelosEmail);
 router.patch("/modelos-email/:decisao", resultadoController.salvarModeloEmail);
 router.post("/modelos-email/:decisao/teste", resultadoController.enviarTesteEmail);

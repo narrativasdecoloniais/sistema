@@ -7,7 +7,7 @@ const { htmlParaBlocos, percorrerBlocos } = require("../utils/htmlParaBlocos");
 const { DATA_URI_IMAGEM } = require("../utils/sanitizadorRichText");
 const { LICENCAS_ANAIS } = require("../utils/licencasAnais");
 const { autorAbnt } = require("../utils/citacao");
-const { FILTRO_SUBMISSOES_ANAIS } = require("../utils/criterioAnais");
+const { filtroSubmissoesAnais } = require("../utils/criterioAnais");
 
 // Monta o modelo neutro dos Anais (dados + rich text em blocos + imagens já
 // carregadas) que pdfAnais.service.js e docxAnais.service.js desenham. Nada
@@ -231,7 +231,7 @@ async function montarDocumentoArtigo(edicaoSlug, artigoSlug) {
   if (!edicao.anais.publicadoEm) throw new ErroHttp(404, "Anais não encontrados.");
 
   const registro = await prisma.artigoAnais.findFirst({
-    where: { edicaoId: edicao.id, slug: artigoSlug, ocultoEm: null, submissao: FILTRO_SUBMISSOES_ANAIS },
+    where: { edicaoId: edicao.id, slug: artigoSlug, ocultoEm: null, submissao: filtroSubmissoesAnais(edicao.id) },
     select: {
       id: true,
       slug: true,

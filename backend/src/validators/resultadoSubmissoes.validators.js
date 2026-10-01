@@ -33,4 +33,14 @@ const modeloEmailSchema = z.object({
   corpo: z.string().trim().min(1, "Informe o texto do e-mail"),
 });
 
-module.exports = { observacaoSchema, prazoSchema, conferirCorrecaoSchema, decisaoParamSchema, modeloEmailSchema };
+// Sem soAutorPrincipal (reenvio de pendentes) mantém a última escolha gravada.
+const enviarEmailsSchema = z.object({ soAutorPrincipal: z.boolean().optional() });
+
+module.exports = {
+  observacaoSchema,
+  prazoSchema,
+  conferirCorrecaoSchema,
+  decisaoParamSchema,
+  modeloEmailSchema,
+  enviarEmailsSchema,
+};

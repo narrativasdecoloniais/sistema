@@ -8,6 +8,7 @@ const certificadosService = require("../services/certificados.service");
 const prisma = require("../config/prisma");
 const inscricoesAbertas = require("../utils/inscricoesAbertas");
 const inscricoesMonitoriaAbertas = require("../utils/inscricoesMonitoriaAbertas");
+const { filtroTrabalhosAprovadosPublicos } = require("../utils/criterioAnais");
 
 // Link "Anais" da navegação aponta para /anais/<slug> quando os Anais da
 // edição estão publicados. Consulta à parte (e tolerante a falha) pra nunca
@@ -132,22 +133,15 @@ const listarGruposConteudo = asyncHandler(async (req, res) => {
   return res.json({ grupos });
 });
 
-// Só depois da divulgação. Ressalvas/formatação entram quando a correção
-// estiver concluída — nunca publica texto ainda pendente de ajuste. Autores
-// só com nome (sem e-mail).
+// Só depois da divulgação e só trabalhos com algum autor credenciado no
+// evento (critério em utils/criterioAnais.js). Autores só com nome (sem e-mail).
 const listarTrabalhosAprovados = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
   if (!edicao.resultadoDivulgadoEm) return res.json({ trabalhos: [] });
 
   const trabalhos = await prisma.submissao.findMany({
-    where: {
-      edicaoId: edicao.id,
-      OR: [
-        { decisaoFinal: "APROVADO" },
-        { decisaoFinal: { in: ["APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"] }, statusCorrecao: "CONCLUIDA" },
-      ],
-    },
+    where: filtroTrabalhosAprovadosPublicos(edicao.id),
     select: {
       id: true,
       titulo: true,
