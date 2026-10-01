@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FileText } from "lucide-react";
 import Botao from "@/components/forms/Botao";
+import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
+import ConteudoRichText from "@/components/ConteudoRichText";
 import CardAjudaInscricao from "./CardAjudaInscricao";
 import FormularioMonitoria from "./FormularioMonitoria";
 import { useToast } from "./ToastProvider";
@@ -44,6 +47,7 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
   const [editando, setEditando] = useState(false);
   const [confirmandoDesistencia, setConfirmandoDesistencia] = useState(false);
   const [desistindo, setDesistindo] = useState(false);
+  const [lendoChamada, setLendoChamada] = useState(false);
 
   async function carregar() {
     try {
@@ -110,6 +114,7 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
       ? formatarPeriodoEdicao(edicao.inicioInscricoesMonitoria, edicao.fimInscricoesMonitoria)
       : null;
   const mostrarFormulario = podeEditar && (!inscricao || editando);
+  const temChamada = Boolean(edicao.editalMonitoria?.replace(/<[^>]*>/g, "").trim());
 
   return (
     <div className={styles.pagina}>
@@ -121,6 +126,16 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
           Monitoria voluntária do evento.{periodo ? ` Inscrições: ${periodo}.` : ""}
         </p>
       </div>
+
+      {temChamada && (
+        <button type="button" className={styles.chamada} onClick={() => setLendoChamada(true)}>
+          <FileText size={20} strokeWidth={1.5} aria-hidden="true" />
+          <span>
+            <span className={styles.chamadaTitulo}>Leia aqui a chamada para monitores</span>
+            <span className={styles.chamadaApoio}>Texto completo do edital da monitoria desta edição.</span>
+          </span>
+        </button>
+      )}
 
       {inscricao && !editando && (
         <section className={styles.cartao} aria-labelledby="situacao-monitoria">
@@ -169,6 +184,12 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
           aoEnviar={enviar}
           aoCancelar={inscricao ? () => setEditando(false) : undefined}
         />
+      )}
+
+      {lendoChamada && (
+        <Modal titulo="Chamada para monitores" onFechar={() => setLendoChamada(false)} largo>
+          <ConteudoRichText className={styles.edital} html={edicao.editalMonitoria} tipo="edital" />
+        </Modal>
       )}
 
       {confirmandoDesistencia && (

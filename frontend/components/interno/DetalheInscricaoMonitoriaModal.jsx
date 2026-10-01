@@ -96,7 +96,7 @@ export default function DetalheInscricaoMonitoriaModal({ edicaoId, edicao, inscr
           </div>
           <div>
             <dt>Pronome</dt>
-            <dd>{inscricao.pronome}</dd>
+            <dd>{inscricao.pronome || "Não informado."}</dd>
           </div>
           <div>
             <dt>Telefone</dt>

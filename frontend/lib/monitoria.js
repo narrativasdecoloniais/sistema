@@ -17,6 +17,19 @@ export const FUNCOES_MONITORIA_PADRAO = [
   "Apoio às atividades para as infâncias",
 ];
 
+// Textos genéricos (sem datas) dos 3 "Estou ciente de que", usados quando a
+// edição ainda não tem os seus (cienteFormacaoMonitoria etc. nulos).
+export const TEXTOS_CIENTE_MONITORIA_PADRAO = {
+  cienteFormacaoMonitoria:
+    "Preciso participar da formação virtual ou presencial de monitores, nas datas indicadas no edital.",
+  cienteDisponibilidadeMonitoria: "Preciso ter disponibilidade para atuar presencialmente em todos os dias do evento.",
+  cienteVoluntariaMonitoria: "A monitoria é voluntária e não implica em remuneração de qualquer tipo.",
+};
+
+export function textoCienteMonitoria(edicao, campo) {
+  return edicao?.[campo] || TEXTOS_CIENTE_MONITORIA_PADRAO[campo];
+}
+
 export const ROTULOS_STATUS_MONITORIA = {
   EM_ANALISE: "Em análise",
   SELECIONADO: "Selecionado(a)",

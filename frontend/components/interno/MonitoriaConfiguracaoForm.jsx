@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, CalendarCheck, FileText, ListChecks, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarCheck, CheckSquare, FileText, ListChecks, Plus, Trash2 } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import CampoRichText from "@/components/forms/CampoRichText";
 import CabecalhoSecao from "./CabecalhoSecao";
@@ -9,7 +9,7 @@ import CampoTexto from "./CampoTexto";
 import { useToast } from "./ToastProvider";
 import { paraData, paraHora, combinar } from "@/lib/dataHoraIngenua";
 import { configuracaoMonitoriaSchema, extrairErros } from "@/lib/validacao";
-import { FUNCOES_MONITORIA_PADRAO, salvarConfiguracaoMonitoria } from "@/lib/monitoria";
+import { FUNCOES_MONITORIA_PADRAO, TEXTOS_CIENTE_MONITORIA_PADRAO, salvarConfiguracaoMonitoria } from "@/lib/monitoria";
 import styles from "./EdicaoForm.module.scss";
 import estilosTabela from "./AvaliacaoSubmissoesPainel.module.scss";
 import estilos from "./MonitoriaPainel.module.scss";
@@ -17,7 +17,8 @@ import estilos from "./MonitoriaPainel.module.scss";
 // Configurações da chamada de monitoria da edição: período de inscrição
 // (mesma convenção de data/hora "ingênua" das inscrições do evento), vagas
 // (só informativo), funções que o candidato escolhe e o texto do edital
-// mostrado na página pública /monitoria. Salva tudo num PATCH só.
+// mostrado na página pública /monitoria e os textos dos 3 "Estou ciente de
+// que" do formulário. Salva tudo num PATCH só.
 export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }) {
   const { notificar } = useToast();
   const [inicio, setInicio] = useState(edicao.inicioInscricoesMonitoria || "");
@@ -28,6 +29,15 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
     edicao.funcoesMonitoria.length > 0 ? edicao.funcoesMonitoria : FUNCOES_MONITORIA_PADRAO
   );
   const [edital, setEdital] = useState(edicao.editalMonitoria || "");
+  // Texto ainda não salvo vem pré-preenchido com o genérico (sem datas).
+  const [ciente, setCiente] = useState(() =>
+    Object.fromEntries(
+      Object.keys(TEXTOS_CIENTE_MONITORIA_PADRAO).map((campo) => [
+        campo,
+        edicao[campo] || TEXTOS_CIENTE_MONITORIA_PADRAO[campo],
+      ])
+    )
+  );
   const [erros, setErros] = useState({});
   const [salvando, setSalvando] = useState(false);
 
@@ -54,6 +64,7 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
       funcoesMonitoria: funcoes.map((funcao) => funcao.trim()),
       // Tabela sem texto ainda conta como conteúdo.
       editalMonitoria: edital.replace(/<[^>]*>/g, "").trim() || edital.includes("<table") ? edital : null,
+      ...ciente,
     };
     const resultado = configuracaoMonitoriaSchema.safeParse(dados);
     if (!resultado.success) {
@@ -193,6 +204,40 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
               Adicionar atividade
             </Botao>
           </div>
+        </div>
+      </div>
+
+      <div className={styles.secao}>
+        <CabecalhoSecao
+          Icone={CheckSquare}
+          titulo="Estou ciente de que"
+          descricao="Confirmações obrigatórias que o candidato marca no fim do formulário. Atualize as datas a cada edição."
+        />
+        <div className={styles.camposSecao}>
+          <CampoTexto
+            id="cienteFormacaoMonitoria"
+            rotulo="a) Formação de monitores"
+            maxLength={500}
+            value={ciente.cienteFormacaoMonitoria}
+            onChange={(e) => setCiente((atual) => ({ ...atual, cienteFormacaoMonitoria: e.target.value }))}
+            erro={erros.cienteFormacaoMonitoria}
+          />
+          <CampoTexto
+            id="cienteDisponibilidadeMonitoria"
+            rotulo="b) Disponibilidade nos dias do evento"
+            maxLength={500}
+            value={ciente.cienteDisponibilidadeMonitoria}
+            onChange={(e) => setCiente((atual) => ({ ...atual, cienteDisponibilidadeMonitoria: e.target.value }))}
+            erro={erros.cienteDisponibilidadeMonitoria}
+          />
+          <CampoTexto
+            id="cienteVoluntariaMonitoria"
+            rotulo="c) Trabalho voluntário"
+            maxLength={500}
+            value={ciente.cienteVoluntariaMonitoria}
+            onChange={(e) => setCiente((atual) => ({ ...atual, cienteVoluntariaMonitoria: e.target.value }))}
+            erro={erros.cienteVoluntariaMonitoria}
+          />
         </div>
       </div>
 

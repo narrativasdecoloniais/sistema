@@ -4,16 +4,23 @@ import { useState } from "react";
 import Link from "next/link";
 import Botao from "@/components/forms/Botao";
 import CampoTexto from "./CampoTexto";
+import CampoSugestoes from "./CampoSugestoes";
 import CampoCheckbox from "./CampoCheckbox";
 import CampoRadioSecao from "./CampoRadioSecao";
 import CampoArquivo from "./CampoArquivo";
 import CamposAdaptacao from "./CamposAdaptacao";
 import { useToast } from "./ToastProvider";
 import { formatarIdentificacao } from "@/lib/identificacao";
-import { formatarPeriodoEdicao } from "@/lib/publico";
 import { criarInscricaoMonitoriaSchema, extrairErros } from "@/lib/validacao";
-import { dataReferenciaIdade, ehMenor } from "@/lib/monitoria";
+import { dataReferenciaIdade, ehMenor, textoCienteMonitoria } from "@/lib/monitoria";
 import styles from "./FormularioMonitoria.module.scss";
+
+const SUGESTOES_PRONOME = [
+  "Ela/dela",
+  "Ele/dele",
+  "Elu/delu",
+  "Qualquer pronome",
+];
 
 const SIM_NAO = [
   { valor: "SIM", rotulo: "Sim" },
@@ -22,7 +29,9 @@ const SIM_NAO = [
 
 function estadoInicial(inscricao) {
   return {
-    dataNascimento: inscricao?.dataNascimento ? String(inscricao.dataNascimento).slice(0, 10) : "",
+    dataNascimento: inscricao?.dataNascimento
+      ? String(inscricao.dataNascimento).slice(0, 10)
+      : "",
     pronome: inscricao?.pronome || "",
     telefone: inscricao?.telefone || "",
     cursoInstituicao: inscricao?.cursoInstituicao || "",
@@ -42,19 +51,30 @@ function estadoInicial(inscricao) {
 
 // Questionário de inscrição na monitoria (validado por
 // criarInscricaoMonitoriaSchema, espelho do backend). Nome, CPF e e-mail vêm
-// da conta. A autorização do responsável só aparece para quem terá menos de
-// 18 anos no primeiro dia do evento.
-export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnviar, aoCancelar }) {
+// da conta. A autorização do responsável fica sempre no fim do formulário, mas
+// só é exigida (e enviada) para quem terá menos de 18 anos no primeiro dia do
+// evento — o backend descarta o anexo de quem é maior de idade.
+export default function FormularioMonitoria({
+  edicao,
+  usuario,
+  inscricao,
+  aoEnviar,
+  aoCancelar,
+}) {
   const { notificar } = useToast();
   const [form, setForm] = useState(() => estadoInicial(inscricao));
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
 
   const funcoesDisponiveis = [
-    ...new Set([...edicao.funcoesMonitoria, ...form.funcoes.filter((funcao) => !edicao.funcoesMonitoria.includes(funcao))]),
+    ...new Set([
+      ...edicao.funcoesMonitoria,
+      ...form.funcoes.filter(
+        (funcao) => !edicao.funcoesMonitoria.includes(funcao),
+      ),
+    ]),
   ];
   const menor = ehMenor(form.dataNascimento, edicao);
-  const periodoEvento = edicao.dataInicio ? formatarPeriodoEdicao(edicao.dataInicio, edicao.dataFim) : null;
 
   function alterar(campo, valor) {
     setForm((atual) => ({ ...atual, [campo]: valor }));
@@ -63,7 +83,9 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
   function alternarFuncao(funcao, marcada) {
     setForm((atual) => ({
       ...atual,
-      funcoes: marcada ? [...atual.funcoes, funcao] : atual.funcoes.filter((item) => item !== funcao),
+      funcoes: marcada
+        ? [...atual.funcoes, funcao]
+        : atual.funcoes.filter((item) => item !== funcao),
     }));
   }
 
@@ -76,13 +98,19 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
       cursoInstituicao: form.cursoInstituicao,
       experienciaAnterior: form.experienciaAnterior,
       // Função que saiu do catálogo depois da inscrição não pode ser reenviada.
-      funcoes: form.funcoes.filter((funcao) => edicao.funcoesMonitoria.includes(funcao)),
+      funcoes: form.funcoes.filter((funcao) =>
+        edicao.funcoesMonitoria.includes(funcao),
+      ),
       precisaAdaptacao: form.adaptacao.precisaAdaptacao,
-      adaptacoesNecessarias: form.adaptacao.precisaAdaptacao ? form.adaptacao.adaptacoesNecessarias : null,
+      adaptacoesNecessarias: form.adaptacao.precisaAdaptacao
+        ? form.adaptacao.adaptacoesNecessarias
+        : null,
       cienteFormacao: form.cienteFormacao,
       cienteDisponibilidade: form.cienteDisponibilidade,
       cienteVoluntaria: form.cienteVoluntaria,
-      autorizacaoResponsavel: menor ? form.autorizacao?.dataUri ?? null : null,
+      autorizacaoResponsavel: menor
+        ? (form.autorizacao?.dataUri ?? null)
+        : null,
     };
 
     const resultado = criarInscricaoMonitoriaSchema({
@@ -126,7 +154,8 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
           </div>
         </dl>
         <p className={styles.apoio}>
-          Esses dados vêm da sua conta. Para corrigir o nome (ou usar o nome social), acesse{" "}
+          Esses dados vêm da sua conta. Para corrigir o nome (ou usar o nome
+          social), acesse{" "}
           <Link href="/participante/perfil" className={styles.link}>
             Meu perfil
           </Link>
@@ -152,12 +181,14 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
             erro={erros.telefone}
           />
         </div>
-        <CampoTexto
+        <CampoSugestoes
           id="pronome"
-          rotulo="Identidade de gênero — qual pronome de tratamento você prefere?"
+          rotulo="Identidade de gênero — qual pronome de tratamento você prefere? (opcional)"
+          sugestoes={SUGESTOES_PRONOME}
+          placeholder="Escolha uma sugestão ou escreva"
           maxLength={100}
           value={form.pronome}
-          onChange={(e) => alterar("pronome", e.target.value)}
+          onChange={(valor) => alterar("pronome", valor)}
           erro={erros.pronome}
         />
         <CampoTexto
@@ -171,14 +202,23 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
         />
       </section>
 
-      <section className={styles.bloco} aria-labelledby="monitoria-participacao">
+      <section
+        className={styles.bloco}
+        aria-labelledby="monitoria-participacao"
+      >
         <h2 id="monitoria-participacao" className={styles.tituloBloco}>
           Participação na monitoria
         </h2>
         <CampoRadioSecao
           id="experienciaAnterior"
           rotulo="Você tem experiência anterior como monitora/monitor em evento acadêmico?"
-          valor={form.experienciaAnterior === true ? "SIM" : form.experienciaAnterior === false ? "NAO" : null}
+          valor={
+            form.experienciaAnterior === true
+              ? "SIM"
+              : form.experienciaAnterior === false
+                ? "NAO"
+                : null
+          }
           onChange={(opcao) => alterar("experienciaAnterior", opcao === "SIM")}
           opcoes={SIM_NAO}
           erro={erros.experienciaAnterior}
@@ -189,8 +229,8 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
           aria-describedby={erros.funcoes ? "funcoes-erro" : undefined}
         >
           <legend className={styles.legenda}>
-            Em quais destas atividades você se sentiria mais confortável para contribuir? Você pode selecionar mais
-            de uma opção.
+            Em quais destas atividades você se sentiria mais confortável para
+            contribuir? Você pode selecionar mais de uma opção.
           </legend>
           {funcoesDisponiveis.map((funcao, indice) => (
             <CampoCheckbox
@@ -210,7 +250,7 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
         </fieldset>
         <CamposAdaptacao
           id="monitoria-adaptacao"
-          pergunta="Você necessita de alguma adaptação ou recurso específico para participar como monitora/monitor do evento?"
+          pergunta="Você precisa de algum recurso de acessibilidade ou adaptação para atuar como monitora ou monitor durante o evento?"
           valor={form.adaptacao}
           onChange={(valor) => alterar("adaptacao", valor)}
           erros={erros}
@@ -224,46 +264,55 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
         <div className={styles.grupo}>
           <CampoCheckbox
             id="cienteFormacao"
-            rotulo="Preciso participar da formação virtual ou presencial de monitoras e monitores, nas datas indicadas no edital."
+            rotulo={textoCienteMonitoria(edicao, "cienteFormacaoMonitoria")}
             checked={form.cienteFormacao}
             onChange={(valor) => alterar("cienteFormacao", valor)}
           />
-          {erros.cienteFormacao && <p className={styles.erro}>{erros.cienteFormacao}</p>}
+          {erros.cienteFormacao && (
+            <p className={styles.erro}>{erros.cienteFormacao}</p>
+          )}
           <CampoCheckbox
             id="cienteDisponibilidade"
-            rotulo={`Preciso ter disponibilidade para atuar presencialmente em todos os dias do evento${
-              periodoEvento ? ` (${periodoEvento})` : ""
-            }.`}
+            rotulo={textoCienteMonitoria(edicao, "cienteDisponibilidadeMonitoria")}
             checked={form.cienteDisponibilidade}
             onChange={(valor) => alterar("cienteDisponibilidade", valor)}
           />
-          {erros.cienteDisponibilidade && <p className={styles.erro}>{erros.cienteDisponibilidade}</p>}
+          {erros.cienteDisponibilidade && (
+            <p className={styles.erro}>{erros.cienteDisponibilidade}</p>
+          )}
           <CampoCheckbox
             id="cienteVoluntaria"
-            rotulo="A monitoria é voluntária e não implica remuneração de qualquer tipo."
+            rotulo={textoCienteMonitoria(edicao, "cienteVoluntariaMonitoria")}
             checked={form.cienteVoluntaria}
             onChange={(valor) => alterar("cienteVoluntaria", valor)}
           />
-          {erros.cienteVoluntaria && <p className={styles.erro}>{erros.cienteVoluntaria}</p>}
+          {erros.cienteVoluntaria && (
+            <p className={styles.erro}>{erros.cienteVoluntaria}</p>
+          )}
         </div>
       </section>
 
-      {menor && (
-        <section className={styles.bloco} aria-labelledby="monitoria-autorizacao">
-          <h2 id="monitoria-autorizacao" className={styles.tituloBloco}>
-            Autorização do(a) responsável
-          </h2>
-          <CampoArquivo
-            id="autorizacaoResponsavel"
-            rotulo="Autorização para participar da monitoria"
-            descricao="Como você terá menos de 18 anos no primeiro dia do evento, anexe a autorização assinada pelo(a) responsável (PDF, JPG ou PNG, até 5MB)."
-            valor={form.autorizacao}
-            onChange={(valor) => alterar("autorizacao", valor)}
-            arquivoSalvo={Boolean(inscricao?.temAutorizacao)}
-            erro={erros.autorizacaoResponsavel}
-          />
-        </section>
-      )}
+      <section
+        className={styles.bloco}
+        aria-labelledby="monitoria-autorizacao"
+      >
+        <h2 id="monitoria-autorizacao" className={styles.tituloBloco}>
+          Autorização do(a) responsável
+        </h2>
+        <CampoArquivo
+          id="autorizacaoResponsavel"
+          rotulo="Caso você seja menor de 18 anos, favor anexar autorização do responsável para participar da atividade."
+          descricao={
+            menor
+              ? "Obrigatório: pela data de nascimento, você terá menos de 18 anos no primeiro dia do evento. Anexe a autorização assinada pelo(a) responsável (PDF, JPG ou PNG, até 5MB)."
+              : "Obrigatório só para quem terá menos de 18 anos no primeiro dia do evento — maiores de idade não precisam anexar. PDF, JPG ou PNG, até 5MB."
+          }
+          valor={form.autorizacao}
+          onChange={(valor) => alterar("autorizacao", valor)}
+          arquivoSalvo={Boolean(inscricao?.temAutorizacao)}
+          erro={erros.autorizacaoResponsavel}
+        />
+      </section>
 
       <div className={styles.acoes}>
         {aoCancelar && (
@@ -272,7 +321,9 @@ export default function FormularioMonitoria({ edicao, usuario, inscricao, aoEnvi
           </Botao>
         )}
         <Botao type="submit" carregando={enviando}>
-          {inscricao && inscricao.status !== "CANCELADA" ? "Salvar alterações" : "Enviar inscrição"}
+          {inscricao && inscricao.status !== "CANCELADA"
+            ? "Salvar alterações"
+            : "Enviar inscrição"}
         </Botao>
       </div>
     </form>

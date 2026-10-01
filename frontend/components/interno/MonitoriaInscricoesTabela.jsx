@@ -75,7 +75,7 @@ function montarColunas(edicao, inscricoes) {
         idade(inscricao) >= 18 ? "Não se aplica" : inscricao.temAutorizacao ? "Anexada" : "Faltando",
     },
     { chave: "telefone", rotulo: "Telefone", valor: (inscricao) => inscricao.telefone },
-    { chave: "pronome", rotulo: "Pronome", valor: (inscricao) => inscricao.pronome },
+    { chave: "pronome", rotulo: "Pronome", valor: (inscricao) => inscricao.pronome || null },
     { chave: "curso", rotulo: "Curso e instituição", valor: (inscricao) => inscricao.cursoInstituicao },
     {
       chave: "experiencia",
@@ -216,7 +216,7 @@ export default function MonitoriaInscricoesTabela({ edicaoId, edicao, inscricoes
                     )}
                   </td>
                   <td data-rotulo="Telefone">{inscricao.telefone}</td>
-                  <td data-rotulo="Pronome">{inscricao.pronome}</td>
+                  <td data-rotulo="Pronome">{inscricao.pronome || "—"}</td>
                   <td data-rotulo="Curso e instituição">{inscricao.cursoInstituicao}</td>
                   <td data-rotulo="Experiência anterior">{inscricao.experienciaAnterior ? "Sim" : "Não"}</td>
                   <td data-rotulo="Atividades de interesse">{inscricao.funcoes.join("; ")}</td>

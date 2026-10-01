@@ -1,3 +1,5 @@
+@use "../../styles/conteudo-rich-text" as rich;
+
 .pagina {
   display: flex;
   flex-direction: column;
@@ -92,4 +94,55 @@
       flex: 1 1 100%;
     }
   }
+}
+
+.chamada {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    color: var(--acento);
+  }
+
+  &:hover {
+    border-color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.chamadaTitulo {
+  display: block;
+  font-weight: 600;
+  color: var(--acento);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.chamadaApoio {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.edital {
+  @include rich.conteudo-rich-text(var(--texto), var(--acento), var(--borda), var(--fundo));
+  font-size: 0.9375rem;
 }
