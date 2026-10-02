@@ -32,6 +32,8 @@ import {
   formatarPeriodoSubmissao,
   prazoSubmissaoAberto,
   dividirParagrafos,
+  fasePublicacoes,
+  CORPO_PUBLICACOES_POR_FASE,
 } from "@/lib/publico";
 import {
   estiloCoresPersonalizadas,
@@ -317,6 +319,7 @@ export default function PaginaInicialConteudo({
   tituloPublicacoes = "Anais e Memória",
   corpoPublicacoes = "",
   linkAnais = null,
+  resultadoDivulgado = false,
   corFundoPublicacoes = "PAPEL",
   opacidadeFundoPublicacoes = 100,
   corTextoPublicacoes = "TINTA",
@@ -363,6 +366,11 @@ export default function PaginaInicialConteudo({
   const diaProgramacaoAtual =
     diasProgramacao.find((dia) => dia.chave === chaveDiaProgramacaoAtiva) ??
     null;
+  const fasePublicacoesEdicao = fasePublicacoes({
+    linkAnais,
+    resultadoDivulgado,
+    modalidades,
+  });
 
   function renderizarCartaoProgramacao(atividade) {
     return (
@@ -1013,7 +1021,9 @@ export default function PaginaInicialConteudo({
             <h2 className={styles.tituloSecundario}>{tituloPublicacoes}</h2>
             {!linkAnais && <SeloEmBreve />}
           </motion.div>
-          {dividirParagrafos(corpoPublicacoes).map((paragrafo, indice) => (
+          {dividirParagrafos(
+            corpoPublicacoes || CORPO_PUBLICACOES_POR_FASE[fasePublicacoesEdicao],
+          ).map((paragrafo, indice) => (
             <motion.p
               key={indice}
               className={styles.secaoTexto}
@@ -1022,11 +1032,18 @@ export default function PaginaInicialConteudo({
               {paragrafo}
             </motion.p>
           ))}
-          {linkAnais && (
+          {fasePublicacoesEdicao === "ANAIS_PUBLICADOS" && (
             <motion.div variants={itemVariants}>
               <Link href={linkAnais} className={styles.anaisCta}>
                 Acessar os Anais →
               </Link>
+            </motion.div>
+          )}
+          {fasePublicacoesEdicao === "CHAMADA_ABERTA" && (
+            <motion.div variants={itemVariants}>
+              <a href="#submissao" className={styles.anaisCta}>
+                Submeter trabalho →
+              </a>
             </motion.div>
           )}
         </motion.div>

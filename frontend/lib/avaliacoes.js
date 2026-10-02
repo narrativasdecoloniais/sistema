@@ -2,11 +2,23 @@
 export const DECISOES_AVALIACAO = [
   { valor: "APROVADO", rotulo: "Aprovado" },
   { valor: "APROVADO_COM_RESSALVAS", rotulo: "Aprovado com ressalvas" },
-  { valor: "APROVADO_FORMATACAO", rotulo: "Aprovado — validar formatação" },
+  { valor: "APROVADO_FORMATACAO", rotulo: "Pendente de revisão" },
   { valor: "REPROVADO", rotulo: "Reprovado" },
 ];
 
 export const ROTULOS_DECISAO = Object.fromEntries(DECISOES_AVALIACAO.map((d) => [d.valor, d.rotulo]));
+
+// Rótulo da decisão para o próprio autor (Minhas submissões e tela de
+// revisão): APROVADO_FORMATACAO aparece como "Pendente de revisão" até a
+// revisão ser concluída, e depois como aprovado. Admin e avaliador usam
+// ROTULOS_DECISAO, que fica sempre "Pendente de revisão" (a situação da
+// correção tem coluna própria).
+export function rotuloDecisaoParticipante(decisao, statusCorrecao) {
+  if (decisao === "APROVADO_FORMATACAO") {
+    return statusCorrecao === "CONCLUIDA" ? "Aprovado" : "Pendente de revisão";
+  }
+  return ROTULOS_DECISAO[decisao];
+}
 
 export const STATUS_AVALIADOR = [
   { valor: "PENDENTE", rotulo: "Pendente" },

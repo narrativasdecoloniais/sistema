@@ -8,7 +8,7 @@ import Botao from "@/components/forms/Botao";
 import { paraNumeroRomano } from "@/lib/romanos";
 import { listarMinhasSubmissoes } from "@/lib/participanteSubmissoes";
 import { listarModalidadesSubmissaoPublicas, prazoSubmissaoAberto } from "@/lib/publico";
-import { ROTULOS_DECISAO, formatarPrazoCorrecao } from "@/lib/avaliacoes";
+import { formatarPrazoCorrecao, rotuloDecisaoParticipante } from "@/lib/avaliacoes";
 import { detalheAtividade, linkAtividade } from "@/lib/apresentacao";
 import { ROTULOS_SITUACAO_COAUTOR, formatarDataHoraCurta } from "@/lib/coautores";
 import { apiClient } from "@/lib/apiClient";
@@ -228,7 +228,7 @@ function ResultadoSubmissao({ id, resultado, ehAutorPrincipal }) {
     <div className={styles.resultado}>
       <p className={styles.resultadoDecisao}>
         <span className={styles.resultadoRotulo}>Resultado</span>
-        {ROTULOS_DECISAO[resultado.decisao]}
+        {rotuloDecisaoParticipante(resultado.decisao, resultado.statusCorrecao)}
       </p>
       {resultado.observacao && <p className={styles.resultadoTexto}>{resultado.observacao}</p>}
       {resultado.statusCorrecao === "DEVOLVIDA" && resultado.motivoDevolucao && (

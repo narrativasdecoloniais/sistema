@@ -26,7 +26,6 @@ export default function BarraNavegacao({ numeroEdicao: numeroEdicaoProp }) {
   const nav = edicaoExibida?.navegacao;
   const ancoras = [
     ANCORAS[0],
-    ...(nav?.resultadoDivulgado ? [{ href: "/trabalhos-aprovados", rotulo: "Aprovados" }] : []),
     ...ANCORAS.slice(1).map((ancora) =>
       ancora.href === "/#anais" && nav?.linkAnais ? { ...ancora, href: nav.linkAnais } : ancora
     ),

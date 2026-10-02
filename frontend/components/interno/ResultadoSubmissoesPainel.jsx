@@ -199,7 +199,7 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
           { rotulo: "Trabalhos", valor: resumo.total },
           { rotulo: "Aprovados", valor: decisoes.APROVADO || 0, tom: "sucesso" },
           { rotulo: "Aprovados com ressalvas", valor: decisoes.APROVADO_COM_RESSALVAS || 0 },
-          { rotulo: "Aprovados — validar formatação", valor: decisoes.APROVADO_FORMATACAO || 0 },
+          { rotulo: "Pendentes de revisão", valor: decisoes.APROVADO_FORMATACAO || 0 },
           { rotulo: "Reprovados", valor: decisoes.REPROVADO || 0 },
           { rotulo: "Sem decisão final", valor: resumo.semDecisao, tom: resumo.semDecisao ? "alerta" : undefined },
         ]}
@@ -210,7 +210,7 @@ function AbaDivulgacao({ edicaoId, resumo, recarregar }) {
           Prazo de correção
         </h2>
         <p className={styles.textoApoio}>
-          Vale para os trabalhos aprovados com ressalvas e os que precisam validar a formatação. O dia escolhido conta
+          Vale para os trabalhos aprovados com ressalvas e os pendentes de revisão. O dia escolhido conta
           inteiro. Pode ser estendido depois da divulgação.
         </p>
         <div className={styles.linhaAcao}>

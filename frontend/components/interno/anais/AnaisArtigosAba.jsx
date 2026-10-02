@@ -91,7 +91,7 @@ export default function AnaisArtigosAba({ edicaoId, artigos, publicado, aoAltera
       <div className={styles.vazio}>
         <p>Nenhum trabalho entra nos Anais por enquanto.</p>
         <p className={styles.vazioApoio}>
-          Entram as submissões com decisão final &quot;Aprovado para formatação&quot; (registrada em Resultado) em que algum dos autores fez o credenciamento no evento.
+          Entram as submissões com decisão final &quot;Pendente de revisão&quot; (registrada em Resultado) em que algum dos autores fez o credenciamento no evento.
         </p>
       </div>
     );

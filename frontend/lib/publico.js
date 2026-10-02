@@ -15,8 +15,21 @@ const CORPO_MODALIDADES_PADRAO =
   "Compartilhe pesquisas, práticas e experiências nas modalidades desta edição.";
 
 const TITULO_PUBLICACOES_PADRAO = "Anais e Memória";
-const CORPO_PUBLICACOES_PADRAO =
-  "Em breve abriremos a chamada para submissão de trabalhos desta edição. Os anais das edições anteriores serão disponibilizados aqui assim que organizados.";
+// Texto da dobra "Anais e Memória" quando a organização não escreveu um
+// próprio (Página pública → Publicações): acompanha a fase da edição, de
+// fasePublicacoes() abaixo.
+export const CORPO_PUBLICACOES_POR_FASE = {
+  ANTES_DA_CHAMADA:
+    "Em breve abriremos a chamada para submissão de trabalhos desta edição. Os anais das edições anteriores serão disponibilizados aqui assim que organizados.",
+  CHAMADA_ABERTA:
+    "A chamada para submissão de trabalhos desta edição está aberta. Os trabalhos aprovados e apresentados no evento serão publicados nos Anais, disponíveis aqui depois do evento.",
+  EM_AVALIACAO:
+    "A chamada para submissão de trabalhos desta edição foi encerrada e os trabalhos recebidos estão em avaliação. O resultado será divulgado aqui, e os trabalhos aprovados e apresentados no evento serão publicados nos Anais.",
+  RESULTADO_DIVULGADO:
+    "O resultado da avaliação dos trabalhos desta edição já foi divulgado aos autores. Os trabalhos aprovados e apresentados no evento serão publicados nos Anais, disponíveis aqui depois do evento.",
+  ANAIS_PUBLICADOS:
+    "Os Anais desta edição estão publicados, com os trabalhos apresentados no evento, seus resumos, referências e forma de citar.",
+};
 
 const TITULO_COMISSOES_PADRAO = "Comissões e Programas";
 const CORPO_COMISSOES_PADRAO =
@@ -158,8 +171,11 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
     corTextoSecundarioCardAgenda: edicao?.corTextoSecundarioCardAgenda || "TINTA",
     corAcentoCardAgenda: edicao?.corAcentoCardAgenda || "BARRO",
     tituloPublicacoes: edicao?.tituloPublicacoes || TITULO_PUBLICACOES_PADRAO,
-    corpoPublicacoes: edicao?.corpoPublicacoes || CORPO_PUBLICACOES_PADRAO,
+    // Vazio = texto padrão da fase (fasePublicacoes), escolhido na dobra
+    // porque depende também das modalidades.
+    corpoPublicacoes: edicao?.corpoPublicacoes || "",
     linkAnais: linkAnaisDaEdicao(edicao),
+    resultadoDivulgado: Boolean(edicao?.resultadoDivulgadoEm),
     corFundoPublicacoes: edicao?.corFundoPublicacoes || "PAPEL",
     opacidadeFundoPublicacoes: edicao?.opacidadeFundoPublicacoes ?? 100,
     corTextoPublicacoes: edicao?.corTextoPublicacoes || "TINTA",
@@ -202,11 +218,6 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
 // configurada pro breakpoint (tipo "NENHUMA") — mesmo ajuste de
 // PaginaInicialConteudo.jsx/DetalheAtividade.jsx, senão a navbar reservava o
 // espaço à toa.
-export async function listarTrabalhosAprovados() {
-  const dados = await requisitarPublico("/publico/edicao-atual/trabalhos-aprovados");
-  return dados?.trabalhos || [];
-}
-
 export function linkAnaisDaEdicao(edicao) {
   return edicao?.anaisPublicados && edicao?.slug ? `/anais/${edicao.slug}` : null;
 }
@@ -241,8 +252,6 @@ export function montarPropsNavegacao(edicao) {
     navMesmoEstilo: Boolean(edicao?.navMesmoEstilo),
     corFundoBotaoNav: edicao?.corFundoBotaoNav || "BARRO",
     corTextoBotaoNav: edicao?.corTextoBotaoNav || "PAPEL",
-    // Link "Aprovados" só depois que a organização divulga o resultado.
-    resultadoDivulgado: Boolean(edicao?.resultadoDivulgadoEm),
     // Link "Monitoria" enquanto houver edital cadastrado (seção Monitoria).
     temMonitoria: Boolean(edicao?.editalMonitoria?.replace(/<[^>]*>/g, "").trim()),
     // "Anais" leva à página dos Anais depois de publicados; antes, à dobra da home.
@@ -440,6 +449,28 @@ export function formatarPeriodoSubmissao(dataInicioIso, dataFimIso) {
 // dataFimIso — ou seja, o último dia do prazo aparecia fechado o dia
 // inteiro em vez de só depois dele.
 // "Hoje" é o dia de Brasília (lib/horarioBrasilia.js).
+// Fase das publicações da edição, para a dobra "Anais e Memória" da home:
+// Anais publicados (só com trabalhos que algum autor credenciado apresentou,
+// ver criterioAnais.js) > resultado divulgado > chamada aberta (algum prazo
+// de modalidade em curso) > em avaliação (todos os prazos já passaram) >
+// antes da chamada (sem modalidades ou prazos ainda por vir).
+export function fasePublicacoes({ linkAnais, resultadoDivulgado, modalidades = [] }) {
+  if (linkAnais) return "ANAIS_PUBLICADOS";
+  if (resultadoDivulgado) return "RESULTADO_DIVULGADO";
+  const comPrazo = modalidades.filter((modalidade) => modalidade.prazoInicio && modalidade.prazoFim);
+  if (comPrazo.some((modalidade) => prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim))) {
+    return "CHAMADA_ABERTA";
+  }
+  const hoje = hojeIngenuo();
+  if (
+    comPrazo.length > 0 &&
+    comPrazo.every((modalidade) => new Date(modalidade.prazoFim).toISOString().slice(0, 10) < hoje)
+  ) {
+    return "EM_AVALIACAO";
+  }
+  return "ANTES_DA_CHAMADA";
+}
+
 export function prazoSubmissaoAberto(dataInicioIso, dataFimIso) {
   const hoje = hojeIngenuo();
   const inicio = new Date(dataInicioIso).toISOString().slice(0, 10);

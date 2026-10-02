@@ -9,7 +9,7 @@ import CampoRichText from "@/components/forms/CampoRichText";
 import CampoTexto from "./CampoTexto";
 import { useToast } from "./ToastProvider";
 import { buscarMinhaSubmissao, corrigirSubmissao } from "@/lib/participanteSubmissoes";
-import { ROTULOS_DECISAO, formatarPrazoCorrecao } from "@/lib/avaliacoes";
+import { formatarPrazoCorrecao, rotuloDecisaoParticipante } from "@/lib/avaliacoes";
 import { correcaoSubmissaoSchema, extrairErros } from "@/lib/validacao";
 // Mesma casca (voltar, cabeçalho, aviso, estados vazios) da tela do avaliador.
 import styles from "./AvaliacoesParticipante.module.scss";
@@ -118,7 +118,7 @@ function Formulario({ submissao }) {
         <div>
           <h1 className={styles.titulo}>{comRessalvas ? "Corrigir trabalho" : "Revisar formatação"}</h1>
           <p className={styles.descricao}>
-            {ROTULOS_DECISAO[resultado.decisao]} · envie até {formatarPrazoCorrecao(resultado.prazoCorrecao)}.
+            {rotuloDecisaoParticipante(resultado.decisao, resultado.statusCorrecao)} · envie até {formatarPrazoCorrecao(resultado.prazoCorrecao)}.
           </p>
         </div>
       </div>
