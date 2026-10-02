@@ -133,6 +133,12 @@ const configuracaoMonitoriaSchema = z
     // Tabelas geram muito HTML; o limite do texto visível fica em
     // sanitizarEditalMonitoria.js.
     editalMonitoria: z.string().max(300000, "O edital está grande demais").nullish(),
+    destaqueMonitoria: z
+      .preprocess(
+        (valor) => (typeof valor === "string" && !valor.trim() ? null : valor),
+        z.string().trim().max(80, "Use no máximo 80 caracteres").nullable()
+      )
+      .optional(),
     cienteFormacaoMonitoria: textoCiente.optional(),
     cienteDisponibilidadeMonitoria: textoCiente.optional(),
     cienteVoluntariaMonitoria: textoCiente.optional(),

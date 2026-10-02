@@ -294,6 +294,9 @@ model Edicao {
   vagasMonitoria                    Int?
   funcoesMonitoria                  String[]             @default([])
   editalMonitoria                   String?              @db.Text
+  // Selo de destaque abaixo do título de /monitoria (texto livre, ex.: "Com
+  // certificado de 60h"). Nulo = sem selo.
+  destaqueMonitoria                 String?
   // Textos dos 3 "Estou ciente de que" do formulário (formação, presença nos
   // dias do evento, trabalho voluntário) — mudam a cada edição por causa das
   // datas. Nulo = texto genérico do frontend (TEXTOS_CIENTE_MONITORIA_PADRAO).

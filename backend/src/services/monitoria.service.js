@@ -32,6 +32,7 @@ const CAMPOS_EDICAO = {
   vagasMonitoria: true,
   funcoesMonitoria: true,
   editalMonitoria: true,
+  destaqueMonitoria: true,
   cienteFormacaoMonitoria: true,
   cienteDisponibilidadeMonitoria: true,
   cienteVoluntariaMonitoria: true,
