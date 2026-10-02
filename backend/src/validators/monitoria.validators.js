@@ -1,5 +1,6 @@
 const { z } = require("zod");
 const { camposAdaptacao, validarAdaptacao } = require("./inscricoes.validators");
+const { corPublicaSchema } = require("./edicoes.validators");
 
 // Espelhado em frontend/lib/validacao.js (criarInscricaoMonitoriaSchema etc.)
 // — mudou um, muda o outro.
@@ -139,6 +140,8 @@ const configuracaoMonitoriaSchema = z
         z.string().trim().max(80, "Use no máximo 80 caracteres").nullable()
       )
       .optional(),
+    corFundoDestaqueMonitoria: corPublicaSchema.nullable(),
+    corTextoDestaqueMonitoria: corPublicaSchema.nullable(),
     cienteFormacaoMonitoria: textoCiente.optional(),
     cienteDisponibilidadeMonitoria: textoCiente.optional(),
     cienteVoluntariaMonitoria: textoCiente.optional(),

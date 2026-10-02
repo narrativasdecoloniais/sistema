@@ -315,4 +315,10 @@ const edicaoSchema = z
     { message: "Informe o valor a ser copiado", path: ["copiaContribuicaoValor"] }
   );
 
-module.exports = { edicaoSchema, edicaoRealizadorSchema, edicaoApoiadorSchema, edicaoPontoInteresseSchema };
+module.exports = {
+  edicaoSchema,
+  edicaoRealizadorSchema,
+  edicaoApoiadorSchema,
+  edicaoPontoInteresseSchema,
+  corPublicaSchema,
+};
