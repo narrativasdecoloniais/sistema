@@ -72,3 +72,30 @@
     }
   }
 }
+
+// Prévia do selo de destaque de /monitoria — mesma forma do .destaque da
+// página pública (cores reais da paleta pública, vindas inline).
+.previaDestaque {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.rotuloPrevia {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--texto-suave);
+}
+
+.seloDestaque {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}

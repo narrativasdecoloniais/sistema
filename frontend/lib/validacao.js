@@ -249,6 +249,8 @@ export const configuracaoMonitoriaSchema = z
       .refine((lista) => new Set(lista).size === lista.length, "Há atividades repetidas na lista"),
     editalMonitoria: z.string().max(300000, "O edital está grande demais").nullable(),
     destaqueMonitoria: z.string().trim().max(80, "Use no máximo 80 caracteres").nullable(),
+    corFundoDestaqueMonitoria: corSchema,
+    corTextoDestaqueMonitoria: corSchema,
     cienteFormacaoMonitoria: textoCienteMonitoria,
     cienteDisponibilidadeMonitoria: textoCienteMonitoria,
     cienteVoluntariaMonitoria: textoCienteMonitoria,

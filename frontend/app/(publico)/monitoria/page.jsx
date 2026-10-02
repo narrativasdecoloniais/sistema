@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Carimbo from "@/components/graficos/Carimbo";
 import Divisor from "@/components/graficos/Divisor";
 import ConteudoRichText from "@/components/ConteudoRichText";
 import { buscarEdicaoAtual, formatarPeriodoEdicao } from "@/lib/publico";
 import { agoraIngenuo } from "@/lib/horarioBrasilia";
+import { ehCorPersonalizada } from "@/lib/cores";
 import styles from "./page.module.scss";
 
 export const metadata = { title: "Monitoria" };
@@ -12,6 +12,13 @@ export const metadata = { title: "Monitoria" };
 // admin, seção Monitoria) e o botão de inscrição, que leva à área do
 // participante (passando pelo login). `monitoriaAberta` vem calculado do
 // backend (inscricoesMonitoriaAbertas.js).
+// Cor do selo: hex personalizado passa direto; token da paleta (ex. "BARRO")
+// vira a variável CSS correspondente de _tokens-publico.scss.
+function corCss(valor, padrao) {
+  if (ehCorPersonalizada(valor)) return valor;
+  return `var(--${(valor || padrao).toLowerCase()})`;
+}
+
 export default async function PaginaMonitoria() {
   const edicao = await buscarEdicaoAtual();
   const temEdital = Boolean(edicao?.editalMonitoria?.replace(/<[^>]*>/g, "").trim());
@@ -28,9 +35,14 @@ export default async function PaginaMonitoria() {
         <span className={styles.eyebrow}>Chamada</span>
         <h1 className={`${styles.titulo} stencil`}>Monitoria</h1>
         {edicao?.destaqueMonitoria && (
-          <p className={styles.destaque}>
-            <Carimbo className={styles.destaqueCarimbo} preenchido />
-            <span>{edicao.destaqueMonitoria}</span>
+          <p
+            className={styles.destaque}
+            style={{
+              background: corCss(edicao.corFundoDestaqueMonitoria, "BARRO"),
+              color: corCss(edicao.corTextoDestaqueMonitoria, "PAPEL"),
+            }}
+          >
+            {edicao.destaqueMonitoria}
           </p>
         )}
         {edicao && <p className={styles.subtitulo}>{edicao.nome}</p>}

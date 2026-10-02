@@ -39,30 +39,19 @@
   line-height: 1.15;
 }
 
-// Selo de destaque definido no admin (ex.: "Com certificado de 60h"), no
-// mesmo registro dos selos de status do cronograma.
+// Selo de destaque definido no admin (ex.: "Com certificado de 60h"), em
+// pílula. Cores vêm inline (escolhidas no admin, padrão barro/papel).
 .destaque {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   max-width: 100%;
   margin: 0.25rem 0;
   padding: 0.45rem 1.1rem;
+  border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.3;
   text-transform: uppercase;
-  color: var(--papel);
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
-}
-
-.destaqueCarimbo {
-  color: var(--barro);
 }
 
 .subtitulo {
