@@ -29,6 +29,7 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
     edicao.funcoesMonitoria.length > 0 ? edicao.funcoesMonitoria : FUNCOES_MONITORIA_PADRAO
   );
   const [edital, setEdital] = useState(edicao.editalMonitoria || "");
+  const [destaque, setDestaque] = useState(edicao.destaqueMonitoria || "");
   // Texto ainda não salvo vem pré-preenchido com o genérico (sem datas).
   const [ciente, setCiente] = useState(() =>
     Object.fromEntries(
@@ -64,6 +65,7 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
       funcoesMonitoria: funcoes.map((funcao) => funcao.trim()),
       // Tabela sem texto ainda conta como conteúdo.
       editalMonitoria: edital.replace(/<[^>]*>/g, "").trim() || edital.includes("<table") ? edital : null,
+      destaqueMonitoria: destaque.trim() || null,
       ...ciente,
     };
     const resultado = configuracaoMonitoriaSchema.safeParse(dados);
@@ -245,9 +247,18 @@ export default function MonitoriaConfiguracaoForm({ edicaoId, edicao, aoSalvar }
         <CabecalhoSecao
           Icone={FileText}
           titulo="Edital"
-          descricao="Texto da chamada mostrado na página pública /monitoria, com títulos, listas e tabelas. O link “Monitoria” aparece no menu do site assim que houver texto. Texto colado entra sem formatação: aplique títulos, listas e tabelas pelos botões."
+          descricao="Texto da chamada mostrado na página pública /monitoria, com títulos, listas e tabelas. O link “Monitoria” aparece no menu do site assim que houver texto. O selo de destaque aparece logo abaixo do título da página; deixe em branco para não mostrar. Texto colado entra sem formatação: aplique títulos, listas e tabelas pelos botões."
         />
         <div className={styles.camposSecao}>
+          <CampoTexto
+            id="destaqueMonitoria"
+            rotulo="Selo de destaque (opcional)"
+            placeholder="Ex.: Com certificado de 60h"
+            maxLength={80}
+            value={destaque}
+            onChange={(e) => setDestaque(e.target.value)}
+            erro={erros.destaqueMonitoria}
+          />
           <CampoRichText
             id="editalMonitoria"
             rotulo="Texto do edital"

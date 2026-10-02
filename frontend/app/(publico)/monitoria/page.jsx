@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Carimbo from "@/components/graficos/Carimbo";
 import Divisor from "@/components/graficos/Divisor";
 import ConteudoRichText from "@/components/ConteudoRichText";
 import { buscarEdicaoAtual, formatarPeriodoEdicao } from "@/lib/publico";
@@ -26,6 +27,12 @@ export default async function PaginaMonitoria() {
       <header className={styles.cabecalho}>
         <span className={styles.eyebrow}>Chamada</span>
         <h1 className={`${styles.titulo} stencil`}>Monitoria</h1>
+        {edicao?.destaqueMonitoria && (
+          <p className={styles.destaque}>
+            <Carimbo className={styles.destaqueCarimbo} preenchido />
+            <span>{edicao.destaqueMonitoria}</span>
+          </p>
+        )}
         {edicao && <p className={styles.subtitulo}>{edicao.nome}</p>}
       </header>
 

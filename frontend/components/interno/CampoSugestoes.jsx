@@ -18,7 +18,10 @@ export default function CampoSugestoes({ id, rotulo, erro, value, onChange, suge
 
   function filtrar(evento) {
     const busca = semAcento(evento.query.trim());
-    setFiltradas(busca ? sugestoes.filter((sugestao) => semAcento(sugestao).includes(busca)) : sugestoes);
+    // Sempre um array novo: o AutoComplete só abre o painel (e sai do estado
+    // "buscando") quando a prop suggestions muda de referência — devolver a
+    // mesma lista ao clicar na seta deixava o spinner girando sem abrir nada.
+    setFiltradas(busca ? sugestoes.filter((sugestao) => semAcento(sugestao).includes(busca)) : [...sugestoes]);
   }
 
   return (
@@ -41,6 +44,8 @@ export default function CampoSugestoes({ id, rotulo, erro, value, onChange, suge
         pt={{
           root: { className: `${styles.raiz} ${erro ? styles.invalido : ""}` },
           input: { root: { className: styles.entrada } },
+          // Filtro é síncrono; o spinner só piscaria sem estilo.
+          loadingIcon: { className: styles.oculto },
           dropdownButton: { root: { className: styles.botaoSeta } },
           panel: { className: styles.painel },
           list: { className: styles.lista },

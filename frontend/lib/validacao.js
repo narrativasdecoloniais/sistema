@@ -248,6 +248,7 @@ export const configuracaoMonitoriaSchema = z
       .max(30, "Cadastre no máximo 30 atividades")
       .refine((lista) => new Set(lista).size === lista.length, "Há atividades repetidas na lista"),
     editalMonitoria: z.string().max(300000, "O edital está grande demais").nullable(),
+    destaqueMonitoria: z.string().trim().max(80, "Use no máximo 80 caracteres").nullable(),
     cienteFormacaoMonitoria: textoCienteMonitoria,
     cienteDisponibilidadeMonitoria: textoCienteMonitoria,
     cienteVoluntariaMonitoria: textoCienteMonitoria,
