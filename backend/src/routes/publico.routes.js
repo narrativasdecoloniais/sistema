@@ -8,7 +8,6 @@ const { limitadorPadrao } = require("../middlewares/rateLimiter");
 const router = Router();
 
 router.get("/edicao-atual", publicoController.buscarEdicaoAtual);
-router.get("/edicao-atual/trabalhos-aprovados", publicoController.listarTrabalhosAprovados);
 router.get("/edicoes-anteriores", publicoController.listarEdicoesAnteriores);
 router.get("/edicao-atual/atividades", publicoController.listarAtividades);
 router.get("/edicao-atual/atividades/:slug", publicoController.buscarAtividadePorSlug);
