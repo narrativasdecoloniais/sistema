@@ -215,6 +215,7 @@ export default function AnaisPainel({ edicaoId, painelInicial, artigosIniciais, 
           edicaoId={edicaoId}
           anais={anais}
           grupos={painel.grupos}
+          totalNoCriterio={contagens.publicados + contagens.ocultos}
           aoSalvar={async () => {
             await recarregarPainel();
             recarregarArtigos();

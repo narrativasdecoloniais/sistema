@@ -89,8 +89,11 @@ function cardCredenciamento({ inscricao }) {
       Icone: QrCode,
       rotulo: "Credenciamento",
       titulo: "Credenciamento feito",
-      detalhes: ["Nas atividades com inscrição, leia o QR code da sala para registrar sua presença."],
-      acoes: [{ href: "/participante/credenciamento", rotulo: "Ler QR code" }],
+      detalhes: ["Nas atividades com inscrição, mostre seu crachá à equipe ou leia o QR code da sala para registrar sua presença."],
+      acoes: [
+        { href: "/participante/cracha", rotulo: "Mostrar crachá" },
+        { href: "/participante/credenciamento", rotulo: "Ler QR code" },
+      ],
     };
   }
   return {
@@ -98,9 +101,12 @@ function cardCredenciamento({ inscricao }) {
     Icone: QrCode,
     rotulo: "Credenciamento",
     titulo: "O evento está acontecendo",
-    detalhes: ["Leia o QR code na entrada do evento para se credenciar."],
+    detalhes: ["Mostre seu crachá à equipe na entrada do evento ou leia o QR code afixado lá."],
     pendente: "Você ainda não se credenciou.",
-    acoes: [{ href: "/participante/credenciamento", rotulo: "Ler QR code", principal: true }],
+    acoes: [
+      { href: "/participante/cracha", rotulo: "Mostrar crachá", principal: true },
+      { href: "/participante/credenciamento", rotulo: "Ler QR code" },
+    ],
   };
 }
 

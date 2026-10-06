@@ -16,6 +16,11 @@
   margin: 0.35rem 0 0;
   color: var(--texto-suave);
   font-size: 0.9375rem;
+
+  a {
+    color: var(--acento);
+    font-weight: 600;
+  }
 }
 
 .cartao {

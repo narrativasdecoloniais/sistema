@@ -96,3 +96,69 @@
   color: var(--texto);
   overflow-wrap: break-word;
 }
+
+// Link com cara de botão primário (Botao é <button>): abre o leitor de crachás.
+.linkPrimario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
+  background: var(--acento);
+  color: var(--superficie);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
+.recentes,
+.secaoQr {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 560px;
+}
+
+.listaRecentes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--borda);
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  li:last-child {
+    border-bottom: 0;
+  }
+}

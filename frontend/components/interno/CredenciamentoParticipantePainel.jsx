@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CardAjudaInscricao from "./CardAjudaInscricao";
 import LeitorQrCode from "./LeitorQrCode";
 import { formatarPeriodoAtividade } from "@/lib/publico";
-import { buscarMinhaSituacaoCredenciamento, extrairTokenDoQr } from "@/lib/credenciamento";
+import { buscarMinhaSituacaoCredenciamento, ehTokenCracha, extrairTokenDoQr } from "@/lib/credenciamento";
 import styles from "./CredenciamentoParticipante.module.scss";
 
 function formatarDataHora(valor) {
@@ -27,6 +28,10 @@ export default function CredenciamentoParticipantePainel() {
   }, []);
 
   function aoLer(texto) {
+    if (ehTokenCracha(texto)) {
+      setErroLeitura("Este é o crachá de um participante — quem lê o crachá é a equipe do evento.");
+      return;
+    }
     const token = extrairTokenDoQr(texto);
     if (!token) {
       setErroLeitura("Este QR code não é do credenciamento do Narrativas.");
@@ -44,7 +49,8 @@ export default function CredenciamentoParticipantePainel() {
         <h1 className={styles.titulo}>Credenciamento</h1>
         <p className={styles.descricao}>
           Leia o QR code do credenciamento, na entrada do evento, ou o QR code afixado em cada atividade para
-          registrar a sua presença.
+          registrar a sua presença. Se preferir, mostre o <Link href="/participante/cracha">seu crachá</Link> para a
+          equipe.
         </p>
       </div>
 

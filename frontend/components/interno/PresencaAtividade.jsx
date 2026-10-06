@@ -17,7 +17,7 @@ import styles from "./AvaliacaoSubmissoesPainel.module.scss";
 import estilos from "./CredenciamentoPainel.module.scss";
 
 const ROTULOS_STATUS = { CONFIRMADA: "Confirmada", LISTA_ESPERA: "Lista de espera" };
-const ROTULOS_ORIGEM = { QR_CODE: "QR code", EQUIPE: "Equipe" };
+const ROTULOS_ORIGEM = { QR_CODE: "QR code", EQUIPE: "Equipe", CRACHA: "Crachá" };
 
 function formatarDataHora(valor) {
   return valor ? new Date(valor).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "";

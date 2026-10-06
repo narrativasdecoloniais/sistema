@@ -865,6 +865,9 @@ export const anaisConfiguracaoSchema = z.object({
   apresentacao: z.string().optional().nullable(),
   fichaCatalografica: textoOpcionalAnais(4000),
   gruposConteudoIds: z.array(z.string()),
+  decisoesPublicadas: z.array(z.string()).min(1, "Escolha pelo menos um status"),
+  exigirCorrecaoConcluida: z.boolean(),
+  credenciamentoExigido: z.string().min(1, "Escolha uma opção"),
 });
 
 export const comentarioAnaisSchema = z.object({

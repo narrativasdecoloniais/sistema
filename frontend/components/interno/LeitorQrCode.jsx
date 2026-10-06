@@ -7,15 +7,21 @@ import styles from "./LeitorQrCode.module.scss";
 
 // Leitor de QR code pela câmera do aparelho (lib qr-scanner, carregada sob
 // demanda; usa o BarcodeDetector nativo quando o navegador tem). Chama
-// `aoLer(texto)` na primeira leitura e desliga a câmera. A câmera só funciona
-// em HTTPS (ou localhost).
-export default function LeitorQrCode({ aoLer }) {
+// `aoLer(texto)` na primeira leitura e desliga a câmera — ou, com `continuo`,
+// a cada leitura, com a câmera sempre ligada (leitor de crachás da equipe;
+// quem chama ignora repetições e leituras enquanto mostra um resultado). A
+// câmera só funciona em HTTPS (ou localhost).
+export default function LeitorQrCode({ aoLer, continuo = false, rotuloIniciar = "Ler QR code" }) {
   const videoRef = useRef(null);
   const leitorRef = useRef(null);
   const lidoRef = useRef(false);
   const [ativo, setAtivo] = useState(false);
   const [iniciando, setIniciando] = useState(false);
   const [erro, setErro] = useState("");
+  // O callback do qr-scanner é criado uma vez ao abrir a câmera; no modo
+  // contínuo ele precisa sempre do `aoLer` mais recente.
+  const aoLerRef = useRef(aoLer);
+  aoLerRef.current = aoLer;
 
   function parar() {
     leitorRef.current?.stop();
@@ -42,6 +48,10 @@ export default function LeitorQrCode({ aoLer }) {
       const leitor = new QrScanner(
         videoRef.current,
         (resultado) => {
+          if (continuo) {
+            aoLerRef.current(resultado.data);
+            return;
+          }
           if (lidoRef.current) return;
           lidoRef.current = true;
           parar();
@@ -94,7 +104,7 @@ export default function LeitorQrCode({ aoLer }) {
       <div className={styles.acoes}>
         <Botao type="button" carregando={iniciando} onClick={iniciar}>
           <Camera size={18} strokeWidth={1.5} aria-hidden="true" />
-          Ler QR code
+          {rotuloIniciar}
         </Botao>
       </div>
     );

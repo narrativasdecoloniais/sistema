@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList, Download, Printer } from "lucide-react";
-import Botao from "@/components/forms/Botao";
+import { ClipboardList } from "lucide-react";
 import PresencaAtividade from "./PresencaAtividade";
 import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
-import { useToast } from "./ToastProvider";
 import { formatarPeriodoAtividade } from "@/lib/publico";
-import { baixarQrPng, credenciamentoAdmin, imprimirQrCodes } from "@/lib/credenciamento";
+import { credenciamentoAdmin } from "@/lib/credenciamento";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
 
 const COLUNAS = [
@@ -26,10 +24,9 @@ const COLUNAS = [
   { chave: "presentes", rotulo: "Presentes", valor: (atividade) => atividade.presentes },
 ];
 
-// Atividades que exigem inscrição: cada uma tem QR code de presença (válido
-// de 30 min antes do início até o fim, horário de Brasília) e lista de presença.
+// Atividades que exigem inscrição e a lista de presença de cada uma (com o QR
+// code de presença dela). A impressão de todos os QR fica na aba QR codes.
 export default function CredenciamentoAtividadesAba({ edicaoId, edicao, atividadesIniciais }) {
-  const { notificar } = useToast();
   const [atividades, setAtividades] = useState(atividadesIniciais);
   const [abertaId, setAbertaId] = useState(null);
   const tabela = useTabela(atividades, COLUNAS);
@@ -40,14 +37,6 @@ export default function CredenciamentoAtividadesAba({ edicaoId, edicao, atividad
       setAtividades(dados.atividades);
     } catch {
       // A lista de presença já avisou; os contadores atualizam na próxima carga.
-    }
-  }
-
-  async function comTratamento(acao) {
-    try {
-      await acao();
-    } catch (erro) {
-      notificar(erro.message, "erro");
     }
   }
 
@@ -78,23 +67,9 @@ export default function CredenciamentoAtividadesAba({ edicaoId, edicao, atividad
   return (
     <>
       <p className={styles.textoApoio}>
-        O QR code de cada atividade funciona de 30 minutos antes do início até o fim, no horário de Brasília. Quem lê
-        sem estar inscrito é inscrito na hora (sem vaga, vai para a lista de espera e precisa ser validado aqui).
+        Abra a lista de presença para ver os inscritos, registrar presença pela busca e baixar o QR code da atividade.
+        No dia, a presença também pode ser lida pelo crachá, no leitor.
       </p>
-      <div>
-        <Botao
-          type="button"
-          variante="secundario"
-          onClick={() =>
-            comTratamento(() =>
-              imprimirQrCodes(async () => (await credenciamentoAdmin.qrTodasAtividades(edicaoId)).qrs, { evento: edicao.nome })
-            )
-          }
-        >
-          <Printer size={18} strokeWidth={1.5} aria-hidden="true" />
-          Imprimir QR de todas as atividades
-        </Botao>
-      </div>
 
       <div className={styles.tabelaWrapper}>
         <BotaoExportarTabela tabela={tabela} nomeArquivo="presenca-atividades" nomeAba="Atividades" />
@@ -123,34 +98,6 @@ export default function CredenciamentoAtividadesAba({ edicaoId, edicao, atividad
                       onClick={() => setAbertaId(atividade.id)}
                     >
                       <ClipboardList size={16} strokeWidth={1.5} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.botaoIcone}
-                      aria-label={`Baixar QR code de ${atividade.nome}`}
-                      title="Baixar QR code (PNG)"
-                      onClick={() =>
-                        comTratamento(async () =>
-                          baixarQrPng(await credenciamentoAdmin.qrAtividade(edicaoId, atividade.id), `qr-${atividade.nome}`)
-                        )
-                      }
-                    >
-                      <Download size={16} strokeWidth={1.5} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.botaoIcone}
-                      aria-label={`Imprimir QR code de ${atividade.nome}`}
-                      title="Imprimir QR code"
-                      onClick={() =>
-                        comTratamento(() =>
-                          imprimirQrCodes(async () => [await credenciamentoAdmin.qrAtividade(edicaoId, atividade.id)], {
-                            evento: edicao.nome,
-                          })
-                        )
-                      }
-                    >
-                      <Printer size={16} strokeWidth={1.5} aria-hidden="true" />
                     </button>
                   </div>
                 </td>

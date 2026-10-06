@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookMarked, Building2, FileText, Plus, ScrollText, Trash2, Users } from "lucide-react";
+import { BookMarked, Building2, FileText, ListChecks, Plus, ScrollText, Trash2, Users } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import CampoRichText from "@/components/forms/CampoRichText";
 import CabecalhoSecao from "../CabecalhoSecao";
@@ -16,6 +16,21 @@ import { anaisConfiguracaoSchema, extrairErros, isbnValido, normalizarIssn } fro
 import styles from "../EdicaoForm.module.scss";
 import estilosTabela from "../AvaliacaoSubmissoesPainel.module.scss";
 import estilos from "./AnaisPainel.module.scss";
+import estilosCampo from "../CampoPrime.module.scss";
+
+// Status que podem entrar nos Anais (espelha DECISOES_PUBLICAVEIS em
+// backend/src/utils/criterioAnais.js).
+const DECISOES_PUBLICAVEIS = [
+  { valor: "APROVADO", rotulo: "Aprovado" },
+  { valor: "APROVADO_COM_RESSALVAS", rotulo: "Aprovado com ressalvas" },
+  { valor: "APROVADO_FORMATACAO", rotulo: "Aprovado para formatação (pendente de revisão)" },
+];
+
+const CREDENCIAMENTOS = [
+  { valor: "NAO_EXIGIR", rotulo: "Não exigir credenciamento" },
+  { valor: "ALGUM_AUTOR", rotulo: "Pelo menos um dos autores se credenciou" },
+  { valor: "AUTOR_PRINCIPAL", rotulo: "O autor principal se credenciou" },
+];
 
 function formInicial(anais) {
   return {
@@ -32,6 +47,9 @@ function formInicial(anais) {
     apresentacao: anais.apresentacao || "",
     fichaCatalografica: anais.fichaCatalografica || "",
     gruposConteudoIds: anais.gruposConteudoIds || [],
+    decisoesPublicadas: anais.decisoesPublicadas || ["APROVADO_FORMATACAO"],
+    exigirCorrecaoConcluida: Boolean(anais.exigirCorrecaoConcluida),
+    credenciamentoExigido: anais.credenciamentoExigido || "ALGUM_AUTOR",
   };
 }
 
@@ -45,7 +63,9 @@ function erroIdentificador(campo, valor) {
 
 // Dados da publicação dos Anais — tudo o que aparece na capa/folha de rosto
 // do PDF/Word, nas páginas públicas e na referência ABNT dos trabalhos.
-export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, aoSalvar }) {
+// totalNoCriterio: trabalhos que entram com o critério salvo (visíveis +
+// ocultos), recalculado a cada salvamento.
+export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNoCriterio, aoSalvar }) {
   const { notificar } = useToast();
   const [form, setForm] = useState(() => formInicial(anais));
   const [erros, setErros] = useState({});
@@ -60,6 +80,13 @@ export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, aoSalva
     alterar(
       "organizadores",
       form.organizadores.map((nome, i) => (i === indice ? valor : nome))
+    );
+  }
+
+  function alternarDecisao(valor, marcado) {
+    alterar(
+      "decisoesPublicadas",
+      marcado ? [...form.decisoesPublicadas, valor] : form.decisoesPublicadas.filter((item) => item !== valor)
     );
   }
 
@@ -104,6 +131,54 @@ export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, aoSalva
 
   return (
     <form className={styles.formulario} onSubmit={salvar} noValidate>
+      <div className={styles.secao}>
+        <CabecalhoSecao
+          Icone={ListChecks}
+          titulo="Trabalhos publicados"
+          descricao="Quais trabalhos entram nos Anais — nas páginas públicas e no PDF/Word. Vale na hora para os Anais já publicados. Coautor sem conta no sistema não tem como se credenciar."
+        />
+        <div className={styles.camposSecao}>
+          <fieldset className={estilos.grupoCampos}>
+            <legend>Status da submissão</legend>
+            {DECISOES_PUBLICAVEIS.map((decisao) => (
+              <CampoCheckbox
+                key={decisao.valor}
+                id={`anais-decisao-${decisao.valor}`}
+                rotulo={decisao.rotulo}
+                checked={form.decisoesPublicadas.includes(decisao.valor)}
+                onChange={(marcado) => alternarDecisao(decisao.valor, marcado)}
+              />
+            ))}
+            {erros.decisoesPublicadas && <p className={estilosCampo.mensagemErro}>{erros.decisoesPublicadas}</p>}
+          </fieldset>
+          <CampoCheckbox
+            id="anais-exigir-correcao"
+            rotulo="Só com a revisão ou correção concluída (vale para “com ressalvas” e “para formatação”)"
+            checked={form.exigirCorrecaoConcluida}
+            onChange={(marcado) => alterar("exigirCorrecaoConcluida", marcado)}
+          />
+          <CampoSelecao
+            id="anais-credenciamento"
+            rotulo="Credenciamento no evento"
+            value={form.credenciamentoExigido}
+            onChange={(e) => alterar("credenciamentoExigido", e.target.value)}
+            erro={erros.credenciamentoExigido}
+          >
+            {CREDENCIAMENTOS.map((opcao) => (
+              <option key={opcao.valor} value={opcao.valor}>
+                {opcao.rotulo}
+              </option>
+            ))}
+          </CampoSelecao>
+          {typeof totalNoCriterio === "number" && (
+            <p className={estilosTabela.textoApoio}>
+              Com o critério salvo, {totalNoCriterio} {totalNoCriterio === 1 ? "trabalho entra" : "trabalhos entram"} nos
+              Anais (incluindo os ocultos na aba Trabalhos). Salve para recalcular.
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className={styles.secao}>
         <CabecalhoSecao
           Icone={BookMarked}

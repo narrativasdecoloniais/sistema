@@ -1,8 +1,16 @@
 import { apiClient } from "@/lib/apiClient";
 import { formatarPeriodoAtividade } from "@/lib/publico";
 
-// Mesmo formato de backend/src/services/credenciamento.service.js (REGEX_TOKEN).
+// Mesmo formato de backend/src/services/credenciamento.service.js (REGEX_TOKEN
+// e REGEX_TOKEN_CRACHA).
 const REGEX_TOKEN = /^[ea]_[A-Za-z0-9_-]{20,64}$/;
+const REGEX_TOKEN_CRACHA = /^c_[A-Za-z0-9_-]{20,64}$/;
+
+// O QR do crachá virtual guarda só o token (QR menos denso, lê mais rápido
+// numa tela com pouco brilho).
+export function ehTokenCracha(texto) {
+  return REGEX_TOKEN_CRACHA.test(String(texto || "").trim());
+}
 
 // O QR code guarda a URL .../participante/credenciamento/<token> (assim a
 // câmera nativa do celular também funciona). Aceita a URL de qualquer
@@ -25,6 +33,15 @@ export function buscarMinhaSituacaoCredenciamento() {
   return apiClient.get("/participante/credenciamento");
 }
 
+// Crachá virtual (QR code próprio que a equipe lê)
+export function buscarMeuCracha() {
+  return apiClient.get("/participante/credenciamento/cracha");
+}
+
+export function gerarNovoCracha() {
+  return apiClient.post("/participante/credenciamento/cracha/novo", {});
+}
+
 export function buscarPreviaCredenciamento(token) {
   return apiClient.get(`/participante/credenciamento/${encodeURIComponent(token)}`);
 }
@@ -41,6 +58,8 @@ export function registrarPresencaNaAtividade(token, opcoes = {}) {
 const base = (edicaoId) => `/edicoes/${edicaoId}/credenciamento`;
 
 export const credenciamentoAdmin = {
+  // Leitor da equipe: { token } (crachá) ou { usuarioId } (busca), atividadeId? e confirmar?
+  ler: (edicaoId, dados) => apiClient.post(`${base(edicaoId)}/leitura`, dados),
   listar: (edicaoId) => apiClient.get(base(edicaoId)),
   qrEvento: (edicaoId) => apiClient.get(`${base(edicaoId)}/qr`),
   novoQrEvento: (edicaoId) => apiClient.post(`${base(edicaoId)}/qr/novo`, {}),
@@ -57,7 +76,7 @@ export const credenciamentoAdmin = {
     apiClient.delete(`${base(edicaoId)}/atividades/${atividadeId}/presencas/${usuarioId}`),
 };
 
-// QR code como imagem PNG (data URI). A lib entra sob demanda — só o admin usa.
+// QR code como imagem PNG (data URI). A lib entra sob demanda (admin e crachá).
 export async function gerarQrDataUrl(texto, tamanho = 720) {
   const QRCode = (await import("qrcode")).default;
   return QRCode.toDataURL(texto, { width: tamanho, margin: 2, errorCorrectionLevel: "M" });

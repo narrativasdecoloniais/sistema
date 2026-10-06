@@ -1,0 +1,122 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 420px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--texto);
+}
+
+.descricao {
+  margin: 0.35rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+}
+
+.cracha {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.pessoa {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.pessoaTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.nome {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--texto);
+  overflow-wrap: break-word;
+}
+
+.apoio {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+
+  a {
+    color: var(--acento);
+    font-weight: 600;
+  }
+}
+
+// Fundo branco fixo de propósito: o QR precisa de contraste máximo para a
+// câmera, independentemente do tema.
+.qr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+
+  img {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+  }
+}
+
+.situacao,
+.situacaoOk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+.situacao {
+  color: var(--texto-suave);
+}
+
+.situacaoOk {
+  color: var(--sucesso);
+  font-weight: 600;
+}
+
+.aviso {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid var(--alerta);
+  background: var(--fundo);
+  color: var(--texto);
+  font-size: 0.9375rem;
+}

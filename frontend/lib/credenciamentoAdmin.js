@@ -19,3 +19,9 @@ export async function buscarCredenciamento(edicaoId) {
   if (!evento || !atividades) return null;
   return { ...evento, atividades: atividades.atividades };
 }
+
+// Carga do leitor de crachás da equipe: só as atividades (seletor de modo).
+export async function buscarAtividadesCredenciamento(edicaoId) {
+  const dados = await requisitarComCookies(`/edicoes/${edicaoId}/credenciamento/atividades`);
+  return dados?.atividades || null;
+}
