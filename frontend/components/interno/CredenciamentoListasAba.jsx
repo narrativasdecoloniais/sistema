@@ -39,8 +39,9 @@ export default function CredenciamentoListasAba({ edicaoId, temAtividades }) {
           Credenciamento no evento
         </h2>
         <p className={styles.textoApoio}>
-          Todos os inscritos em ordem alfabética, com espaço para assinatura e linhas em branco no fim para quem
-          chegar sem inscrição.
+          Todos os inscritos em ordem alfabética, com espaço para assinatura e linhas em branco para quem chegar sem
+          inscrição. A partir de 80 inscritos, cada letra começa numa página nova (com as próprias linhas em branco),
+          para dividir as folhas entre as mesas.
         </p>
         <div>
           <Botao
