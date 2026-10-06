@@ -574,6 +574,11 @@ async function registrarPresencasEmLote(edicaoId, atividadeId, usuarioIds, autor
 const CAMPOS_PESSOA_LISTA = { nome: true, cpf: true, documentoEstrangeiro: true, pais: true };
 const LINHAS_EM_BRANCO_EVENTO = 30;
 const LINHAS_EM_BRANCO_ATIVIDADE = 10;
+// A partir daqui a lista do evento sai com uma página por letra (para dividir
+// as mesas); abaixo, corrida, sem gastar 20+ folhas com poucos inscritos.
+const MINIMO_LISTA_POR_LETRA = 80;
+const LINHAS_EM_BRANCO_POR_LETRA = 4;
+const LINHAS_EM_BRANCO_OUTRAS_LETRAS = 15;
 
 function porNome(a, b) {
   return a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
@@ -625,6 +630,7 @@ async function listaImpressaEvento(edicaoId) {
       pessoaDaLista(inscricao.usuario, inscricao.credenciadoEm, "Credenciado(a)")
     )
     .sort(porNome);
+  const porLetra = pessoas.length >= MINIMO_LISTA_POR_LETRA;
 
   return {
     evento: edicao.nome,
@@ -635,10 +641,13 @@ async function listaImpressaEvento(edicaoId) {
     instrucoes:
       "Lista de contingência, para usar se o sistema ou a internet ficarem fora do ar. Peça a cada pessoa que confira o nome e assine. " +
       "Linhas sombreadas já estavam credenciadas no sistema quando a lista foi gerada e não precisam assinar. " +
-      "Quem não estiver na lista preenche uma linha em \"Sem inscrição\", no fim. " +
+      (porLetra
+        ? "Cada letra começa numa página nova, para dividir as folhas entre as mesas. Quem não estiver na lista preenche uma linha em \"Sem inscrição\" na página da própria letra (ou na última página, se a letra não tiver página). "
+        : "Quem não estiver na lista preenche uma linha em \"Sem inscrição\", no fim. ") +
       "Depois, registre no sistema em Credenciamento › Credenciados: marque quem assinou e use \"Credenciar selecionados\".",
     secoes: [{ titulo: "Inscritos no evento", pessoas }],
-    linhasEmBranco: LINHAS_EM_BRANCO_EVENTO,
+    linhasEmBranco: porLetra ? LINHAS_EM_BRANCO_OUTRAS_LETRAS : LINHAS_EM_BRANCO_EVENTO,
+    porLetra: porLetra ? { linhasEmBranco: LINHAS_EM_BRANCO_POR_LETRA } : null,
   };
 }
 

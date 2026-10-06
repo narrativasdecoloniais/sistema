@@ -29,6 +29,7 @@ const ESTILOS = {
   tituloSecao: { fontSize: 10, bold: true, margin: [0, 2, 0, 2] },
   cabecalhoColuna: { fontSize: 7.5, bold: true, color: COR.suave },
   letra: { fontSize: 8, bold: true, color: COR.barro },
+  letraPagina: { fontSize: 30, bold: true, color: COR.barro, lineHeight: 0.9 },
   celula: { fontSize: 9 },
   situacao: { fontSize: 7.5, bold: true, color: COR.suave },
   rodape: { fontSize: 7.5, color: COR.suave },
@@ -53,9 +54,10 @@ const LAYOUT_TABELA = {
 };
 
 // Uma seção de inscritos: título (repetido em cada página, com as colunas),
-// separadores por letra e uma linha por pessoa — quem já tem registro no
-// sistema sai sombreado, com a situação no lugar da assinatura.
-function tabelaPessoas(secao, { inicioNumeracao }) {
+// separadores por letra (`separadores`, em listas longas) e uma linha por
+// pessoa — quem já tem registro no sistema sai sombreado, com a situação no
+// lugar da assinatura.
+function tabelaPessoas(secao, { inicioNumeracao, separadores = true }) {
   const larguras = [20, "*", 96, 150];
   const corpo = [
     [{ text: `${secao.titulo} (${secao.pessoas.length})`, style: "tituloSecao", colSpan: 4, border: [false, false, false, false] }, {}, {}, {}],
@@ -74,7 +76,7 @@ function tabelaPessoas(secao, { inicioNumeracao }) {
   let letraAtual = null;
   secao.pessoas.forEach((pessoa, indice) => {
     const letra = letraInicial(pessoa.nome);
-    if (letra !== letraAtual && secao.pessoas.length > 15) {
+    if (separadores && letra !== letraAtual && secao.pessoas.length > 15) {
       corpo.push([{ text: letra, style: "letra", colSpan: 4, margin: [0, -4, 0, -4] }, {}, {}, {}]);
     }
     letraAtual = letra;
@@ -95,13 +97,16 @@ function tabelaPessoas(secao, { inicioNumeracao }) {
 }
 
 // Linhas em branco para quem aparecer sem inscrição.
-function tabelaEmBranco(quantidade) {
+function tabelaEmBranco(quantidade, { titulo = "Sem inscrição", apoio } = {}) {
   const corpo = [
     [
       {
         stack: [
-          { text: "Sem inscrição", style: "tituloSecao" },
-          { text: "Quem não está na lista: preencha com letra legível para a equipe registrar depois.", style: "detalhes" },
+          { text: titulo, style: "tituloSecao" },
+          {
+            text: apoio || "Quem não está na lista: preencha com letra legível para a equipe registrar depois.",
+            style: "detalhes",
+          },
         ],
         colSpan: 4,
         border: [false, false, false, false],
@@ -125,8 +130,8 @@ function tabelaEmBranco(quantidade) {
   };
 }
 
-function conteudoLista(lista) {
-  const conteudo = [
+function abertura(lista) {
+  return [
     { text: lista.evento.toUpperCase(), style: "evento" },
     { text: lista.titulo, style: "titulo" },
     lista.detalhes ? { text: lista.detalhes, style: "detalhes" } : null,
@@ -139,19 +144,73 @@ function conteudoLista(lista) {
       margin: [0, 10, 0, 0],
     },
   ].filter(Boolean);
+}
 
+// Lista corrida: seções uma após a outra e as linhas em branco no fim.
+function blocoCorrido(lista) {
+  const conteudo = abertura(lista);
   let numeracao = 1;
   for (const secao of lista.secoes) {
     conteudo.push(tabelaPessoas(secao, { inicioNumeracao: numeracao }));
     numeracao += secao.pessoas.length;
   }
   if (lista.linhasEmBranco > 0) conteudo.push(tabelaEmBranco(lista.linhasEmBranco));
-  return conteudo;
+  return [{ rotulo: lista.rotuloCurto, conteudo }];
+}
+
+const ALFABETO = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+// Uma página nova por letra inicial (só a 1ª seção — a do evento tem uma só),
+// para dividir o credenciamento entre mesas: cada letra traz as próprias
+// linhas em branco, e a última página recebe quem chegar sem inscrição com
+// uma letra que não tem página.
+function blocosPorLetra(lista) {
+  const grupos = new Map();
+  for (const pessoa of lista.secoes[0].pessoas) {
+    const letra = letraInicial(pessoa.nome);
+    if (!grupos.has(letra)) grupos.set(letra, []);
+    grupos.get(letra).push(pessoa);
+  }
+
+  const blocos = [];
+  let numeracao = 1;
+  for (const [letra, pessoas] of grupos) {
+    const nomeLetra = letra === "#" ? "Outros caracteres" : `Letra ${letra}`;
+    blocos.push({
+      rotulo: `${lista.rotuloCurto} · ${nomeLetra}`,
+      conteudo: [
+        ...(blocos.length === 0 ? abertura(lista) : []),
+        { text: letra, style: "letraPagina", margin: [0, blocos.length === 0 ? 14 : 0, 0, 0] },
+        tabelaPessoas({ titulo: "Inscritos", pessoas }, { inicioNumeracao: numeracao, separadores: false }),
+        tabelaEmBranco(lista.porLetra.linhasEmBranco, { titulo: `Sem inscrição · ${nomeLetra}` }),
+      ],
+    });
+    numeracao += pessoas.length;
+  }
+
+  const semPagina = [...ALFABETO].filter((letra) => !grupos.has(letra));
+  blocos.push({
+    rotulo: `${lista.rotuloCurto} · Outras letras`,
+    conteudo: [
+      ...(blocos.length === 0 ? abertura(lista) : []),
+      tabelaEmBranco(lista.linhasEmBranco, {
+        titulo: "Sem inscrição · outras letras",
+        apoio: semPagina.length
+          ? `Para quem chegar sem inscrição com nome iniciado por ${semPagina.join(", ")} (letras sem página nesta lista). Preencha com letra legível.`
+          : "Para quem chegar sem inscrição e não couber na página da própria letra. Preencha com letra legível.",
+      }),
+    ],
+  });
+  return blocos;
+}
+
+function blocosDaLista(lista) {
+  return lista.porLetra ? blocosPorLetra(lista) : blocoCorrido(lista);
 }
 
 // Numeração por lista ("Página 2 de 3" da própria atividade), não do arquivo.
-// `paginas` (id da lista -> páginas dela) vem de uma primeira diagramação:
-// o pdfmake desenha os rodapés antes de expor as páginas de cada nó.
+// `paginasDaLista` vem de uma primeira diagramação: o pdfmake desenha os
+// rodapés antes de expor as páginas de cada nó.
 function rodapePorLista(paginasDaLista) {
   return (paginaAtual, totalPaginas) => {
     const indice = paginasDaLista ? paginasDaLista.indexOf(paginaAtual) : -1;
@@ -164,42 +223,51 @@ function rodapePorLista(paginasDaLista) {
   };
 }
 
-function montarDefinicao(listas, titulo, paginas) {
-  return {
-    pageSize: "A4",
-    pageMargins: MARGENS,
-    info: { title: titulo, creator: "Narrativas — GPDES/UnB" },
-    // Cada section começa numa página nova.
-    content: listas.map((lista, indice) => ({
-      section: [{ id: `lista-${indice}`, stack: conteudoLista(lista) }],
-      footer: rodapePorLista(paginas?.get(`lista-${indice}`)),
+// `paginasPorLista`: índice da lista -> páginas dela (todas as seções).
+function montarDefinicao(listas, titulo, paginasPorLista) {
+  // Cada section começa numa página nova.
+  const secoes = listas.flatMap((lista, indiceLista) =>
+    blocosDaLista(lista).map((bloco, indiceBloco) => ({
+      section: [{ id: `lista-${indiceLista}-${indiceBloco}`, stack: bloco.conteudo }],
+      footer: rodapePorLista(paginasPorLista?.get(indiceLista)),
       header: () => ({
         columns: [
-          { text: lista.rotuloCurto, style: "rodape", bold: true },
+          { text: bloco.rotulo, style: "rodape", bold: true },
           { text: lista.geradaEm, style: "rodape", alignment: "right" },
         ],
         margin: [MARGENS[0], 28, MARGENS[2], 0],
       }),
-    })),
+    }))
+  );
+  return {
+    pageSize: "A4",
+    pageMargins: MARGENS,
+    info: { title: titulo, creator: "Narrativas — GPDES/UnB" },
+    content: secoes,
     styles: ESTILOS,
     defaultStyle: { font: "Archivo", fontSize: 9, color: COR.tinta },
   };
 }
 
 // `listas`: [{ evento, titulo, rotuloCurto, detalhes, instrucoes, geradaEm,
-// secoes: [{ titulo, pessoas: [{ nome, documento, registrado }] }], linhasEmBranco }]
+// secoes: [{ titulo, pessoas: [{ nome, documento, registrado }] }],
+// linhasEmBranco, porLetra?: { linhasEmBranco } }]
 async function gerarPdfListasPresenca(listas, { titulo }) {
   // Uma lista só: a numeração do arquivo já é a dela.
   if (listas.length === 1) return pdfmake.createPdf(aplicarFontes(montarDefinicao(listas, titulo))).getBuffer();
 
-  const paginas = new Map();
+  const paginasPorLista = new Map();
   const medicao = montarDefinicao(listas, titulo);
   medicao.pageBreakBefore = (no) => {
-    if (no.id?.startsWith("lista-")) paginas.set(no.id, no.pageNumbers);
+    const [, indiceLista] = /^lista-(\d+)-\d+$/.exec(no.id || "") || [];
+    if (indiceLista !== undefined) {
+      const indice = Number(indiceLista);
+      paginasPorLista.set(indice, [...(paginasPorLista.get(indice) || []), ...no.pageNumbers]);
+    }
     return false;
   };
   await pdfmake.createPdf(aplicarFontes(medicao)).getBuffer();
-  return pdfmake.createPdf(aplicarFontes(montarDefinicao(listas, titulo, paginas))).getBuffer();
+  return pdfmake.createPdf(aplicarFontes(montarDefinicao(listas, titulo, paginasPorLista))).getBuffer();
 }
 
 module.exports = { gerarPdfListasPresenca };
