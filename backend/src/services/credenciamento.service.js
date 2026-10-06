@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const prisma = require("../config/prisma");
 const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
-const { agoraIngenuo, hojeIngenuo } = require("../utils/horarioBrasilia");
+const { agoraIngenuo, hojeIngenuo, ingenuoDe } = require("../utils/horarioBrasilia");
 const inscricoesService = require("./inscricoes.service");
 const storageService = require("./storage.service");
 
@@ -515,6 +515,180 @@ async function qrTodasAtividades(edicaoId) {
 }
 
 // ---------------------------------------------------------------------------
+// Registro em lote (digitar depois o que foi assinado nas listas impressas)
+// ---------------------------------------------------------------------------
+
+// Contas inexistentes ou anonimizadas ficam de fora — nunca derrubam o lote.
+async function usuariosAtivos(db, usuarioIds) {
+  const usuarios = await db.usuario.findMany({ where: { id: { in: usuarioIds }, ativo: true }, select: { id: true } });
+  return usuarios.map((usuario) => usuario.id);
+}
+
+async function credenciarEmLote(edicaoId, usuarioIds, autorId) {
+  await buscarEdicao(edicaoId);
+  return prisma.$transaction(
+    async (tx) => {
+      const ids = await usuariosAtivos(tx, usuarioIds);
+      let credenciados = 0;
+      for (const usuarioId of ids) {
+        const { jaEstava } = await garantirCredenciamento(tx, usuarioId, edicaoId, { origem: "EQUIPE", autorId });
+        if (!jaEstava) credenciados += 1;
+      }
+      const inscricoes = await tx.inscricaoEdicao.findMany({
+        where: { edicaoId, usuarioId: { in: ids } },
+        include: INCLUDE_INSCRICAO_EDICAO,
+      });
+      return { inscricoes, credenciados, jaEstavam: ids.length - credenciados };
+    },
+    { timeout: 60000 }
+  );
+}
+
+// Mesma regra de registrarPresencaPelaEquipe, para várias pessoas de uma vez.
+async function registrarPresencasEmLote(edicaoId, atividadeId, usuarioIds, autorId) {
+  const atividade = await buscarAtividade(edicaoId, atividadeId);
+  return prisma.$transaction(
+    async (tx) => {
+      const ids = await usuariosAtivos(tx, usuarioIds);
+      let registradas = 0;
+      for (const usuarioId of ids) {
+        const inscricao = await tx.inscricaoAtividade.findUnique({ where: { usuarioId_atividadeId: { usuarioId, atividadeId } } });
+        if (inscricao?.presencaEm) continue;
+        await marcarPresencaPelaEquipe(tx, atividade, usuarioId, inscricao, { origem: "EQUIPE", autorId });
+        registradas += 1;
+      }
+      const inscricoes = await tx.inscricaoAtividade.findMany({
+        where: { atividadeId, usuarioId: { in: ids } },
+        include: INCLUDE_INSCRICAO_ATIVIDADE,
+      });
+      return { inscricoes, registradas, jaEstavam: ids.length - registradas };
+    },
+    { timeout: 60000 }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Listas impressas (PDF de contingência)
+// ---------------------------------------------------------------------------
+
+const CAMPOS_PESSOA_LISTA = { nome: true, cpf: true, documentoEstrangeiro: true, pais: true };
+const LINHAS_EM_BRANCO_EVENTO = 30;
+const LINHAS_EM_BRANCO_ATIVIDADE = 10;
+
+function porNome(a, b) {
+  return a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
+}
+
+function momentoBrasilia(data) {
+  return `${formatarDia(data)} às ${formatarHora(data)}`;
+}
+
+// `registradoEm` é um instante real (new Date() na gravação); o horário sai em
+// Brasília.
+function pessoaDaLista(usuario, registradoEm, rotulo) {
+  const momento = registradoEm && ingenuoDe(registradoEm);
+  return {
+    nome: usuario.nome,
+    documento: documentoMascarado(usuario),
+    registrado: momento ? `${rotulo} ${formatarDia(momento).slice(0, 5)} ${formatarHora(momento)}` : null,
+  };
+}
+
+function cabecalhoGeracao() {
+  return `Gerada em ${momentoBrasilia(agoraIngenuo())} (Brasília)`;
+}
+
+function periodoEvento(edicao) {
+  if (!edicao.dataInicio) return null;
+  const inicio = formatarDia(edicao.dataInicio);
+  const fim = edicao.dataFim ? formatarDia(edicao.dataFim) : inicio;
+  return inicio === fim ? inicio : `${inicio} a ${fim}`;
+}
+
+function periodoAtividade(atividade) {
+  const inicio = new Date(atividade.inicioAtividade);
+  const fim = new Date(atividade.fimAtividade);
+  const mesmoDia = formatarDia(inicio) === formatarDia(fim);
+  return mesmoDia
+    ? `${formatarDia(inicio)}, ${formatarHora(inicio)} às ${formatarHora(fim)}`
+    : `${formatarDia(inicio)} ${formatarHora(inicio)} a ${formatarDia(fim)} ${formatarHora(fim)}`;
+}
+
+async function listaImpressaEvento(edicaoId) {
+  const edicao = await buscarEdicao(edicaoId);
+  const inscricoes = await prisma.inscricaoEdicao.findMany({
+    where: { edicaoId, usuario: { ativo: true } },
+    select: { credenciadoEm: true, usuario: { select: CAMPOS_PESSOA_LISTA } },
+  });
+  const pessoas = inscricoes
+    .map((inscricao) =>
+      pessoaDaLista(inscricao.usuario, inscricao.credenciadoEm, "Credenciado(a)")
+    )
+    .sort(porNome);
+
+  return {
+    evento: edicao.nome,
+    titulo: "Lista de credenciamento",
+    rotuloCurto: `${edicao.nome} · Credenciamento no evento`,
+    detalhes: periodoEvento(edicao),
+    geradaEm: cabecalhoGeracao(),
+    instrucoes:
+      "Lista de contingência, para usar se o sistema ou a internet ficarem fora do ar. Peça a cada pessoa que confira o nome e assine. " +
+      "Linhas sombreadas já estavam credenciadas no sistema quando a lista foi gerada e não precisam assinar. " +
+      "Quem não estiver na lista preenche uma linha em \"Sem inscrição\", no fim. " +
+      "Depois, registre no sistema em Credenciamento › Credenciados: marque quem assinou e use \"Credenciar selecionados\".",
+    secoes: [{ titulo: "Inscritos no evento", pessoas }],
+    linhasEmBranco: LINHAS_EM_BRANCO_EVENTO,
+  };
+}
+
+async function listaImpressaAtividade(edicaoId, atividadeId) {
+  const atividade = await buscarAtividade(edicaoId, atividadeId);
+  const inscricoes = await prisma.inscricaoAtividade.findMany({
+    where: { atividadeId, usuario: { ativo: true } },
+    select: { status: true, presencaEm: true, usuario: { select: CAMPOS_PESSOA_LISTA } },
+  });
+  const pessoasCom = (status) =>
+    inscricoes
+      .filter((inscricao) => inscricao.status === status)
+      .map((inscricao) => pessoaDaLista(inscricao.usuario, inscricao.presencaEm, "Presente"))
+      .sort(porNome);
+
+  const secoes = [{ titulo: "Inscrições confirmadas", pessoas: pessoasCom("CONFIRMADA") }];
+  const espera = pessoasCom("LISTA_ESPERA");
+  if (espera.length > 0) secoes.push({ titulo: "Lista de espera", pessoas: espera });
+
+  return {
+    evento: atividade.edicao.nome,
+    titulo: atividade.nome,
+    rotuloCurto: `Lista de presença · ${atividade.nome}`,
+    detalhes: [periodoAtividade(atividade), atividade.local].filter(Boolean).join(" · "),
+    geradaEm: cabecalhoGeracao(),
+    instrucoes:
+      "Lista de contingência, para usar se o sistema ou a internet ficarem fora do ar. Peça a cada pessoa que confira o nome e assine. " +
+      "Linhas sombreadas já tinham a presença registrada no sistema quando a lista foi gerada. " +
+      (espera.length > 0 ? "Quem está na lista de espera assina na própria seção, conforme a orientação da equipe sobre as vagas. " : "") +
+      "Quem não estiver na lista preenche uma linha em \"Sem inscrição\", no fim. " +
+      "Depois, registre no sistema em Credenciamento › Atividades › lista de presença: marque quem assinou e use \"Registrar presença dos selecionados\".",
+    secoes,
+    linhasEmBranco: LINHAS_EM_BRANCO_ATIVIDADE,
+  };
+}
+
+async function listasImpressasAtividades(edicaoId) {
+  await buscarEdicao(edicaoId);
+  const atividades = await prisma.atividade.findMany({
+    where: { edicaoId, exigeInscricao: true },
+    select: { id: true },
+    orderBy: [{ inicioAtividade: "asc" }, { ordem: { sort: "asc", nulls: "last" } }, { nome: "asc" }],
+  });
+  if (atividades.length === 0) throw new ErroHttp(404, "Nenhuma atividade desta edição exige inscrição.");
+  const listas = [];
+  for (const { id } of atividades) listas.push(await listaImpressaAtividade(edicaoId, id));
+  return listas;
+}
+
+// ---------------------------------------------------------------------------
 // Crachá virtual
 // ---------------------------------------------------------------------------
 
@@ -659,6 +833,11 @@ module.exports = {
   qrTodasAtividades,
   meuCracha,
   lerNaEquipe,
+  credenciarEmLote,
+  registrarPresencasEmLote,
+  listaImpressaEvento,
+  listaImpressaAtividade,
+  listasImpressasAtividades,
   // exportados para teste
   janelaEvento,
   janelaAtividade,

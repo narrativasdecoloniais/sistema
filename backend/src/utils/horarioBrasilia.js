@@ -11,9 +11,15 @@ function agoraIngenuo() {
   return new Date(Date.now() - DESLOCAMENTO_BRASILIA_MS);
 }
 
+// Um instante real (gravado com new Date(), ex.: credenciadoEm) na mesma
+// convenção, para formatar o horário de Brasília com os componentes UTC.
+function ingenuoDe(instante) {
+  return new Date(new Date(instante).getTime() - DESLOCAMENTO_BRASILIA_MS);
+}
+
 // Dia de hoje em Brasília, "YYYY-MM-DD".
 function hojeIngenuo() {
   return agoraIngenuo().toISOString().slice(0, 10);
 }
 
-module.exports = { agoraIngenuo, hojeIngenuo };
+module.exports = { agoraIngenuo, hojeIngenuo, ingenuoDe };
