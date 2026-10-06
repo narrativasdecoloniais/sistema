@@ -1033,20 +1033,17 @@
 }
 
 .seloEmBreve {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  padding: 0.3rem 0.9rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  line-height: 1.3;
   text-transform: uppercase;
   color: var(--barro);
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
 }
 
 // ---- section Submissão (grade de cartões por modalidade) ----
@@ -1279,48 +1276,23 @@
   margin-top: 1rem;
 }
 
-// Rótulo que abre o bloco de atividades contínuas (sempre o primeiro grupo
-// do dia, ver agruparAtividadesPorHorarioInicio em lib/publico.js) — mesmo
-// selo usado em .seloEmBreve, reaproveitado aqui como marcador de subseção
-// em vez de introduzir um divisor novo (ver DESIGN.md, seção 5: separação
-// por espaço/tipografia, não por linhas ou caixas coloridas).
-.rotuloContinuas {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
+// Rótulos de subseção da programação: "Atividades contínuas" abre o bloco
+// de contínuas (sempre o primeiro grupo do dia, ver
+// agruparAtividadesPorHorarioInicio em lib/publico.js) e "Atividades por
+// horário" reabre a leitura por horário depois dele. Só tipografia, sem
+// contorno nem caixa (DESIGN.md, seção 5: separação por espaço/tipografia).
+.rotuloContinuas,
+.rotuloPorHorario {
   margin: 0 0 1.25rem;
-  padding: 0.3rem 0.9rem;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--barro);
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
 }
 
-// Reabre a leitura por horário depois do bloco de contínuas, no mesmo
-// registro e cor do selo acima (.rotuloContinuas) — os dois são o mesmo tipo
-// de marcador de subseção, só o texto muda.
 .rotuloPorHorario {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  margin: 1.5rem 0 1.25rem;
-  padding: 0.3rem 0.9rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--barro);
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
+  margin-top: 1.5rem;
 }
 
 // Section "Comissões e Programas" (motor genérico Grupo > Lista > Item)

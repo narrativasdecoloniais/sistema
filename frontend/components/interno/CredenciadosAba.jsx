@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { UserCheck, UserX } from "lucide-react";
 import ModalConfirmacao from "./ModalConfirmacao";
-import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
-import BotaoExportarTabela from "./BotaoExportarTabela";
+import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
+import useSelecaoLinhas from "./useSelecaoLinhas";
 import useTabela from "./useTabela";
 import { formatarIdentificacao } from "@/lib/identificacao";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
@@ -57,11 +58,28 @@ const COLUNAS = [
 ];
 
 // Todas as inscrições gerais da edição, credenciadas ou não, com credenciar e
-// desfazer por linha (o estado mora em CredenciamentoPainel).
-export default function CredenciadosAba({ inscricoes, aoCredenciar, aoDesfazer }) {
+// desfazer por linha e credenciar em lote — para lançar a lista impressa
+// assinada (o estado mora em CredenciamentoPainel).
+export default function CredenciadosAba({ inscricoes, aoCredenciar, aoCredenciarEmLote, aoDesfazer }) {
   const [processandoId, setProcessandoId] = useState(null);
   const [desfazendo, setDesfazendo] = useState(null);
+  const [confirmandoLote, setConfirmandoLote] = useState(false);
+  const [credenciandoLote, setCredenciandoLote] = useState(false);
   const tabela = useTabela(inscricoes, COLUNAS);
+  const selecao = useSelecaoLinhas(tabela);
+
+  // Só quem ainda não está credenciado conta para o lote.
+  const pendentesSelecionados = inscricoes.filter(
+    (inscricao) => selecao.estaSelecionado(inscricao.id) && !inscricao.credenciadoEm
+  );
+
+  async function credenciarSelecionados() {
+    setCredenciandoLote(true);
+    const ok = await aoCredenciarEmLote(pendentesSelecionados.map((inscricao) => inscricao.usuarioId));
+    setCredenciandoLote(false);
+    setConfirmandoLote(false);
+    if (ok) selecao.limpar();
+  }
 
   async function credenciarLinha(inscricao) {
     setProcessandoId(inscricao.id);
@@ -84,13 +102,26 @@ export default function CredenciadosAba({ inscricoes, aoCredenciar, aoDesfazer }
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
-          <BotaoExportarTabela tabela={tabela} nomeArquivo="credenciamento-evento" nomeAba="Credenciamento" />
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="credenciamento-evento" nomeAba="Credenciamento">
+            {pendentesSelecionados.length > 0 && (
+              <BotaoAcaoTabela onClick={() => setConfirmandoLote(true)}>
+                <UserCheck size={16} strokeWidth={1.5} aria-hidden="true" />
+                Credenciar {pendentesSelecionados.length} {pendentesSelecionados.length === 1 ? "selecionado" : "selecionados"}
+              </BotaoAcaoTabela>
+            )}
+          </BotaoExportarTabela>
           <table className={styles.tabela}>
-            <CabecalhoTabela tabela={tabela} idTabela="credenciamento-evento" classeAcoes={styles.colunaAcoes} />
+            <CabecalhoTabela
+              tabela={tabela}
+              idTabela="credenciamento-evento"
+              classeAcoes={styles.colunaAcoes}
+              selecao={selecao}
+            />
             <tbody>
-              {tabela.linhasVisiveis.length === 0 && <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />}
+              {tabela.linhasVisiveis.length === 0 && <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 2} />}
               {tabela.linhasVisiveis.map((inscricao) => (
                 <tr key={inscricao.id}>
+                  <CelulaSelecao selecao={selecao} id={inscricao.id} rotulo={`Selecionar ${inscricao.usuario.nome}`} />
                   <td data-rotulo="Nome">{inscricao.usuario.nome}</td>
                   <td data-rotulo="E-mail">{inscricao.usuario.email}</td>
                   <td data-rotulo="CPF / Documento">{formatarIdentificacao(inscricao.usuario) || "—"}</td>
@@ -130,6 +161,20 @@ export default function CredenciadosAba({ inscricoes, aoCredenciar, aoDesfazer }
             </tbody>
           </table>
         </div>
+      )}
+
+      {confirmandoLote && (
+        <ModalConfirmacao
+          titulo="Credenciar selecionados"
+          mensagem={`${pendentesSelecionados.length} ${
+            pendentesSelecionados.length === 1 ? "pessoa será credenciada" : "pessoas serão credenciadas"
+          } no evento, com você como responsável pelo registro. Quem já estava credenciado entre os selecionados continua como está.`}
+          rotuloConfirmar="Credenciar"
+          perigo={false}
+          confirmando={credenciandoLote}
+          onConfirmar={credenciarSelecionados}
+          onCancelar={() => setConfirmandoLote(false)}
+        />
       )}
 
       {desfazendo && (

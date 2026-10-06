@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, UserCheck, UserX } from "lucide-react";
+import { ArrowLeft, FileDown, UserCheck, UserX } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import BuscaUsuario from "./BuscaUsuario";
 import CartaoQrCode from "./CartaoQrCode";
 import ModalConfirmacao from "./ModalConfirmacao";
-import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
-import BotaoExportarTabela from "./BotaoExportarTabela";
+import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
+import useSelecaoLinhas from "./useSelecaoLinhas";
 import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { formatarIdentificacao } from "@/lib/identificacao";
@@ -73,8 +74,9 @@ const COLUNAS = [
 ];
 
 // Lista de presença de uma atividade: a equipe marca ou remove a presença de
-// qualquer inscrito (inclusive da lista de espera, sem mudar a situação dele)
-// e pode registrar quem nem se inscreveu.
+// qualquer inscrito (inclusive da lista de espera, sem mudar a situação dele),
+// também em lote (lançar a lista impressa assinada), e pode registrar quem nem
+// se inscreveu.
 export default function PresencaAtividade({ edicaoId, edicao, atividadeResumo, aoVoltar }) {
   const { notificar } = useToast();
   const [dados, setDados] = useState(null);
@@ -83,7 +85,11 @@ export default function PresencaAtividade({ edicaoId, edicao, atividadeResumo, a
   const [adicionando, setAdicionando] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [removendo, setRemovendo] = useState(null);
+  const [baixandoLista, setBaixandoLista] = useState(false);
+  const [confirmandoLote, setConfirmandoLote] = useState(false);
+  const [registrandoLote, setRegistrandoLote] = useState(false);
   const tabela = useTabela(dados?.inscricoes || [], COLUNAS);
+  const selecao = useSelecaoLinhas(tabela);
 
   useEffect(() => {
     credenciamentoAdmin
@@ -125,6 +131,36 @@ export default function PresencaAtividade({ edicaoId, edicao, atividadeResumo, a
     setProcessandoId(null);
   }
 
+  async function baixarLista() {
+    setBaixandoLista(true);
+    try {
+      await credenciamentoAdmin.baixarListaAtividade(edicaoId, atividadeResumo);
+    } catch (falha) {
+      notificar(falha.message, "erro");
+    } finally {
+      setBaixandoLista(false);
+    }
+  }
+
+  async function registrarSelecionados() {
+    setRegistrandoLote(true);
+    try {
+      const resposta = await credenciamentoAdmin.registrarPresencasEmLote(
+        edicaoId,
+        atividadeResumo.id,
+        semPresencaSelecionados.map((inscricao) => inscricao.usuarioId)
+      );
+      resposta.inscricoes.forEach(substituir);
+      selecao.limpar();
+      notificar(resposta.mensagem);
+    } catch (falha) {
+      notificar(falha.message, "erro");
+    } finally {
+      setRegistrandoLote(false);
+      setConfirmandoLote(false);
+    }
+  }
+
   async function remover() {
     setProcessandoId(removendo.id);
     try {
@@ -141,6 +177,11 @@ export default function PresencaAtividade({ edicaoId, edicao, atividadeResumo, a
 
   const inscricoes = dados?.inscricoes || [];
   const atividade = dados?.atividade || atividadeResumo;
+  // Só quem ainda não tem presença conta para o lote.
+  const semPresencaSelecionados = inscricoes.filter(
+    (inscricao) => selecao.estaSelecionado(inscricao.id) && !inscricao.presencaEm
+  );
+  const emEsperaNoLote = semPresencaSelecionados.filter((inscricao) => inscricao.status === "LISTA_ESPERA").length;
 
   return (
     <>
@@ -156,6 +197,13 @@ export default function PresencaAtividade({ edicaoId, edicao, atividadeResumo, a
         <p className={styles.textoApoio}>
           {[formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade), atividade.local].filter(Boolean).join(" · ")}
         </p>
+      </div>
+
+      <div>
+        <Botao type="button" variante="secundario" carregando={baixandoLista} onClick={baixarLista}>
+          <FileDown size={18} strokeWidth={1.5} aria-hidden="true" />
+          Baixar lista impressa (PDF)
+        </Botao>
       </div>
 
       <CartaoQrCode
@@ -204,13 +252,26 @@ export default function PresencaAtividade({ edicaoId, edicao, atividadeResumo, a
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
-          <BotaoExportarTabela tabela={tabela} nomeArquivo={`presenca-${atividade.nome}`} nomeAba="Presença" />
+          <BotaoExportarTabela tabela={tabela} nomeArquivo={`presenca-${atividade.nome}`} nomeAba="Presença">
+            {semPresencaSelecionados.length > 0 && (
+              <BotaoAcaoTabela onClick={() => setConfirmandoLote(true)}>
+                <UserCheck size={16} strokeWidth={1.5} aria-hidden="true" />
+                Registrar presença {semPresencaSelecionados.length === 1 ? "do selecionado" : `dos ${semPresencaSelecionados.length} selecionados`}
+              </BotaoAcaoTabela>
+            )}
+          </BotaoExportarTabela>
           <table className={styles.tabela}>
-            <CabecalhoTabela tabela={tabela} idTabela="presenca-atividade" classeAcoes={styles.colunaAcoes} />
+            <CabecalhoTabela
+              tabela={tabela}
+              idTabela="presenca-atividade"
+              classeAcoes={styles.colunaAcoes}
+              selecao={selecao}
+            />
             <tbody>
-              {tabela.linhasVisiveis.length === 0 && <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 1} />}
+              {tabela.linhasVisiveis.length === 0 && <LinhaSemResultado tabela={tabela} colSpan={COLUNAS.length + 2} />}
               {tabela.linhasVisiveis.map((inscricao) => (
                 <tr key={inscricao.id}>
+                  <CelulaSelecao selecao={selecao} id={inscricao.id} rotulo={`Selecionar ${inscricao.usuario.nome}`} />
                   <td data-rotulo="Nome">{inscricao.usuario.nome}</td>
                   <td data-rotulo="E-mail">{inscricao.usuario.email}</td>
                   <td data-rotulo="CPF / Documento">{formatarIdentificacao(inscricao.usuario) || "—"}</td>
@@ -251,6 +312,24 @@ export default function PresencaAtividade({ edicaoId, edicao, atividadeResumo, a
             </tbody>
           </table>
         </div>
+      )}
+
+      {confirmandoLote && (
+        <ModalConfirmacao
+          titulo="Registrar presença dos selecionados"
+          mensagem={`A presença de ${semPresencaSelecionados.length} ${
+            semPresencaSelecionados.length === 1 ? "pessoa" : "pessoas"
+          } será registrada nesta atividade, com você como responsável, e quem ainda não estava credenciado no evento passa a estar.${
+            emEsperaNoLote > 0
+              ? ` ${emEsperaNoLote} ${emEsperaNoLote === 1 ? "está" : "estão"} na lista de espera e ${emEsperaNoLote === 1 ? "continua" : "continuam"} nela, só com a presença validada.`
+              : ""
+          }`}
+          rotuloConfirmar="Registrar"
+          perigo={false}
+          confirmando={registrandoLote}
+          onConfirmar={registrarSelecionados}
+          onCancelar={() => setConfirmandoLote(false)}
+        />
       )}
 
       {removendo && (

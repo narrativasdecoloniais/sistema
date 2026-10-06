@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, salvarBlob } from "@/lib/apiClient";
 import { formatarPeriodoAtividade } from "@/lib/publico";
 
 // Mesmo formato de backend/src/services/credenciamento.service.js (REGEX_TOKEN
@@ -74,6 +74,23 @@ export const credenciamentoAdmin = {
     apiClient.post(`${base(edicaoId)}/atividades/${atividadeId}/presencas/${usuarioId}`, {}),
   removerPresenca: (edicaoId, atividadeId, usuarioId) =>
     apiClient.delete(`${base(edicaoId)}/atividades/${atividadeId}/presencas/${usuarioId}`),
+  // Lançamento das listas impressas assinadas
+  credenciarEmLote: (edicaoId, usuarioIds) => apiClient.post(`${base(edicaoId)}/lote`, { usuarioIds }),
+  registrarPresencasEmLote: (edicaoId, atividadeId, usuarioIds) =>
+    apiClient.post(`${base(edicaoId)}/atividades/${atividadeId}/presencas/lote`, { usuarioIds }),
+  // Listas impressas de contingência (PDF)
+  async baixarListaEvento(edicaoId) {
+    salvarBlob(await apiClient.blob(`${base(edicaoId)}/lista-impressa`), "lista-credenciamento-evento.pdf");
+  },
+  async baixarListasAtividades(edicaoId) {
+    salvarBlob(await apiClient.blob(`${base(edicaoId)}/atividades/lista-impressa`), "listas-presenca-atividades.pdf");
+  },
+  async baixarListaAtividade(edicaoId, atividade) {
+    salvarBlob(
+      await apiClient.blob(`${base(edicaoId)}/atividades/${atividade.id}/lista-impressa`),
+      `lista-presenca-${atividade.nome}.pdf`
+    );
+  },
 };
 
 // QR code como imagem PNG (data URI). A lib entra sob demanda (admin e crachá).

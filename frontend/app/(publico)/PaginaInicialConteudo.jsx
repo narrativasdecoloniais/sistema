@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import Logo, { LOGO_DURACAO_ENTRADA } from "@/components/publico/Logo";
-import Carimbo from "@/components/graficos/Carimbo";
 import Divisor from "@/components/graficos/Divisor";
 import TexturaPapel from "@/components/graficos/TexturaPapel";
 import NavegacaoDias, {
@@ -207,10 +206,7 @@ function Eyebrow({ children }) {
 
 function SeloEmBreve({ children = "Em breve" }) {
   return (
-    <span className={styles.seloEmBreve}>
-      <Carimbo />
-      <span>{children}</span>
-    </span>
+    <span className={styles.seloEmBreve}>{children}</span>
   );
 }
 
@@ -852,8 +848,7 @@ export default function PaginaInicialConteudo({
                       {indice === 0 &&
                         grupo.atividades[0].atividadeContinua && (
                           <p className={styles.rotuloContinuas}>
-                            <Carimbo />
-                            <span>Atividades contínuas</span>
+                            Atividades contínuas
                           </p>
                         )}
                       {indice > 0 &&
@@ -861,8 +856,7 @@ export default function PaginaInicialConteudo({
                         todosGrupos[indice - 1].atividades[0]
                           .atividadeContinua && (
                           <p className={styles.rotuloPorHorario}>
-                            <Carimbo />
-                            <span>Atividades por horário</span>
+                            Atividades por horário
                           </p>
                         )}
                       <LinhaProgramacao

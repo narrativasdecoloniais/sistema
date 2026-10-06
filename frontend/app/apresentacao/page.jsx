@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Carimbo from "@/components/graficos/Carimbo";
 import BuziosSimbolos from "@/components/publico/buzios/BuziosSimbolos";
 import LogoEmDestaque from "./LogoEmDestaque";
 import styles from "./apresentacao.module.scss";
@@ -337,8 +336,7 @@ export default function Apresentacao() {
           qualquer um desses pontos e ajustar o que a equipe sentir necessário.
         </p>
         <Link href="/" className={styles.cta}>
-          <Carimbo className={styles.ctaCarimbo} preenchido />
-          <span>Veja como ficou! →</span>
+          Veja como ficou! →
         </Link>
       </section>
     </div>

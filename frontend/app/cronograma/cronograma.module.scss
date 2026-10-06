@@ -271,45 +271,32 @@
 // ---- selo de status (módulo) ----
 
 .selo {
-  position: relative;
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  padding: 0.3rem 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  line-height: 1.3;
   text-transform: uppercase;
   white-space: nowrap;
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
 }
 
 .seloConcluido {
+  background: var(--cerrado);
   color: var(--papel);
-
-  .seloCarimbo {
-    color: var(--cerrado);
-  }
 }
 
 .seloEmAndamento {
+  background: var(--barro);
   color: var(--papel);
-
-  .seloCarimbo {
-    color: var(--barro);
-  }
 }
 
 .seloPlanejado {
+  background: var(--ocre);
   color: var(--tinta);
-
-  .seloCarimbo {
-    color: var(--ocre);
-  }
 }
 
 // ---- lista de itens dentro do módulo ----

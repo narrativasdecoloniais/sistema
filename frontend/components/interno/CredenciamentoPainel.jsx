@@ -8,6 +8,7 @@ import CredenciarAba from "./CredenciarAba";
 import CredenciadosAba from "./CredenciadosAba";
 import CredenciamentoAtividadesAba from "./CredenciamentoAtividadesAba";
 import CredenciamentoQrCodesAba from "./CredenciamentoQrCodesAba";
+import CredenciamentoListasAba from "./CredenciamentoListasAba";
 import { useToast } from "./ToastProvider";
 import { credenciamentoAdmin } from "@/lib/credenciamento";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
@@ -18,12 +19,13 @@ const ABAS = [
   { chave: "credenciados", rotulo: "Credenciados" },
   { chave: "atividades", rotulo: "Atividades" },
   { chave: "qr", rotulo: "QR codes" },
+  { chave: "listas", rotulo: "Listas impressas" },
 ];
 
 // Tela de credenciamento da equipe (seção CREDENCIAMENTO), separada por
 // tarefa: Credenciar (operação no dia — leitor de crachás e busca), Credenciados
-// (tabela), Atividades (presença) e QR codes (preparação: cartazes para
-// autocredenciamento). Regras em credenciamento.service.js.
+// (tabela), Atividades (presença), QR codes (preparação: cartazes para
+// autocredenciamento) e Listas impressas (PDF de contingência sem internet). Regras em credenciamento.service.js.
 export default function CredenciamentoPainel({ edicaoId, dadosIniciais }) {
   const router = useRouter();
   const { notificar } = useToast();
@@ -57,6 +59,19 @@ export default function CredenciamentoPainel({ edicaoId, dadosIniciais }) {
         ? atual.map((item) => (item.id === inscricao.id ? inscricao : item))
         : [...atual, inscricao]
     );
+  }
+
+  async function credenciarEmLote(usuarioIds) {
+    try {
+      const resposta = await credenciamentoAdmin.credenciarEmLote(edicaoId, usuarioIds);
+      resposta.inscricoes.forEach(substituir);
+      notificar(resposta.mensagem);
+      router.refresh();
+      return true;
+    } catch (erro) {
+      notificar(erro.message, "erro");
+      return false;
+    }
   }
 
   async function credenciar(usuarioId) {
@@ -114,7 +129,12 @@ export default function CredenciamentoPainel({ edicaoId, dadosIniciais }) {
 
       {abaAtiva === "credenciar" && <CredenciarAba inscricoes={inscricoes} aoCredenciar={credenciar} />}
       {abaAtiva === "credenciados" && (
-        <CredenciadosAba inscricoes={inscricoes} aoCredenciar={credenciar} aoDesfazer={desfazer} />
+        <CredenciadosAba
+          inscricoes={inscricoes}
+          aoCredenciar={credenciar}
+          aoCredenciarEmLote={credenciarEmLote}
+          aoDesfazer={desfazer}
+        />
       )}
       {abaAtiva === "atividades" && (
         <CredenciamentoAtividadesAba
@@ -129,6 +149,9 @@ export default function CredenciamentoPainel({ edicaoId, dadosIniciais }) {
           edicao={dadosIniciais.edicao}
           temAtividades={dadosIniciais.atividades.length > 0}
         />
+      )}
+      {abaAtiva === "listas" && (
+        <CredenciamentoListasAba edicaoId={edicaoId} temAtividades={dadosIniciais.atividades.length > 0} />
       )}
     </div>
   );

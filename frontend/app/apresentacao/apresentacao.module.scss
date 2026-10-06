@@ -359,19 +359,15 @@
 }
 
 .cta {
-  position: relative;
   display: inline-flex;
   align-items: center;
   padding: 0.9rem 2rem;
+  border-radius: 6px;
+  background: var(--barro);
   color: var(--papel);
   font-size: 1.05rem;
   font-weight: 700;
   text-decoration: none;
-
-  span {
-    position: relative;
-    z-index: 1;
-  }
 
   &:hover {
     opacity: 0.9;
@@ -381,8 +377,4 @@
     outline: 2px solid var(--tinta);
     outline-offset: 2px;
   }
-}
-
-.ctaCarimbo {
-  color: var(--barro);
 }

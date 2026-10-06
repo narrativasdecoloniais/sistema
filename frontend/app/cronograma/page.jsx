@@ -1,4 +1,3 @@
-import Carimbo from "@/components/graficos/Carimbo";
 import BuziosSimbolos from "@/components/publico/buzios/BuziosSimbolos";
 import {
   FASES_CRONOGRAMA,
@@ -72,8 +71,7 @@ const CLASSE_SELO = {
 function Selo({ status }) {
   return (
     <span className={`${styles.selo} ${CLASSE_SELO[status]}`}>
-      <Carimbo className={styles.seloCarimbo} preenchido />
-      <span>{ROTULO_STATUS[status]}</span>
+      {ROTULO_STATUS[status]}
     </span>
   );
 }
