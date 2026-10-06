@@ -204,8 +204,8 @@ async function montarDocumentoAnais(edicaoId) {
   const edicao = await buscarEdicaoDocumento({ id: edicaoId });
   const { anais } = edicao;
 
-  await anaisService.sincronizarArtigos(edicaoId);
-  const registros = await anaisService.listarArtigosVisiveis(edicaoId, SELECT_SUBMISSAO_DOCUMENTO);
+  await anaisService.sincronizarArtigos(edicaoId, anais);
+  const registros = await anaisService.listarArtigosVisiveis(edicaoId, anais, SELECT_SUBMISSAO_DOCUMENTO);
   if (!registros.length) throw new ErroHttp(409, "Não há nenhum trabalho nos Anais para gerar o arquivo.");
 
   const artigos = registros.map((registro) => montarArtigo(edicao, anais, registro));
@@ -231,7 +231,7 @@ async function montarDocumentoArtigo(edicaoSlug, artigoSlug) {
   if (!edicao.anais.publicadoEm) throw new ErroHttp(404, "Anais não encontrados.");
 
   const registro = await prisma.artigoAnais.findFirst({
-    where: { edicaoId: edicao.id, slug: artigoSlug, ocultoEm: null, submissao: filtroSubmissoesAnais(edicao.id) },
+    where: { edicaoId: edicao.id, slug: artigoSlug, ocultoEm: null, submissao: filtroSubmissoesAnais(edicao.id, edicao.anais) },
     select: {
       id: true,
       slug: true,

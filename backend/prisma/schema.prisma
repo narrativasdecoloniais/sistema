@@ -97,10 +97,12 @@ enum SecaoAdmin {
 // EM_ANALISE até a coordenação decidir; CANCELADA = desistência do candidato
 // ou cancelamento pela coordenação (edital, item 8).
 // Como o credenciamento/presença foi registrado: leitura do QR code pelo
-// próprio participante ou pela equipe no admin (credenciamento.service.js).
+// próprio participante, pela equipe no admin ou pela equipe lendo o crachá
+// virtual do participante (credenciamento.service.js).
 enum OrigemCredenciamento {
   QR_CODE
   EQUIPE
+  CRACHA
 }
 
 enum StatusInscricaoMonitoria {
@@ -195,6 +197,10 @@ model Usuario {
   instituicao          String?
   categoria            CategoriaUsuario?
   foto                 String?
+  // Segredo do QR code do crachá virtual (credenciamento.service.js), prefixo
+  // "c_". Um por pessoa, vale em todas as edições; gerado quando a pessoa abre
+  // o crachá pela primeira vez e trocado se ela pedir um novo.
+  tokenCracha          String?           @unique
   senhaHash            String
   emailConfirmado      Boolean           @default(false)
   papeis               PapelUsuario[]    @default([PARTICIPANTE])
@@ -1159,7 +1165,8 @@ model InscricaoEdicao {
   precisaAdaptacao      Boolean?
   adaptacoesNecessarias String?
   // Credenciamento geral (uma vez no evento): pelo QR code geral, pela
-  // presença numa atividade ou pela equipe. credenciadoPorId só com EQUIPE.
+  // presença numa atividade, pela equipe ou pelo crachá virtual lido pela
+  // equipe. credenciadoPorId com EQUIPE e CRACHA.
   credenciadoEm         DateTime?
   credenciamentoOrigem  OrigemCredenciamento?
   credenciadoPorId      String?
@@ -1218,7 +1225,7 @@ model InscricaoAtividade {
   updatedAt               DateTime                 @updatedAt
   // Presença na atividade (credenciamento.service.js). Pelo QR, só para
   // CONFIRMADA; a equipe valida de qualquer um, inclusive da lista de espera
-  // (o status não muda). presencaRegistradaPorId só com EQUIPE.
+  // (o status não muda). presencaRegistradaPorId com EQUIPE e CRACHA.
   presencaEm              DateTime?
   presencaOrigem          OrigemCredenciamento?
   presencaRegistradaPorId String?
@@ -1253,6 +1260,14 @@ enum LicencaAnais {
 // (GrupoConteudo) listados no expediente do PDF/Word. Os campos de arquivo
 // guardam a última geração em segundo plano (geracaoAnais.service.js):
 // geracaoIniciadaEm preenchido = gerando agora.
+// Quem precisa ter se credenciado no evento para o trabalho entrar nos Anais.
+// Coautor sem conta não tem como se credenciar.
+enum CredenciamentoAnais {
+  NAO_EXIGIR
+  ALGUM_AUTOR
+  AUTOR_PRINCIPAL
+}
+
 model AnaisEdicao {
   id                 String       @id @default(uuid())
   edicaoId           String       @unique
@@ -1272,6 +1287,12 @@ model AnaisEdicao {
   apresentacao       String?      @db.Text
   fichaCatalografica String?      @db.Text
   gruposConteudoIds  String[]     @default([])
+  // Critério de quais trabalhos entram nos Anais (utils/criterioAnais.js):
+  // status da decisão final, se ressalvas/formatação exigem a correção
+  // concluída e quem precisa ter se credenciado no evento.
+  decisoesPublicadas      DecisaoAvaliacao[]  @default([APROVADO_FORMATACAO])
+  exigirCorrecaoConcluida Boolean             @default(false)
+  credenciamentoExigido   CredenciamentoAnais @default(ALGUM_AUTOR)
   publicadoEm        DateTime?
   pdfUrl             String?
   pdfGeradoEm        DateTime?

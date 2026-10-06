@@ -4,6 +4,7 @@ const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
 const { agoraIngenuo, hojeIngenuo } = require("../utils/horarioBrasilia");
 const inscricoesService = require("./inscricoes.service");
+const storageService = require("./storage.service");
 
 // Credenciamento geral (uma vez no evento) e presença em atividades que
 // exigem inscrição. Pelo QR code, o participante logado lê um token secreto
@@ -13,15 +14,22 @@ const inscricoesService = require("./inscricoes.service");
 // registrada também credencia no evento, e credenciar cria a inscrição geral
 // se faltar — sem a pergunta de adaptação (fica "sem resposta") e sem olhar a
 // janela de inscrições.
+//
+// Crachá virtual: cada pessoa tem um QR code próprio (Usuario.tokenCracha,
+// prefixo "c_", o QR guarda só o token) que a equipe lê no leitor
+// (/equipe/edicoes/<id>/credenciamento) para credenciar no evento ou
+// registrar presença numa atividade — origem CRACHA, a qualquer hora, como
+// tudo o que a equipe faz.
 
 const MINUTOS_ANTES_DA_ATIVIDADE = 30;
 const REGEX_TOKEN = /^[ea]_[A-Za-z0-9_-]{20,64}$/;
+const REGEX_TOKEN_CRACHA = /^c_[A-Za-z0-9_-]{20,64}$/;
 const AVISO_EQUIPE = "Sua presença deve ser validada com a equipe do evento.";
 const CAMPOS_USUARIO = { id: true, nome: true, email: true, cpf: true, documentoEstrangeiro: true, pais: true };
 const CAMPOS_AUTOR = { select: { id: true, nome: true } };
 
-function gerarToken(prefixo) {
-  return `${prefixo}_${crypto.randomBytes(24).toString("base64url")}`;
+function gerarToken(prefixo, bytes = 24) {
+  return `${prefixo}_${crypto.randomBytes(bytes).toString("base64url")}`;
 }
 
 function urlDoToken(token) {
@@ -94,6 +102,9 @@ const CAMPOS_ATIVIDADE_QR = {
 
 async function resolverToken(token) {
   const invalido = new ErroHttp(404, "QR code inválido ou desativado. Procure a equipe do evento.");
+  if (typeof token === "string" && REGEX_TOKEN_CRACHA.test(token)) {
+    throw new ErroHttp(400, "Este é o crachá de um participante. Quem lê o crachá é a equipe do evento.");
+  }
   if (typeof token !== "string" || !REGEX_TOKEN.test(token)) throw invalido;
 
   if (token.startsWith("e_")) {
@@ -112,28 +123,34 @@ async function resolverToken(token) {
 // Núcleo compartilhado (QR e equipe)
 // ---------------------------------------------------------------------------
 
+// Quem registrou: ninguém pelo QR do próprio participante; a pessoa da
+// equipe com EQUIPE (busca no admin) e CRACHA (leitor de crachás).
+function autorDoRegistro(origem, autorId) {
+  return origem === "QR_CODE" ? null : autorId;
+}
+
 // Cria a inscrição geral se faltar e marca o credenciamento (só a primeira
 // vez: credenciar de novo não muda quando nem por quem).
 async function garantirCredenciamento(tx, usuarioId, edicaoId, { origem, autorId = null }) {
   const existente = await tx.inscricaoEdicao.findUnique({ where: { usuarioId_edicaoId: { usuarioId, edicaoId } } });
-  if (existente?.credenciadoEm) return { inscricao: existente, jaEstava: true };
+  if (existente?.credenciadoEm) return { inscricao: existente, jaEstava: true, inscritaAgora: false };
 
   const dados = {
     credenciadoEm: new Date(),
     credenciamentoOrigem: origem,
-    credenciadoPorId: origem === "EQUIPE" ? autorId : null,
+    credenciadoPorId: autorDoRegistro(origem, autorId),
   };
   const inscricao = existente
     ? await tx.inscricaoEdicao.update({ where: { id: existente.id }, data: dados })
     : await tx.inscricaoEdicao.create({ data: { usuarioId, edicaoId, ...dados } });
-  return { inscricao, jaEstava: false };
+  return { inscricao, jaEstava: false, inscritaAgora: !existente };
 }
 
 function dadosPresenca(origem, autorId) {
   return {
     presencaEm: new Date(),
     presencaOrigem: origem,
-    presencaRegistradaPorId: origem === "EQUIPE" ? autorId : null,
+    presencaRegistradaPorId: autorDoRegistro(origem, autorId),
   };
 }
 
@@ -418,28 +435,36 @@ async function listarPresencas(edicaoId, atividadeId) {
   return { atividade: { ...resto, janela: janelaAtividade(atividade) }, inscricoes };
 }
 
-// Vale para qualquer pessoa: sem inscrição, cria pela regra de vagas (sem
-// vaga fica na lista de espera); inscrita em espera, continua em espera — só a
-// presença é validada. Também credencia no evento.
+// Presença registrada pela equipe (busca ou crachá), já sem presença antes:
+// sem inscrição, cria pela regra de vagas (sem vaga fica na lista de espera);
+// inscrita em espera, continua em espera — só a presença é validada. Também
+// credencia no evento.
+async function marcarPresencaPelaEquipe(tx, atividade, usuarioId, inscricaoAtual, { origem, autorId }) {
+  let inscricao = inscricaoAtual;
+  if (!inscricao) {
+    const status = await inscricoesService.statusParaNovaInscricao(tx, atividade);
+    inscricao = await tx.inscricaoAtividade.create({ data: { usuarioId, atividadeId: atividade.id, status } });
+  }
+  const atualizada = await tx.inscricaoAtividade.update({
+    where: { id: inscricao.id },
+    data: dadosPresenca(origem, autorId),
+    include: INCLUDE_INSCRICAO_ATIVIDADE,
+  });
+  await garantirCredenciamento(tx, usuarioId, atividade.edicaoId, { origem, autorId });
+  return { inscricao: atualizada, inscritaAgora: !inscricaoAtual };
+}
+
+// Vale para qualquer pessoa (ver marcarPresencaPelaEquipe).
 async function registrarPresencaPelaEquipe(edicaoId, atividadeId, usuarioId, autorId) {
   const atividade = await buscarAtividade(edicaoId, atividadeId);
   await buscarUsuario(usuarioId);
 
   return prisma.$transaction(async (tx) => {
-    let inscricao = await tx.inscricaoAtividade.findUnique({ where: { usuarioId_atividadeId: { usuarioId, atividadeId } } });
+    const inscricao = await tx.inscricaoAtividade.findUnique({ where: { usuarioId_atividadeId: { usuarioId, atividadeId } } });
     if (inscricao?.presencaEm) {
       return { inscricao: await tx.inscricaoAtividade.findUnique({ where: { id: inscricao.id }, include: INCLUDE_INSCRICAO_ATIVIDADE }), mensagem: "A presença dessa pessoa já estava registrada." };
     }
-    if (!inscricao) {
-      const status = await inscricoesService.statusParaNovaInscricao(tx, atividade);
-      inscricao = await tx.inscricaoAtividade.create({ data: { usuarioId, atividadeId, status } });
-    }
-    const atualizada = await tx.inscricaoAtividade.update({
-      where: { id: inscricao.id },
-      data: dadosPresenca("EQUIPE", autorId),
-      include: INCLUDE_INSCRICAO_ATIVIDADE,
-    });
-    await garantirCredenciamento(tx, usuarioId, edicaoId, { origem: "EQUIPE", autorId });
+    const { inscricao: atualizada } = await marcarPresencaPelaEquipe(tx, atividade, usuarioId, inscricao, { origem: "EQUIPE", autorId });
     return { inscricao: atualizada, mensagem: "Presença registrada." };
   });
 }
@@ -489,6 +514,134 @@ async function qrTodasAtividades(edicaoId) {
   return lista;
 }
 
+// ---------------------------------------------------------------------------
+// Crachá virtual
+// ---------------------------------------------------------------------------
+
+const CAMPOS_PESSOA_CRACHA = { id: true, nome: true, foto: true, cpf: true, documentoEstrangeiro: true, pais: true, ativo: true };
+
+// Só o suficiente para a equipe conferir com o documento na mão.
+function documentoMascarado(usuario) {
+  if (usuario.cpf && /^\d{11}$/.test(usuario.cpf)) {
+    return `CPF ***.${usuario.cpf.slice(3, 6)}.${usuario.cpf.slice(6, 9)}-**`;
+  }
+  if (usuario.documentoEstrangeiro) {
+    return `Documento ${usuario.pais ? `(${usuario.pais}) ` : ""}···${usuario.documentoEstrangeiro.slice(-4)}`;
+  }
+  return null;
+}
+
+// Usuario.foto é o path no bucket privado; a URL assinada sai a cada leitura.
+async function projetarPessoa(usuario) {
+  return {
+    id: usuario.id,
+    nome: usuario.nome,
+    foto: await storageService.gerarUrlAssinada(usuario.foto),
+    documento: documentoMascarado(usuario),
+  };
+}
+
+async function meuCracha(usuarioId, edicao, { novo = false } = {}) {
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId }, select: { ...CAMPOS_PESSOA_CRACHA, tokenCracha: true } });
+  if (!usuario) throw new ErroHttp(404, "Conta não encontrada.");
+
+  let token = usuario.tokenCracha;
+  if (!token || novo) {
+    token = gerarToken("c", 18);
+    await prisma.usuario.update({ where: { id: usuarioId }, data: { tokenCracha: token } });
+  }
+
+  const inscricao = edicao
+    ? await prisma.inscricaoEdicao.findUnique({
+        where: { usuarioId_edicaoId: { usuarioId, edicaoId: edicao.id } },
+        select: { credenciadoEm: true },
+      })
+    : null;
+
+  return {
+    token,
+    pessoa: await projetarPessoa(usuario),
+    edicao: edicao ? { id: edicao.id, nome: edicao.nome } : null,
+    credenciadoEm: inscricao?.credenciadoEm || null,
+  };
+}
+
+async function resolverPessoa({ token, usuarioId }) {
+  if (token !== undefined) {
+    const invalido = new ErroHttp(404, "Crachá inválido ou substituído por um novo. Peça para a pessoa abrir o crachá de novo ou busque pelo nome.");
+    if (typeof token !== "string" || !REGEX_TOKEN_CRACHA.test(token)) {
+      if (typeof token === "string" && REGEX_TOKEN.test(token)) {
+        throw new ErroHttp(400, "Este é o QR code de credenciamento afixado no evento, não o crachá de um participante.");
+      }
+      throw invalido;
+    }
+    const usuario = await prisma.usuario.findUnique({ where: { tokenCracha: token }, select: CAMPOS_PESSOA_CRACHA });
+    if (!usuario || !usuario.ativo) throw invalido;
+    return usuario;
+  }
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId }, select: CAMPOS_PESSOA_CRACHA });
+  if (!usuario || !usuario.ativo) throw new ErroHttp(404, "Participante não encontrado.");
+  return usuario;
+}
+
+// Leitura no leitor da equipe: pelo crachá (`token`, origem CRACHA) ou pela
+// busca de reserva (`usuarioId`, origem EQUIPE). Sem `atividadeId`, credencia
+// no evento; com, registra a presença — na hora para inscrito confirmado,
+// e para quem está na lista de espera ou nem se inscreveu só depois de a
+// equipe confirmar (`confirmar`), para não ocupar vaga sem querer.
+// `resultado`: REGISTRADO | JA_REGISTRADO | CONFIRMAR.
+async function lerNaEquipe(edicaoId, { token, usuarioId, atividadeId, confirmar = false }, autorId) {
+  const origem = token !== undefined ? "CRACHA" : "EQUIPE";
+  const usuario = await resolverPessoa({ token, usuarioId });
+  const pessoa = await projetarPessoa(usuario);
+
+  if (!atividadeId) {
+    await buscarEdicao(edicaoId);
+    const { inscricao, jaEstava, inscritaAgora } = await prisma.$transaction((tx) =>
+      garantirCredenciamento(tx, usuario.id, edicaoId, { origem, autorId })
+    );
+    if (jaEstava) {
+      return { resultado: "JA_REGISTRADO", pessoa, registradoEm: inscricao.credenciadoEm, mensagem: `${pessoa.nome} já estava credenciado(a).` };
+    }
+    return {
+      resultado: "REGISTRADO",
+      pessoa,
+      registradoEm: inscricao.credenciadoEm,
+      mensagem: inscritaAgora ? "Credenciado(a). Não tinha inscrição e foi inscrito(a) agora." : "Credenciado(a) no evento.",
+    };
+  }
+
+  const atividade = await buscarAtividade(edicaoId, atividadeId);
+  return prisma.$transaction(async (tx) => {
+    const inscricao = await tx.inscricaoAtividade.findUnique({
+      where: { usuarioId_atividadeId: { usuarioId: usuario.id, atividadeId } },
+    });
+    if (inscricao?.presencaEm) {
+      return { resultado: "JA_REGISTRADO", pessoa, registradoEm: inscricao.presencaEm, mensagem: `A presença de ${pessoa.nome} já estava registrada.` };
+    }
+    if (inscricao?.status !== "CONFIRMADA" && !confirmar) {
+      const vaga = inscricao ? null : await temVaga(tx, atividade);
+      return {
+        resultado: "CONFIRMAR",
+        pessoa,
+        motivo: inscricao ? "LISTA_ESPERA" : "SEM_INSCRICAO",
+        mensagem: inscricao
+          ? "Está na lista de espera desta atividade. Registrar a presença mesmo assim? A situação na lista não muda."
+          : vaga
+            ? "Não está inscrito(a) nesta atividade. Registrar a presença inscreve agora (há vaga)."
+            : "Não está inscrito(a) e não há mais vagas. Registrar a presença inscreve na lista de espera, com a presença validada.",
+      };
+    }
+    const { inscricao: atualizada, inscritaAgora } = await marcarPresencaPelaEquipe(tx, atividade, usuario.id, inscricao, { origem, autorId });
+    return {
+      resultado: "REGISTRADO",
+      pessoa,
+      registradoEm: atualizada.presencaEm,
+      mensagem: inscritaAgora ? "Inscrito(a) agora e presença registrada." : "Presença registrada.",
+    };
+  });
+}
+
 module.exports = {
   previa,
   credenciarEvento,
@@ -504,6 +657,8 @@ module.exports = {
   qrEvento,
   qrAtividade,
   qrTodasAtividades,
+  meuCracha,
+  lerNaEquipe,
   // exportados para teste
   janelaEvento,
   janelaAtividade,

@@ -6,6 +6,9 @@ const router = Router({ mergeParams: true });
 
 router.use(autorizarSecao("CREDENCIAMENTO"));
 
+// Leitor de crachás (e busca de reserva): evento ou presença numa atividade
+router.post("/leitura", controller.ler);
+
 // Credenciamento geral (uma vez no evento)
 router.get("/", controller.listar);
 router.get("/qr", controller.qrEvento);

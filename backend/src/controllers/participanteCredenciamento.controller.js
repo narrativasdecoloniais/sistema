@@ -17,6 +17,18 @@ const minhaSituacao = asyncHandler(async (req, res) => {
   return res.json({ edicao: { id: edicao.id, nome: edicao.nome }, ...situacao });
 });
 
+// Crachá virtual: QR code próprio que a equipe lê para credenciar.
+const meuCracha = asyncHandler(async (req, res) => {
+  const edicao = await edicoesService.buscarEdicaoAtual();
+  return res.json(await credenciamentoService.meuCracha(req.usuario.id, edicao));
+});
+
+const novoCracha = asyncHandler(async (req, res) => {
+  const edicao = await edicoesService.buscarEdicaoAtual();
+  const cracha = await credenciamentoService.meuCracha(req.usuario.id, edicao, { novo: true });
+  return res.json({ ...cracha, mensagem: "Novo crachá gerado. O anterior deixou de funcionar." });
+});
+
 const previa = asyncHandler(async (req, res) => {
   const dados = await credenciamentoService.previa(req.usuario.id, req.params.token);
   return res.json(dados);
@@ -33,4 +45,4 @@ const registrarPresenca = asyncHandler(async (req, res) => {
   return res.json(resultado);
 });
 
-module.exports = { minhaSituacao, previa, credenciarEvento, registrarPresenca };
+module.exports = { minhaSituacao, meuCracha, novoCracha, previa, credenciarEvento, registrarPresenca };

@@ -1,5 +1,23 @@
+const { z } = require("zod");
 const asyncHandler = require("../utils/asyncHandler");
 const credenciamentoService = require("../services/credenciamento.service");
+
+// Leitor da equipe: crachá (token) ou busca de reserva (usuarioId), nunca os dois.
+const leituraSchema = z
+  .object({
+    token: z.string().trim().min(1).max(100).optional(),
+    usuarioId: z.string().uuid().optional(),
+    atividadeId: z.string().uuid().optional(),
+    confirmar: z.boolean().optional(),
+  })
+  .refine((dados) => Boolean(dados.token) !== Boolean(dados.usuarioId), {
+    message: "Informe o crachá lido ou o participante.",
+  });
+
+const ler = asyncHandler(async (req, res) => {
+  const dados = leituraSchema.parse(req.body || {});
+  return res.json(await credenciamentoService.lerNaEquipe(req.params.edicaoId, dados, req.usuario.id));
+});
 
 const listar = asyncHandler(async (req, res) => {
   return res.json(await credenciamentoService.listarCredenciamento(req.params.edicaoId));
@@ -61,6 +79,7 @@ const removerPresenca = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  ler,
   listar,
   credenciar,
   desfazer,

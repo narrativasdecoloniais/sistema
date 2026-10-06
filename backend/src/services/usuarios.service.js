@@ -341,6 +341,7 @@ function operacoesAnonimizacao(id, cliente = prisma) {
         cpf: `anon-${id}`,
         documentoEstrangeiro: null,
         pais: null,
+        tokenCracha: null,
         instituicao: "",
         papeis: [],
         acessoCompleto: false,

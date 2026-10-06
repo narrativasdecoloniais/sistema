@@ -1,7 +1,7 @@
 const prisma = require("../config/prisma");
 const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
-const { filtroSubmissoesAnais } = require("../utils/criterioAnais");
+const { filtroSubmissoesAnais, CRITERIO_PADRAO, SELECT_CRITERIO_ANAIS } = require("../utils/criterioAnais");
 const { gerarSlug } = require("../utils/slug");
 const {
   CONFIG_RESUMO,
@@ -73,6 +73,7 @@ function configuracaoPadrao(edicao) {
     apresentacao: null,
     fichaCatalografica: null,
     gruposConteudoIds: [],
+    ...CRITERIO_PADRAO,
     publicadoEm: null,
     pdfUrl: null,
     pdfGeradoEm: null,
@@ -150,8 +151,10 @@ function compararArtigos(a, b) {
   );
 }
 
-function whereArtigosVisiveis(edicaoId) {
-  return { edicaoId, ocultoEm: null, submissao: filtroSubmissoesAnais(edicaoId) };
+// anais: AnaisEdicao da edição (ou só os campos do critério) — o critério de
+// quais trabalhos entram é configurado por edição.
+function whereArtigosVisiveis(edicaoId, anais) {
+  return { edicaoId, ocultoEm: null, submissao: filtroSubmissoesAnais(edicaoId, anais) };
 }
 
 // ---------------------------------------------------------------------------
@@ -160,9 +163,9 @@ function whereArtigosVisiveis(edicaoId) {
 
 // Cria o ArtigoAnais (com slug fixo) de toda submissão que entrou no critério
 // e ainda não tem. Nunca apaga: quem sai do critério só some das consultas.
-async function sincronizarArtigos(edicaoId) {
+async function sincronizarArtigos(edicaoId, anais) {
   const novas = await prisma.submissao.findMany({
-    where: { edicaoId, ...filtroSubmissoesAnais(edicaoId), artigoAnais: null },
+    where: { edicaoId, ...filtroSubmissoesAnais(edicaoId, anais), artigoAnais: null },
     select: { id: true, titulo: true },
     orderBy: { createdAt: "asc" },
   });
@@ -191,11 +194,13 @@ async function sincronizarArtigos(edicaoId) {
 
 async function obterPainel(edicaoId, { geracaoEmAndamento = null } = {}) {
   const edicao = await buscarEdicao(edicaoId);
-  await sincronizarArtigos(edicaoId);
+  await sincronizarArtigos(edicaoId, edicao.anais);
 
   const [publicados, ocultos, comentarios, comentariosOcultos, grupos] = await Promise.all([
-    prisma.artigoAnais.count({ where: whereArtigosVisiveis(edicaoId) }),
-    prisma.artigoAnais.count({ where: { edicaoId, ocultoEm: { not: null }, submissao: filtroSubmissoesAnais(edicaoId) } }),
+    prisma.artigoAnais.count({ where: whereArtigosVisiveis(edicaoId, edicao.anais) }),
+    prisma.artigoAnais.count({
+      where: { edicaoId, ocultoEm: { not: null }, submissao: filtroSubmissoesAnais(edicaoId, edicao.anais) },
+    }),
     prisma.comentarioAnais.count({ where: { artigoAnais: { edicaoId } } }),
     prisma.comentarioAnais.count({ where: { artigoAnais: { edicaoId }, ocultoEm: { not: null } } }),
     prisma.grupoConteudo.findMany({
@@ -251,8 +256,8 @@ async function definirPublicacao(edicaoId, publicar) {
     if (!edicao.slug) {
       throw new ErroHttp(409, "Defina o endereço (slug) da edição em Configurações do evento antes de publicar os Anais.");
     }
-    await sincronizarArtigos(edicaoId);
-    const total = await prisma.artigoAnais.count({ where: whereArtigosVisiveis(edicaoId) });
+    await sincronizarArtigos(edicaoId, edicao.anais);
+    const total = await prisma.artigoAnais.count({ where: whereArtigosVisiveis(edicaoId, edicao.anais) });
     if (!total) throw new ErroHttp(409, "Não há nenhum trabalho para publicar nos Anais.");
   }
 
@@ -264,10 +269,10 @@ async function definirPublicacao(edicaoId, publicar) {
 
 async function listarArtigosAdmin(edicaoId) {
   const edicao = await buscarEdicao(edicaoId);
-  await sincronizarArtigos(edicaoId);
+  await sincronizarArtigos(edicaoId, edicao.anais);
 
   const artigos = await prisma.artigoAnais.findMany({
-    where: { edicaoId, submissao: filtroSubmissoesAnais(edicaoId) },
+    where: { edicaoId, submissao: filtroSubmissoesAnais(edicaoId, edicao.anais) },
     select: {
       id: true,
       slug: true,
@@ -389,18 +394,31 @@ async function listarEdicoesComAnais() {
       slug: true,
       dataInicio: true,
       cidade: true,
-      anais: { select: { titulo: true, subtitulo: true, issn: true, isbn: true, pdfUrl: true, publicadoEm: true } },
+      anais: {
+        select: {
+          titulo: true,
+          subtitulo: true,
+          issn: true,
+          isbn: true,
+          pdfUrl: true,
+          publicadoEm: true,
+          ...SELECT_CRITERIO_ANAIS,
+        },
+      },
     },
     orderBy: { numero: "desc" },
   });
   const contagens = await prisma.artigoAnais.groupBy({
     by: ["edicaoId"],
-    // O critério depende da edição (credenciamento), então um OR por edição.
-    where: { OR: edicoes.map((edicao) => whereArtigosVisiveis(edicao.id)) },
+    // O critério é configurado por edição, então um OR por edição.
+    where: { OR: edicoes.map((edicao) => whereArtigosVisiveis(edicao.id, edicao.anais)) },
     _count: { _all: true },
   });
   const totalPorEdicao = Object.fromEntries(contagens.map((item) => [item.edicaoId, item._count._all]));
-  return edicoes.map(({ id, ...edicao }) => ({ ...edicao, totalArtigos: totalPorEdicao[id] || 0 }));
+  return edicoes.map(({ id, anais, ...edicao }) => {
+    const { decisoesPublicadas, exigirCorrecaoConcluida, credenciamentoExigido, ...dadosAnais } = anais;
+    return { ...edicao, anais: dadosAnais, totalArtigos: totalPorEdicao[id] || 0 };
+  });
 }
 
 const SELECT_SUBMISSAO_LISTA = {
@@ -412,9 +430,9 @@ const SELECT_SUBMISSAO_LISTA = {
   areaSubmissao: { select: { id: true, titulo: true, slug: true, ordem: true } },
 };
 
-async function listarArtigosVisiveis(edicaoId, selectSubmissao = SELECT_SUBMISSAO_LISTA) {
+async function listarArtigosVisiveis(edicaoId, anais, selectSubmissao = SELECT_SUBMISSAO_LISTA) {
   const artigos = await prisma.artigoAnais.findMany({
-    where: whereArtigosVisiveis(edicaoId),
+    where: whereArtigosVisiveis(edicaoId, anais),
     select: {
       id: true,
       slug: true,
@@ -445,7 +463,7 @@ function artigoResumido(artigo) {
 async function buscarAnaisPublicos(edicaoSlug) {
   const edicao = await buscarEdicaoPublicada(edicaoSlug);
   if (!edicao) return null;
-  const artigos = await listarArtigosVisiveis(edicao.id);
+  const artigos = await listarArtigosVisiveis(edicao.id, edicao.anais);
   const { anais, ...dadosEdicao } = edicao;
   return {
     edicao: dadosEdicao,
@@ -459,7 +477,7 @@ async function buscarArtigoPublico(edicaoSlug, artigoSlug) {
   if (!edicao) return null;
 
   const artigo = await prisma.artigoAnais.findFirst({
-    where: { ...whereArtigosVisiveis(edicao.id), slug: artigoSlug },
+    where: { ...whereArtigosVisiveis(edicao.id, edicao.anais), slug: artigoSlug },
     select: {
       id: true,
       slug: true,
@@ -481,7 +499,7 @@ async function buscarArtigoPublico(edicaoSlug, artigoSlug) {
   if (!artigo) return null;
 
   // Anterior/próximo e relacionados (mesma área) pela ordem dos Anais.
-  const todos = await listarArtigosVisiveis(edicao.id, {
+  const todos = await listarArtigosVisiveis(edicao.id, edicao.anais, {
     id: true,
     titulo: true,
     autores: { select: { nome: true }, orderBy: { ordem: "asc" } },
@@ -581,12 +599,12 @@ async function buscarPreviaArtigo(usuarioId, submissaoId) {
 async function listarSitemap() {
   const edicoes = await prisma.edicao.findMany({
     where: { slug: { not: null }, anais: { publicadoEm: { not: null } } },
-    select: { id: true, slug: true, anais: { select: { updatedAt: true } } },
+    select: { id: true, slug: true, anais: { select: { updatedAt: true, ...SELECT_CRITERIO_ANAIS } } },
   });
   const resultado = [];
   for (const edicao of edicoes) {
     const artigos = await prisma.artigoAnais.findMany({
-      where: whereArtigosVisiveis(edicao.id),
+      where: whereArtigosVisiveis(edicao.id, edicao.anais),
       select: { slug: true, submissao: { select: { updatedAt: true } } },
     });
     resultado.push({
@@ -601,13 +619,16 @@ async function listarSitemap() {
 // Artigo visível (Anais publicados, não oculto, no critério) — base das
 // rotas públicas por id (comentários, contadores).
 async function buscarArtigoVisivelPorId(artigoId) {
-  // O critério depende da edição do artigo (credenciamento dos autores).
-  const registro = await prisma.artigoAnais.findUnique({ where: { id: artigoId }, select: { edicaoId: true } });
+  // O critério é o da edição do artigo.
+  const registro = await prisma.artigoAnais.findUnique({
+    where: { id: artigoId },
+    select: { edicaoId: true, edicao: { select: { anais: { select: SELECT_CRITERIO_ANAIS } } } },
+  });
   if (!registro) throw new ErroHttp(404, "Trabalho não encontrado nos Anais.");
 
   const artigo = await prisma.artigoAnais.findFirst({
     where: {
-      ...whereArtigosVisiveis(registro.edicaoId),
+      ...whereArtigosVisiveis(registro.edicaoId, registro.edicao.anais),
       id: artigoId,
       edicao: { anais: { publicadoEm: { not: null } } },
     },

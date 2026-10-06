@@ -1,5 +1,6 @@
 const { z } = require("zod");
 const { normalizarIssn, normalizarIsbn } = require("../utils/validarIssnIsbn");
+const { DECISOES_PUBLICAVEIS, CREDENCIAMENTOS_ANAIS } = require("../utils/criterioAnais");
 
 // Espelhado em frontend/lib/validacao.js (anaisConfiguracaoSchema) — campo
 // novo aqui precisa ir pra lá também.
@@ -56,6 +57,13 @@ const anaisConfiguracaoSchema = z.object({
   apresentacao: z.string().max(300000, "A apresentação está grande demais").nullish(),
   fichaCatalografica: textoOpcional(4000, "Use no máximo 4000 caracteres"),
   gruposConteudoIds: z.array(z.string().uuid()).max(50).default([]),
+  // Critério dos trabalhos publicados (utils/criterioAnais.js).
+  decisoesPublicadas: z
+    .array(z.enum(DECISOES_PUBLICAVEIS, { errorMap: () => ({ message: "Status inválido" }) }))
+    .min(1, "Escolha pelo menos um status")
+    .transform((decisoes) => [...new Set(decisoes)]),
+  exigirCorrecaoConcluida: z.boolean(),
+  credenciamentoExigido: z.enum(CREDENCIAMENTOS_ANAIS, { errorMap: () => ({ message: "Opção inválida" }) }),
 });
 
 const publicacaoSchema = z.object({ publicado: z.boolean() });
