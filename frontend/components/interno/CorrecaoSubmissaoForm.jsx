@@ -165,7 +165,7 @@ function Formulario({ submissao }) {
             Cancelar
           </Botao>
           <Botao type="submit" carregando={enviando}>
-            {comRessalvas ? "Enviar correção" : "Confirmar formatação"}
+            {comRessalvas ? "Enviar correção" : "Confirmar Revisão"}
           </Botao>
         </div>
       </form>

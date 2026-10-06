@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import Logo, { LOGO_DURACAO_ENTRADA } from "@/components/publico/Logo";
 import Carimbo from "@/components/graficos/Carimbo";
@@ -356,8 +357,22 @@ export default function PaginaInicialConteudo({
     () => agruparAtividadesPorDia(atividades),
     [atividades],
   );
-  const [diaProgramacaoSelecionado, setDiaProgramacaoSelecionado] =
-    useState(null);
+  // O dia escolhido vai pra URL (?dia=AAAA-MM-DD) pra que o "voltar" do
+  // navegador, vindo da página de uma atividade, reabra a mesma aba. Lido via
+  // useSearchParams (e não pela prop searchParams do page.jsx) porque o voltar
+  // reaproveita o render em cache do Next, feito com a URL antiga; como a página
+  // é dinâmica, o 1º render no servidor já sai no dia certo, sem piscar.
+  const searchParams = useSearchParams();
+  const [diaProgramacaoSelecionado, setDiaProgramacaoSelecionado] = useState(
+    () => searchParams.get("dia"),
+  );
+  function selecionarDiaProgramacao(chave) {
+    setDiaProgramacaoSelecionado(chave);
+    const url = new URL(window.location.href);
+    url.searchParams.set("dia", chave);
+    // replaceState (não push): trocar de aba não deve virar entrada no histórico.
+    window.history.replaceState(null, "", url);
+  }
   const chaveDiaProgramacaoAtiva =
     diaProgramacaoSelecionado &&
     diasProgramacao.some((dia) => dia.chave === diaProgramacaoSelecionado)
@@ -799,7 +814,7 @@ export default function PaginaInicialConteudo({
                 <NavegacaoDias
                   dias={diasProgramacao}
                   chaveAtiva={chaveDiaProgramacaoAtiva}
-                  onSelecionar={setDiaProgramacaoSelecionado}
+                  onSelecionar={selecionarDiaProgramacao}
                   idBase={idDiasProgramacao}
                 />
               ) : (
