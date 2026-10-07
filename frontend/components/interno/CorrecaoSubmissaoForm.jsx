@@ -134,6 +134,13 @@ function Formulario({ submissao }) {
         </p>
       ) : null}
 
+      {!comRessalvas && resultado.statusCorrecao === "CONCLUIDA" && (
+        <p className={styles.textoApoio}>
+          Você já revisou a formatação deste trabalho. Pode ajustar de novo até{" "}
+          {formatarPrazoCorrecao(resultado.prazoCorrecao)}, enquanto os Anais não forem publicados.
+        </p>
+      )}
+
       {!comRessalvas && (
         <p className={styles.textoApoio}>
           Confira se o resumo e as referências estão bem formatados para a publicação — parágrafos, negrito, itálico e

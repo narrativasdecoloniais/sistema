@@ -7,10 +7,19 @@ import { Plus } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import { paraNumeroRomano } from "@/lib/romanos";
 import { listarMinhasSubmissoes } from "@/lib/participanteSubmissoes";
-import { listarModalidadesSubmissaoPublicas, prazoSubmissaoAberto } from "@/lib/publico";
-import { formatarPrazoCorrecao, rotuloDecisaoParticipante } from "@/lib/avaliacoes";
+import {
+  listarModalidadesSubmissaoPublicas,
+  prazoSubmissaoAberto,
+} from "@/lib/publico";
+import {
+  formatarPrazoCorrecao,
+  rotuloDecisaoParticipante,
+} from "@/lib/avaliacoes";
 import { detalheAtividade, linkAtividade } from "@/lib/apresentacao";
-import { ROTULOS_SITUACAO_COAUTOR, formatarDataHoraCurta } from "@/lib/coautores";
+import {
+  ROTULOS_SITUACAO_COAUTOR,
+  formatarDataHoraCurta,
+} from "@/lib/coautores";
 import { apiClient } from "@/lib/apiClient";
 import { useToast } from "./ToastProvider";
 import styles from "./SubmissoesParticipantePainel.module.scss";
@@ -58,7 +67,7 @@ export default function SubmissoesParticipantePainel() {
   // escolha das modalidades encerradas.
   const carregandoModalidades = modalidades === null;
   const temModalidadeAberta = (modalidades || []).some((modalidade) =>
-    prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim)
+    prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim),
   );
   const novaSubmissaoBloqueada = !carregandoModalidades && !temModalidadeAberta;
 
@@ -67,16 +76,24 @@ export default function SubmissoesParticipantePainel() {
       <div className={styles.cabecalho}>
         <div>
           <h1 className={styles.titulo}>Minhas submissões</h1>
-          <p className={styles.descricao}>Trabalhos que você enviou, como autor principal ou coautor.</p>
+          <p className={styles.descricao}>
+            Trabalhos que você enviou, como autor principal ou coautor.
+          </p>
           {novaSubmissaoBloqueada && (
-            <p className={styles.avisoPrazo}>Nenhuma modalidade de submissão está com prazo aberto no momento.</p>
+            <p className={styles.avisoPrazo}>
+              Nenhuma modalidade de submissão está com prazo aberto no momento.
+            </p>
           )}
         </div>
         <Botao
           type="button"
           onClick={() => router.push("/participante/submissoes/nova")}
           disabled={carregandoModalidades || novaSubmissaoBloqueada}
-          title={novaSubmissaoBloqueada ? "Nenhuma modalidade de submissão está com prazo aberto no momento." : undefined}
+          title={
+            novaSubmissaoBloqueada
+              ? "Nenhuma modalidade de submissão está com prazo aberto no momento."
+              : undefined
+          }
         >
           <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
           Nova submissão
@@ -90,7 +107,9 @@ export default function SubmissoesParticipantePainel() {
       ) : submissoes.length === 0 ? (
         <div className={styles.vazio}>
           <p>Você ainda não enviou nenhum trabalho.</p>
-          <p className={styles.vazioApoio}>Use o botão acima para fazer sua primeira submissão.</p>
+          <p className={styles.vazioApoio}>
+            Use o botão acima para fazer sua primeira submissão.
+          </p>
         </div>
       ) : (
         <div className={styles.grade}>
@@ -98,41 +117,65 @@ export default function SubmissoesParticipantePainel() {
             <article key={submissao.id} className={styles.cartao}>
               <div className={styles.cartaoCabecalho}>
                 <h3 className={styles.cartaoTitulo}>{submissao.titulo}</h3>
-                <span className={styles.cartaoEdicao}>{paraNumeroRomano(submissao.edicao.numero)}</span>
+                <span className={styles.cartaoEdicao}>
+                  {paraNumeroRomano(submissao.edicao.numero)}
+                </span>
               </div>
               <p className={styles.cartaoMeta}>
                 {submissao.modalidadeSubmissao.nome}
-                {submissao.areaSubmissao?.titulo ? ` · ${submissao.areaSubmissao.titulo}` : ""}
+                {submissao.areaSubmissao?.titulo
+                  ? ` · ${submissao.areaSubmissao.titulo}`
+                  : ""}
               </p>
               <p className={styles.cartaoAutores}>
                 {submissao.autores.map((autor) => autor.nome).join(", ")}
               </p>
-              {submissao.ehAutorPrincipal && submissao.autores.some((autor) => autor.cadastro) && (
-                <CoautoresSubmissao submissao={submissao} setSubmissoes={setSubmissoes} />
-              )}
+              {submissao.ehAutorPrincipal &&
+                submissao.autores.some((autor) => autor.cadastro) && (
+                  <CoautoresSubmissao
+                    submissao={submissao}
+                    setSubmissoes={setSubmissoes}
+                  />
+                )}
               <div className={styles.cartaoRodape}>
-                <p className={styles.cartaoData}>Enviado em {formatarData(submissao.createdAt)}</p>
-                <Link href={`/participante/submissoes/${submissao.id}/previa`} className={styles.linkVerTrabalho}>
+                <p className={styles.cartaoData}>
+                  Enviado em {formatarData(submissao.createdAt)}
+                </p>
+                <Link
+                  href={`/participante/submissoes/${submissao.id}/previa`}
+                  className={styles.linkVerTrabalho}
+                >
                   Ver trabalho
                 </Link>
               </div>
               {submissao.resultado && (
-                <ResultadoSubmissao id={submissao.id} resultado={submissao.resultado} ehAutorPrincipal={submissao.ehAutorPrincipal} />
+                <ResultadoSubmissao
+                  id={submissao.id}
+                  resultado={submissao.resultado}
+                  ehAutorPrincipal={submissao.ehAutorPrincipal}
+                />
               )}
               {submissao.apresentacao && (
                 <div className={styles.resultado}>
                   <p className={styles.resultadoDecisao}>
                     <span className={styles.resultadoRotulo}>Apresentação</span>
                     <Link
-                      href={linkAtividade(submissao.edicao, submissao.apresentacao.atividade)}
+                      href={linkAtividade(
+                        submissao.edicao,
+                        submissao.apresentacao.atividade,
+                      )}
                       className={styles.linkAtividade}
                     >
                       {submissao.apresentacao.atividade.nome}
                     </Link>
                   </p>
-                  <p className={styles.resultadoTexto}>{detalheAtividade(submissao.apresentacao.atividade)}</p>
+                  <p className={styles.resultadoTexto}>
+                    {detalheAtividade(submissao.apresentacao.atividade)}
+                  </p>
                   {submissao.apresentacao.ordem && (
-                    <p className={styles.resultadoTexto}>Ordem de apresentação: {submissao.apresentacao.ordem}º</p>
+                    <p className={styles.resultadoTexto}>
+                      Ordem de apresentação: {submissao.apresentacao.ordem}º
+                    </p>
                   )}
                 </div>
               )}
@@ -154,7 +197,9 @@ function CoautoresSubmissao({ submissao, setSubmissoes }) {
   async function reenviar(autor) {
     setReenviando(autor.id);
     try {
-      const resposta = await apiClient.post(`/participante/submissoes/${submissao.id}/autores/${autor.id}/convite`);
+      const resposta = await apiClient.post(
+        `/participante/submissoes/${submissao.id}/autores/${autor.id}/convite`,
+      );
       notificar(resposta.mensagem);
       setSubmissoes((atuais) =>
         atuais.map((item) =>
@@ -163,10 +208,15 @@ function CoautoresSubmissao({ submissao, setSubmissoes }) {
             : {
                 ...item,
                 autores: item.autores.map((outro) =>
-                  outro.id === autor.id ? { ...outro, cadastro: { ...outro.cadastro, situacao: "NA_FILA" } } : outro
+                  outro.id === autor.id
+                    ? {
+                        ...outro,
+                        cadastro: { ...outro.cadastro, situacao: "NA_FILA" },
+                      }
+                    : outro,
                 ),
-              }
-        )
+              },
+        ),
       );
     } catch (erro) {
       notificar(erro.message, "erro");
@@ -182,9 +232,17 @@ function CoautoresSubmissao({ submissao, setSubmissoes }) {
         return (
           <li key={autor.id} className={styles.coautor}>
             <span>{autor.nome}</span>
-            <span className={situacao === "CADASTRADO" ? styles.coautorCadastrado : styles.coautorSituacao}>
+            <span
+              className={
+                situacao === "CADASTRADO"
+                  ? styles.coautorCadastrado
+                  : styles.coautorSituacao
+              }
+            >
               {ROTULOS_SITUACAO_COAUTOR[situacao]}
-              {situacao === "CONVITE_ENVIADO" && enviadoEm ? ` em ${formatarDataHoraCurta(enviadoEm)}` : ""}
+              {situacao === "CONVITE_ENVIADO" && enviadoEm
+                ? ` em ${formatarDataHoraCurta(enviadoEm)}`
+                : ""}
             </span>
             {situacao !== "CADASTRADO" && situacao !== "NA_FILA" && (
               <button
@@ -193,7 +251,11 @@ function CoautoresSubmissao({ submissao, setSubmissoes }) {
                 onClick={() => reenviar(autor)}
                 disabled={reenviando === autor.id}
               >
-                {reenviando === autor.id ? "Enviando..." : enviadoEm ? "Reenviar convite" : "Enviar convite"}
+                {reenviando === autor.id
+                  ? "Enviando..."
+                  : enviadoEm
+                    ? "Reenviar convite"
+                    : "Enviar convite"}
               </button>
             )}
           </li>
@@ -204,9 +266,19 @@ function CoautoresSubmissao({ submissao, setSubmissoes }) {
 }
 
 const ACAO_CORRECAO = {
-  APROVADO_COM_RESSALVAS: { botao: "Corrigir trabalho", verbo: "enviar a versão corrigida" },
-  APROVADO_FORMATACAO: { botao: "Revisar", verbo: "revisar a formatação do resumo e das referências" },
+  APROVADO_COM_RESSALVAS: {
+    botao: "Corrigir trabalho",
+    verbo: "enviar a versão corrigida",
+  },
+  APROVADO_FORMATACAO: {
+    botao: "Revisar",
+    verbo: "revisar a formatação do resumo e das referências",
+  },
 };
+
+// Formatação já revisada continua editável dentro do prazo, até os Anais
+// saírem (podeCorrigir vem da API — utils/prazoCorrecao.js).
+const ACAO_REVISAR_DE_NOVO = "Editar revisão";
 
 // Só chega preenchido depois que a organização divulga o resultado (a API
 // omite a decisão antes disso).
@@ -215,12 +287,22 @@ function ResultadoSubmissao({ id, resultado, ehAutorPrincipal }) {
   const prazo = formatarPrazoCorrecao(resultado.prazoCorrecao);
   const pendente = ["PENDENTE", "DEVOLVIDA"].includes(resultado.statusCorrecao);
 
+  const revisarDeNovo =
+    resultado.statusCorrecao === "CONCLUIDA" && resultado.podeCorrigir;
+
   let situacao = null;
   if (acao) {
-    if (resultado.statusCorrecao === "CONCLUIDA") situacao = "Correção concluída.";
-    else if (resultado.statusCorrecao === "ENVIADA") situacao = "Correção enviada — aguardando conferência da organização.";
-    else if (!resultado.prazoAberto) situacao = `O prazo de correção terminou em ${prazo}. Fale com a organização.`;
-    else if (ehAutorPrincipal) situacao = `Você precisa ${acao.verbo} até ${prazo}.`;
+    // podeCorrigir só vem para o autor principal.
+    if (revisarDeNovo)
+      situacao = `Você ainda pode ajustar até ${prazo}, enquanto os Anais não forem publicados.`;
+    else if (resultado.statusCorrecao === "CONCLUIDA")
+      situacao = "Correção concluída.";
+    else if (resultado.statusCorrecao === "ENVIADA")
+      situacao = "Correção enviada — aguardando conferência da organização.";
+    else if (!resultado.prazoAberto)
+      situacao = `O prazo de correção terminou em ${prazo}. Fale com a organização.`;
+    else if (ehAutorPrincipal)
+      situacao = `Você precisa ${acao.verbo} até ${prazo}.`;
     else situacao = `O autor principal precisa ${acao.verbo} até ${prazo}.`;
   }
 
@@ -230,16 +312,32 @@ function ResultadoSubmissao({ id, resultado, ehAutorPrincipal }) {
         <span className={styles.resultadoRotulo}>Resultado</span>
         {rotuloDecisaoParticipante(resultado.decisao, resultado.statusCorrecao)}
       </p>
-      {resultado.observacao && <p className={styles.resultadoTexto}>{resultado.observacao}</p>}
-      {resultado.statusCorrecao === "DEVOLVIDA" && resultado.motivoDevolucao && (
-        <p className={styles.resultadoTexto}>
-          <strong>Correção devolvida:</strong> {resultado.motivoDevolucao}
+      {resultado.observacao && (
+        <p className={styles.resultadoTexto}>{resultado.observacao}</p>
+      )}
+      {resultado.statusCorrecao === "DEVOLVIDA" &&
+        resultado.motivoDevolucao && (
+          <p className={styles.resultadoTexto}>
+            <strong>Correção devolvida:</strong> {resultado.motivoDevolucao}
+          </p>
+        )}
+      {situacao && (
+        <p
+          className={
+            pendente && resultado.prazoAberto
+              ? styles.resultadoPendente
+              : styles.resultadoTexto
+          }
+        >
+          {situacao}
         </p>
       )}
-      {situacao && <p className={pendente && resultado.prazoAberto ? styles.resultadoPendente : styles.resultadoTexto}>{situacao}</p>}
       {resultado.podeCorrigir && acao && (
-        <Link href={`/participante/submissoes/${id}/correcao`} className={styles.resultadoAcao}>
-          {acao.botao}
+        <Link
+          href={`/participante/submissoes/${id}/correcao`}
+          className={styles.resultadoAcao}
+        >
+          {revisarDeNovo ? ACAO_REVISAR_DE_NOVO : acao.botao}
         </Link>
       )}
     </div>
