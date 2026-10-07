@@ -7,7 +7,7 @@ const sanitizarReferenciaBibliografica = require("../utils/sanitizarReferenciaBi
 const processarImagensEmbutidas = require("../utils/processarImagensEmbutidas");
 const prazoSubmissaoAberto = require("../utils/prazoSubmissaoAberto");
 const avaliacoesService = require("./avaliacoes.service");
-const { prazoCorrecaoAberto, formatarPrazoCorrecao } = require("../utils/prazoCorrecao");
+const { prazoCorrecaoAberto, formatarPrazoCorrecao, correcaoEditavel } = require("../utils/prazoCorrecao");
 
 const TIPO_TOKEN = "submissao";
 // Mais longo que o de inscrição (30m) — preencher resumo/referência e
@@ -110,12 +110,17 @@ function textoVisivel(html) {
 }
 
 // Correção pedida no resultado — só o autor principal, dentro do prazo, com
-// correção pendente ou devolvida. Guarda o texto anterior em SubmissaoVersao.
+// correção pendente ou devolvida, ou formatação já concluída enquanto os Anais
+// não saem (correcaoEditavel). Guarda o texto anterior em SubmissaoVersao — na
+// revisão de uma formatação concluída, não: a versão guardada continua sendo a
+// de antes da 1ª revisão, e a comparação do admin mostra a mudança inteira.
 async function corrigirSubmissao(usuarioId, submissaoId, dados) {
   const submissao = await prisma.submissao.findUnique({
     where: { id: submissaoId },
     include: {
-      edicao: { select: { resultadoDivulgadoEm: true, prazoCorrecaoSubmissao: true } },
+      edicao: {
+        select: { resultadoDivulgadoEm: true, prazoCorrecaoSubmissao: true, anais: { select: { publicadoEm: true } } },
+      },
       autores: { select: { usuarioId: true } },
     },
   });
@@ -125,10 +130,12 @@ async function corrigirSubmissao(usuarioId, submissaoId, dados) {
   if (submissao.usuarioId !== usuarioId) {
     throw new ErroHttp(403, "Só o autor principal pode enviar a correção do trabalho.");
   }
+  const revisandoFormatacao =
+    submissao.decisaoFinal === "APROVADO_FORMATACAO" && submissao.statusCorrecao === "CONCLUIDA";
   if (
     !submissao.edicao.resultadoDivulgadoEm ||
     !DECISOES_COM_CORRECAO.includes(submissao.decisaoFinal) ||
-    !["PENDENTE", "DEVOLVIDA"].includes(submissao.statusCorrecao)
+    !(["PENDENTE", "DEVOLVIDA"].includes(submissao.statusCorrecao) || revisandoFormatacao)
   ) {
     throw new ErroHttp(409, "Este trabalho não tem correção pendente.");
   }
@@ -137,6 +144,10 @@ async function corrigirSubmissao(usuarioId, submissaoId, dados) {
       409,
       `O prazo de correção terminou em ${formatarPrazoCorrecao(submissao.edicao.prazoCorrecaoSubmissao)}. Fale com a organização.`
     );
+  }
+  const anaisPublicados = Boolean(submissao.edicao.anais?.publicadoEm);
+  if (!correcaoEditavel(submissao, { ...submissao.edicao, anaisPublicados })) {
+    throw new ErroHttp(409, "Os Anais já foram publicados, então a formatação não pode mais ser alterada. Fale com a organização.");
   }
 
   const resumo = await processarImagensEmbutidas(sanitizarResumoSubmissao(dados.resumo), "submissoes-resumo");
@@ -148,14 +159,18 @@ async function corrigirSubmissao(usuarioId, submissaoId, dados) {
   const titulo = comRessalvas && dados.titulo ? dados.titulo : submissao.titulo;
 
   await prisma.$transaction([
-    prisma.submissaoVersao.create({
-      data: {
-        submissaoId,
-        titulo: submissao.titulo,
-        resumo: submissao.resumo,
-        referenciaBibliografica: submissao.referenciaBibliografica,
-      },
-    }),
+    ...(revisandoFormatacao
+      ? []
+      : [
+          prisma.submissaoVersao.create({
+            data: {
+              submissaoId,
+              titulo: submissao.titulo,
+              resumo: submissao.resumo,
+              referenciaBibliografica: submissao.referenciaBibliografica,
+            },
+          }),
+        ]),
     prisma.submissao.update({
       where: { id: submissaoId },
       data: {

@@ -2,7 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ErroHttp = require("../utils/erroHttp");
 const prisma = require("../config/prisma");
 const INCLUDE_PADRAO = require("../utils/submissaoIncludePadrao");
-const { prazoCorrecaoAberto } = require("../utils/prazoCorrecao");
+const { prazoCorrecaoAberto, correcaoEditavel } = require("../utils/prazoCorrecao");
 const {
   criarSubmissaoSchema,
   verificarEmailAutorSchema,
@@ -25,6 +25,7 @@ const INCLUDE_PARTICIPANTE = {
       resultadoDivulgadoEm: true,
       prazoCorrecaoSubmissao: true,
       apresentacaoPublicadaEm: true,
+      anais: { select: { publicadoEm: true } },
     },
   },
   atividadeApresentacao: {
@@ -71,7 +72,8 @@ function formatarParaParticipante(submissao, usuarioId, { completa = false, conv
           prazoCorrecao: edicao.prazoCorrecaoSubmissao,
           prazoAberto,
           podeCorrigir:
-            ehAutorPrincipal && prazoAberto && ["PENDENTE", "DEVOLVIDA"].includes(submissao.statusCorrecao),
+            ehAutorPrincipal &&
+            correcaoEditavel(submissao, { ...edicao, anaisPublicados: Boolean(edicao.anais?.publicadoEm) }),
         }
       : null,
   };

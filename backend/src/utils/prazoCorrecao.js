@@ -16,4 +16,14 @@ function formatarPrazoCorrecao(prazo) {
   return `${dia}/${mes}/${ano}`;
 }
 
-module.exports = { prazoCorrecaoAberto, formatarPrazoCorrecao };
+// Situações em que o autor principal (re)envia a correção, sempre dentro do
+// prazo: pendente ou devolvida; e a formatação já concluída, que pode ser
+// revista enquanto os Anais não forem publicados — depois disso o texto já é
+// público. Ressalvas enviadas/conferidas ficam com a organização.
+function correcaoEditavel({ decisaoFinal, statusCorrecao }, { prazoCorrecaoSubmissao, anaisPublicados }) {
+  if (!prazoCorrecaoAberto(prazoCorrecaoSubmissao)) return false;
+  if (["PENDENTE", "DEVOLVIDA"].includes(statusCorrecao)) return true;
+  return decisaoFinal === "APROVADO_FORMATACAO" && statusCorrecao === "CONCLUIDA" && !anaisPublicados;
+}
+
+module.exports = { prazoCorrecaoAberto, formatarPrazoCorrecao, correcaoEditavel };
