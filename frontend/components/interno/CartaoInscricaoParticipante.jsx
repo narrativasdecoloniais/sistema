@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Printer } from "lucide-react";
+import { buscarMeuCracha, gerarQrDataUrl } from "@/lib/credenciamento";
 import { formatarPeriodoAtividade, formatarPeriodoEdicao } from "@/lib/publico";
 import { paraNumeroRomano } from "@/lib/romanos";
 import styles from "./CartaoInscricaoParticipante.module.scss";
@@ -13,7 +16,10 @@ function escaparHtml(valor) {
 
 // Comprovante da área do participante — impressão via popup com HTML
 // standalone; a casca em tela usa os tokens da pele interna, e o
-// cancelamento por atividade abre o ModalConfirmacao do painel.
+// cancelamento por atividade abre o ModalConfirmacao do painel. Traz o QR do
+// crachá virtual (o mesmo de /participante/cracha), que a equipe lê para
+// credenciar no evento e registrar presença nas atividades; sem ele (falha ao
+// buscar) o comprovante segue sem a seção.
 export default function CartaoInscricaoParticipante({
   edicao,
   inscricoesAtividade = [],
@@ -22,6 +28,20 @@ export default function CartaoInscricaoParticipante({
 }) {
   const confirmadas = inscricoesAtividade.filter((item) => item.status === "CONFIRMADA");
   const listaEspera = inscricoesAtividade.filter((item) => item.status === "LISTA_ESPERA");
+  const [qrCracha, setQrCracha] = useState(null);
+
+  useEffect(() => {
+    let ativo = true;
+    buscarMeuCracha()
+      .then((cracha) => gerarQrDataUrl(cracha.token, 480))
+      .then((imagem) => {
+        if (ativo) setQrCracha(imagem);
+      })
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   function aoImprimir() {
     const janela = window.open("", "_blank", "width=720,height=900");
@@ -75,6 +95,10 @@ export default function CartaoInscricaoParticipante({
   table.atividades td.status { text-align: right; white-space: nowrap; color: #4D4842; padding-left: 1rem; }
   .periodoAtividade { color: #4D4842; font-size: 0.85rem; }
   .vazio { color: #4D4842; font-size: 0.9rem; }
+  .cracha { display: flex; align-items: center; gap: 1.25rem; margin: 0 0 1.75rem; }
+  .cracha img { width: 150px; height: 150px; flex-shrink: 0; }
+  .cracha p { margin: 0 0 0.35rem; font-size: 0.85rem; color: #4D4842; }
+  .cracha strong { color: #201914; }
   footer {
     margin-top: 2.5rem; padding-top: 1rem; border-top: 1px dashed #B87C34;
     font-size: 0.75rem; color: #4D4842; text-align: center;
@@ -94,6 +118,19 @@ export default function CartaoInscricaoParticipante({
       ${nomeParticipante ? `<dt>Participante</dt><dd>${escaparHtml(nomeParticipante)}</dd>` : ""}
       <dt>Emitido em</dt><dd>${escaparHtml(new Date().toLocaleString("pt-BR"))}</dd>
     </dl>
+
+    ${
+      qrCracha
+        ? `<div class="cracha">
+      <img src="${qrCracha}" alt="QR code do crachá" />
+      <div>
+        <p><strong>Crachá para o credenciamento</strong></p>
+        <p>Apresente este QR code à equipe na entrada do evento e na porta das atividades com inscrição.</p>
+        <p>Se você gerar um novo crachá na área do participante, este QR code deixa de valer.</p>
+      </div>
+    </div>`
+        : ""
+    }
 
     <h2>Atividades específicas</h2>
     ${linhasAtividades}
@@ -156,6 +193,19 @@ export default function CartaoInscricaoParticipante({
           </p>
         )}
       </div>
+
+      {qrCracha && (
+        <div className={styles.cracha}>
+          <img src={qrCracha} alt="QR code do seu crachá" className={styles.qrCracha} />
+          <div>
+            <p className={styles.subtituloCracha}>Crachá para o credenciamento</p>
+            <p className={styles.textoCracha}>
+              Apresente este QR code à equipe na entrada do evento e na porta das atividades com
+              inscrição. Ele também está em <Link href="/participante/cracha">Meu crachá</Link>.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className={styles.atividades}>
         <p className={styles.subtitulo}>Atividades específicas</p>
