@@ -2,8 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarCheck, Handshake, QrCode, FileText, ClipboardCheck, Award, ArrowRight } from "lucide-react";
+import {
+  CalendarCheck,
+  Handshake,
+  QrCode,
+  FileText,
+  ClipboardCheck,
+  Award,
+  ArrowRight,
+  Presentation,
+} from "lucide-react";
 import { paraNumeroRomano } from "@/lib/romanos";
+import { detalheAtividade, linkAtividade } from "@/lib/apresentacao";
 import { buscarResumoParticipante } from "@/lib/participanteResumo";
 import styles from "./InicioParticipantePainel.module.scss";
 
@@ -188,6 +198,38 @@ function cardSubmissoes({ submissoes }) {
   };
 }
 
+// Onde e quando a pessoa apresenta (autor ou coautor) — só com a
+// distribuição publicada e enquanto a atividade não terminou.
+function cardApresentacao({ submissoes }) {
+  const apresentacoes = submissoes?.apresentacoes || [];
+  if (apresentacoes.length === 0) return null;
+  const [proxima] = apresentacoes;
+  const unica = apresentacoes.length === 1;
+
+  return {
+    chave: "apresentacao",
+    Icone: Presentation,
+    rotulo: "Apresentação",
+    titulo: unica
+      ? `Você apresenta em ${formatarDiaHora(proxima.atividade.inicioAtividade)}`
+      : `${apresentacoes.length} apresentações marcadas`,
+    detalhes: [unica ? null : `A próxima é em ${formatarDiaHora(proxima.atividade.inicioAtividade)}.`],
+    lista: apresentacoes.map((apresentacao) => ({
+      chave: apresentacao.id,
+      href: linkAtividade({ slug: apresentacao.edicaoSlug }, apresentacao.atividade),
+      texto: apresentacao.titulo,
+      apoio: [
+        apresentacao.atividade.nome,
+        detalheAtividade(apresentacao.atividade),
+        apresentacao.ordem ? `${apresentacao.ordem}º a apresentar` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    })),
+    acoes: [{ href: "/participante/submissoes", rotulo: "Ver minhas submissões" }],
+  };
+}
+
 function cardAvaliacoes({ avaliacoes }) {
   if (!avaliacoes) return null;
   if (avaliacoes.pendentes > 0) {
@@ -225,7 +267,15 @@ function cardCertificados({ certificados }) {
 
 // O que tem pendência vem primeiro; o resto mantém a ordem do menu lateral.
 function montarCards(resumo) {
-  const cards = [cardCredenciamento, cardInscricao, cardMonitoria, cardSubmissoes, cardAvaliacoes, cardCertificados]
+  const cards = [
+    cardCredenciamento,
+    cardApresentacao,
+    cardInscricao,
+    cardMonitoria,
+    cardSubmissoes,
+    cardAvaliacoes,
+    cardCertificados,
+  ]
     .map((montar) => montar(resumo))
     .filter(Boolean);
   return [...cards.filter((card) => card.pendente), ...cards.filter((card) => !card.pendente)];
@@ -252,7 +302,7 @@ function Card({ card }) {
       {lista?.length > 0 && (
         <ul className={styles.lista}>
           {lista.map((item) => (
-            <li key={item.href}>
+            <li key={item.chave ?? item.href}>
               <Link href={item.href} className={styles.linkLista}>
                 {item.texto}
               </Link>

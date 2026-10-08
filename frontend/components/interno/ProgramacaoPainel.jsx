@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileDown, Plus, Ticket } from "lucide-react";
+import { FileDown, Plus, Ticket, X } from "lucide-react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -12,9 +12,13 @@ import Modal from "./Modal";
 import AtividadeForm from "./AtividadeForm";
 import ModalDuplicarAtividade from "./ModalDuplicarAtividade";
 import SeletorDiaProgramacao from "./SeletorDiaProgramacao";
+import CampoTexto from "./CampoTexto";
+import CampoSelecao from "./CampoSelecao";
+import { normalizarTexto } from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { agruparAtividadesPorDia } from "@/lib/inscricao";
+import { formatarDiaAtividade, formatarFaixaHorario } from "@/lib/publico";
 import { criarMapaCores, corPorMapa } from "@/lib/coresAtividade";
 import { baixarPdfProgramacao } from "@/lib/pdfProgramacao";
 import styles from "./ProgramacaoPainel.module.scss";
@@ -44,6 +48,21 @@ function calcularFaixaHoras(atividadesDoDia) {
     min: `${String(horaMin).padStart(2, "0")}:00:00`,
     max: `${String(horaMax).padStart(2, "0")}:00:00`,
   };
+}
+
+const FILTROS_VAZIOS = { busca: "", tipo: "", local: "", inscricao: "" };
+
+// A busca olha nome, local e pessoas envolvidas (sem acento/caixa) — no dia
+// cheio é comum lembrar só de quem facilita a atividade, não do título.
+function atendeFiltros(atividade, filtros, buscaNormalizada) {
+  if (filtros.tipo && atividade.tipoAtividadeId !== filtros.tipo) return false;
+  if (filtros.local && (atividade.local || "") !== filtros.local) return false;
+  if (filtros.inscricao === "SIM" && !atividade.exigeInscricao) return false;
+  if (filtros.inscricao === "NAO" && atividade.exigeInscricao) return false;
+  if (!buscaNormalizada) return true;
+
+  const textos = [atividade.nome, atividade.local, ...(atividade.pessoas || []).map((pessoa) => pessoa.nome)];
+  return textos.some((texto) => normalizarTexto(texto).includes(buscaNormalizada));
 }
 
 function paraEvento(atividade, mapaCores) {
@@ -108,20 +127,53 @@ export default function ProgramacaoPainel({ edicao, atividadesIniciais, tiposAti
   const [duplicandoAtividade, setDuplicandoAtividade] = useState(null);
   const [duplicataCriada, setDuplicataCriada] = useState(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [filtros, setFiltros] = useState(FILTROS_VAZIOS);
 
   const dias = useMemo(() => agruparAtividadesPorDia(atividades), [atividades]);
   const diaAtivo = dias.find((dia) => dia.chave === chaveDiaSelecionado) ?? dias[0] ?? null;
   const mapaCores = useMemo(() => criarMapaCores(tiposAtividade), [tiposAtividade]);
 
-  const eventos = useMemo(
-    () => (diaAtivo ? diaAtivo.atividades.map((atividade) => paraEvento(atividade, mapaCores)) : []),
-    [diaAtivo, mapaCores]
+  const locais = useMemo(
+    () =>
+      [...new Set(atividades.map((atividade) => atividade.local).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+      ),
+    [atividades]
   );
+  // Só os tipos que aparecem na programação — o catálogo é global e traria
+  // opções que não filtram nada nesta edição.
+  const tiposUsados = useMemo(() => {
+    const ids = new Set(atividades.map((atividade) => atividade.tipoAtividadeId));
+    return tiposAtividade.filter((tipo) => ids.has(tipo.id));
+  }, [atividades, tiposAtividade]);
+
+  const filtrando = Object.values(filtros).some((valor) => valor.trim() !== "");
+  const buscaNormalizada = normalizarTexto(filtros.busca.trim());
+  const filtrar = (lista) =>
+    filtrando ? lista.filter((atividade) => atendeFiltros(atividade, filtros, buscaNormalizada)) : lista;
+
+  // Resultados de todos os dias, na ordem da programação — clicar abre a
+  // edição sem precisar achar o bloco na grade.
+  const resultados = filtrando ? dias.flatMap((dia) => filtrar(dia.atividades)) : [];
+  const atividadesVisiveis = diaAtivo ? filtrar(diaAtivo.atividades) : [];
+  const eventos = atividadesVisiveis.map((atividade) => paraEvento(atividade, mapaCores));
   const faixaHoras = useMemo(() => calcularFaixaHoras(diaAtivo?.atividades ?? []), [diaAtivo]);
 
   function abrirCriacao() {
     setAtividadeEmEdicao(null);
     setModalAberto(true);
+  }
+
+  function alterarFiltro(campo, valor) {
+    setFiltros((atual) => ({ ...atual, [campo]: valor }));
+  }
+
+  // Leva a grade pro dia do resultado, pra que ao fechar o modal a atividade
+  // esteja à vista no contexto do dia.
+  function abrirResultado(atividade) {
+    const dia = dias.find((item) => item.atividades.some((outra) => outra.id === atividade.id));
+    if (dia) setChaveDiaSelecionado(dia.chave);
+    abrirEdicao(atividade);
   }
 
   function abrirEdicao(atividade) {
@@ -233,6 +285,105 @@ export default function ProgramacaoPainel({ edicao, atividadesIniciais, tiposAti
         </div>
       ) : (
         <>
+          <div className={styles.filtros} role="search" aria-label="Buscar e filtrar atividades">
+            <div className={styles.filtroBusca}>
+              <CampoTexto
+                id="buscaProgramacao"
+                rotulo="Buscar atividade"
+                type="search"
+                value={filtros.busca}
+                onChange={(evento) => alterarFiltro("busca", evento.target.value)}
+                placeholder="Nome, local ou pessoa envolvida"
+              />
+            </div>
+            <CampoSelecao
+              id="filtroTipoProgramacao"
+              rotulo="Tipo de atividade"
+              value={filtros.tipo}
+              onChange={(evento) => alterarFiltro("tipo", evento.target.value)}
+            >
+              <option value="">Todos</option>
+              {tiposUsados.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nome}
+                </option>
+              ))}
+            </CampoSelecao>
+            <CampoSelecao
+              id="filtroLocalProgramacao"
+              rotulo="Local"
+              value={filtros.local}
+              onChange={(evento) => alterarFiltro("local", evento.target.value)}
+            >
+              <option value="">Todos</option>
+              {locais.map((local) => (
+                <option key={local} value={local}>
+                  {local}
+                </option>
+              ))}
+            </CampoSelecao>
+            <CampoSelecao
+              id="filtroInscricaoProgramacao"
+              rotulo="Inscrição"
+              value={filtros.inscricao}
+              onChange={(evento) => alterarFiltro("inscricao", evento.target.value)}
+            >
+              <option value="">Todas</option>
+              <option value="SIM">Exige inscrição</option>
+              <option value="NAO">Não exige inscrição</option>
+            </CampoSelecao>
+          </div>
+
+          {filtrando && (
+            <section className={styles.resultados} aria-labelledby="tituloResultadosProgramacao">
+              <div className={styles.resultadosCabecalho}>
+                <h2 id="tituloResultadosProgramacao" className={styles.resultadosTitulo} aria-live="polite">
+                  {resultados.length === 0
+                    ? "Nenhuma atividade encontrada"
+                    : `${resultados.length} ${resultados.length === 1 ? "atividade encontrada" : "atividades encontradas"}`}
+                </h2>
+                <Botao type="button" variante="secundario" onClick={() => setFiltros(FILTROS_VAZIOS)}>
+                  <X size={16} strokeWidth={1.5} aria-hidden="true" />
+                  Limpar filtros
+                </Botao>
+              </div>
+              {resultados.length === 0 ? (
+                <p className={styles.resultadosVazio}>
+                  Confira a grafia ou limpe os filtros para ver toda a programação.
+                </p>
+              ) : (
+                <ul className={styles.listaResultados}>
+                  {resultados.map((atividade) => {
+                    const { diaSemana, dataCurta } = formatarDiaAtividade(atividade.inicioAtividade);
+                    return (
+                      <li key={atividade.id}>
+                        <button
+                          type="button"
+                          className={styles.resultado}
+                          onClick={() => abrirResultado(atividade)}
+                        >
+                          <span
+                            className={styles.resultadoCor}
+                            style={{ background: corPorMapa(mapaCores, atividade.tipoAtividade?.nome) }}
+                            aria-hidden="true"
+                          />
+                          <span className={styles.resultadoTexto}>
+                            <span className={styles.resultadoNome}>{atividade.nome}</span>
+                            <span className={styles.resultadoDetalhe}>
+                              {diaSemana} {dataCurta} ·{" "}
+                              {formatarFaixaHorario(atividade.inicioAtividade, atividade.fimAtividade)}
+                              {atividade.local && ` · ${atividade.local}`}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+          )}
+
           <SeletorDiaProgramacao
             dias={dias}
             chaveAtiva={diaAtivo?.chave}
