@@ -53,6 +53,15 @@ enum TipoToken {
 // implementadas (Postgres não remove valores de enum facilmente).
 // ADMIN sempre tem acesso total e nunca consulta este enum; "Início"
 // também fica de fora por ser sempre acessível a ADMIN/ORGANIZADOR.
+// Onde o aviso da atividade (Atividade.destaque) aparece — escolhido pelo
+// gestor no formulário da atividade.
+enum LocalAvisoAtividade {
+  PROGRAMACAO // cartão da atividade na programação do site
+  PAGINA_ATIVIDADE // página pública da atividade
+  INSCRICAO // cartão e "Ver detalhes" na inscrição do participante
+  COMPROVANTE // comprovante de inscrição: e-mail, tela e impressão
+}
+
 enum SecaoAdmin {
   ATIVIDADES
   // PAGINA_EVENTO cobre hoje o subitem "Hero + Navbar" de Página do evento
@@ -591,6 +600,11 @@ model Atividade {
   descricao              String?
   cargaHoraria           Int?
   local                  String?
+  // Aviso curto exibido em destaque na programação, na página da atividade e
+  // na inscrição (ex.: "Cada participante deve levar um instrumento de
+  // percussão"). Nulo = sem destaque.
+  destaque               String?
+  destaqueLocais         LocalAvisoAtividade[] @default([PROGRAMACAO, PAGINA_ATIVIDADE, INSCRICAO, COMPROVANTE])
   exigeInscricao         Boolean        @default(true)
   semLimiteVagas         Boolean        @default(false)
   vagas                  Int?

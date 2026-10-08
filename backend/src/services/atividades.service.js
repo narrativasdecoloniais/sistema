@@ -141,6 +141,15 @@ async function gerarSlugUnico(edicaoId, slugBase) {
   return `${slugBase}-${contador}`;
 }
 
+// Destaque vazio vira null; ausente (undefined) não mexe no valor gravado.
+// destaqueLocais sem duplicatas; ausente mantém o gravado (ou o padrão: todos).
+function normalizarDestaque(dados) {
+  return {
+    ...(dados.destaque === undefined ? {} : { destaque: dados.destaque || null }),
+    ...(dados.destaqueLocais === undefined ? {} : { destaqueLocais: [...new Set(dados.destaqueLocais)] }),
+  };
+}
+
 async function criarAtividade(edicaoId, dados) {
   const { pessoas, slug, ...camposAtividade } = dados;
   const pessoasCriadas =
@@ -153,6 +162,7 @@ async function criarAtividade(edicaoId, dados) {
       ...camposAtividade,
       slug: await gerarSlugUnico(edicaoId, slug),
       ...normalizarInscricao(dados),
+      ...normalizarDestaque(dados),
       edicaoId,
       pessoas: pessoasCriadas ? { create: pessoasCriadas } : undefined,
     },
@@ -173,7 +183,7 @@ async function atualizarAtividade(id, dados) {
 
   return prisma.atividade.update({
     where: { id },
-    data: { ...camposAtividade, ...normalizarInscricao(dados) },
+    data: { ...camposAtividade, ...normalizarInscricao(dados), ...normalizarDestaque(dados) },
     include: INCLUDE_PADRAO,
   });
 }
@@ -211,6 +221,8 @@ async function duplicarAtividade(edicaoId, original, { inicioAtividade, fimAtivi
       descricao: original.descricao,
       cargaHoraria: original.cargaHoraria,
       local: original.local,
+      destaque: original.destaque,
+      destaqueLocais: original.destaqueLocais,
       exigeInscricao: original.exigeInscricao,
       semLimiteVagas: original.semLimiteVagas,
       vagas: original.vagas,

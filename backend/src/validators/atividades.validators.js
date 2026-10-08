@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { LocalAvisoAtividade } = require("@prisma/client");
 
 const atividadePessoaSchema = z.object({
   id: z.string().uuid().optional(),
@@ -33,6 +34,9 @@ const atividadeSchema = z
       .positive("Informe uma carga horária válida")
       .optional(),
     local: z.string().trim().optional(),
+    // Nulo/vazio = sem destaque (null explícito pra conseguir limpar ao editar).
+    destaque: z.string().trim().max(120, "O aviso deve ter no máximo 120 caracteres").nullable().optional(),
+    destaqueLocais: z.array(z.enum(Object.values(LocalAvisoAtividade))).optional(),
     pessoas: z.array(atividadePessoaSchema).optional(),
     exigeInscricao: z.boolean().optional().default(true),
     semLimiteVagas: z.boolean().optional().default(false),
@@ -62,6 +66,10 @@ const atividadeSchema = z
   .refine((dados) => dados.fimAtividade > dados.inicioAtividade, {
     message: "O fim da atividade deve ser posterior ao início",
     path: ["fimAtividade"],
+  })
+  .refine((dados) => !dados.destaque || !dados.destaqueLocais || dados.destaqueLocais.length > 0, {
+    message: "Marque ao menos um lugar para mostrar o aviso",
+    path: ["destaqueLocais"],
   })
   .refine((dados) => !dados.exigeInscricao || dados.semLimiteVagas || dados.vagas != null, {
     message: "Informe a quantidade de vagas ou marque sem limite",

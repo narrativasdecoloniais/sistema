@@ -390,7 +390,11 @@ function listaAtividadesHtml(inscricoes, { vazio }) {
       (inscricao) => `
         <li style="margin: 0 0 10px;">
           <strong>${escaparHtml(inscricao.atividade.nome)}</strong><br />
-          <span style="font-size: 14px;">${formatarPeriodoAtividade(inscricao.atividade.inicioAtividade, inscricao.atividade.fimAtividade)}</span>
+          <span style="font-size: 14px;">${formatarPeriodoAtividade(inscricao.atividade.inicioAtividade, inscricao.atividade.fimAtividade)}</span>${
+            inscricao.atividade.destaque && inscricao.atividade.destaqueLocais?.includes("COMPROVANTE")
+              ? `<br /><span style="display: inline-block; margin-top: 4px; font-size: 14px; font-weight: 700; color: ${CORES_EMAIL.barro};">${escaparHtml(inscricao.atividade.destaque)}</span>`
+              : ""
+          }
         </li>`
     )
     .join("");

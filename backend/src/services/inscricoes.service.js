@@ -14,7 +14,7 @@ async function buscarInscricaoCompleta(edicaoId, usuarioId) {
       where: { usuarioId, atividade: { edicaoId } },
       include: {
         atividade: {
-          select: { id: true, nome: true, inicioAtividade: true, fimAtividade: true, local: true },
+          select: { id: true, nome: true, inicioAtividade: true, fimAtividade: true, local: true, destaque: true, destaqueLocais: true },
         },
       },
       orderBy: { atividade: { inicioAtividade: "asc" } },
