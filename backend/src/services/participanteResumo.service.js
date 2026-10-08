@@ -3,7 +3,7 @@ const inscricoesAbertas = require("../utils/inscricoesAbertas");
 const inscricoesMonitoriaAbertas = require("../utils/inscricoesMonitoriaAbertas");
 const prazoSubmissaoAberto = require("../utils/prazoSubmissaoAberto");
 const { prazoCorrecaoAberto } = require("../utils/prazoCorrecao");
-const { hojeIngenuo } = require("../utils/horarioBrasilia");
+const { agoraIngenuo, hojeIngenuo } = require("../utils/horarioBrasilia");
 const avaliacoesService = require("./avaliacoes.service");
 const certificadosService = require("./certificados.service");
 
@@ -92,7 +92,13 @@ async function resumoSubmissoes(usuarioId, edicao) {
       titulo: true,
       usuarioId: true,
       statusCorrecao: true,
-      edicao: { select: { resultadoDivulgadoEm: true, prazoCorrecaoSubmissao: true } },
+      ordemApresentacao: true,
+      edicao: {
+        select: { slug: true, resultadoDivulgadoEm: true, prazoCorrecaoSubmissao: true, apresentacaoPublicadaEm: true },
+      },
+      atividadeApresentacao: {
+        select: { nome: true, slug: true, local: true, inicioAtividade: true, fimAtividade: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -113,6 +119,25 @@ async function resumoSubmissoes(usuarioId, edicao) {
       prazo: submissao.edicao.prazoCorrecaoSubmissao,
     }));
 
+  // Mesma regra de Minhas submissões (só com a distribuição publicada), e só
+  // as que ainda não terminaram — depois do evento o lembrete vira ruído.
+  const agora = agoraIngenuo();
+  const apresentacoes = submissoes
+    .filter(
+      (submissao) =>
+        submissao.edicao.apresentacaoPublicadaEm &&
+        submissao.atividadeApresentacao &&
+        submissao.atividadeApresentacao.fimAtividade >= agora
+    )
+    .map((submissao) => ({
+      id: submissao.id,
+      titulo: submissao.titulo,
+      ordem: submissao.ordemApresentacao,
+      edicaoSlug: submissao.edicao.slug,
+      atividade: submissao.atividadeApresentacao,
+    }))
+    .sort((a, b) => a.atividade.inicioAtividade - b.atividade.inicioAtividade);
+
   const modalidadesAbertas = (edicao?.modalidadesSubmissao || []).filter((modalidade) =>
     prazoSubmissaoAberto(modalidade.prazoInicio, modalidade.prazoFim)
   );
@@ -126,6 +151,7 @@ async function resumoSubmissoes(usuarioId, edicao) {
     recebendo: modalidadesAbertas.length > 0,
     fimRecebimento,
     correcoes,
+    apresentacoes,
   };
 }
 
