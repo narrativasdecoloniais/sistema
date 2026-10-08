@@ -59,10 +59,11 @@ const listarAtividadesPorEdicaoSlug = asyncHandler(async (req, res) => {
   return res.json({ atividades });
 });
 
-// Trabalhos apresentados na atividade — só depois que a organização publica
-// a distribuição da edição. Autores só com nome (sem e-mail).
+// Trabalhos apresentados na atividade — só depois que a organização divulga
+// a distribuição da edição ao público (liberar só para os autores não basta).
+// Autores só com nome (sem e-mail).
 async function anexarTrabalhosApresentados(atividade, edicao) {
-  if (!edicao?.apresentacaoPublicadaEm) return { ...atividade, trabalhos: [] };
+  if (!edicao?.apresentacaoPublicaEm) return { ...atividade, trabalhos: [] };
   const trabalhos = await prisma.submissao.findMany({
     where: { atividadeApresentacaoId: atividade.id },
     select: {

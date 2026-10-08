@@ -287,9 +287,12 @@ model Edicao {
   resultadoDivulgadoEm              DateTime?
   prazoCorrecaoSubmissao            DateTime?
   // Distribuição dos trabalhos nas atividades (apresentacaoSubmissoes.service.js)
-  // só aparece na página pública da atividade e em Minhas submissões quando
-  // publicada — nulo = oculta (pode voltar a ser ocultada).
+  // em duas etapas, nulo = oculta (cada uma pode voltar a ser ocultada):
+  // apresentacaoPublicadaEm libera para os autores (Minhas submissões, Início,
+  // prévia do trabalho, aviso por e-mail); apresentacaoPublicaEm divulga ao
+  // público (página da atividade, Anais) e exige a primeira.
   apresentacaoPublicadaEm           DateTime?
+  apresentacaoPublicaEm             DateTime?
   // Monitoria (monitoria.service.js): janela de inscrição própria — mesma
   // regra de inscricoesAbertas.js, sem as duas datas fica fechada —, vagas
   // (só informativo, não bloqueia), catálogo de funções que o candidato

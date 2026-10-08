@@ -16,7 +16,14 @@ function esperar(ms) {
 async function buscarEdicao(db, edicaoId) {
   const edicao = await db.edicao.findUnique({
     where: { id: edicaoId },
-    select: { id: true, nome: true, slug: true, resultadoDivulgadoEm: true, apresentacaoPublicadaEm: true },
+    select: {
+      id: true,
+      nome: true,
+      slug: true,
+      resultadoDivulgadoEm: true,
+      apresentacaoPublicadaEm: true,
+      apresentacaoPublicaEm: true,
+    },
   });
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
   return edicao;
@@ -113,6 +120,7 @@ async function listar(edicaoId) {
     atividades: atividades.map(({ _count, ...atividade }) => ({ ...atividade, totalTrabalhos: _count.trabalhosApresentados })),
     estado: {
       publicadaEm: edicao.apresentacaoPublicadaEm,
+      publicaEm: edicao.apresentacaoPublicaEm,
       resultadoDivulgado: Boolean(edicao.resultadoDivulgadoEm),
       avisosPendentes,
       avisosComErro: trabalhos.filter((trabalho) => trabalho.statusAviso === "ERRO").length,
@@ -293,24 +301,43 @@ async function distribuirPelaArea(edicaoId, { simular }) {
   return { vinculados, semAtividade, porArea };
 }
 
+// Libera (ou oculta) a distribuição para os autores. Ocultar dos autores
+// também tira do público — o público nunca vê o que os autores não veem.
 async function publicar(edicaoId, publicarDistribuicao) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (publicarDistribuicao && !edicao.resultadoDivulgadoEm) {
-    throw new ErroHttp(409, "Divulgue o resultado das submissões antes de publicar a distribuição.");
+    throw new ErroHttp(409, "Divulgue o resultado das submissões antes de liberar a distribuição.");
   }
   const atualizada = await prisma.edicao.update({
     where: { id: edicaoId },
-    data: { apresentacaoPublicadaEm: publicarDistribuicao ? new Date() : null },
-    select: { apresentacaoPublicadaEm: true },
+    data: publicarDistribuicao
+      ? { apresentacaoPublicadaEm: new Date() }
+      : { apresentacaoPublicadaEm: null, apresentacaoPublicaEm: null },
+    select: { apresentacaoPublicadaEm: true, apresentacaoPublicaEm: true },
   });
-  return atualizada.apresentacaoPublicadaEm;
+  return { publicadaEm: atualizada.apresentacaoPublicadaEm, publicaEm: atualizada.apresentacaoPublicaEm };
+}
+
+// Divulga (ou oculta) os trabalhos na página pública de cada atividade e nos
+// Anais. Exige a distribuição já liberada para os autores.
+async function publicarAoPublico(edicaoId, divulgar) {
+  const edicao = await buscarEdicao(prisma, edicaoId);
+  if (divulgar && !edicao.apresentacaoPublicadaEm) {
+    throw new ErroHttp(409, "Libere a distribuição para os autores antes de divulgá-la ao público.");
+  }
+  const atualizada = await prisma.edicao.update({
+    where: { id: edicaoId },
+    data: { apresentacaoPublicaEm: divulgar ? new Date() : null },
+    select: { apresentacaoPublicaEm: true },
+  });
+  return atualizada.apresentacaoPublicaEm;
 }
 
 async function iniciarAvisos(edicaoId) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (!edicao.resultadoDivulgadoEm) throw new ErroHttp(409, "Divulgue o resultado das submissões antes de avisar os autores.");
   if (!edicao.apresentacaoPublicadaEm) {
-    throw new ErroHttp(409, "Publique a distribuição antes de avisar os autores — o e-mail aponta para a página da atividade.");
+    throw new ErroHttp(409, "Libere a distribuição para os autores antes de avisá-los — o e-mail repete o que eles veem em Minhas submissões.");
   }
   if (enviosEmAndamento.has(edicaoId)) throw new ErroHttp(409, "O envio dos avisos já está em andamento.");
 
@@ -390,6 +417,7 @@ module.exports = {
   reordenar,
   distribuirPelaArea,
   publicar,
+  publicarAoPublico,
   iniciarAvisos,
   enviarAvisosPendentes,
   removerSeNaoAprovada,

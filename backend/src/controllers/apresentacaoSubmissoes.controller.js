@@ -47,12 +47,23 @@ const distribuirPelaArea = asyncHandler(async (req, res) => {
 
 const publicar = asyncHandler(async (req, res) => {
   const { publicar: publicarDistribuicao } = publicacaoSchema.parse(req.body);
-  const publicadaEm = await apresentacaoService.publicar(req.params.edicaoId, publicarDistribuicao);
+  const estado = await apresentacaoService.publicar(req.params.edicaoId, publicarDistribuicao);
   return res.json({
-    publicadaEm,
+    ...estado,
     mensagem: publicarDistribuicao
-      ? "Distribuição publicada na página das atividades e em Minhas submissões."
-      : "Distribuição ocultada.",
+      ? "Distribuição liberada para os autores em Minhas submissões."
+      : "Distribuição ocultada dos autores e do público.",
+  });
+});
+
+const publicarAoPublico = asyncHandler(async (req, res) => {
+  const { publicar: divulgar } = publicacaoSchema.parse(req.body);
+  const publicaEm = await apresentacaoService.publicarAoPublico(req.params.edicaoId, divulgar);
+  return res.json({
+    publicaEm,
+    mensagem: divulgar
+      ? "Distribuição divulgada na página pública de cada atividade."
+      : "Distribuição ocultada do público. Os autores continuam vendo.",
   });
 });
 
@@ -61,4 +72,13 @@ const enviarAvisos = asyncHandler(async (req, res) => {
   return res.status(202).json({ mensagem: "Envio dos avisos iniciado." });
 });
 
-module.exports = { listar, vincular, desvincular, reordenar, distribuirPelaArea, publicar, enviarAvisos };
+module.exports = {
+  listar,
+  vincular,
+  desvincular,
+  reordenar,
+  distribuirPelaArea,
+  publicar,
+  publicarAoPublico,
+  enviarAvisos,
+};

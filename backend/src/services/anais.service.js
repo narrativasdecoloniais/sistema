@@ -96,6 +96,7 @@ const SELECT_EDICAO = {
   dataFim: true,
   resultadoDivulgadoEm: true,
   apresentacaoPublicadaEm: true,
+  apresentacaoPublicaEm: true,
 };
 
 async function buscarEdicao(edicaoId) {
@@ -542,7 +543,8 @@ async function buscarArtigoPublico(edicaoSlug, artigoSlug) {
       paginaFinal: artigo.paginaFinal,
       publicadoEm: anais.publicadoEm > artigo.createdAt ? anais.publicadoEm : artigo.createdAt,
       atualizadoEm: submissao.updatedAt,
-      apresentacao: edicao.apresentacaoPublicadaEm ? submissao.atividadeApresentacao : null,
+      // Página pública: só com a distribuição divulgada ao público.
+      apresentacao: edicao.apresentacaoPublicaEm ? submissao.atividadeApresentacao : null,
       citacao: dadosCitacao(edicao, anais, artigo, submissao),
     },
     anterior: vizinho(todos[indice - 1]),

@@ -12,6 +12,7 @@ router.post("/desvincular", apresentacaoController.desvincular);
 router.patch("/atividades/:atividadeId/ordem", apresentacaoController.reordenar);
 router.post("/distribuir-por-area", apresentacaoController.distribuirPelaArea);
 router.patch("/publicacao", apresentacaoController.publicar);
+router.patch("/publicacao-publica", apresentacaoController.publicarAoPublico);
 router.post("/avisos", apresentacaoController.enviarAvisos);
 
 module.exports = router;
