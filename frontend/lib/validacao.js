@@ -3,6 +3,7 @@ import { corSchema } from "@/lib/cores";
 import { camposIdentificacao, validarIdentificacao } from "@/lib/identificacao";
 import { idadeEm } from "@/lib/idade";
 import { validarBlocos } from "@/lib/emailResultado";
+import { marcadoresDesconhecidos as marcadoresDesconhecidosApresentacao } from "@/lib/emailApresentacao";
 
 export const senhaForte = z
   .string()
@@ -701,6 +702,28 @@ export const modeloEmailResultadoSchema = z.object({
       const erro = validarBlocos(valor);
       if (erro) ctx.addIssue({ code: z.ZodIssueCode.custom, message: erro });
     }),
+});
+
+// Espelha modeloEmailSchema de backend/src/validators/apresentacaoSubmissoes.validators.js;
+// marcador desconhecido sai inline aqui e vira 400 em emailApresentacao.service.js.
+function semMarcadorDesconhecido(valor, ctx) {
+  const desconhecidos = marcadoresDesconhecidosApresentacao(valor);
+  if (desconhecidos.length > 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Marcador desconhecido: ${desconhecidos.map((chave) => `{{${chave}}}`).join(", ")}`,
+    });
+  }
+}
+
+export const modeloEmailApresentacaoSchema = z.object({
+  assunto: z
+    .string()
+    .trim()
+    .min(3, "Informe o assunto")
+    .max(200, "Máximo de 200 caracteres")
+    .superRefine(semMarcadorDesconhecido),
+  corpo: z.string().trim().min(1, "Informe o texto do e-mail").superRefine(semMarcadorDesconhecido),
 });
 
 // Espelha modeloCertificadoSchema em backend/src/validators/certificados.validators.js

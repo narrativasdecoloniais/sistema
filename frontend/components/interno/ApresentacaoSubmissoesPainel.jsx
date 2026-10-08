@@ -15,6 +15,7 @@ import useSelecaoLinhas from "./useSelecaoLinhas";
 import LinkEditarSubmissao from "./LinkEditarSubmissao";
 import ModalVincularAtividade from "./ModalVincularAtividade";
 import AbaPorAtividade from "./ApresentacaoPorAtividade";
+import ModeloEmailApresentacao from "./ModeloEmailApresentacao";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import { DECISOES_AVALIACAO, ROTULOS_DECISAO } from "@/lib/avaliacoes";
@@ -112,7 +113,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
     },
     avisos: {
       titulo: "Enviar aviso por e-mail",
-      mensagem: `Cada autor e coautor de ${estado.avisosPendentes} ${estado.avisosPendentes === 1 ? "trabalho" : "trabalhos"} recebe um e-mail com a atividade, o dia, o horário e o local. Quem já foi avisado da atividade atual não recebe de novo.`,
+      mensagem: `Cada autor e coautor de ${estado.avisosPendentes} ${estado.avisosPendentes === 1 ? "trabalho" : "trabalhos"} recebe o e-mail com o texto da aba "E-mail de aviso". Quem já foi avisado da atividade atual não recebe de novo.`,
       rotulo: "Enviar",
     },
   };
@@ -205,6 +206,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
         {[
           { chave: "trabalhos", rotulo: "Trabalhos" },
           { chave: "atividades", rotulo: "Por atividade" },
+          { chave: "email", rotulo: "E-mail de aviso" },
         ].map((aba) => (
           <button
             key={aba.chave}
@@ -220,11 +222,13 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
         ))}
       </div>
 
-      {abaAtiva === "trabalhos" ? (
+      {abaAtiva === "trabalhos" && (
         <AbaTrabalhos edicaoId={edicaoId} dados={dados} modalidades={modalidades} recarregar={recarregar} />
-      ) : (
+      )}
+      {abaAtiva === "atividades" && (
         <AbaPorAtividade edicaoId={edicaoId} dados={dados} modalidades={modalidades} recarregar={recarregar} />
       )}
+      {abaAtiva === "email" && <ModeloEmailApresentacao edicaoId={edicaoId} />}
 
       {confirmando && (
         <ModalConfirmacao
