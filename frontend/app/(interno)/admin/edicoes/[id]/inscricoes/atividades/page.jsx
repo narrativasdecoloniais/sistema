@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
+import { temPapel } from "@/lib/permissoes";
 import { buscarEdicaoPorId } from "@/lib/edicoes";
 import { listarInscricoesAtividade } from "@/lib/inscricoesAdmin";
 import { listarAtividades } from "@/lib/atividades";
@@ -22,8 +23,10 @@ export default async function PaginaInscricoesAtividade({ params }) {
   return (
     <InscricoesAtividadePainel
       edicaoId={params.id}
+      edicaoNome={edicao.nome}
       inscricoesIniciais={inscricoes}
       atividades={atividades}
+      podeEnviarEmail={temPapel(usuario, "ADMIN")}
     />
   );
 }

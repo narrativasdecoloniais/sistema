@@ -2,16 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ArrowUpCircle, Clock } from "lucide-react";
+import { Plus, Trash2, ArrowUpCircle, Clock, Mail } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import InscricaoAtividadeForm from "./InscricaoAtividadeForm";
+import EnviarEmailModal from "./EnviarEmailModal";
+import CampoTexto from "./CampoTexto";
 import CartoesContadores from "./CartoesContadores";
 import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
 import useSelecaoLinhas from "./useSelecaoLinhas";
-import useTabela from "./useTabela";
+import useTabela, { normalizarTexto } from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
 import styles from "./InscricoesAtividadePainel.module.scss";
@@ -27,7 +29,33 @@ const ROTULO_STATUS = {
 
 const OPCOES_STATUS = Object.entries(ROTULO_STATUS).map(([valor, rotulo]) => ({ valor, rotulo }));
 
-export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais, atividades }) {
+// Busca geral por nome, e-mail, CPF ou documento estrangeiro. CPF e documento
+// só entram quando o termo tem algum dígito, comparando sem pontuação
+// ("123.456" acha "12345678900"); o documento já é guardado em maiúsculas,
+// só com letras e dígitos.
+function atendeBusca(usuario, busca) {
+  const termo = normalizarTexto(busca.trim());
+  if (!termo) return true;
+  if (normalizarTexto(usuario.nome).includes(termo) || normalizarTexto(usuario.email).includes(termo)) {
+    return true;
+  }
+  if (!/\d/.test(termo)) return false;
+
+  const digitos = termo.replace(/\D/g, "");
+  if (usuario.cpf && usuario.cpf.replace(/\D/g, "").includes(digitos)) return true;
+  const documento = termo.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return Boolean(usuario.documentoEstrangeiro?.includes(documento));
+}
+
+// podeEnviarEmail: o envio em massa (/emails) é ADMIN-only, então o botão
+// só aparece para admin, mesmo com a seção liberada para organizador.
+export default function InscricoesAtividadePainel({
+  edicaoId,
+  edicaoNome,
+  inscricoesIniciais,
+  atividades,
+  podeEnviarEmail = false,
+}) {
   const router = useRouter();
   const { notificar } = useToast();
 
@@ -35,6 +63,7 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmandoId, setConfirmandoId] = useState(null);
+  const [busca, setBusca] = useState("");
 
   const colunas = useMemo(
     () => [
@@ -72,10 +101,25 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
     [atividades]
   );
 
-  const tabela = useTabela(inscricoes, colunas);
+  // A busca filtra antes da tabela, então contadores, exportação e seleção em
+  // lote acompanham o resultado.
+  const inscricoesBuscadas = useMemo(
+    () => inscricoes.filter((inscricao) => atendeBusca(inscricao.usuario, busca)),
+    [inscricoes, busca]
+  );
+  const tabela = useTabela(inscricoesBuscadas, colunas);
+  // "Limpar filtros" da linha sem resultado também limpa a busca.
+  const tabelaComBusca = {
+    ...tabela,
+    limparFiltros: () => {
+      tabela.limparFiltros();
+      setBusca("");
+    },
+  };
   const selecao = useSelecaoLinhas(tabela);
   const [confirmandoLote, setConfirmandoLote] = useState(false);
   const [excluindoLote, setExcluindoLote] = useState(false);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
   const inscricoesFiltradas = tabela.linhasVisiveis;
   // Só sugere a atividade no modal de adicionar quando exatamente uma está filtrada.
   const atividadesFiltradas = tabela.filtros.atividade || [];
@@ -168,6 +212,19 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
     }
   }
 
+  // A seleção é por inscrição; a mesma pessoa pode estar em mais de uma
+  // atividade selecionada, mas recebe o e-mail uma vez só.
+  const destinatariosEmail = useMemo(() => {
+    if (!enviandoEmail) return [];
+    const porUsuario = new Map();
+    for (const inscricao of inscricoes) {
+      if (!selecao.selecionados.has(inscricao.id)) continue;
+      const { id, nome, email } = inscricao.usuario;
+      if (!porUsuario.has(id)) porUsuario.set(id, { id, nome, email });
+    }
+    return [...porUsuario.values()];
+  }, [enviandoEmail, inscricoes, selecao.selecionados]);
+
   const inscricaoEmConfirmacao = inscricoes.find((item) => item.id === confirmandoId);
 
   return (
@@ -203,83 +260,101 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
           </p>
         </div>
       ) : (
-        <div className={styles.tabelaWrapper}>
-          <BotaoExportarTabela tabela={tabela} nomeArquivo="inscricoes-em-atividades" nomeAba="Inscrições em atividades">
-            {selecao.quantidade > 0 && (
-              <BotaoAcaoTabela perigo onClick={() => setConfirmandoLote(true)}>
-                <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
-                Excluir {selecao.quantidade} {selecao.quantidade === 1 ? "selecionada" : "selecionadas"}
-              </BotaoAcaoTabela>
-            )}
-          </BotaoExportarTabela>
-          <table className={styles.tabela}>
-            <CabecalhoTabela
-              tabela={tabela}
-              idTabela="inscricoes-atividade"
-              classeAcoes={styles.colunaAcoes}
-              selecao={selecao}
+        <>
+          <div className={styles.busca}>
+            <CampoTexto
+              id="buscaInscricoesAtividade"
+              rotulo="Buscar participante"
+              type="search"
+              value={busca}
+              onChange={(evento) => setBusca(evento.target.value)}
+              placeholder="Nome, e-mail ou CPF"
             />
-            <tbody>
-              {inscricoesFiltradas.length === 0 && (
-                <LinhaSemResultado tabela={tabela} colSpan={colunas.length + 2} />
+          </div>
+          <div className={styles.tabelaWrapper}>
+            <BotaoExportarTabela tabela={tabela} nomeArquivo="inscricoes-em-atividades" nomeAba="Inscrições em atividades">
+              {podeEnviarEmail && selecao.quantidade > 0 && (
+                <BotaoAcaoTabela onClick={() => setEnviandoEmail(true)}>
+                  <Mail size={16} strokeWidth={1.5} aria-hidden="true" />
+                  Enviar e-mail ({selecao.quantidade})
+                </BotaoAcaoTabela>
               )}
-              {inscricoesFiltradas.map((inscricao) => (
-                <tr key={inscricao.id}>
-                  <CelulaSelecao
-                    selecao={selecao}
-                    id={inscricao.id}
-                    rotulo={`Selecionar inscrição de ${inscricao.usuario.nome} em ${inscricao.atividade.nome}`}
-                  />
-                  <td data-rotulo="Atividade">{inscricao.atividade.nome}</td>
-                  <td data-rotulo="Tipo de atividade">
-                    {inscricao.atividade.tipoAtividade?.nome || "—"}
-                  </td>
-                  <td data-rotulo="Nome">{inscricao.usuario.nome}</td>
-                  <td data-rotulo="E-mail">{inscricao.usuario.email}</td>
-                  <td data-rotulo="Status">
-                    <span
-                      className={`${styles.tag} ${
-                        inscricao.status === "CONFIRMADA" ? styles.tagConfirmada : styles.tagEspera
-                      }`}
-                    >
-                      {ROTULO_STATUS[inscricao.status]}
-                    </span>
-                  </td>
-                  <td data-rotulo="Inscrito em">{formatarData(inscricao.createdAt)}</td>
-                  <td data-rotulo="Ações" className={styles.colunaAcoes}>
-                    <div className={styles.acoesLinha}>
-                      <button
-                        type="button"
-                        className={styles.botaoIcone}
-                        aria-label={
-                          inscricao.status === "CONFIRMADA"
-                            ? `Mover ${inscricao.usuario.nome} para lista de espera`
-                            : `Confirmar inscrição de ${inscricao.usuario.nome}`
-                        }
-                        disabled={processandoId === inscricao.id}
-                        onClick={() => alternarStatus(inscricao)}
+              {selecao.quantidade > 0 && (
+                <BotaoAcaoTabela perigo onClick={() => setConfirmandoLote(true)}>
+                  <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                  Excluir {selecao.quantidade} {selecao.quantidade === 1 ? "selecionada" : "selecionadas"}
+                </BotaoAcaoTabela>
+              )}
+            </BotaoExportarTabela>
+            <table className={styles.tabela}>
+              <CabecalhoTabela
+                tabela={tabela}
+                idTabela="inscricoes-atividade"
+                classeAcoes={styles.colunaAcoes}
+                selecao={selecao}
+              />
+              <tbody>
+                {inscricoesFiltradas.length === 0 && (
+                  <LinhaSemResultado tabela={tabelaComBusca} colSpan={colunas.length + 2} />
+                )}
+                {inscricoesFiltradas.map((inscricao) => (
+                  <tr key={inscricao.id}>
+                    <CelulaSelecao
+                      selecao={selecao}
+                      id={inscricao.id}
+                      rotulo={`Selecionar inscrição de ${inscricao.usuario.nome} em ${inscricao.atividade.nome}`}
+                    />
+                    <td data-rotulo="Atividade">{inscricao.atividade.nome}</td>
+                    <td data-rotulo="Tipo de atividade">
+                      {inscricao.atividade.tipoAtividade?.nome || "—"}
+                    </td>
+                    <td data-rotulo="Nome">{inscricao.usuario.nome}</td>
+                    <td data-rotulo="E-mail">{inscricao.usuario.email}</td>
+                    <td data-rotulo="Status">
+                      <span
+                        className={`${styles.tag} ${
+                          inscricao.status === "CONFIRMADA" ? styles.tagConfirmada : styles.tagEspera
+                        }`}
                       >
-                        {inscricao.status === "CONFIRMADA" ? (
-                          <Clock size={16} strokeWidth={1.5} aria-hidden="true" />
-                        ) : (
-                          <ArrowUpCircle size={16} strokeWidth={1.5} aria-hidden="true" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
-                        aria-label={`Excluir inscrição de ${inscricao.usuario.nome}`}
-                        onClick={() => setConfirmandoId(inscricao.id)}
-                      >
-                        <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        {ROTULO_STATUS[inscricao.status]}
+                      </span>
+                    </td>
+                    <td data-rotulo="Inscrito em">{formatarData(inscricao.createdAt)}</td>
+                    <td data-rotulo="Ações" className={styles.colunaAcoes}>
+                      <div className={styles.acoesLinha}>
+                        <button
+                          type="button"
+                          className={styles.botaoIcone}
+                          aria-label={
+                            inscricao.status === "CONFIRMADA"
+                              ? `Mover ${inscricao.usuario.nome} para lista de espera`
+                              : `Confirmar inscrição de ${inscricao.usuario.nome}`
+                          }
+                          disabled={processandoId === inscricao.id}
+                          onClick={() => alternarStatus(inscricao)}
+                        >
+                          {inscricao.status === "CONFIRMADA" ? (
+                            <Clock size={16} strokeWidth={1.5} aria-hidden="true" />
+                          ) : (
+                            <ArrowUpCircle size={16} strokeWidth={1.5} aria-hidden="true" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
+                          aria-label={`Excluir inscrição de ${inscricao.usuario.nome}`}
+                          onClick={() => setConfirmandoId(inscricao.id)}
+                        >
+                          <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {modalAberto && (
@@ -292,6 +367,16 @@ export default function InscricoesAtividadePainel({ edicaoId, inscricoesIniciais
             aoCancelar={fecharModal}
           />
         </Modal>
+      )}
+
+      {enviandoEmail && (
+        <EnviarEmailModal
+          edicaoId={edicaoId}
+          edicaoNome={edicaoNome}
+          destinatarios={destinatariosEmail}
+          onFechar={() => setEnviandoEmail(false)}
+          onEnviado={selecao.limpar}
+        />
       )}
 
       {confirmandoLote && (

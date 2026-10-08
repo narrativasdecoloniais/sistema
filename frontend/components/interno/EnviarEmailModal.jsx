@@ -14,8 +14,8 @@ import { textoEmailSchema, extrairErros } from "@/lib/validacao";
 import { valoresExemplo } from "@/lib/emailsMassa";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
 
-// Envio de e-mail para pessoas selecionadas numa tabela (por enquanto, a aba
-// Usuários de Participantes). destinatarios: [{ id, nome, email }] — contas.
+// Envio de e-mail para pessoas selecionadas numa tabela (a aba Usuários de
+// Participantes e Inscrições em atividades). destinatarios: [{ id, nome, email }] — contas.
 // O texto parte de um modelo (ou em branco) e pode ser ajustado só para este
 // envio; o envio em si roda em segundo plano no backend
 // (emailsMassa.service.js) e é acompanhado na tela E-mails.
