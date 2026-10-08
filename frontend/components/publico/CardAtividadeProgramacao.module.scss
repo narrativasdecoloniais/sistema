@@ -100,6 +100,24 @@
   }
 }
 
+// Aviso da atividade (Atividade.destaque): filete na cor de destaque do
+// cartão, texto na cor do cartão — chama atenção sem virar um segundo CTA.
+.destaque {
+  width: 100%;
+  margin: 0.15rem 0 0;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--cor-acento-card);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--cor-texto-card);
+  overflow-wrap: break-word;
+
+  @media (min-width: 640px) {
+    font-size: 0.82rem;
+  }
+}
+
 // Anel de foco fixo (não segue a cor de destaque customizável) pra sempre
 // ter contraste previsível, mesma cautela já aplicada nos outros ajustes
 // desta sessão.

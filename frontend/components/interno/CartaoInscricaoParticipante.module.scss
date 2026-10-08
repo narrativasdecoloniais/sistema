@@ -170,6 +170,16 @@
   font-size: 0.8125rem;
 }
 
+// Aviso da atividade (Atividade.destaque), por peso e cor de acento — sem caixa.
+.destaqueAtividade {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--acento);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .cancelar {
   flex-shrink: 0;
   border: none;

@@ -14,6 +14,7 @@ import ModalConfirmacao from "./ModalConfirmacao";
 import PessoaEnvolvidaLinha from "./PessoaEnvolvidaLinha";
 import { apiClient } from "@/lib/apiClient";
 import { atividadeSchema, extrairErros } from "@/lib/validacao";
+import { LOCAIS_AVISO_ATIVIDADE, TODOS_LOCAIS_AVISO } from "@/lib/avisoAtividade";
 import { gerarSlug } from "@/lib/slug";
 import { ordenarGruposPorOrdemDoTipo } from "@/lib/publico";
 import { paraData, paraHora, combinar } from "@/lib/dataHoraIngenua";
@@ -36,6 +37,8 @@ function estadoInicial(atividadeInicial) {
     descricao: atividadeInicial?.descricao || "",
     cargaHoraria: atividadeInicial?.cargaHoraria ?? null,
     local: atividadeInicial?.local || "",
+    destaque: atividadeInicial?.destaque || "",
+    destaqueLocais: atividadeInicial?.destaqueLocais || TODOS_LOCAIS_AVISO,
     atividadeContinua: atividadeInicial?.atividadeContinua || false,
     paraConvidados: atividadeInicial?.paraConvidados || false,
     paraCriancasConvidadas: atividadeInicial?.paraCriancasConvidadas || false,
@@ -73,6 +76,8 @@ function paraPayload(dados, atividadeInicial) {
     descricao: dados.descricao || undefined,
     cargaHoraria: dados.cargaHoraria ?? undefined,
     local: dados.local || undefined,
+    // null explícito (não undefined) pra conseguir remover o aviso ao editar.
+    destaque: dados.destaque.trim() || null,
     // null explícito (não undefined) pra conseguir limpar a ordem ao editar.
     ordem: dados.ordem ?? null,
     pessoas: (dados.pessoas || []).map((pessoa) => {
@@ -149,6 +154,15 @@ export default function AtividadeForm({
 
   function atualizarCampo(campo, valor) {
     setDados((atual) => ({ ...atual, [campo]: valor }));
+  }
+
+  function aoAlternarLocalAviso(local, marcado) {
+    setDados((atual) => ({
+      ...atual,
+      destaqueLocais: marcado
+        ? TODOS_LOCAIS_AVISO.filter((valor) => valor === local || atual.destaqueLocais.includes(valor))
+        : atual.destaqueLocais.filter((valor) => valor !== local),
+    }));
   }
 
   function aoMudarNome(valor) {
@@ -335,6 +349,34 @@ export default function AtividadeForm({
           erro={erros.local}
         />
       </div>
+      <CampoTexto
+        id="destaque"
+        rotulo="Aviso aos participantes (opcional)"
+        value={dados.destaque}
+        maxLength={120}
+        onChange={(evento) => atualizarCampo("destaque", evento.target.value)}
+        erro={erros.destaque}
+      />
+      <p className={styles.ajuda}>
+        Orientação curta e prática para quem vai participar, com até 120 caracteres (ex.: &quot;Cada
+        participante deve levar um instrumento de percussão&quot;). Deixe em branco para não mostrar
+        aviso.
+      </p>
+      {dados.destaque.trim() && (
+        <fieldset className={styles.locaisAviso}>
+          <legend className={styles.locaisAvisoTitulo}>Onde mostrar o aviso</legend>
+          {LOCAIS_AVISO_ATIVIDADE.map((local) => (
+            <CampoCheckbox
+              key={local.valor}
+              id={`aviso-local-${local.valor}`}
+              rotulo={`${local.rotulo} (${local.descricao})`}
+              checked={dados.destaqueLocais.includes(local.valor)}
+              onChange={(marcado) => aoAlternarLocalAviso(local.valor, marcado)}
+            />
+          ))}
+          {erros.destaqueLocais && <p className={styles.erroLocais}>{erros.destaqueLocais}</p>}
+        </fieldset>
+      )}
 
       <div className={styles.linha}>
         <Campo

@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { avisoAtividade } from "@/lib/avisoAtividade";
 import styles from "./CardAtividadeProgramacao.module.scss";
 
 export default function CardAtividadeProgramacao({ atividade, temEdicaoAtual, edicaoSlug }) {
+  const aviso = avisoAtividade(atividade, "PROGRAMACAO");
   const meta = [
     atividade.local,
     !atividade.exigeInscricao
@@ -30,6 +32,7 @@ export default function CardAtividadeProgramacao({ atividade, temEdicaoAtual, ed
         <span className={styles.tipo}>{atividade.nome}</span>
       </div>
       {meta && <p className={styles.meta}>{meta}</p>}
+      {aviso && <p className={styles.destaque}>{aviso}</p>}
       {(temEdicaoAtual || edicaoSlug) && (
         <Link
           href={

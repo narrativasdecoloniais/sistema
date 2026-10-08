@@ -36,3 +36,14 @@
   line-height: 1.6;
   color: var(--texto);
 }
+
+// Aviso da atividade (Atividade.destaque), mesmo filete do cartão da inscrição.
+.destaque {
+  margin: 0.5rem 0 0;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--acento);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--texto);
+}

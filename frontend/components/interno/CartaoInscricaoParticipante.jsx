@@ -6,6 +6,7 @@ import { Printer } from "lucide-react";
 import { buscarMeuCracha, gerarQrDataUrl } from "@/lib/credenciamento";
 import { formatarPeriodoAtividade, formatarPeriodoEdicao } from "@/lib/publico";
 import { paraNumeroRomano } from "@/lib/romanos";
+import { avisoAtividade } from "@/lib/avisoAtividade";
 import styles from "./CartaoInscricaoParticipante.module.scss";
 
 function escaparHtml(valor) {
@@ -58,7 +59,11 @@ export default function CartaoInscricaoParticipante({
                   <strong>${escaparHtml(item.atividade.nome)}</strong><br/>
                   <span class="periodoAtividade">${escaparHtml(
                     formatarPeriodoAtividade(item.atividade.inicioAtividade, item.atividade.fimAtividade)
-                  )}</span>
+                  )}</span>${
+                    avisoAtividade(item.atividade, "COMPROVANTE")
+                      ? `<br/><span class="destaqueAtividade">${escaparHtml(item.atividade.destaque)}</span>`
+                      : ""
+                  }
                 </td>
                 <td class="status">${item.status === "LISTA_ESPERA" ? "Lista de espera" : "Confirmada"}</td>
               </tr>`
@@ -94,6 +99,7 @@ export default function CartaoInscricaoParticipante({
   table.atividades td { padding: 0.6rem 0; border-bottom: 1px solid #EDE4D4; vertical-align: top; }
   table.atividades td.status { text-align: right; white-space: nowrap; color: #4D4842; padding-left: 1rem; }
   .periodoAtividade { color: #4D4842; font-size: 0.85rem; }
+  .destaqueAtividade { display: inline-block; margin-top: 0.25rem; font-size: 0.85rem; font-weight: 700; color: #9C4A2F; }
   .vazio { color: #4D4842; font-size: 0.9rem; }
   .cracha { display: flex; align-items: center; gap: 1.25rem; margin: 0 0 1.75rem; }
   .cracha img { width: 150px; height: 150px; flex-shrink: 0; }
@@ -157,6 +163,9 @@ export default function CartaoInscricaoParticipante({
           <span className={styles.periodoAtividade}>
             {formatarPeriodoAtividade(item.atividade.inicioAtividade, item.atividade.fimAtividade)}
           </span>
+          {avisoAtividade(item.atividade, "COMPROVANTE") && (
+            <span className={styles.destaqueAtividade}>{item.atividade.destaque}</span>
+          )}
         </div>
         {onCancelarAtividade && (
           <button type="button" className={styles.cancelar} onClick={() => onCancelarAtividade(item)}>

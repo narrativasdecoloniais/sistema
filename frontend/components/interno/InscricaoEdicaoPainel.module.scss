@@ -163,6 +163,18 @@
   font-size: 0.875rem;
 }
 
+// Aviso da atividade (Atividade.destaque): peso e filete no acento, sem caixa
+// colorida (DESIGN.md).
+.cartaoDestaque {
+  margin: 0;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--acento);
+  color: var(--texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .cartaoAcoes {
   margin-top: auto;
   padding-top: 0.5rem;

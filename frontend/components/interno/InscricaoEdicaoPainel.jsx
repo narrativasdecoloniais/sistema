@@ -17,6 +17,7 @@ import NavegacaoDiasParticipante, {
 import { useToast } from "./ToastProvider";
 import { formatarPeriodoAtividade, formatarDiaAtividade } from "@/lib/publico";
 import { haSobreposicao, agruparAtividadesPorDia } from "@/lib/inscricao";
+import { avisoAtividade } from "@/lib/avisoAtividade";
 import { adaptacaoInscricaoSchema, extrairErros } from "@/lib/validacao";
 import {
   buscarInscricaoEdicao,
@@ -283,6 +284,9 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
                     <p className={styles.cartaoMeta}>
                       {formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade)}
                     </p>
+                    {avisoAtividade(atividade, "INSCRICAO") && (
+                      <p className={styles.cartaoDestaque}>{atividade.destaque}</p>
+                    )}
                     <p className={styles.cartaoMeta}>
                       {atividade.semLimiteVagas
                         ? "Sem limite de vagas"

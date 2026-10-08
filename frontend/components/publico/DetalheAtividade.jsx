@@ -5,6 +5,7 @@ import FaixaLateral from "@/components/publico/FaixaLateral";
 import TrabalhosDaAtividade from "@/components/publico/TrabalhosDaAtividade";
 import { agruparPessoasPorTipoParticipacao, formatarPeriodoAtividade } from "@/lib/publico";
 import { estiloCoresPersonalizadas } from "@/lib/cores";
+import { avisoAtividade } from "@/lib/avisoAtividade";
 import styles from "./DetalheAtividade.module.scss";
 
 // Compartilhado por /atividades/[slug] (edição atual) e
@@ -102,6 +103,9 @@ export default function DetalheAtividade({ atividade, permiteInscricao }) {
             <span className={styles.eyebrow}>{atividade.tipoAtividade.nome}</span>
             <h1 className={`${styles.titulo} stencil`}>{atividade.nome}</h1>
             {subtitulo && <p className={styles.subtitulo}>{subtitulo}</p>}
+            {avisoAtividade(atividade, "PAGINA_ATIVIDADE") && (
+              <p className={styles.destaque}>{atividade.destaque}</p>
+            )}
           </header>
 
           <Divisor className={styles.divisor} />

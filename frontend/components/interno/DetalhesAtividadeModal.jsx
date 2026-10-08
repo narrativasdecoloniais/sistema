@@ -2,6 +2,7 @@
 
 import Modal from "./Modal";
 import { formatarDiaAtividade, formatarFaixaHorario } from "@/lib/publico";
+import { avisoAtividade } from "@/lib/avisoAtividade";
 import styles from "./DetalhesAtividadeModal.module.scss";
 
 export default function DetalhesAtividadeModal({ atividade, onFechar }) {
@@ -30,6 +31,9 @@ export default function DetalhesAtividadeModal({ atividade, onFechar }) {
         <p className={styles.linha}>{formatarFaixaHorario(atividade.inicioAtividade, atividade.fimAtividade)}</p>
         {meta && <p className={styles.linha}>{meta}</p>}
         <p className={styles.vagas}>{estadoVagas}</p>
+        {avisoAtividade(atividade, "INSCRICAO") && (
+          <p className={styles.destaque}>{atividade.destaque}</p>
+        )}
         {atividade.descricao && <p className={styles.descricao}>{atividade.descricao}</p>}
       </div>
     </Modal>
