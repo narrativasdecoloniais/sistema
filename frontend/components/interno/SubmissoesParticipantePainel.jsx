@@ -172,11 +172,6 @@ export default function SubmissoesParticipantePainel() {
                   <p className={styles.resultadoTexto}>
                     {detalheAtividade(submissao.apresentacao.atividade)}
                   </p>
-                  {submissao.apresentacao.ordem && (
-                    <p className={styles.resultadoTexto}>
-                      Ordem de apresentação: {submissao.apresentacao.ordem}º
-                    </p>
-                  )}
                 </div>
               )}
             </article>

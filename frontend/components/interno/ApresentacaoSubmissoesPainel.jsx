@@ -89,7 +89,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
     publicar: {
       titulo: "Liberar para os autores",
       mensagem:
-        "Cada autor e coautor com conta passa a ver em Minhas submissões e no Início onde, quando e em que ordem vai apresentar. O público ainda não vê nada. Alterações feitas depois aparecem na hora.",
+        "Cada autor e coautor com conta passa a ver em Minhas submissões e no Início onde e quando vai apresentar. O público ainda não vê nada. Alterações feitas depois aparecem na hora.",
       rotulo: "Liberar",
     },
     ocultar: {
@@ -112,7 +112,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
     },
     avisos: {
       titulo: "Enviar aviso por e-mail",
-      mensagem: `Cada autor e coautor de ${estado.avisosPendentes} ${estado.avisosPendentes === 1 ? "trabalho" : "trabalhos"} recebe um e-mail com a atividade, o dia, o horário, o local e a ordem de apresentação. Quem já foi avisado da atividade atual não recebe de novo.`,
+      mensagem: `Cada autor e coautor de ${estado.avisosPendentes} ${estado.avisosPendentes === 1 ? "trabalho" : "trabalhos"} recebe um e-mail com a atividade, o dia, o horário e o local. Quem já foi avisado da atividade atual não recebe de novo.`,
       rotulo: "Enviar",
     },
   };

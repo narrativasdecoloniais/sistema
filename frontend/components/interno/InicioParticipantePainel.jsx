@@ -218,13 +218,7 @@ function cardApresentacao({ submissoes }) {
       chave: apresentacao.id,
       href: linkAtividade({ slug: apresentacao.edicaoSlug }, apresentacao.atividade),
       texto: apresentacao.titulo,
-      apoio: [
-        apresentacao.atividade.nome,
-        detalheAtividade(apresentacao.atividade),
-        apresentacao.ordem ? `${apresentacao.ordem}º a apresentar` : null,
-      ]
-        .filter(Boolean)
-        .join(" · "),
+      apoio: `${apresentacao.atividade.nome} · ${detalheAtividade(apresentacao.atividade)}`,
     })),
     acoes: [{ href: "/participante/submissoes", rotulo: "Ver minhas submissões" }],
   };
