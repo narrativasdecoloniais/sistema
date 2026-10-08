@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Link2, Unlink, Wand2, Eye, EyeOff, Send } from "lucide-react";
+import { Link2, Unlink, Wand2, Eye, EyeOff, Send, Globe } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
@@ -32,7 +32,8 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
   const { notificar } = useToast();
   const [dados, setDados] = useState(dadosIniciais);
   const [abaAtiva, setAbaAtiva] = useState("trabalhos");
-  const [confirmando, setConfirmando] = useState(null); // "publicar" | "ocultar" | "avisos"
+  // "publicar" | "ocultar" | "divulgar" | "ocultarPublico" | "avisos"
+  const [confirmando, setConfirmando] = useState(null);
   const [processando, setProcessando] = useState(false);
 
   const recarregar = useCallback(async () => {
@@ -57,17 +58,23 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
   }
 
   const { estado } = dados;
+  // Duas etapas: liberar para os autores (Minhas submissões, e-mail) e,
+  // depois, divulgar ao público (página de cada atividade, Anais).
   const publicada = Boolean(estado.publicadaEm);
+  const publica = Boolean(estado.publicaEm);
+
+  const REQUISICOES = {
+    publicar: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao`, { publicar: true }),
+    ocultar: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao`, { publicar: false }),
+    divulgar: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao-publica`, { publicar: true }),
+    ocultarPublico: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao-publica`, { publicar: false }),
+    avisos: () => apiClient.post(`/edicoes/${edicaoId}/apresentacao/avisos`, {}),
+  };
 
   async function executarConfirmacao() {
     setProcessando(true);
     try {
-      const resposta =
-        confirmando === "avisos"
-          ? await apiClient.post(`/edicoes/${edicaoId}/apresentacao/avisos`, {})
-          : await apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao`, {
-              publicar: confirmando === "publicar",
-            });
+      const resposta = await REQUISICOES[confirmando]();
       notificar(resposta.mensagem);
       await recarregar();
     } catch (erro) {
@@ -80,14 +87,27 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
 
   const MENSAGENS_CONFIRMACAO = {
     publicar: {
-      titulo: "Publicar distribuição",
+      titulo: "Liberar para os autores",
       mensagem:
-        "A lista de trabalhos passa a aparecer na página pública de cada atividade, e cada autor vê em Minhas submissões onde vai apresentar. Alterações feitas depois aparecem na hora.",
-      rotulo: "Publicar",
+        "Cada autor e coautor com conta passa a ver em Minhas submissões e no Início onde, quando e em que ordem vai apresentar. O público ainda não vê nada. Alterações feitas depois aparecem na hora.",
+      rotulo: "Liberar",
     },
     ocultar: {
-      titulo: "Ocultar distribuição",
-      mensagem: "Os trabalhos deixam de aparecer nas páginas das atividades e em Minhas submissões até você publicar de novo.",
+      titulo: "Ocultar dos autores",
+      mensagem: publica
+        ? "Os autores deixam de ver a apresentação em Minhas submissões, e os trabalhos também saem das páginas públicas das atividades."
+        : "Os autores deixam de ver a apresentação em Minhas submissões até você liberar de novo.",
+      rotulo: "Ocultar",
+    },
+    divulgar: {
+      titulo: "Divulgar ao público",
+      mensagem:
+        "A lista de trabalhos de cada atividade, com título, nomes dos autores e resumo, passa a aparecer na página pública da atividade, para qualquer visitante do site.",
+      rotulo: "Divulgar",
+    },
+    ocultarPublico: {
+      titulo: "Ocultar do público",
+      mensagem: "Os trabalhos saem das páginas públicas das atividades. Os autores continuam vendo a apresentação em Minhas submissões.",
       rotulo: "Ocultar",
     },
     avisos: {
@@ -113,12 +133,24 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
           <p className={estilos.semMargem}>
             {publicada ? (
               <>
-                <strong>Distribuição publicada</strong> em {new Date(estado.publicadaEm).toLocaleDateString("pt-BR")}{" "}
-                — visível nas páginas das atividades e em Minhas submissões.
+                <strong>Autores:</strong> liberada em {new Date(estado.publicadaEm).toLocaleDateString("pt-BR")} — cada
+                um vê em Minhas submissões onde vai apresentar.
               </>
             ) : (
               <>
-                <strong>Distribuição oculta</strong> — só a organização vê.
+                <strong>Autores:</strong> oculta — só a organização vê.
+              </>
+            )}
+          </p>
+          <p className={estilos.semMargem}>
+            {publica ? (
+              <>
+                <strong>Público:</strong> divulgada em {new Date(estado.publicaEm).toLocaleDateString("pt-BR")} — visível
+                na página de cada atividade.
+              </>
+            ) : (
+              <>
+                <strong>Público:</strong> não divulgada.
               </>
             )}
           </p>
@@ -129,7 +161,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
           </p>
           {!estado.resultadoDivulgado && (
             <p className={styles.aviso}>
-              Publicar e avisar os autores só fica disponível depois de{" "}
+              Liberar, divulgar e avisar os autores só fica disponível depois de{" "}
               <Link href={`/admin/edicoes/${edicaoId}/submissoes/resultado`} className={estilos.link}>
                 divulgar o resultado
               </Link>
@@ -145,13 +177,23 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
             disabled={!estado.resultadoDivulgado && !publicada}
           >
             {publicada ? <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" /> : <Eye size={18} strokeWidth={1.5} aria-hidden="true" />}
-            {publicada ? "Ocultar distribuição" : "Publicar distribuição"}
+            {publicada ? "Ocultar dos autores" : "Liberar para os autores"}
+          </Botao>
+          <Botao
+            type="button"
+            variante="secundario"
+            onClick={() => setConfirmando(publica ? "ocultarPublico" : "divulgar")}
+            disabled={!publicada && !publica}
+            title={!publicada ? "Libere para os autores antes de divulgar ao público" : undefined}
+          >
+            {publica ? <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" /> : <Globe size={18} strokeWidth={1.5} aria-hidden="true" />}
+            {publica ? "Ocultar do público" : "Divulgar ao público"}
           </Botao>
           <Botao
             type="button"
             onClick={() => setConfirmando("avisos")}
             disabled={!publicada || estado.avisosPendentes === 0 || estado.enviando}
-            title={!publicada ? "Publique a distribuição antes de avisar os autores" : undefined}
+            title={!publicada ? "Libere para os autores antes de avisá-los" : undefined}
           >
             <Send size={18} strokeWidth={1.5} aria-hidden="true" />
             Enviar aviso por e-mail ({estado.avisosPendentes})
@@ -189,7 +231,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
           titulo={MENSAGENS_CONFIRMACAO[confirmando].titulo}
           mensagem={MENSAGENS_CONFIRMACAO[confirmando].mensagem}
           rotuloConfirmar={MENSAGENS_CONFIRMACAO[confirmando].rotulo}
-          perigo={confirmando === "ocultar"}
+          perigo={confirmando === "ocultar" || confirmando === "ocultarPublico"}
           confirmando={processando}
           onConfirmar={executarConfirmacao}
           onCancelar={() => setConfirmando(null)}
