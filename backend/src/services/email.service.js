@@ -456,7 +456,7 @@ async function enviarEmailCorrecaoDevolvida(usuario, { edicao, titulo, motivo, p
 }
 
 // Aviso de onde/quando o trabalho será apresentado (apresentacaoSubmissoes.service.js).
-async function enviarEmailApresentacao(autor, { edicao, trabalho, atividade, ordem }) {
+async function enviarEmailApresentacao(autor, { edicao, trabalho, atividade }) {
   // Rota por edição quando ela tem slug (funciona também para edições
   // passadas); senão, a rota da edição atual.
   const link = edicao.slug
@@ -468,7 +468,6 @@ async function enviarEmailApresentacao(autor, { edicao, trabalho, atividade, ord
     <p style="margin: 0 0 4px; font-size: 18px; font-weight: 700;">${escaparHtml(atividade.nome)}</p>
     <p style="margin: 0 0 4px; font-size: 15px;">${escaparHtml(formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade))}</p>
     ${atividade.local ? `<p style="margin: 0 0 4px; font-size: 15px;">Local: ${escaparHtml(atividade.local)}</p>` : ""}
-    ${ordem ? `<p style="margin: 0 0 16px; font-size: 15px;">Ordem de apresentação: <strong>${ordem}º</strong></p>` : ""}
     <div style="height: 12px;"></div>
     ${botaoEmail(link, "Ver a atividade")}
     ${avisoFinalEmail("Essas informações também ficam em Minhas submissões, na sua área do participante.")}

@@ -61,7 +61,7 @@ function formatarParaParticipante(submissao, usuarioId, { completa = false, conv
     // Onde/quando apresenta — só depois que a distribuição é publicada.
     apresentacao:
       edicao.apresentacaoPublicadaEm && submissao.atividadeApresentacao
-        ? { atividade: submissao.atividadeApresentacao, ordem: submissao.ordemApresentacao }
+        ? { atividade: submissao.atividadeApresentacao }
         : null,
     resultado: divulgado
       ? {

@@ -92,7 +92,6 @@ async function resumoSubmissoes(usuarioId, edicao) {
       titulo: true,
       usuarioId: true,
       statusCorrecao: true,
-      ordemApresentacao: true,
       edicao: {
         select: { slug: true, resultadoDivulgadoEm: true, prazoCorrecaoSubmissao: true, apresentacaoPublicadaEm: true },
       },
@@ -132,7 +131,6 @@ async function resumoSubmissoes(usuarioId, edicao) {
     .map((submissao) => ({
       id: submissao.id,
       titulo: submissao.titulo,
-      ordem: submissao.ordemApresentacao,
       edicaoSlug: submissao.edicao.slug,
       atividade: submissao.atividadeApresentacao,
     }))

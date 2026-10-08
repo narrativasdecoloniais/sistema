@@ -371,7 +371,6 @@ async function enviarAvisosPendentes(edicaoId) {
             edicao,
             trabalho: submissao,
             atividade: submissao.atividadeApresentacao,
-            ordem: submissao.ordemApresentacao,
           });
           await esperar(INTERVALO_ENVIO_MS);
         }
