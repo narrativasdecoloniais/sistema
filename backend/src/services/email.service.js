@@ -455,30 +455,6 @@ async function enviarEmailCorrecaoDevolvida(usuario, { edicao, titulo, motivo, p
   });
 }
 
-// Aviso de onde/quando o trabalho será apresentado (apresentacaoSubmissoes.service.js).
-async function enviarEmailApresentacao(autor, { edicao, trabalho, atividade }) {
-  // Rota por edição quando ela tem slug (funciona também para edições
-  // passadas); senão, a rota da edição atual.
-  const link = edicao.slug
-    ? `${env.frontendUrl}/edicoes/${edicao.slug}/atividades/${atividade.slug}`
-    : `${env.frontendUrl}/atividades/${atividade.slug}`;
-  const corpoHtml = `
-    ${ola(autor.nome)}
-    <p>O trabalho <strong>${escaparHtml(trabalho.titulo)}</strong> será apresentado na atividade:</p>
-    <p style="margin: 0 0 4px; font-size: 18px; font-weight: 700;">${escaparHtml(atividade.nome)}</p>
-    <p style="margin: 0 0 4px; font-size: 15px;">${escaparHtml(formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade))}</p>
-    ${atividade.local ? `<p style="margin: 0 0 4px; font-size: 15px;">Local: ${escaparHtml(atividade.local)}</p>` : ""}
-    <div style="height: 12px;"></div>
-    ${botaoEmail(link, "Ver a atividade")}
-    ${avisoFinalEmail("Essas informações também ficam em Minhas submissões, na sua área do participante.")}
-  `;
-  await enviarEmail({
-    para: autor.email,
-    assunto: `Apresentação do seu trabalho — ${edicao.nome}`,
-    html: layoutEmailPublico({ eyebrow: "Apresentação de trabalho", titulo: escaparHtml(edicao.nome), corpoHtml }),
-  });
-}
-
 // Novo comentário num trabalho publicado nos Anais (anais.service.js) — vai
 // para cada autor/coautor, menos quem comentou.
 async function enviarEmailNovoComentarioAnais(autor, { edicao, titulo, comentario, link }) {
@@ -499,7 +475,6 @@ async function enviarEmailNovoComentarioAnais(autor, { edicao, titulo, comentari
 
 module.exports = {
   enviarEmailNovoComentarioAnais,
-  enviarEmailApresentacao,
   enviarEmailConfirmacao,
   enviarEmailRecuperacaoSenha,
   enviarEmailEntrarSubmissao,

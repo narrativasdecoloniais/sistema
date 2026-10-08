@@ -2,6 +2,7 @@ const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
 const INCLUDE_SUBMISSAO = require("../utils/submissaoIncludePadrao");
 const emailService = require("./email.service");
+const emailApresentacaoService = require("./emailApresentacao.service");
 
 // Só trabalho aprovado (qualquer um dos três tipos) vai para uma atividade.
 const DECISOES_APROVADAS = ["APROVADO", "APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"];
@@ -363,15 +364,21 @@ async function enviarAvisosPendentes(edicaoId) {
       orderBy: { titulo: "asc" },
     });
     const pendentes = candidatos.filter((s) => s.emailApresentacaoAtividadeId !== s.atividadeApresentacaoId);
+    // Texto lido uma vez por envio — editar no meio não muda os que faltam.
+    const modelo = await emailApresentacaoService.buscarModelo(edicaoId);
 
     for (const submissao of pendentes) {
       try {
         for (const autor of submissao.autores) {
-          await emailService.enviarEmailApresentacao(autor, {
-            edicao,
-            trabalho: submissao,
-            atividade: submissao.atividadeApresentacao,
-          });
+          const { assunto, html } = emailApresentacaoService.renderizar(
+            modelo,
+            emailApresentacaoService.valoresPara(autor, {
+              edicao,
+              trabalho: submissao,
+              atividade: submissao.atividadeApresentacao,
+            })
+          );
+          await emailService.enviarEmail({ para: autor.email, assunto, html });
           await esperar(INTERVALO_ENVIO_MS);
         }
         await prisma.submissao.update({

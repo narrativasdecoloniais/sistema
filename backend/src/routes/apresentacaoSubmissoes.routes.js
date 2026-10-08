@@ -14,5 +14,9 @@ router.post("/distribuir-por-area", apresentacaoController.distribuirPelaArea);
 router.patch("/publicacao", apresentacaoController.publicar);
 router.patch("/publicacao-publica", apresentacaoController.publicarAoPublico);
 router.post("/avisos", apresentacaoController.enviarAvisos);
+router.get("/modelo-email", apresentacaoController.buscarModeloEmail);
+router.put("/modelo-email", apresentacaoController.salvarModeloEmail);
+router.delete("/modelo-email", apresentacaoController.restaurarModeloEmail);
+router.post("/modelo-email/teste", apresentacaoController.enviarTesteEmail);
 
 module.exports = router;

@@ -1,11 +1,14 @@
 const asyncHandler = require("../utils/asyncHandler");
+const prisma = require("../config/prisma");
 const apresentacaoService = require("../services/apresentacaoSubmissoes.service");
+const emailApresentacaoService = require("../services/emailApresentacao.service");
 const {
   vincularSchema,
   desvincularSchema,
   reordenarSchema,
   distribuirSchema,
   publicacaoSchema,
+  modeloEmailSchema,
 } = require("../validators/apresentacaoSubmissoes.validators");
 
 const listar = asyncHandler(async (req, res) => {
@@ -72,6 +75,35 @@ const enviarAvisos = asyncHandler(async (req, res) => {
   return res.status(202).json({ mensagem: "Envio dos avisos iniciado." });
 });
 
+// edicao.nome alimenta a pré-visualização no admin.
+const buscarModeloEmail = asyncHandler(async (req, res) => {
+  const [modelo, edicao] = await Promise.all([
+    emailApresentacaoService.buscarModelo(req.params.edicaoId),
+    prisma.edicao.findUnique({ where: { id: req.params.edicaoId }, select: { nome: true } }),
+  ]);
+  return res.json({ modelo, edicao, marcadores: emailApresentacaoService.MARCADORES });
+});
+
+const salvarModeloEmail = asyncHandler(async (req, res) => {
+  const dados = modeloEmailSchema.parse(req.body);
+  const modelo = await emailApresentacaoService.salvarModelo(req.params.edicaoId, dados);
+  return res.json({ modelo, mensagem: "Texto do aviso salvo." });
+});
+
+const restaurarModeloEmail = asyncHandler(async (req, res) => {
+  const modelo = await emailApresentacaoService.restaurarPadrao(req.params.edicaoId);
+  return res.json({ modelo, mensagem: "Texto padrão restaurado." });
+});
+
+const enviarTesteEmail = asyncHandler(async (req, res) => {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: req.usuario.id },
+    select: { nome: true, email: true },
+  });
+  await emailApresentacaoService.enviarTeste(req.params.edicaoId, usuario);
+  return res.json({ mensagem: `E-mail de teste enviado para ${usuario.email}.` });
+});
+
 module.exports = {
   listar,
   vincular,
@@ -81,4 +113,8 @@ module.exports = {
   publicar,
   publicarAoPublico,
   enviarAvisos,
+  buscarModeloEmail,
+  salvarModeloEmail,
+  restaurarModeloEmail,
+  enviarTesteEmail,
 };

@@ -22,4 +22,17 @@ const distribuirSchema = z.object({ simular: z.boolean().default(false) });
 
 const publicacaoSchema = z.object({ publicar: z.boolean() });
 
-module.exports = { vincularSchema, desvincularSchema, reordenarSchema, distribuirSchema, publicacaoSchema };
+// Espelhado em modeloEmailApresentacaoSchema (frontend/lib/validacao.js).
+const modeloEmailSchema = z.object({
+  assunto: z.string().trim().min(3, "Informe o assunto").max(200, "Máximo de 200 caracteres"),
+  corpo: z.string().trim().min(1, "Informe o texto do e-mail"),
+});
+
+module.exports = {
+  vincularSchema,
+  desvincularSchema,
+  reordenarSchema,
+  distribuirSchema,
+  publicacaoSchema,
+  modeloEmailSchema,
+};

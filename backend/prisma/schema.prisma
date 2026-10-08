@@ -559,22 +559,23 @@ model Edicao {
   createdAt                         DateTime             @default(now())
   updatedAt                         DateTime             @updatedAt
 
-  atividades            Atividade[]
-  realizadores          EdicaoRealizador[]
-  apoiadores            EdicaoApoiador[]
-  pontosInteresse       EdicaoPontoInteresse[]
-  inscricoes            InscricaoEdicao[]
-  inscricoesMonitoria   InscricaoMonitoria[]
-  modalidadesSubmissao  ModalidadeSubmissao[]
-  submissoes            Submissao[]
-  gruposConteudo        GrupoConteudo[]
-  avaliadores           AvaliadorEdicao[]
-  modelosEmailResultado ModeloEmailResultado[]
-  modelosCertificado    ModeloCertificado[]
-  certificados          Certificado[]
-  anais                 AnaisEdicao?
-  artigosAnais          ArtigoAnais[]
-  enviosEmail           EnvioEmail[]
+  atividades              Atividade[]
+  realizadores            EdicaoRealizador[]
+  apoiadores              EdicaoApoiador[]
+  pontosInteresse         EdicaoPontoInteresse[]
+  inscricoes              InscricaoEdicao[]
+  inscricoesMonitoria     InscricaoMonitoria[]
+  modalidadesSubmissao    ModalidadeSubmissao[]
+  submissoes              Submissao[]
+  gruposConteudo          GrupoConteudo[]
+  avaliadores             AvaliadorEdicao[]
+  modelosEmailResultado   ModeloEmailResultado[]
+  modeloEmailApresentacao ModeloEmailApresentacao?
+  modelosCertificado      ModeloCertificado[]
+  certificados            Certificado[]
+  anais                   AnaisEdicao?
+  artigosAnais            ArtigoAnais[]
+  enviosEmail             EnvioEmail[]
 
   @@map("edicoes")
 }
@@ -951,6 +952,19 @@ model ModeloEmailResultado {
   @@map("modelos_email_resultado")
 }
 
+// Texto do aviso de apresentação (apresentacaoSubmissoes.service.js), um por
+// edição; sem registro vale o padrão de emailApresentacao.service.js.
+model ModeloEmailApresentacao {
+  id        String   @id @default(uuid())
+  edicaoId  String   @unique
+  edicao    Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  assunto   String
+  corpo     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("modelos_email_apresentacao")
+}
+
 // AREA = criada automaticamente pelo vínculo avaliador↔área (ver
 // avaliacoes.service.js); MANUAL = atribuída pela organização direto na
 // submissão. Só as AREA sem decisão somem quando o avaliador perde a área.
@@ -1272,40 +1286,40 @@ enum CredenciamentoAnais {
 }
 
 model AnaisEdicao {
-  id                 String       @id @default(uuid())
-  edicaoId           String       @unique
-  edicao             Edicao       @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  titulo             String
-  subtitulo          String?
+  id                      String              @id @default(uuid())
+  edicaoId                String              @unique
+  edicao                  Edicao              @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  titulo                  String
+  subtitulo               String?
   // Nome do evento sem o número da edição, como entra na referência ABNT
   // ("In: NOME DO EVENTO, 5., 2026, Brasília").
-  nomeEvento         String?
-  issn               String?
-  isbn               String?
-  editora            String?
-  localPublicacao    String?
-  anoPublicacao      Int?
-  organizadores      String[]     @default([])
-  licenca            LicencaAnais @default(CC_BY)
-  apresentacao       String?      @db.Text
-  fichaCatalografica String?      @db.Text
-  gruposConteudoIds  String[]     @default([])
+  nomeEvento              String?
+  issn                    String?
+  isbn                    String?
+  editora                 String?
+  localPublicacao         String?
+  anoPublicacao           Int?
+  organizadores           String[]            @default([])
+  licenca                 LicencaAnais        @default(CC_BY)
+  apresentacao            String?             @db.Text
+  fichaCatalografica      String?             @db.Text
+  gruposConteudoIds       String[]            @default([])
   // Critério de quais trabalhos entram nos Anais (utils/criterioAnais.js):
   // status da decisão final, se ressalvas/formatação exigem a correção
   // concluída e quem precisa ter se credenciado no evento.
   decisoesPublicadas      DecisaoAvaliacao[]  @default([APROVADO_FORMATACAO])
   exigirCorrecaoConcluida Boolean             @default(false)
   credenciamentoExigido   CredenciamentoAnais @default(ALGUM_AUTOR)
-  publicadoEm        DateTime?
-  pdfUrl             String?
-  pdfGeradoEm        DateTime?
-  docxUrl            String?
-  docxGeradoEm       DateTime?
-  geracaoFormato     String?
-  geracaoIniciadaEm  DateTime?
-  erroGeracao        String?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  publicadoEm             DateTime?
+  pdfUrl                  String?
+  pdfGeradoEm             DateTime?
+  docxUrl                 String?
+  docxGeradoEm            DateTime?
+  geracaoFormato          String?
+  geracaoIniciadaEm       DateTime?
+  erroGeracao             String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
 
   @@map("anais_edicao")
 }
