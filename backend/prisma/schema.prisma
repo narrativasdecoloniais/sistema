@@ -131,6 +131,11 @@ enum TipoCertificado {
   APRESENTACAO_TRABALHO
   AVALIADOR
   MONITOR
+  // Pessoa envolvida numa atividade (palestrante, mediador…), um por pessoa
+  // por atividade.
+  ATUACAO_ATIVIDADE
+  // Membro da equipe do evento (MembroEquipe).
+  EQUIPE_EVENTO
 }
 
 enum OrigemCertificado {
@@ -243,6 +248,10 @@ model Usuario {
   convitesCoautor            ConviteCoautor[]
   enviosEmailCriados         EnvioEmail[]             @relation("EnvioEmailCriadoPor")
   enviosEmailRecebidos       EnvioEmailDestinatario[]
+  // Convidado de atividade / membro da equipe do evento ligado à conta pelo
+  // e-mail (certificados de atuação e de equipe).
+  atuacoesAtividade          AtividadePessoa[]
+  participacoesEquipe        MembroEquipe[]
 
   @@map("usuarios")
 }
@@ -582,6 +591,7 @@ model Edicao {
   modeloEmailApresentacao ModeloEmailApresentacao?
   modelosCertificado      ModeloCertificado[]
   certificados            Certificado[]
+  membrosEquipe           MembroEquipe[]
   anais                   AnaisEdicao?
   artigosAnais            ArtigoAnais[]
   enviosEmail             EnvioEmail[]
@@ -590,11 +600,11 @@ model Edicao {
 }
 
 model Atividade {
-  id                     String         @id @default(uuid())
+  id                     String                @id @default(uuid())
   edicaoId               String
-  edicao                 Edicao         @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  edicao                 Edicao                @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
   tipoAtividadeId        String
-  tipoAtividade          TipoAtividade  @relation(fields: [tipoAtividadeId], references: [id])
+  tipoAtividade          TipoAtividade         @relation(fields: [tipoAtividadeId], references: [id])
   nome                   String
   slug                   String
   descricao              String?
@@ -605,25 +615,25 @@ model Atividade {
   // percussão"). Nulo = sem destaque.
   destaque               String?
   destaqueLocais         LocalAvisoAtividade[] @default([PROGRAMACAO, PAGINA_ATIVIDADE, INSCRICAO, COMPROVANTE])
-  exigeInscricao         Boolean        @default(true)
-  semLimiteVagas         Boolean        @default(false)
+  exigeInscricao         Boolean               @default(true)
+  semLimiteVagas         Boolean               @default(false)
   vagas                  Int?
   inicioAtividade        DateTime
   fimAtividade           DateTime
-  atividadeContinua      Boolean        @default(false)
+  atividadeContinua      Boolean               @default(false)
   // Segredo do QR code de presença (só atividades com exigeInscricao) — mesmo
   // esquema de Edicao.tokenCredenciamento.
-  tokenPresenca          String?        @unique
-  paraConvidados         Boolean        @default(false)
-  paraCriancasConvidadas Boolean        @default(false)
+  tokenPresenca          String?               @unique
+  paraConvidados         Boolean               @default(false)
+  paraCriancasConvidadas Boolean               @default(false)
   // Posição na programação entre atividades que começam no mesmo horário
   // (menor = aparece antes). Nulo = sem ordem definida: mantém a ordem
   // anterior à coluna (tipo, depois nome).
   ordem                  Int?
   areaSubmissaoId        String?
-  areaSubmissao          AreaSubmissao? @relation(fields: [areaSubmissaoId], references: [id], onDelete: Restrict)
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
+  areaSubmissao          AreaSubmissao?        @relation(fields: [areaSubmissaoId], references: [id], onDelete: Restrict)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
 
   pessoas               AtividadePessoa[]
   inscricoes            InscricaoAtividade[]
@@ -706,10 +716,43 @@ model AtividadePessoa {
   tipoParticipacaoId String?
   tipoParticipacao   TipoParticipacao? @relation(fields: [tipoParticipacaoId], references: [id])
   ordem              Int               @default(0)
+  // Só para o certificado de atuação (nunca sai na API pública). Sem conta
+  // fica só o e-mail; a conta é ligada quando alguém se cadastra ou troca
+  // para esse e-mail (usuarios.service.js), como SubmissaoAutor.
+  email              String?
+  usuarioId          String?
+  usuario            Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
+  certificados Certificado[]
+
+  @@index([usuarioId])
   @@map("atividade_pessoas")
+}
+
+// Equipe do evento (comissões, coordenação etc.) de uma edição — lista só
+// para o certificado de equipe, independente da dobra "Comissões e
+// Programas" da home. Mesmo esquema de e-mail/conta de AtividadePessoa.
+model MembroEquipe {
+  id           String   @id @default(uuid())
+  edicaoId     String
+  edicao       Edicao   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  nome         String
+  email        String?
+  usuarioId    String?
+  usuario      Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  // Ex.: "Comissão Organizadora", "Comissão Científica".
+  funcao       String
+  cargaHoraria Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  certificados Certificado[]
+
+  @@index([edicaoId])
+  @@index([usuarioId])
+  @@map("membros_equipe")
 }
 
 // `ordem` é a preferência de renderização do tipo nas páginas públicas da
@@ -1146,28 +1189,40 @@ model ModeloCertificado {
 // presença/atividade mude depois. usuarioId é nulo para coautor sem conta (a
 // conta é resolvida pela autoria quando a pessoa se cadastrar).
 model Certificado {
-  id               String            @id @default(uuid())
-  edicaoId         String
-  edicao           Edicao            @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  tipo             TipoCertificado
-  chave            String
-  codigo           String            @unique
-  usuarioId        String?
-  usuario          Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  submissaoAutorId String?
-  submissaoAutor   SubmissaoAutor?   @relation(fields: [submissaoAutorId], references: [id], onDelete: SetNull)
-  atividadeId      String?
-  atividade        Atividade?        @relation(fields: [atividadeId], references: [id], onDelete: SetNull)
-  origem           OrigemCertificado @default(REGRA)
-  dados            Json
-  revogadoEm       DateTime?
-  motivoRevogacao  String?
-  emitidoEm        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                String            @id @default(uuid())
+  edicaoId          String
+  edicao            Edicao            @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipo              TipoCertificado
+  chave             String
+  codigo            String            @unique
+  usuarioId         String?
+  usuario           Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  submissaoAutorId  String?
+  submissaoAutor    SubmissaoAutor?   @relation(fields: [submissaoAutorId], references: [id], onDelete: SetNull)
+  atividadeId       String?
+  atividade         Atividade?        @relation(fields: [atividadeId], references: [id], onDelete: SetNull)
+  atividadePessoaId String?
+  atividadePessoa   AtividadePessoa?  @relation(fields: [atividadePessoaId], references: [id], onDelete: SetNull)
+  membroEquipeId    String?
+  membroEquipe      MembroEquipe?     @relation(fields: [membroEquipeId], references: [id], onDelete: SetNull)
+  origem            OrigemCertificado @default(REGRA)
+  dados             Json
+  revogadoEm        DateTime?
+  motivoRevogacao   String?
+  emitidoEm         DateTime          @default(now())
+  // Envio do certificado por e-mail (link do PDF pelo código), pedido pela
+  // organização na aba Emitidos e feito em segundo plano. Pendente =
+  // solicitado e ainda não enviado.
+  emailSolicitadoEm DateTime?
+  emailEnviadoEm    DateTime?
+  emailErro         String?
+  updatedAt         DateTime          @updatedAt
 
   @@unique([edicaoId, tipo, chave])
   @@index([usuarioId])
   @@index([submissaoAutorId])
+  @@index([atividadePessoaId])
+  @@index([membroEquipeId])
   @@map("certificados")
 }
 

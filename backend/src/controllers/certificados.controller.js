@@ -6,6 +6,9 @@ const {
   inclusaoManualSchema,
   revogacaoSchema,
   revogacaoEmLoteSchema,
+  membroEquipeSchema,
+  convidadoSchema,
+  envioEmailSchema,
 } = require("../validators/certificados.validators");
 const certificadosService = require("../services/certificados.service");
 
@@ -85,7 +88,47 @@ const pdf = asyncHandler(async (req, res) => {
   return enviarPdf(res, await certificadosService.pdfAdmin(req.params.edicaoId, req.params.id));
 });
 
+const salvarMembroEquipe = asyncHandler(async (req, res) => {
+  const dados = membroEquipeSchema.parse(req.body);
+  const membro = await certificadosService.salvarMembroEquipe(req.params.edicaoId, req.params.id || null, dados);
+  return res.status(req.params.id ? 200 : 201).json({
+    membro,
+    mensagem: req.params.id ? "Membro da equipe atualizado." : "Membro da equipe incluído.",
+  });
+});
+
+const excluirMembroEquipe = asyncHandler(async (req, res) => {
+  await certificadosService.excluirMembroEquipe(req.params.edicaoId, req.params.id);
+  return res.json({ mensagem: "Membro removido da equipe." });
+});
+
+const atualizarConvidado = asyncHandler(async (req, res) => {
+  const dados = convidadoSchema.parse(req.body);
+  const convidado = await certificadosService.atualizarConvidado(req.params.edicaoId, req.params.id, dados);
+  return res.json({ convidado, mensagem: "E-mail do convidado atualizado." });
+});
+
+const enviarPorEmail = asyncHandler(async (req, res) => {
+  const dados = envioEmailSchema.parse(req.body);
+  const { solicitados, semEmail } = await certificadosService.solicitarEnvioEmail(req.params.edicaoId, dados);
+  const partes = [
+    `${solicitados} ${solicitados === 1 ? "certificado será enviado" : "certificados serão enviados"} por e-mail em segundo plano`,
+    ...(semEmail > 0 ? [`${semEmail} sem e-mail ${semEmail === 1 ? "ficou" : "ficaram"} de fora`] : []),
+  ];
+  return res.json({ solicitados, semEmail, mensagem: `${partes.join("; ")}.` });
+});
+
+const retomarEnvioEmail = asyncHandler(async (req, res) => {
+  const total = await certificadosService.retomarEnvioEmail(req.params.edicaoId);
+  return res.json({ mensagem: `Envio retomado: ${total} ${total === 1 ? "certificado pendente" : "certificados pendentes"}.` });
+});
+
 module.exports = {
+  salvarMembroEquipe,
+  excluirMembroEquipe,
+  atualizarConvidado,
+  enviarPorEmail,
+  retomarEnvioEmail,
   enviarPdf,
   listar,
   salvarModelo,

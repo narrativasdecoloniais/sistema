@@ -16,6 +16,11 @@ const atividadePessoaSchema = z.object({
     .uuid("Selecione um tipo de participação válido")
     .nullable()
     .optional(),
+  // Só para o certificado de atuação; nunca sai na API pública. null/"" limpa.
+  email: z
+    .union([z.literal(""), z.string().trim().toLowerCase().email("Informe um e-mail válido")])
+    .nullable()
+    .optional(),
 });
 
 const atividadeSchema = z

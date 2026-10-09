@@ -20,6 +20,9 @@ const {
   chavePresenca,
 } = require("./certificadosElegiveis");
 const { gerarPdfCertificado } = require("./pdfCertificado.service");
+const emailService = require("./email.service");
+const { camposContaPorEmail } = require("./atividades.service");
+const escaparHtml = require("../utils/escaparHtml");
 
 // Certificados de uma edição (seção CERTIFICADOS do admin). A organização
 // configura um modelo por tipo (fundo, texto com marcadores, margens, QR),
@@ -28,7 +31,15 @@ const { gerarPdfCertificado } = require("./pdfCertificado.service");
 // PDF na área dele. Cada certificado tem um código público validado em
 // /validar-certificado/<codigo> (QR code impresso no PDF).
 
-const TIPOS = ["PARTICIPACAO_EVENTO", "PRESENCA_ATIVIDADE", "APRESENTACAO_TRABALHO", "AVALIADOR", "MONITOR"];
+const TIPOS = [
+  "PARTICIPACAO_EVENTO",
+  "PRESENCA_ATIVIDADE",
+  "APRESENTACAO_TRABALHO",
+  "AVALIADOR",
+  "MONITOR",
+  "ATUACAO_ATIVIDADE",
+  "EQUIPE_EVENTO",
+];
 
 const ROTULOS_TIPO = {
   PARTICIPACAO_EVENTO: "Participação no evento",
@@ -36,6 +47,8 @@ const ROTULOS_TIPO = {
   APRESENTACAO_TRABALHO: "Apresentação de trabalho",
   AVALIADOR: "Avaliação de trabalhos",
   MONITOR: "Monitoria",
+  ATUACAO_ATIVIDADE: "Atuação em atividade",
+  EQUIPE_EVENTO: "Equipe do evento",
 };
 
 const TEXTOS_PADRAO = {
@@ -49,6 +62,10 @@ const TEXTOS_PADRAO = {
     "<p>Certificamos que <strong>{{nome}}</strong> atuou como avaliador(a) dos trabalhos submetidos ao {{edicao}}, tendo avaliado {{trabalhosAvaliados}} trabalho(s).</p>",
   MONITOR:
     "<p>Certificamos que <strong>{{nome}}</strong> atuou como monitor(a) voluntário(a) do {{edicao}}, realizado {{periodoEvento}}, com carga horária de {{cargaHoraria}} horas.</p>",
+  ATUACAO_ATIVIDADE:
+    "<p>Certificamos que <strong>{{nome}}</strong> atuou como {{funcao}} na atividade <em>{{atividade}}</em>, realizada {{dataAtividade}}, no {{edicao}}, com carga horária de {{cargaHoraria}} horas.</p>",
+  EQUIPE_EVENTO:
+    "<p>Certificamos que <strong>{{nome}}</strong> integrou a {{funcao}} do {{edicao}}, realizado {{periodoEvento}}, com carga horária de {{cargaHoraria}} horas.</p>",
 };
 
 const CAMPOS_LAYOUT = [
@@ -224,6 +241,10 @@ function referenciaDe(certificado) {
   const dados = certificado.dados || {};
   if (certificado.tipo === "APRESENTACAO_TRABALHO") return dados.titulo || "";
   if (certificado.tipo === "PRESENCA_ATIVIDADE") return dados.atividade || "";
+  if (certificado.tipo === "ATUACAO_ATIVIDADE") {
+    return [dados.funcao, dados.atividade].filter(Boolean).join(" — ");
+  }
+  if (certificado.tipo === "EQUIPE_EVENTO") return dados.funcao || "";
   return "";
 }
 
@@ -246,6 +267,7 @@ function valoresExemplo(edicao, tipo, modelo) {
     trabalhosAvaliados: "5",
     areas: "Educação e relações étnico-raciais",
     funcoes: "Credenciamento e Apoio às atividades",
+    funcao: tipo === "EQUIPE_EVENTO" ? "Comissão Organizadora" : "Mediadora",
   };
 }
 
@@ -259,9 +281,32 @@ function valoresDoCertificado(certificado, modelo) {
   };
 }
 
+// Para onde vai o certificado por e-mail: a conta ligada, senão o e-mail
+// solto da autoria / convidado / membro da equipe.
+const SELECT_DESTINO = {
+  usuario: { select: { email: true, ativo: true, anonimizadoEm: true } },
+  submissaoAutor: { select: { email: true } },
+  atividadePessoa: { select: { email: true } },
+  membroEquipe: { select: { email: true } },
+};
+
+function emailDestino(certificado) {
+  if (certificado.usuario) return contaValida(certificado.usuario) ? certificado.usuario.email : null;
+  return (
+    certificado.submissaoAutor?.email || certificado.atividadePessoa?.email || certificado.membroEquipe?.email || null
+  );
+}
+
+function situacaoEmail(certificado) {
+  if (certificado.emailEnviadoEm) return "ENVIADO";
+  if (certificado.emailErro) return "ERRO";
+  if (certificado.emailSolicitadoEm) return "PENDENTE";
+  return "NAO_ENVIADO";
+}
+
 async function listar(edicaoId) {
   const edicao = await buscarEdicao(edicaoId);
-  const [modelos, certificados, elegiveisPorTipo, atividades] = await Promise.all([
+  const [modelos, certificados, elegiveisPorTipo, atividades, equipe, convidados] = await Promise.all([
     modelosDaEdicao(edicaoId),
     prisma.certificado.findMany({
       where: { edicaoId },
@@ -275,14 +320,18 @@ async function listar(edicaoId) {
         revogadoEm: true,
         motivoRevogacao: true,
         emitidoEm: true,
-        usuario: { select: { email: true } },
-        submissaoAutor: { select: { email: true } },
+        emailSolicitadoEm: true,
+        emailEnviadoEm: true,
+        emailErro: true,
+        ...SELECT_DESTINO,
       },
       orderBy: { emitidoEm: "desc" },
     }),
     Promise.all(TIPOS.map((tipo) => listarElegiveis(prisma, edicao, tipo))),
     // Pra inclusão manual de presença.
     prisma.atividade.findMany({ where: { edicaoId }, select: { id: true, nome: true }, orderBy: { nome: "asc" } }),
+    listarEquipe(edicaoId),
+    listarConvidados(edicaoId),
   ]);
 
   const chavesElegiveis = Object.fromEntries(
@@ -315,12 +364,22 @@ async function listar(edicaoId) {
     marcadores: MARCADORES_POR_TIPO,
     exemplos: Object.fromEntries(TIPOS.map((tipo) => [tipo, valoresExemplo(edicao, tipo, modelos[tipo])])),
     resumo,
+    equipe,
+    convidados,
+    envioEmail: {
+      enviando: enviosEmAndamento.has(edicaoId),
+      pendentes: certificados.filter((c) => situacaoEmail(c) === "PENDENTE" && !c.revogadoEm).length,
+      comErro: certificados.filter((c) => situacaoEmail(c) === "ERRO" && !c.revogadoEm).length,
+    },
     certificados: certificados.map((c) => ({
       id: c.id,
       tipo: c.tipo,
       codigo: formatarCodigo(c.codigo),
       nome: c.dados?.nome || "",
-      email: c.usuario?.email || c.submissaoAutor?.email || null,
+      email: emailDestino(c),
+      situacaoEmail: situacaoEmail(c),
+      emailEnviadoEm: c.emailEnviadoEm,
+      emailErro: c.emailErro,
       referencia: referenciaDe(c),
       cargaHoraria: cargaHorariaDe(modelos[c.tipo], c.dados),
       origem: c.origem,
@@ -500,6 +559,8 @@ async function gerar(edicaoId, tipo) {
             codigo: codigos[i],
             usuarioId: item.usuarioId ?? null,
             submissaoAutorId: item.submissaoAutorId ?? null,
+            atividadePessoaId: item.atividadePessoaId ?? null,
+            membroEquipeId: item.membroEquipeId ?? null,
             atividadeId: item.atividadeId ?? null,
             origem: "REGRA",
             dados: item.dados,
@@ -627,7 +688,15 @@ async function pdfAdmin(edicaoId, id) {
 // Do participante: ligado à conta direto ou pela autoria (coautor que criou a
 // conta depois da geração).
 function filtroDoUsuario(usuarioId) {
-  return { revogadoEm: null, OR: [{ usuarioId }, { submissaoAutor: { usuarioId } }] };
+  return {
+    revogadoEm: null,
+    OR: [
+      { usuarioId },
+      { submissaoAutor: { usuarioId } },
+      { atividadePessoa: { usuarioId } },
+      { membroEquipe: { usuarioId } },
+    ],
+  };
 }
 
 async function modelosLiberados(edicaoIds) {
@@ -713,6 +782,252 @@ async function validar(codigoDigitado) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// PDF pelo código (link do e-mail e botão da validação pública)
+// ---------------------------------------------------------------------------
+
+// Mesma regra da validação: só certificado válido de tipo liberado. O código
+// já está impresso (e no QR) do próprio certificado, então o PDF não expõe
+// nada além do que quem tem o código já tem em mãos.
+async function pdfPublico(codigoDigitado) {
+  const codigo = normalizarCodigo(codigoDigitado);
+  const naoEncontrado = new ErroHttp(404, "Não encontramos certificado com esse código.");
+  if (codigo.length !== 12) throw naoEncontrado;
+  const certificado = await prisma.certificado.findUnique({ where: { codigo } });
+  if (!certificado || certificado.revogadoEm) throw naoEncontrado;
+  const modelo = (await modelosLiberados([certificado.edicaoId])).get(`${certificado.edicaoId}:${certificado.tipo}`);
+  if (!modelo) throw naoEncontrado;
+  return montarPdf(certificado, modelo);
+}
+
+// ---------------------------------------------------------------------------
+// Equipe do evento (MembroEquipe) e convidados das atividades
+// (AtividadePessoa) — as pessoas dos certificados EQUIPE_EVENTO e
+// ATUACAO_ATIVIDADE. E-mail sem conta fica solto; a conta é ligada quando
+// existir (camposContaPorEmail e usuarios.service.js).
+// ---------------------------------------------------------------------------
+
+const SELECT_CONTA_VINCULADA = { select: { id: true, nome: true, email: true } };
+
+async function listarEquipe(edicaoId) {
+  return prisma.membroEquipe.findMany({
+    where: { edicaoId },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      funcao: true,
+      cargaHoraria: true,
+      usuario: SELECT_CONTA_VINCULADA,
+      _count: { select: { certificados: { where: { revogadoEm: null } } } },
+    },
+    orderBy: [{ funcao: "asc" }, { nome: "asc" }],
+  });
+}
+
+async function camposMembro(dados) {
+  if (dados.usuarioId) {
+    const conta = await prisma.usuario.findUnique({ where: { id: dados.usuarioId } });
+    if (!contaValida(conta)) throw new ErroHttp(404, "Conta não encontrada.");
+    return { email: conta.email.toLowerCase(), usuarioId: conta.id };
+  }
+  return camposContaPorEmail(dados.email || null);
+}
+
+async function salvarMembroEquipe(edicaoId, id, dados) {
+  await buscarEdicao(edicaoId);
+  const campos = {
+    nome: dados.nome,
+    funcao: dados.funcao,
+    cargaHoraria: dados.cargaHoraria ?? null,
+    ...(await camposMembro(dados)),
+  };
+  if (!id) return prisma.membroEquipe.create({ data: { ...campos, edicaoId } });
+
+  const atual = await prisma.membroEquipe.findFirst({ where: { id, edicaoId } });
+  if (!atual) throw new ErroHttp(404, "Membro da equipe não encontrado.");
+  return prisma.membroEquipe.update({ where: { id }, data: campos });
+}
+
+// Bloqueado com certificado não revogado — revogue antes (o código já pode
+// ter sido entregue).
+async function excluirMembroEquipe(edicaoId, id) {
+  const membro = await prisma.membroEquipe.findFirst({
+    where: { id, edicaoId },
+    select: { _count: { select: { certificados: { where: { revogadoEm: null } } } } },
+  });
+  if (!membro) throw new ErroHttp(404, "Membro da equipe não encontrado.");
+  if (membro._count.certificados > 0) {
+    throw new ErroHttp(409, "Essa pessoa tem certificado emitido. Revogue o certificado antes de removê-la da equipe.");
+  }
+  await prisma.membroEquipe.delete({ where: { id } });
+}
+
+async function listarConvidados(edicaoId) {
+  const pessoas = await prisma.atividadePessoa.findMany({
+    where: { atividade: { edicaoId } },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      usuario: SELECT_CONTA_VINCULADA,
+      tipoParticipacao: { select: { nome: true } },
+      atividade: { select: { id: true, nome: true, inicioAtividade: true } },
+    },
+    orderBy: [{ atividade: { inicioAtividade: "asc" } }, { ordem: "asc" }],
+  });
+  return pessoas.map(({ tipoParticipacao, ...pessoa }) => ({ ...pessoa, funcao: tipoParticipacao?.nome || null }));
+}
+
+// Só e-mail/conta — nome, foto e tipo continuam sendo editados na atividade.
+async function atualizarConvidado(edicaoId, id, dados) {
+  const pessoa = await prisma.atividadePessoa.findFirst({ where: { id, atividade: { edicaoId } } });
+  if (!pessoa) throw new ErroHttp(404, "Convidado não encontrado nesta edição.");
+  return prisma.atividadePessoa.update({ where: { id }, data: await camposMembro(dados) });
+}
+
+// ---------------------------------------------------------------------------
+// Envio por e-mail
+// ---------------------------------------------------------------------------
+
+// Pedido pela organização na aba Emitidos (por tipo ou pelos selecionados) e
+// feito em segundo plano, um por vez (~600 ms, limite do Resend), como os
+// e-mails de resultado. Progresso em Certificado.email*; "Retomar pendentes"
+// continua depois de falha ou restart. Só sai certificado válido de tipo
+// liberado — o link leva à validação pública, que tem o botão do PDF.
+
+const INTERVALO_ENVIO_MS = 600;
+const enviosEmAndamento = new Set();
+
+function esperar(ms) {
+  return new Promise((resolver) => setTimeout(resolver, ms));
+}
+
+function htmlEmailCertificado({ nome, rotulo, referencia, edicao, codigo, comConta }) {
+  const link = urlValidacao(codigo);
+  const corpoHtml = `
+    <p>Olá, ${escaparHtml(nome)}.</p>
+    <p>O seu certificado de <strong>${escaparHtml(rotulo)}</strong>${
+      referencia ? ` (${escaparHtml(referencia)})` : ""
+    } do ${escaparHtml(edicao)} está disponível.</p>
+    ${emailService.botaoEmail(link, "Ver e baixar o certificado")}
+    <p>Código de validação: <strong>${escaparHtml(formatarCodigo(codigo))}</strong>. Qualquer pessoa pode conferir a autenticidade do certificado por esse código, no site do evento.</p>
+    ${
+      comConta
+        ? "<p>O certificado também fica disponível em Meus certificados, na sua área do participante.</p>"
+        : ""
+    }
+  `;
+  return emailService.layoutEmailPublico({ eyebrow: "Certificado", titulo: escaparHtml(edicao), corpoHtml });
+}
+
+// tipos: envia todos os válidos desses tipos; ids: só esses certificados.
+// reenviar: inclui quem já recebeu (senão só quem ainda não recebeu).
+async function solicitarEnvioEmail(edicaoId, { tipos, ids, reenviar }) {
+  const edicao = await buscarEdicao(edicaoId);
+  if (enviosEmAndamento.has(edicaoId)) {
+    throw new ErroHttp(409, "Já há um envio de certificados em andamento. Aguarde terminar.");
+  }
+
+  const liberados = await prisma.modeloCertificado.findMany({
+    where: { edicaoId, liberadoEm: { not: null } },
+    select: { tipo: true },
+  });
+  const tiposLiberados = liberados.map((m) => m.tipo);
+  if (tiposLiberados.length === 0) {
+    throw new ErroHttp(409, "Nenhum tipo de certificado está liberado. Libere o tipo antes de enviar por e-mail.");
+  }
+
+  const candidatos = await prisma.certificado.findMany({
+    where: {
+      edicaoId,
+      revogadoEm: null,
+      tipo: { in: tipos ? tipos.filter((t) => tiposLiberados.includes(t)) : tiposLiberados },
+      ...(ids ? { id: { in: ids } } : {}),
+      ...(reenviar ? {} : { emailEnviadoEm: null }),
+    },
+    select: { id: true, ...SELECT_DESTINO },
+  });
+  const comEmail = candidatos.filter((c) => emailDestino(c));
+  if (comEmail.length === 0) {
+    throw new ErroHttp(409, "Nenhum certificado a enviar: todos já foram enviados, não estão liberados ou não têm e-mail.");
+  }
+
+  await prisma.certificado.updateMany({
+    where: { id: { in: comEmail.map((c) => c.id) } },
+    data: { emailSolicitadoEm: new Date(), emailEnviadoEm: null, emailErro: null },
+  });
+  iniciarEnvioEmSegundoPlano(edicaoId);
+  return { solicitados: comEmail.length, semEmail: candidatos.length - comEmail.length, edicao: edicao.nome };
+}
+
+function iniciarEnvioEmSegundoPlano(edicaoId) {
+  enviarEmailsPendentes(edicaoId).catch((erro) => {
+    console.error(`[certificados] Falha no envio de e-mails da edição ${edicaoId}:`, erro);
+  });
+}
+
+async function retomarEnvioEmail(edicaoId) {
+  await buscarEdicao(edicaoId);
+  if (enviosEmAndamento.has(edicaoId)) throw new ErroHttp(409, "O envio dos certificados já está em andamento.");
+  // Falhas voltam pra fila.
+  const { count } = await prisma.certificado.updateMany({
+    where: { edicaoId, revogadoEm: null, emailSolicitadoEm: { not: null }, emailEnviadoEm: null },
+    data: { emailErro: null },
+  });
+  if (count === 0) throw new ErroHttp(409, "Não há envios pendentes.");
+  iniciarEnvioEmSegundoPlano(edicaoId);
+  return count;
+}
+
+async function enviarEmailsPendentes(edicaoId) {
+  if (enviosEmAndamento.has(edicaoId)) return;
+  enviosEmAndamento.add(edicaoId);
+
+  try {
+    const edicao = await buscarEdicao(edicaoId);
+    const pendentes = await prisma.certificado.findMany({
+      where: { edicaoId, revogadoEm: null, emailSolicitadoEm: { not: null }, emailEnviadoEm: null, emailErro: null },
+      select: { id: true, tipo: true, codigo: true, dados: true, usuarioId: true, ...SELECT_DESTINO },
+      orderBy: { emitidoEm: "asc" },
+    });
+    const liberados = await modelosLiberados([edicaoId]);
+
+    for (const certificado of pendentes) {
+      const email = emailDestino(certificado);
+      try {
+        if (!liberados.has(`${edicaoId}:${certificado.tipo}`)) throw new Error("Tipo de certificado não está liberado.");
+        if (!email) throw new Error("Sem e-mail de destino.");
+        await emailService.enviarEmail({
+          para: email,
+          assunto: `Seu certificado — ${edicao.nome}`,
+          html: htmlEmailCertificado({
+            nome: certificado.dados?.nome || "",
+            rotulo: ROTULOS_TIPO[certificado.tipo],
+            referencia: referenciaDe(certificado),
+            edicao: edicao.nome,
+            codigo: certificado.codigo,
+            comConta: Boolean(certificado.usuarioId),
+          }),
+        });
+        await prisma.certificado.update({
+          where: { id: certificado.id },
+          data: { emailEnviadoEm: new Date(), emailErro: null },
+        });
+      } catch (erro) {
+        console.error(`[certificados] E-mail do certificado ${certificado.id} falhou:`, erro.message);
+        await prisma.certificado.update({
+          where: { id: certificado.id },
+          data: { emailErro: String(erro.message).slice(0, 500) },
+        });
+      }
+      await esperar(INTERVALO_ENVIO_MS);
+    }
+  } finally {
+    enviosEmAndamento.delete(edicaoId);
+  }
+}
+
 module.exports = {
   TIPOS,
   ROTULOS_TIPO,
@@ -729,4 +1044,10 @@ module.exports = {
   listarDoParticipante,
   pdfDoParticipante,
   validar,
+  pdfPublico,
+  salvarMembroEquipe,
+  excluirMembroEquipe,
+  atualizarConvidado,
+  solicitarEnvioEmail,
+  retomarEnvioEmail,
 };

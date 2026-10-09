@@ -8,6 +8,7 @@ const certificadosService = require("../services/certificados.service");
 const prisma = require("../config/prisma");
 const inscricoesAbertas = require("../utils/inscricoesAbertas");
 const inscricoesMonitoriaAbertas = require("../utils/inscricoesMonitoriaAbertas");
+const { enviarPdf } = require("./certificados.controller");
 
 // Link "Anais" da navegação aponta para /anais/<slug> quando os Anais da
 // edição estão publicados. Consulta à parte (e tolerante a falha) pra nunca
@@ -54,7 +55,7 @@ const buscarEdicaoPorSlug = asyncHandler(async (req, res) => {
 const listarAtividadesPorEdicaoSlug = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarPorSlug(req.params.slug);
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
-  const atividades = await atividadesService.listarAtividades(edicao.id);
+  const atividades = (await atividadesService.listarAtividades(edicao.id)).map(atividadesService.paraPublico);
   atividades.sort((a, b) => a.nome.localeCompare(b.nome));
   return res.json({ atividades });
 });
@@ -85,7 +86,9 @@ const buscarAtividadePorEdicaoSlug = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarPorSlug(req.params.edicaoSlug);
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
 
-  const atividade = await atividadesService.buscarPorSlug(edicao.id, req.params.atividadeSlug);
+  const atividade = atividadesService.paraPublico(
+    await atividadesService.buscarPorSlug(edicao.id, req.params.atividadeSlug)
+  );
   if (!atividade) throw new ErroHttp(404, "Atividade não encontrada.");
   return res.json({ atividade: await anexarTrabalhosApresentados(atividade, edicao) });
 });
@@ -94,7 +97,7 @@ const listarAtividades = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
 
-  const atividades = await atividadesService.listarAtividades(edicao.id);
+  const atividades = (await atividadesService.listarAtividades(edicao.id)).map(atividadesService.paraPublico);
   atividades.sort((a, b) => a.nome.localeCompare(b.nome));
   return res.json({ atividades });
 });
@@ -103,7 +106,7 @@ const buscarAtividadePorSlug = asyncHandler(async (req, res) => {
   const edicao = await edicoesService.buscarEdicaoAtual();
   if (!edicao) throw new ErroHttp(404, "Nenhuma edição encontrada.");
 
-  const atividade = await atividadesService.buscarPorSlug(edicao.id, req.params.slug);
+  const atividade = atividadesService.paraPublico(await atividadesService.buscarPorSlug(edicao.id, req.params.slug));
   if (!atividade) throw new ErroHttp(404, "Atividade não encontrada.");
   return res.json({ atividade: await anexarTrabalhosApresentados(atividade, edicao) });
 });
@@ -138,8 +141,14 @@ const validarCertificado = asyncHandler(async (req, res) => {
   return res.json({ certificado });
 });
 
+// PDF pelo código (botão da validação pública, link do e-mail do certificado).
+const baixarCertificadoPublico = asyncHandler(async (req, res) => {
+  return enviarPdf(res, await certificadosService.pdfPublico(req.params.codigo));
+});
+
 module.exports = {
   validarCertificado,
+  baixarCertificadoPublico,
   buscarEdicaoAtual,
   listarEdicoesAnteriores,
   buscarEdicaoPorSlug,

@@ -3,7 +3,18 @@ const { z } = require("zod");
 // Espelhado em frontend/lib/validacao.js (modeloCertificadoSchema) — mudou um,
 // muda o outro.
 
-const TIPOS_CERTIFICADO = ["PARTICIPACAO_EVENTO", "PRESENCA_ATIVIDADE", "APRESENTACAO_TRABALHO", "AVALIADOR", "MONITOR"];
+const TIPOS_CERTIFICADO = [
+  "PARTICIPACAO_EVENTO",
+  "PRESENCA_ATIVIDADE",
+  "APRESENTACAO_TRABALHO",
+  "AVALIADOR",
+  "MONITOR",
+  "ATUACAO_ATIVIDADE",
+  "EQUIPE_EVENTO",
+];
+
+// Saem só pela regra/lista própria, sem inclusão manual por conta.
+const TIPOS_SEM_INCLUSAO_MANUAL = ["APRESENTACAO_TRABALHO", "ATUACAO_ATIVIDADE", "EQUIPE_EVENTO"];
 
 // Página A4 paisagem, em mm. Sobra mínima pra caixa de texto não sumir.
 const LARGURA_PAGINA_MM = 297;
@@ -69,8 +80,9 @@ const modeloCertificadoSchema = z
 const liberacaoSchema = z.object({ liberado: z.boolean() });
 
 const inclusaoManualSchema = z.object({
-  tipo: tipoCertificadoSchema.refine((tipo) => tipo !== "APRESENTACAO_TRABALHO", {
-    message: "Certificados de apresentação de trabalho saem só pela regra (trabalho aprovado e vinculado a uma atividade)",
+  tipo: tipoCertificadoSchema.refine((tipo) => !TIPOS_SEM_INCLUSAO_MANUAL.includes(tipo), {
+    message:
+      "Este tipo não tem inclusão manual: apresentação sai pela regra, atuação pelas pessoas das atividades e equipe pela aba Equipe do evento",
   }),
   usuarioId: z.string({ required_error: "Escolha a pessoa" }).uuid("Escolha a pessoa"),
   atividadeId: z.string().uuid("Escolha a atividade").nullable().optional(),
@@ -85,8 +97,46 @@ const revogacaoEmLoteSchema = z.object({
   motivo: motivoSchema,
 });
 
+const emailOpcionalSchema = z
+  .union([z.literal(""), z.string().trim().toLowerCase().email("Informe um e-mail válido")])
+  .nullable()
+  .optional();
+
+// usuarioId (conta escolhida na busca) tem prioridade sobre o e-mail digitado.
+const contaOuEmailSchema = {
+  email: emailOpcionalSchema,
+  usuarioId: z.string().uuid("Conta inválida").nullable().optional(),
+};
+
+const membroEquipeSchema = z.object({
+  nome: z.string().trim().min(2, "Informe o nome").max(200, "Nome grande demais"),
+  funcao: z.string().trim().min(2, "Informe a função (ex. Comissão Organizadora)").max(120, "Função grande demais"),
+  cargaHoraria: z
+    .number({ invalid_type_error: "Carga horária inválida" })
+    .int("A carga horária deve ser um número inteiro")
+    .min(1, "A carga horária deve ser de pelo menos 1 hora")
+    .max(2000, "Carga horária grande demais")
+    .nullable()
+    .optional(),
+  ...contaOuEmailSchema,
+});
+
+const convidadoSchema = z.object(contaOuEmailSchema);
+
+// Por tipos (todos os válidos deles) ou pelos certificados selecionados.
+const envioEmailSchema = z
+  .object({
+    tipos: z.array(tipoCertificadoSchema).min(1, "Escolha ao menos um tipo").optional(),
+    ids: z.array(z.string().uuid()).min(1, "Selecione ao menos um certificado").max(5000).optional(),
+    reenviar: z.boolean().optional().default(false),
+  })
+  .refine((d) => d.tipos || d.ids, { message: "Escolha os tipos ou os certificados", path: ["tipos"] });
+
 module.exports = {
   TIPOS_CERTIFICADO,
+  membroEquipeSchema,
+  convidadoSchema,
+  envioEmailSchema,
   tipoCertificadoSchema,
   modeloCertificadoSchema,
   liberacaoSchema,

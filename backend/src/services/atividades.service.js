@@ -2,6 +2,7 @@ const prisma = require("../config/prisma");
 const sincronizarLista = require("../utils/sincronizarLista");
 const storageService = require("./storage.service");
 const ErroHttp = require("../utils/erroHttp");
+const { buscarPorEmail } = require("./usuarios.service");
 
 const INCLUDE_PADRAO = {
   tipoAtividade: true,
@@ -21,6 +22,7 @@ async function camposPessoa(pessoa, indice) {
     breveDescricao: pessoa.breveDescricao ?? null,
     tipoParticipacaoId: pessoa.tipoParticipacaoId,
     ordem: indice,
+    ...(await camposContaPorEmail(pessoa.email)),
   };
 
   if (pessoa.imagem === null) {
@@ -30,6 +32,29 @@ async function camposPessoa(pessoa, indice) {
   }
 
   return campos;
+}
+
+// E-mail de convidado de atividade / membro da equipe (certificados): a conta
+// com esse e-mail, se existir, fica ligada; sem conta, fica só o e-mail e a
+// ligação acontece quando a pessoa se cadastrar (usuarios.service.js).
+// undefined = não mexe; null/"" = sem e-mail e sem conta.
+async function camposContaPorEmail(email) {
+  if (email === undefined) return {};
+  if (!email) return { email: null, usuarioId: null };
+  const conta = await buscarPorEmail(email);
+  const valida = conta && conta.ativo && !conta.anonimizadoEm;
+  return { email: valida ? conta.email.toLowerCase() : email, usuarioId: valida ? conta.id : null };
+}
+
+// Resposta das rotas públicas: sem o segredo do QR de presença nem o e-mail/
+// conta dos convidados (só existem pro admin e pros certificados).
+function paraPublico(atividade) {
+  if (!atividade) return atividade;
+  const { tokenPresenca, ...resto } = atividade;
+  return {
+    ...resto,
+    pessoas: (resto.pessoas || []).map(({ email, usuarioId, ...pessoa }) => pessoa),
+  };
 }
 
 async function removerImagemPessoa(pessoa) {
@@ -210,6 +235,8 @@ async function duplicarAtividade(edicaoId, original, { inicioAtividade, fimAtivi
     breveDescricao: pessoa.breveDescricao,
     tipoParticipacaoId: pessoa.tipoParticipacaoId,
     ordem: pessoa.ordem,
+    email: pessoa.email,
+    usuarioId: pessoa.usuarioId,
   }));
 
   return prisma.atividade.create({
@@ -259,6 +286,8 @@ async function excluirAtividade(id) {
 }
 
 module.exports = {
+  camposContaPorEmail,
+  paraPublico,
   listarAtividades,
   buscarPorId,
   buscarPorSlug,

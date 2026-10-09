@@ -36,10 +36,43 @@ async function buscarPorId(id) {
   return edicao;
 }
 
+// Trabalhos da pessoa (autora ou coautora) vinculados a uma atividade de
+// apresentação nesta edição — mesma regra de Minhas submissões: só depois de
+// "Liberar para os autores" (Edicao.apresentacaoPublicadaEm). Vai para o
+// comprovante de inscrição.
+async function listarApresentacoes(usuarioId, edicao) {
+  if (!edicao?.apresentacaoPublicadaEm) return [];
+
+  const submissoes = await prisma.submissao.findMany({
+    where: {
+      edicaoId: edicao.id,
+      atividadeApresentacaoId: { not: null },
+      autores: { some: { usuarioId } },
+    },
+    select: {
+      id: true,
+      titulo: true,
+      ordemApresentacao: true,
+      atividadeApresentacao: {
+        select: { nome: true, local: true, inicioAtividade: true, fimAtividade: true },
+      },
+    },
+  });
+
+  return submissoes.sort(
+    (a, b) =>
+      a.atividadeApresentacao.inicioAtividade - b.atividadeApresentacao.inicioAtividade ||
+      (a.ordemApresentacao ?? 0) - (b.ordemApresentacao ?? 0)
+  );
+}
+
 async function buscarEstado(usuarioId, edicaoId) {
   const edicao = await buscarPorId(edicaoId);
-  const estado = await inscricoesService.buscarEstadoInscricao(edicaoId, usuarioId);
-  return { edicao, aberta: inscricoesAbertas(edicao), ...estado };
+  const [estado, apresentacoes] = await Promise.all([
+    inscricoesService.buscarEstadoInscricao(edicaoId, usuarioId),
+    listarApresentacoes(usuarioId, edicao),
+  ]);
+  return { edicao, aberta: inscricoesAbertas(edicao), ...estado, apresentacoes };
 }
 
 function exigirAberta(edicao) {

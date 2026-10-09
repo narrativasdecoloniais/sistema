@@ -35,6 +35,13 @@ const ESPECIFICOS = {
     { chave: "areas", descricao: "áreas temáticas do avaliador" },
   ],
   MONITOR: [{ chave: "funcoes", descricao: "funções da monitoria" }],
+  ATUACAO_ATIVIDADE: [
+    { chave: "funcao", descricao: "tipo de participação (ex. Mediador(a), Conferencista)" },
+    { chave: "atividade", descricao: "nome da atividade" },
+    { chave: "tipoAtividade", descricao: "tipo da atividade (ex. Mesa-redonda)" },
+    { chave: "dataAtividade", descricao: "data da atividade (ex. em 11 de novembro de 2026)" },
+  ],
+  EQUIPE_EVENTO: [{ chave: "funcao", descricao: "função na equipe (ex. Comissão Organizadora)" }],
 };
 
 function marcadoresDoTipo(tipo) {

@@ -9,7 +9,8 @@ const { temIdentificacao } = require("../utils/identificacao");
 // é anonimizada (nunca DELETE — LGPD/integridade referencial, ver
 // anonimizarUsuario). Só mexe nos vínculos que existem hoje no schema:
 // inscrição geral, inscrição em atividade, submissão, autoria de submissão,
-// certificados e comentários nos Anais — se um model novo passar a referenciar Usuario, precisa
+// certificados, comentários nos Anais e vínculos de convidado de atividade/
+// equipe do evento — se um model novo passar a referenciar Usuario, precisa
 // entrar aqui.
 
 const SELECT_CONTA = {
@@ -213,6 +214,11 @@ async function unificarUsuarios({ manterId, removerId, confirmarEmail = false })
       await tx.submissaoAutor.deleteMany({ where: { id: { in: autoriasDuplicadas.map((a) => a.id) } } });
       await tx.submissaoAutor.updateMany({ where: { usuarioId: removerId }, data: { usuarioId: manterId } });
       await tx.comentarioAnais.updateMany({ where: { usuarioId: removerId }, data: { usuarioId: manterId } });
+      // Convidado de atividade / equipe do evento: passam pra mantida, com o
+      // e-mail dela (destino do certificado).
+      for (const modelo of [tx.atividadePessoa, tx.membroEquipe]) {
+        await modelo.updateMany({ where: { usuarioId: removerId }, data: { usuarioId: manterId, email: manter.email.toLowerCase() } });
+      }
 
       // Anonimiza antes de gravar o CPF na mantida: o campo é único, e só
       // depois disso o CPF da removida fica livre.

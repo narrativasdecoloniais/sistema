@@ -125,10 +125,28 @@ async function associarAutoriasPendentes(usuarioId, email) {
   // mode: "insensitive" porque e-mail não é normalizado no cadastro — sem
   // isso, um coautor guardado como "Ana@x.com" não associaria com a conta
   // criada depois como "ana@x.com".
-  await prisma.submissaoAutor.updateMany({
-    where: { usuarioId: null, email: { equals: email, mode: "insensitive" } },
-    data: { usuarioId },
-  });
+  await prisma.$transaction([
+    prisma.submissaoAutor.updateMany({
+      where: { usuarioId: null, email: { equals: email, mode: "insensitive" } },
+      data: { usuarioId },
+    }),
+    ...operacoesVinculosCertificado(usuarioId, email),
+  ]);
+}
+
+// Convidados de atividade (AtividadePessoa) e membros da equipe do evento
+// (MembroEquipe) seguem a mesma regra das autorias: os soltos com esse e-mail
+// passam a ser da conta e, numa troca de e-mail da conta (emailDaConta), os já
+// ligados acompanham o novo endereço — é para ele que o certificado vai.
+function operacoesVinculosCertificado(usuarioId, email, { emailDaConta = false } = {}) {
+  const alvo = normalizarEmail(email);
+  return [prisma.atividadePessoa, prisma.membroEquipe].flatMap((modelo) => [
+    ...(emailDaConta ? [modelo.updateMany({ where: { usuarioId }, data: { email: alvo } })] : []),
+    modelo.updateMany({
+      where: { usuarioId: null, email: { equals: alvo, mode: "insensitive" } },
+      data: { usuarioId },
+    }),
+  ]);
 }
 
 // dados.identificacao: { cpf } ou { documentoEstrangeiro, pais }.
@@ -299,6 +317,7 @@ async function atualizarEmail(id, novoEmail) {
       where: { usuarioId: null, email: { equals: email, mode: "insensitive" } },
       data: { usuarioId: id },
     }),
+    ...operacoesVinculosCertificado(id, email, { emailDaConta: true }),
   ]);
   return atualizado;
 }
@@ -325,6 +344,7 @@ async function trocarProprioEmail(id, novoEmail) {
       where: { usuarioId: null, email: { equals: email, mode: "insensitive" } },
       data: { usuarioId: id },
     }),
+    ...operacoesVinculosCertificado(id, email, { emailDaConta: true }),
   ]);
   return anexarUrlFoto(usuario);
 }
@@ -358,7 +378,14 @@ function operacoesAnonimizacao(id, cliente = prisma) {
     // validação pública passa a mostrar só "revogado"). Na unificação, os que
     // não eram duplicados já foram movidos pra conta mantida antes daqui.
     cliente.certificado.updateMany({
-      where: { OR: [{ usuarioId: id }, { submissaoAutor: { usuarioId: id } }] },
+      where: {
+        OR: [
+          { usuarioId: id },
+          { submissaoAutor: { usuarioId: id } },
+          { atividadePessoa: { usuarioId: id } },
+          { membroEquipe: { usuarioId: id } },
+        ],
+      },
       data: {
         dados: { nome: "Usuário removido" },
         revogadoEm: new Date(),
@@ -402,6 +429,7 @@ module.exports = {
   criarUsuarioConvidado,
   criarUsuarioViaSubmissao,
   associarAutoriasPendentes,
+  operacoesVinculosCertificado,
   vincularIdentificacaoAoUsuario,
   definirSenhaEAceites,
   atualizarPerfil,

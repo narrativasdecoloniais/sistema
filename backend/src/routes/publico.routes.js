@@ -26,6 +26,7 @@ router.get(
 // Validação de certificado (QR code impresso no PDF) — limite por IP contra
 // varredura de códigos.
 router.get("/certificados/:codigo", limitadorPadrao, publicoController.validarCertificado);
+router.get("/certificados/:codigo/pdf", limitadorPadrao, publicoController.baixarCertificadoPublico);
 router.use("/submissao", submissoesPublicoRoutes);
 router.use("/regularizacao", regularizacaoContasRoutes);
 router.use("/anais", anaisPublicoRoutes);

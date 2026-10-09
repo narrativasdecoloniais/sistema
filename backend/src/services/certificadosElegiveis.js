@@ -42,6 +42,8 @@ const FILTRO_APROVADO = [
 const chaveUsuario = (usuarioId) => `u:${usuarioId}`;
 const chavePresenca = (usuarioId, atividadeId) => `u:${usuarioId}:a:${atividadeId}`;
 const chaveAutoria = (submissaoAutorId) => `sa:${submissaoAutorId}`;
+const chaveAtuacao = (atividadePessoaId) => `ap:${atividadePessoaId}`;
+const chaveEquipe = (membroEquipeId) => `me:${membroEquipeId}`;
 
 function contaValida(usuario) {
   return Boolean(usuario && usuario.ativo && !usuario.anonimizadoEm);
@@ -209,12 +211,72 @@ function itemMonitor(edicao, usuario, funcoes) {
   };
 }
 
+// Pessoas envolvidas nas atividades (palestrante, mediador…): um certificado
+// por pessoa por atividade, com ou sem conta — sem conta fica sem usuarioId
+// até alguém se cadastrar com o e-mail informado (como as autorias). O nome é
+// o cadastrado na atividade (é o que a organização revisou), o documento vem
+// da conta, quando houver.
+async function atuacaoAtividade(db, edicao) {
+  const pessoas = await db.atividadePessoa.findMany({
+    where: { atividade: { edicaoId: edicao.id } },
+    select: {
+      id: true,
+      nome: true,
+      usuario: { select: CAMPOS_USUARIO },
+      tipoParticipacao: { select: { nome: true } },
+      atividade: INCLUDE_ATIVIDADE,
+    },
+    orderBy: [{ atividade: { inicioAtividade: "asc" } }, { ordem: "asc" }],
+  });
+  return pessoas
+    .filter((p) => !p.usuario || contaValida(p.usuario))
+    .map((p) => ({
+      chave: chaveAtuacao(p.id),
+      usuarioId: p.usuario?.id || null,
+      atividadePessoaId: p.id,
+      atividadeId: p.atividade.id,
+      dados: {
+        ...dadosEdicao(edicao),
+        nome: p.nome,
+        documento: formatarDocumento(p.usuario),
+        ...dadosAtividade(p.atividade),
+        funcao: p.tipoParticipacao?.nome || "",
+        cargaHoraria: p.atividade.cargaHoraria ?? null,
+      },
+    }));
+}
+
+// Equipe do evento (MembroEquipe), cadastrada na tela de Certificados.
+async function equipeEvento(db, edicao) {
+  const membros = await db.membroEquipe.findMany({
+    where: { edicaoId: edicao.id },
+    select: { id: true, nome: true, funcao: true, cargaHoraria: true, usuario: { select: CAMPOS_USUARIO } },
+    orderBy: [{ funcao: "asc" }, { nome: "asc" }],
+  });
+  return membros
+    .filter((m) => !m.usuario || contaValida(m.usuario))
+    .map((m) => ({
+      chave: chaveEquipe(m.id),
+      usuarioId: m.usuario?.id || null,
+      membroEquipeId: m.id,
+      dados: {
+        ...dadosEdicao(edicao),
+        nome: m.nome,
+        documento: formatarDocumento(m.usuario),
+        funcao: m.funcao,
+        cargaHoraria: m.cargaHoraria ?? null,
+      },
+    }));
+}
+
 const POR_TIPO = {
   PARTICIPACAO_EVENTO: participacaoEvento,
   PRESENCA_ATIVIDADE: presencaAtividade,
   APRESENTACAO_TRABALHO: apresentacaoTrabalho,
   AVALIADOR: avaliador,
   MONITOR: monitor,
+  ATUACAO_ATIVIDADE: atuacaoAtividade,
+  EQUIPE_EVENTO: equipeEvento,
 };
 
 async function listarElegiveis(db, edicao, tipo) {
