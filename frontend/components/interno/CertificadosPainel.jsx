@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import ModeloCertificadoForm, { formDoModelo } from "./ModeloCertificadoForm";
 import CertificadosEmitidosAba from "./CertificadosEmitidosAba";
+import EquipeEventoAba from "./EquipeEventoAba";
+import ConvidadosAtividadesAba from "./ConvidadosAtividadesAba";
 import { useToast } from "./ToastProvider";
 import { certificadosAdmin } from "@/lib/certificados";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
@@ -25,6 +27,14 @@ export default function CertificadosPainel({ edicaoId, dadosIniciais }) {
       : {}
   );
 
+  const recarregar = useCallback(async () => {
+    try {
+      setDados(await certificadosAdmin.listar(edicaoId));
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    }
+  }, [edicaoId, notificar]);
+
   if (!dados) {
     return (
       <div className={styles.vazio}>
@@ -32,14 +42,6 @@ export default function CertificadosPainel({ edicaoId, dadosIniciais }) {
         <p className={styles.vazioApoio}>Recarregue a página para tentar de novo.</p>
       </div>
     );
-  }
-
-  async function recarregar() {
-    try {
-      setDados(await certificadosAdmin.listar(edicaoId));
-    } catch (erro) {
-      notificar(erro.message, "erro");
-    }
   }
 
   function aoSalvarModelo(tipo, modelo) {
@@ -66,6 +68,8 @@ export default function CertificadosPainel({ edicaoId, dadosIniciais }) {
         {[
           { chave: "modelos", rotulo: "Modelos" },
           { chave: "emitidos", rotulo: `Emitidos (${dados.certificados.length})` },
+          { chave: "equipe", rotulo: `Equipe do evento (${dados.equipe.length})` },
+          { chave: "convidados", rotulo: `Convidados das atividades (${dados.convidados.length})` },
         ].map((aba) => (
           <button
             key={aba.chave}
@@ -118,8 +122,12 @@ export default function CertificadosPainel({ edicaoId, dadosIniciais }) {
             aoSalvar={(modelo) => aoSalvarModelo(tipoAtivo, modelo)}
           />
         </>
-      ) : (
+      ) : abaAtiva === "emitidos" ? (
         <CertificadosEmitidosAba edicaoId={edicaoId} dados={dados} recarregar={recarregar} />
+      ) : abaAtiva === "equipe" ? (
+        <EquipeEventoAba edicaoId={edicaoId} equipe={dados.equipe} recarregar={recarregar} />
+      ) : (
+        <ConvidadosAtividadesAba edicaoId={edicaoId} convidados={dados.convidados} recarregar={recarregar} />
       )}
     </div>
   );

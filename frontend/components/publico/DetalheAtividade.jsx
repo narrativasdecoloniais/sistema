@@ -14,9 +14,10 @@ import styles from "./DetalheAtividade.module.scss";
 // inscrição só faz sentido pra edição atual, mas descrição, pessoas
 // envolvidas e horário continuam visíveis pra qualquer edição.
 export default function DetalheAtividade({ atividade, permiteInscricao }) {
+  // Com rótulo: sozinho, um local como "A definir" não diz do que se trata.
   const subtitulo = [
-    atividade.local,
-    atividade.cargaHoraria ? `${atividade.cargaHoraria}h` : null,
+    atividade.local ? `Local: ${atividade.local}` : null,
+    atividade.cargaHoraria ? `Carga horária: ${atividade.cargaHoraria}h` : null,
   ]
     .filter(Boolean)
     .join(" · ");

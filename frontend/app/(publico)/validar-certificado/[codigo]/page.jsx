@@ -1,7 +1,7 @@
 import Divisor from "@/components/graficos/Divisor";
 import FormularioValidarCertificado from "@/components/publico/FormularioValidarCertificado";
 import { buscarCertificadoPublico } from "@/lib/publico";
-import { normalizarCodigoCertificado } from "@/lib/certificados";
+import { normalizarCodigoCertificado, urlPdfCertificadoPublico } from "@/lib/certificados";
 import styles from "../page.module.scss";
 
 export const metadata = { title: "Validar certificado", robots: { index: false } };
@@ -81,6 +81,11 @@ export default async function PaginaResultadoValidacao({ params }) {
               <dd>{certificado.codigo}</dd>
             </div>
           </dl>
+          {valido && (
+            <a className={styles.baixar} href={urlPdfCertificadoPublico(certificado.codigo)} download>
+              Baixar certificado (PDF)
+            </a>
+          )}
         </section>
       )}
 

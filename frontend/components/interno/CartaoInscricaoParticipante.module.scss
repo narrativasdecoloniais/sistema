@@ -170,6 +170,13 @@
   font-size: 0.8125rem;
 }
 
+.ordemApresentacao {
+  flex-shrink: 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
 // Aviso da atividade (Atividade.destaque), por peso e cor de acento — sem caixa.
 .destaqueAtividade {
   display: block;

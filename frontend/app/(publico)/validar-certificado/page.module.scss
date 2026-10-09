@@ -105,6 +105,28 @@
   }
 }
 
+// Download do PDF pelo código (só certificado válido).
+.baixar {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 1.3rem;
+  border-radius: 8px;
+  background: var(--tinta);
+  color: var(--papel);
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--barro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 3px;
+  }
+}
+
 .outroCodigo {
   display: flex;
   flex-direction: column;

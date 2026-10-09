@@ -5,7 +5,7 @@ import styles from "./CardAtividadeProgramacao.module.scss";
 export default function CardAtividadeProgramacao({ atividade, temEdicaoAtual, edicaoSlug }) {
   const aviso = avisoAtividade(atividade, "PROGRAMACAO");
   const meta = [
-    atividade.local,
+    atividade.local ? `Local: ${atividade.local}` : null,
     !atividade.exigeInscricao
       ? "Sem inscrição necessária"
       : atividade.semLimiteVagas

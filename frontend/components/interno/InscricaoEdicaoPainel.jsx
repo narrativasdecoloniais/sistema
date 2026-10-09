@@ -167,7 +167,7 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
     );
   }
 
-  const { edicao, aberta, jaInscritoNaEdicao, inscricaoAtual, atividades } = estado;
+  const { edicao, aberta, jaInscritoNaEdicao, inscricaoAtual, atividades, apresentacoes = [] } = estado;
   const inscricoesAtividade = inscricaoAtual?.inscricoesAtividade || [];
   const inscricaoEdicao = inscricaoAtual?.inscricaoEdicao;
   const dias = agruparAtividadesPorDia(atividades || []);
@@ -191,6 +191,7 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
           <CartaoInscricaoParticipante
             edicao={edicao}
             inscricoesAtividade={inscricoesAtividade}
+            apresentacoes={apresentacoes}
             nomeParticipante={usuario?.nome}
             onCancelarAtividade={
               aberta ? (item) => setConfirmando({ tipo: "atividade", item }) : undefined

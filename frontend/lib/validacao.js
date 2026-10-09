@@ -508,6 +508,10 @@ export const atividadePessoaSchema = z.object({
     .max(200, "A breve descrição deve ter no máximo 200 caracteres")
     .optional(),
   tipoParticipacaoId: z.string().nullable().optional(),
+  email: z
+    .union([z.literal(""), z.string().trim().toLowerCase().email("Informe um e-mail válido")])
+    .nullable()
+    .optional(),
 });
 
 export const atividadeSchema = z

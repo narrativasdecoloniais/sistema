@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Download, RefreshCw, RotateCcw, Ban, Eye, EyeOff, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Download, RefreshCw, RotateCcw, Ban, Eye, EyeOff, UserPlus, Mail } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import BuscaUsuario from "./BuscaUsuario";
+import EnviarCertificadosEmailModal from "./EnviarCertificadosEmailModal";
 import CampoSelecao from "./CampoSelecao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
@@ -18,6 +19,9 @@ import estilos from "./CertificadosPainel.module.scss";
 
 const ROTULOS_SITUACAO = { DISPONIVEL: "Disponível", NAO_LIBERADO: "Não liberado", REVOGADO: "Revogado" };
 const ROTULOS_REGRA = { ATENDE: "Atende", NAO_ATENDE: "Não atende mais", MANUAL: "Incluído manualmente" };
+const ROTULOS_ENVIO = { NAO_ENVIADO: "Não enviado", PENDENTE: "Na fila", ENVIADO: "Enviado", ERRO: "Falhou" };
+const textoEnvio = (c) =>
+  c.situacaoEmail === "ENVIADO" ? `Enviado em ${formatarData(c.emailEnviadoEm)}` : ROTULOS_ENVIO[c.situacaoEmail];
 
 const situacaoDe = (c) => (c.revogadoEm ? "REVOGADO" : c.liberado ? "DISPONIVEL" : "NAO_LIBERADO");
 const regraDe = (c) => (c.origem === "MANUAL" ? "MANUAL" : c.foraDaRegra ? "NAO_ATENDE" : "ATENDE");
@@ -57,6 +61,14 @@ const COLUNAS = [
     filtro: "select",
     opcoes: opcoesDe(ROTULOS_REGRA),
     exportar: (c) => ROTULOS_REGRA[regraDe(c)],
+  },
+  {
+    chave: "envio",
+    rotulo: "E-mail do certificado",
+    valor: (c) => c.situacaoEmail,
+    filtro: "select",
+    opcoes: opcoesDe(ROTULOS_ENVIO),
+    exportar: textoEnvio,
   },
   {
     chave: "emitidoEm",
@@ -104,8 +116,9 @@ function ModalIncluirCertificado({ edicaoId, atividades, onFechar, onIncluido })
     <Modal titulo="Incluir certificado manualmente" onFechar={onFechar}>
       <form className={styles.formulario} onSubmit={incluir} noValidate>
         <p className={styles.textoApoio}>
-          Para quem tem direito mas ficou fora da regra (ex. presença não registrada). Certificados de apresentação de
-          trabalho saem só pela regra.
+          Para quem tem direito mas ficou fora da regra (ex. presença não registrada). Apresentação de trabalho sai só
+          pela regra; atuação em atividade, pelas pessoas cadastradas nas atividades; e equipe do evento, pela aba
+          Equipe do evento.
         </p>
         <CampoSelecao id="incluir-tipo" rotulo="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}>
           {TIPOS_MANUAIS.map((valor) => (
@@ -158,8 +171,36 @@ export default function CertificadosEmitidosAba({ edicaoId, dados, recarregar })
   const [processando, setProcessando] = useState(false);
   const [baixandoId, setBaixandoId] = useState(null);
   const [incluindo, setIncluindo] = useState(false);
+  // null = fechado; { ids } = selecionados; {} = por tipo.
+  const [envioEmail, setEnvioEmail] = useState(null);
+  const [retomando, setRetomando] = useState(false);
 
   const tipos = useMemo(() => dados.tipos.map((t) => t.tipo), [dados.tipos]);
+  const { enviando, pendentes, comErro } = dados.envioEmail;
+
+  // Acompanha o envio em segundo plano.
+  useEffect(() => {
+    if (!enviando) return undefined;
+    const intervalo = setInterval(recarregar, 5000);
+    return () => clearInterval(intervalo);
+  }, [enviando, recarregar]);
+
+  async function retomarEnvio() {
+    setRetomando(true);
+    try {
+      const resposta = await certificadosAdmin.retomarEnvioEmail(edicaoId);
+      notificar(resposta.mensagem);
+      await recarregar();
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setRetomando(false);
+    }
+  }
+
+  function idsSelecionadosVisiveis() {
+    return tabela.linhasVisiveis.filter((linha) => selecao.estaSelecionado(linha.id)).map((linha) => linha.id);
+  }
 
   async function executar(acao) {
     setProcessando(true);
@@ -316,11 +357,33 @@ export default function CertificadosEmitidosAba({ edicaoId, dados, recarregar })
           Gerar cria os certificados de quem tem direito pela regra do tipo; liberar deixa o tipo disponível na área do
           participante.
         </p>
-        <Botao type="button" variante="secundario" onClick={() => setIncluindo(true)}>
-          <UserPlus size={18} strokeWidth={1.5} aria-hidden="true" />
-          Incluir manualmente
-        </Botao>
+        <div className={estilos.acoesCartao}>
+          <Botao type="button" variante="secundario" onClick={() => setEnvioEmail({})}>
+            <Mail size={18} strokeWidth={1.5} aria-hidden="true" />
+            Enviar por e-mail
+          </Botao>
+          <Botao type="button" variante="secundario" onClick={() => setIncluindo(true)}>
+            <UserPlus size={18} strokeWidth={1.5} aria-hidden="true" />
+            Incluir manualmente
+          </Botao>
+        </div>
       </div>
+
+      {(enviando || pendentes > 0 || comErro > 0) && (
+        <div className={estilos.statusEnvio} role="status">
+          <span>
+            {enviando
+              ? `Enviando certificados por e-mail… ${pendentes} na fila.`
+              : `Envio por e-mail parado: ${pendentes} na fila${comErro > 0 ? `, ${comErro} com falha` : ""}.`}
+          </span>
+          {!enviando && (
+            <Botao type="button" variante="secundario" carregando={retomando} onClick={retomarEnvio}>
+              <RotateCcw size={16} strokeWidth={1.5} aria-hidden="true" />
+              Retomar pendentes e falhas
+            </Botao>
+          )}
+        </div>
+      )}
 
       {dados.certificados.length === 0 ? (
         <div className={styles.vazio}>
@@ -330,6 +393,12 @@ export default function CertificadosEmitidosAba({ edicaoId, dados, recarregar })
       ) : (
         <div className={styles.tabelaWrapper}>
           <BotaoExportarTabela tabela={tabela} nomeArquivo="certificados" nomeAba="Certificados">
+            {selecao.quantidade > 0 && (
+              <BotaoAcaoTabela onClick={() => setEnvioEmail({ ids: idsSelecionadosVisiveis() })}>
+                <Mail size={16} strokeWidth={1.5} aria-hidden="true" />
+                Enviar por e-mail ({selecao.quantidade})
+              </BotaoAcaoTabela>
+            )}
             {selecao.quantidade > 0 && (
               <BotaoAcaoTabela perigo onClick={confirmarRevogarLote}>
                 <Ban size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -361,6 +430,9 @@ export default function CertificadosEmitidosAba({ edicaoId, dados, recarregar })
                   </td>
                   <td data-rotulo="Regra">
                     {certificado.foraDaRegra ? <strong>{ROTULOS_REGRA.NAO_ATENDE}</strong> : ROTULOS_REGRA[regraDe(certificado)]}
+                  </td>
+                  <td data-rotulo="E-mail do certificado" title={certificado.emailErro || undefined}>
+                    {certificado.situacaoEmail === "ERRO" ? <strong>{ROTULOS_ENVIO.ERRO}</strong> : textoEnvio(certificado)}
                   </td>
                   <td data-rotulo="Emitido em">{formatarData(certificado.emitidoEm)}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
@@ -403,6 +475,20 @@ export default function CertificadosEmitidosAba({ edicaoId, dados, recarregar })
             </tbody>
           </table>
         </div>
+      )}
+
+      {envioEmail && (
+        <EnviarCertificadosEmailModal
+          edicaoId={edicaoId}
+          dados={dados}
+          idsSelecionados={envioEmail.ids}
+          onFechar={() => setEnvioEmail(null)}
+          onEnviado={async () => {
+            setEnvioEmail(null);
+            if (envioEmail.ids) selecao.limpar();
+            await recarregar();
+          }}
+        />
       )}
 
       {incluindo && (

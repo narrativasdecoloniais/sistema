@@ -9,6 +9,8 @@ export const ROTULOS_TIPO_CERTIFICADO = {
   APRESENTACAO_TRABALHO: "Apresentação de trabalho",
   AVALIADOR: "Avaliação de trabalhos",
   MONITOR: "Monitoria",
+  ATUACAO_ATIVIDADE: "Atuação em atividade",
+  EQUIPE_EVENTO: "Equipe do evento",
 };
 
 // Página A4 paisagem em mm — mesma base do gerador de PDF.
@@ -53,6 +55,13 @@ export const certificadosAdmin = {
   revogar: (edicaoId, id, motivo) => apiClient.post(`${base(edicaoId)}/${id}/revogar`, { motivo }),
   restaurar: (edicaoId, id) => apiClient.post(`${base(edicaoId)}/${id}/restaurar`),
   revogarEmLote: (edicaoId, ids, motivo) => apiClient.post(`${base(edicaoId)}/revogacao-em-lote`, { ids, motivo }),
+  // { tipos } ou { ids }, + reenviar (inclui quem já recebeu).
+  enviarPorEmail: (edicaoId, dados) => apiClient.post(`${base(edicaoId)}/envio-email`, dados),
+  retomarEnvioEmail: (edicaoId) => apiClient.post(`${base(edicaoId)}/envio-email/retomar`),
+  salvarMembroEquipe: (edicaoId, id, dados) =>
+    id ? apiClient.put(`${base(edicaoId)}/equipe/${id}`, dados) : apiClient.post(`${base(edicaoId)}/equipe`, dados),
+  excluirMembroEquipe: (edicaoId, id) => apiClient.delete(`${base(edicaoId)}/equipe/${id}`),
+  atualizarConvidado: (edicaoId, id, dados) => apiClient.patch(`${base(edicaoId)}/convidados/${id}`, dados),
   async baixar(edicaoId, certificado) {
     const blob = await apiClient.blob(`${base(edicaoId)}/${certificado.id}/pdf`);
     salvarBlob(blob, `certificado-${certificado.codigo}.pdf`);
@@ -66,6 +75,12 @@ export const certificadosParticipante = {
     salvarBlob(blob, `certificado-${certificado.codigo}.pdf`);
   },
 };
+
+// Download direto do PDF pelo código (validação pública e link do e-mail).
+export function urlPdfCertificadoPublico(codigo) {
+  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  return `${api}/publico/certificados/${encodeURIComponent(codigo)}/pdf`;
+}
 
 // "abcd efgh-jkmn" -> "ABCD-EFGH-JKMN" (o backend aceita com ou sem hífen).
 export function normalizarCodigoCertificado(entrada) {

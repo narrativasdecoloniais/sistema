@@ -93,6 +93,18 @@ export default function PessoaEnvolvidaLinha({
             ))}
           </CampoSelecao>
           <CampoTexto
+            id={`pessoa-email-${indiceFlat}`}
+            rotulo="E-mail (opcional, não aparece no site)"
+            type="email"
+            value={pessoa.email || ""}
+            onChange={(evento) => aoMudarCampo("email", evento.target.value)}
+            erro={erros[`pessoas.${indiceFlat}.email`]}
+          />
+          <p className={styles.ajuda}>
+            Usado só para o certificado de atuação. Se a pessoa já tiver conta com esse e-mail, o certificado
+            aparece na área dela; senão, dá para enviá-lo por e-mail na tela de Certificados.
+          </p>
+          <CampoTexto
             id={`pessoa-breve-descricao-${indiceFlat}`}
             rotulo="Breve descrição"
             value={pessoa.breveDescricao}

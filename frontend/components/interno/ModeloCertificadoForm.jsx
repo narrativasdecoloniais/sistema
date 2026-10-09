@@ -84,6 +84,8 @@ const AJUDA_CARGA = {
   APRESENTACAO_TRABALHO: "Deixe vazio para usar a carga horária da atividade em que o trabalho foi apresentado.",
   AVALIADOR: "Se ficar vazio, o campo {{cargaHoraria}} sai em branco.",
   MONITOR: "Se ficar vazio, o campo {{cargaHoraria}} sai em branco.",
+  ATUACAO_ATIVIDADE: "Deixe vazio para usar a carga horária de cada atividade.",
+  EQUIPE_EVENTO: "Deixe vazio para usar a carga horária informada em cada membro da equipe.",
 };
 
 function marcadoresDesconhecidos(texto, marcadores) {

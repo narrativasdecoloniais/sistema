@@ -15,6 +15,19 @@ function escaparHtml(valor) {
   );
 }
 
+// "Atividade · 10/11, 14h às 17h · Local" — linha de cada trabalho na seção
+// Apresentação de trabalho (tela e impressão).
+function descreverApresentacao(trabalho) {
+  const atividade = trabalho.atividadeApresentacao;
+  return [
+    atividade.nome,
+    formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade),
+    atividade.local,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 // Comprovante da área do participante — impressão via popup com HTML
 // standalone; a casca em tela usa os tokens da pele interna, e o
 // cancelamento por atividade abre o ModalConfirmacao do painel. Traz o QR do
@@ -24,6 +37,7 @@ function escaparHtml(valor) {
 export default function CartaoInscricaoParticipante({
   edicao,
   inscricoesAtividade = [],
+  apresentacoes = [],
   nomeParticipante,
   onCancelarAtividade,
 }) {
@@ -69,6 +83,23 @@ export default function CartaoInscricaoParticipante({
               </tr>`
             )
             .join("")}</tbody></table>`;
+
+    const blocoApresentacoes =
+      apresentacoes.length === 0
+        ? ""
+        : `<h2>Apresentação de trabalho</h2>
+    <table class="atividades"><tbody>${apresentacoes
+      .map(
+        (trabalho) => `
+        <tr>
+          <td>
+            <strong>${escaparHtml(trabalho.titulo)}</strong><br/>
+            <span class="periodoAtividade">${escaparHtml(descreverApresentacao(trabalho))}</span>
+          </td>
+          <td class="status">${trabalho.ordemApresentacao ? `${trabalho.ordemApresentacao}º a apresentar` : ""}</td>
+        </tr>`
+      )
+      .join("")}</tbody></table>`;
 
     const html = `<!doctype html>
 <html lang="pt-BR">
@@ -140,6 +171,8 @@ export default function CartaoInscricaoParticipante({
 
     <h2>Atividades específicas</h2>
     ${linhasAtividades}
+
+    ${blocoApresentacoes}
 
     <footer>Narrativas Interculturais, Decoloniais e Antirracistas em Educação — GPDES/UnB</footer>
   </div>
@@ -229,6 +262,28 @@ export default function CartaoInscricaoParticipante({
           <>
             <p className={styles.subtituloEspera}>Lista de espera</p>
             <ul className={styles.lista}>{listaEspera.map(renderizarItem)}</ul>
+          </>
+        )}
+
+        {apresentacoes.length > 0 && (
+          <>
+            <p className={styles.subtitulo}>Apresentação de trabalho</p>
+            <ul className={styles.lista}>
+              {apresentacoes.map((trabalho) => (
+                <li key={trabalho.id} className={styles.itemAtividade}>
+                  <div>
+                    <strong>{trabalho.titulo}</strong>
+                    <br />
+                    <span className={styles.periodoAtividade}>{descreverApresentacao(trabalho)}</span>
+                  </div>
+                  {trabalho.ordemApresentacao && (
+                    <span className={styles.ordemApresentacao}>
+                      {trabalho.ordemApresentacao}º a apresentar
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </div>

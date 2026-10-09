@@ -60,6 +60,7 @@ function estadoInicial(atividadeInicial) {
       descricao: pessoa.descricao || "",
       breveDescricao: pessoa.breveDescricao || "",
       tipoParticipacaoId: pessoa.tipoParticipacao?.id || "",
+      email: pessoa.email || "",
     })),
   };
 }
@@ -89,6 +90,8 @@ function paraPayload(dados, atividadeInicial) {
         descricao: pessoa.descricao || undefined,
         breveDescricao: pessoa.breveDescricao || undefined,
         tipoParticipacaoId: pessoa.tipoParticipacaoId || undefined,
+        // null explícito pra conseguir limpar.
+        email: pessoa.email?.trim() || null,
       };
     }),
   };
@@ -215,7 +218,7 @@ export default function AtividadeForm({
       ...atual,
       pessoas: [
         ...atual.pessoas,
-        { localId, nome: "", imagem: null, descricao: "", breveDescricao: "", tipoParticipacaoId: "" },
+        { localId, nome: "", imagem: null, descricao: "", breveDescricao: "", tipoParticipacaoId: "", email: "" },
       ],
     }));
     // pessoa nova ainda não tem nome — deixa aberta pra não virar uma linha
