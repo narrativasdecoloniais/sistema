@@ -8,6 +8,7 @@ const { DATA_URI_IMAGEM } = require("../utils/sanitizadorRichText");
 const { LICENCAS_ANAIS } = require("../utils/licencasAnais");
 const { autorAbnt } = require("../utils/citacao");
 const { filtroSubmissoesAnais } = require("../utils/criterioAnais");
+const { carregarImagensDocumento } = require("./imagensAnais.service");
 
 // Monta o modelo neutro dos Anais (dados + rich text em blocos + imagens já
 // carregadas) que pdfAnais.service.js e docxAnais.service.js desenham. Nada
@@ -58,24 +59,6 @@ async function carregarImagens(listasDeBlocos) {
       if (imagem) Object.assign(bloco, imagem);
       else bloco.ausente = true;
     }
-  }
-}
-
-// Logo da edição (SVG com as cores editáveis em var(--logo-cor-N)) em PNG.
-async function prepararLogo(edicao) {
-  if (!edicao.logoSvg || !edicao.logoSvgViewBox) return null;
-  const cores = edicao.logoSvgCores || {};
-  const conteudo = edicao.logoSvg.replace(/var\(\s*(--logo-cor-\d+)\s*\)/g, (_, nome) => cores[nome] || "#201914");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${edicao.logoSvgViewBox}">${conteudo}</svg>`;
-  try {
-    const { data, info } = await sharp(Buffer.from(svg), { density: 300 })
-      .resize({ width: 1200, height: 1200, fit: "inside" })
-      .png()
-      .toBuffer({ resolveWithObject: true });
-    return { dados: data, formato: "png", largura: info.width, altura: info.height };
-  } catch (erro) {
-    console.error("[anais] logo ignorada:", erro.message);
-    return null;
   }
 }
 
@@ -188,9 +171,6 @@ async function buscarEdicaoDocumento(where) {
       estado: true,
       dataInicio: true,
       dataFim: true,
-      logoSvg: true,
-      logoSvgViewBox: true,
-      logoSvgCores: true,
       anais: true,
     },
   });
@@ -215,7 +195,8 @@ async function montarDocumentoAnais(edicaoId) {
   return {
     edicao: dadosEdicaoDocumento(edicao),
     anais: { ...anais, licencaInfo: LICENCAS_ANAIS[anais.licenca] },
-    logo: await prepararLogo(edicao),
+    // Capa e cabeçalho/rodapé dos trabalhos — só as que a organização enviou.
+    imagens: await carregarImagensDocumento(anais),
     expediente: await carregarExpediente(edicaoId, anais.gruposConteudoIds),
     apresentacao,
     secoes: agruparSecoes(artigos),
@@ -248,6 +229,7 @@ async function montarDocumentoArtigo(edicaoSlug, artigoSlug) {
   return {
     edicao: dadosEdicaoDocumento(edicao),
     anais: { ...edicao.anais, licencaInfo: LICENCAS_ANAIS[edicao.anais.licenca] },
+    imagens: await carregarImagensDocumento(edicao.anais, { capa: false }),
     artigo,
   };
 }

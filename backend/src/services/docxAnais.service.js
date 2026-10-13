@@ -20,6 +20,10 @@ const {
   Bookmark,
   PageReference,
   ShadingType,
+  HorizontalPositionRelativeFrom,
+  HorizontalPositionAlign,
+  VerticalPositionRelativeFrom,
+  VerticalPositionAlign,
   convertMillimetersToTwip,
 } = require("docx");
 const { citacaoAbnt } = require("../utils/citacao");
@@ -32,6 +36,8 @@ const { linhaIdentificadores, periodoEvento, localEvento } = require("../utils/f
 // - fontes padrão de sistema (Times New Roman no corpo, Arial nos títulos),
 //   já que o .docx é para edição/diagramação posterior e o Word não embute
 //   as fontes do site.
+// Capa e faixas de cabeçalho/rodapé só entram se a organização enviou as
+// imagens (imagens flutuantes presas à página, atrás do texto).
 
 const COR = {
   tinta: "201914",
@@ -61,6 +67,12 @@ const PAGINA = {
 // Largura útil em px (96 dpi) para as imagens: 160 mm.
 const LARGURA_CONTEUDO_PX = Math.round((160 / 25.4) * 96);
 const ALTURA_MAX_IMAGEM_PX = Math.round((120 / 25.4) * 96);
+
+const mmParaPx = (mm) => (mm / 25.4) * 96;
+const pxParaMm = (px) => (px / 96) * 25.4;
+const A4_PX = { largura: mmParaPx(210), altura: mmParaPx(297) };
+// Mesmo teto do PDF (150 pt ≈ 53 mm) para as faixas de cabeçalho/rodapé.
+const ALTURA_MAX_FAIXA_PX = mmParaPx(53);
 
 // ---------------------------------------------------------------------------
 // Rich text → docx
@@ -212,62 +224,46 @@ function paragrafoVazio(antes = 0) {
   return new Paragraph({ spacing: { before: antes }, children: [] });
 }
 
+// Imagem presa à página (não ao texto), atrás do conteúdo.
+function imagemFlutuante(imagem, { largura, altura, vertical }) {
+  return new ImageRun({
+    type: imagem.formato === "jpg" ? "jpg" : "png",
+    data: imagem.dados,
+    transformation: { width: Math.round(largura), height: Math.round(altura) },
+    floating: {
+      horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, align: HorizontalPositionAlign.CENTER },
+      verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, align: vertical },
+      behindDocument: true,
+      allowOverlap: true,
+    },
+  });
+}
+
+// Capa = a imagem enviada, ocupando a página inteira. Sem imagem, sem capa.
 function capa(documento) {
-  const { anais, edicao, logo } = documento;
-  const filhos = [];
-  if (logo) {
-    const altura = 220;
-    const largura = Math.round((logo.largura / logo.altura) * altura);
-    filhos.push(
+  const imagem = documento.imagens?.capa;
+  if (!imagem) return null;
+  return {
+    properties: { page: { size: PAGINA.size, margin: { top: 0, left: 0, bottom: 0, right: 0, header: 0, footer: 0 } } },
+    children: [
       new Paragraph({
-        spacing: { before: 600, after: 600 },
-        children: [new ImageRun({ type: "png", data: logo.dados, transformation: { width: largura, height: altura } })],
-      })
-    );
-  } else {
-    filhos.push(paragrafoVazio(3600));
+        children: [
+          imagemFlutuante(imagem, { largura: A4_PX.largura, altura: A4_PX.altura, vertical: VerticalPositionAlign.TOP }),
+        ],
+      }),
+    ],
+  };
+}
+
+// Faixa na largura da página (ou menor, centralizada, se passar do teto).
+function medidasFaixa(imagem) {
+  let largura = A4_PX.largura;
+  let altura = (imagem.altura / imagem.largura) * largura;
+  if (altura > ALTURA_MAX_FAIXA_PX) {
+    largura *= ALTURA_MAX_FAIXA_PX / altura;
+    altura = ALTURA_MAX_FAIXA_PX;
   }
-  filhos.push(
-    new Paragraph({
-      spacing: { after: 240 },
-      border: { bottom: { style: BorderStyle.SINGLE, size: 24, color: COR.buzio, space: 8 } },
-      children: [new TextRun({ text: "ANAIS", font: FONTE_TITULO, bold: true, size: 96, color: COR.tinta, characterSpacing: 60 })],
-    }),
-    new Paragraph({
-      spacing: { before: 240 },
-      children: [new TextRun({ text: anais.titulo, font: FONTE_TITULO, bold: true, size: 40, color: COR.tinta })],
-    })
-  );
-  if (anais.subtitulo) {
-    filhos.push(
-      new Paragraph({
-        spacing: { before: 120 },
-        children: [new TextRun({ text: anais.subtitulo, font: FONTE_TITULO, size: 26, color: COR.textoSuave })],
-      })
-    );
-  }
-  filhos.push(
-    new Paragraph({
-      spacing: { before: 360 },
-      children: [
-        new TextRun({
-          text: [localEvento(edicao), periodoEvento(edicao)].filter(Boolean).join(" · "),
-          font: FONTE_TITULO,
-          size: 20,
-          color: COR.textoSuave,
-        }),
-      ],
-    })
-  );
-  if (linhaIdentificadores(anais)) {
-    filhos.push(
-      new Paragraph({
-        spacing: { before: 2400 },
-        children: [new TextRun({ text: linhaIdentificadores(anais), font: FONTE_TITULO, bold: true, size: 18, color: COR.barro })],
-      })
-    );
-  }
-  return { properties: { page: PAGINA }, children: filhos };
+  return { largura, altura };
 }
 
 function folhaDeRosto(documento) {
@@ -552,7 +548,16 @@ function textuais(documento, ctx) {
   return filhos;
 }
 
-function cabecalho(anais) {
+function cabecalho(anais, imagem) {
+  if (imagem) {
+    return new Header({
+      children: [
+        new Paragraph({
+          children: [imagemFlutuante(imagem, { ...medidasFaixa(imagem), vertical: VerticalPositionAlign.TOP })],
+        }),
+      ],
+    });
+  }
   return new Header({
     children: [
       new Paragraph({
@@ -565,15 +570,26 @@ function cabecalho(anais) {
   });
 }
 
-function rodape() {
-  return new Footer({
-    children: [
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [new TextRun({ children: [PageNumber.CURRENT], font: FONTE_TITULO, size: 16, color: COR.textoSuave })],
-      }),
-    ],
-  });
+function rodape(imagem) {
+  const filhos = [new TextRun({ children: [PageNumber.CURRENT], font: FONTE_TITULO, size: 16, color: COR.textoSuave })];
+  if (imagem) filhos.push(imagemFlutuante(imagem, { ...medidasFaixa(imagem), vertical: VerticalPositionAlign.BOTTOM }));
+  return new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: filhos })] });
+}
+
+// Página dos trabalhos: com faixa no cabeçalho/rodapé, as margens crescem
+// pra que o texto (e o número da página) não fique por cima da imagem.
+function paginaTextuais(imagens) {
+  const margem = { ...PAGINA.margin };
+  if (imagens?.cabecalho) {
+    const altura = pxParaMm(medidasFaixa(imagens.cabecalho).altura);
+    margem.top = Math.max(PAGINA.margin.top, convertMillimetersToTwip(altura + 8));
+  }
+  if (imagens?.rodape) {
+    const altura = pxParaMm(medidasFaixa(imagens.rodape).altura);
+    margem.footer = convertMillimetersToTwip(altura + 4);
+    margem.bottom = Math.max(PAGINA.margin.bottom, convertMillimetersToTwip(altura + 12));
+  }
+  return { size: PAGINA.size, margin: margem };
 }
 
 const ESTILOS = {
@@ -658,9 +674,9 @@ async function gerarDocxAnais(documento) {
     sections: [
       ...secoesPretextuais,
       {
-        properties: { page: PAGINA },
-        headers: { default: cabecalho(documento.anais) },
-        footers: { default: rodape() },
+        properties: { page: paginaTextuais(documento.imagens) },
+        headers: { default: cabecalho(documento.anais, documento.imagens?.cabecalho) },
+        footers: { default: rodape(documento.imagens?.rodape) },
         children: textuais(documento, ctx),
       },
     ],

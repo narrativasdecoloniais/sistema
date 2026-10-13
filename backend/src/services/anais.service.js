@@ -12,6 +12,7 @@ const {
 } = require("../utils/sanitizadorRichText");
 const sanitizarApresentacaoAnais = require("../utils/sanitizarApresentacaoAnais");
 const emailService = require("./email.service");
+const imagensAnaisService = require("./imagensAnais.service");
 
 // Anais da edição (módulo 11): configuração da publicação, artigos
 // (ArtigoAnais, um por submissão no critério de utils/criterioAnais.js),
@@ -73,6 +74,9 @@ function configuracaoPadrao(edicao) {
     apresentacao: null,
     fichaCatalografica: null,
     gruposConteudoIds: [],
+    imagemCapa: null,
+    imagemCabecalho: null,
+    imagemRodape: null,
     ...CRITERIO_PADRAO,
     publicadoEm: null,
     pdfUrl: null,
@@ -239,11 +243,23 @@ async function salvarConfiguracao(edicaoId, dados) {
     campos.gruposConteudoIds = campos.gruposConteudoIds.filter((id) => ids.has(id));
   }
 
-  return prisma.anaisEdicao.upsert({
-    where: { edicaoId: edicao.id },
-    create: { edicaoId: edicao.id, ...campos },
-    update: campos,
-  });
+  const imagens = await imagensAnaisService.prepararImagens(edicao.anais, campos);
+  Object.assign(campos, imagens.campos);
+
+  let anais;
+  try {
+    anais = await prisma.anaisEdicao.upsert({
+      where: { edicaoId: edicao.id },
+      create: { edicaoId: edicao.id, ...campos },
+      update: campos,
+    });
+  } catch (erro) {
+    await imagensAnaisService.descartar(imagens.novos);
+    throw erro;
+  }
+  // O arquivo antigo sai do bucket só depois que o novo já está salvo.
+  await imagensAnaisService.descartar(imagens.substituidos);
+  return anais;
 }
 
 async function definirPublicacao(edicaoId, publicar) {

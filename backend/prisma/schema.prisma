@@ -1373,6 +1373,12 @@ model AnaisEdicao {
   apresentacao            String?             @db.Text
   fichaCatalografica      String?             @db.Text
   gruposConteudoIds       String[]            @default([])
+  // Imagens enviadas pela organização (bucket público, pasta anais-imagens).
+  // Sem capa, o PDF/Word começa na folha de rosto; sem cabeçalho/rodapé, as
+  // páginas dos trabalhos ficam só com o cabeçalho textual e o número.
+  imagemCapa              String?
+  imagemCabecalho         String?
+  imagemRodape            String?
   // Critério de quais trabalhos entram nos Anais (utils/criterioAnais.js):
   // status da decisão final, se ressalvas/formatação exigem a correção
   // concluída e quem precisa ter se credenciado no evento.

@@ -15,6 +15,14 @@ function textoOpcional(maximo, mensagem) {
   );
 }
 
+function imagemOpcional() {
+  return z
+    .string()
+    .max(30 * 1024 * 1024, "A imagem está grande demais")
+    .nullish()
+    .transform((valor) => valor || null);
+}
+
 const anaisConfiguracaoSchema = z.object({
   titulo: z.string().trim().min(3, "Informe o título dos Anais").max(300, "Use no máximo 300 caracteres"),
   subtitulo: textoOpcional(300, "Use no máximo 300 caracteres"),
@@ -57,6 +65,11 @@ const anaisConfiguracaoSchema = z.object({
   apresentacao: z.string().max(300000, "A apresentação está grande demais").nullish(),
   fichaCatalografica: textoOpcional(4000, "Use no máximo 4000 caracteres"),
   gruposConteudoIds: z.array(z.string().uuid()).max(50).default([]),
+  // Capa e cabeçalho/rodapé dos trabalhos: data URI (arquivo novo), a URL
+  // já salva (sem mudança) ou null (remover) — ver imagensAnais.service.js.
+  imagemCapa: imagemOpcional(),
+  imagemCabecalho: imagemOpcional(),
+  imagemRodape: imagemOpcional(),
   // Critério dos trabalhos publicados (utils/criterioAnais.js).
   decisoesPublicadas: z
     .array(z.enum(DECISOES_PUBLICAVEIS, { errorMap: () => ({ message: "Status inválido" }) }))

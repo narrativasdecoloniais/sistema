@@ -8,12 +8,16 @@ const { linhaIdentificadores, periodoEvento, localEvento } = require("../utils/f
 // imagens) e devolve Buffer + as páginas de cada trabalho.
 //
 // Estrutura dos Anais completos:
-//   capa · folha de rosto · créditos (ficha catalográfica, ISSN/ISBN,
-//   licença) · expediente · apresentação · sumário · por modalidade, uma
-//   página de abertura e os trabalhos (cada um em página nova: área,
-//   título, autores, resumo, referências, "Como citar") · índice de autores.
+//   capa (só se a organização enviou a imagem) · folha de rosto · créditos
+//   (ficha catalográfica, ISSN/ISBN, licença) · expediente · apresentação ·
+//   sumário · por modalidade, uma página de abertura e os trabalhos (cada um
+//   em página nova: área, título, autores, resumo, referências, "Como
+//   citar") · índice de autores.
 // As páginas pré-textuais não têm cabeçalho nem número; a numeração segue a
 // contagem absoluta de páginas (é a que o sumário e as citações usam).
+// Imagens de cabeçalho/rodapé enviadas pela organização entram em todas as
+// páginas dos trabalhos (e do PDF individual), de borda a borda; o cabeçalho
+// em imagem substitui o textual.
 
 // Paleta pública (styles/_tokens-publico.scss) — o PDF não enxerga as
 // variáveis CSS, os valores ficam repetidos aqui (como em pdfProgramacao.js).
@@ -31,10 +35,14 @@ const COR = {
 const A4 = { largura: 595.28, altura: 841.89 };
 const MARGENS = [64, 78, 64, 72]; // esquerda, topo, direita, base
 const LARGURA_CONTEUDO = A4.largura - MARGENS[0] - MARGENS[2];
+// Faixa de cabeçalho/rodapé mais alta que isso é reduzida (e centralizada)
+// pra não engolir a página.
+const ALTURA_MAX_FAIXA = 150;
 
 // ---------------------------------------------------------------------------
-// Fontes: Archivo (títulos), Source Serif 4 (corpo) e Saira Stencil (capa),
-// fatiadas por alfabeto, com a DejaVu Sans de reserva — ver fontesPdf.js.
+// Fontes: Archivo (títulos), Source Serif 4 (corpo) e Saira Stencil (topo do
+// PDF individual), fatiadas por alfabeto, com a DejaVu Sans de reserva — ver
+// fontesPdf.js.
 // ---------------------------------------------------------------------------
 
 pdfmake.setFonts(FONTES);
@@ -229,13 +237,63 @@ function cabecalhoTextual(anais) {
   });
 }
 
-function rodapeNumerado(deslocamento = 0) {
+function rodapeNumerado(deslocamento = 0, margemTopo = 30) {
   return (paginaAtual) => ({
     text: String(paginaAtual + deslocamento),
     style: "rodape",
     alignment: "center",
-    margin: [0, 30, 0, 0],
+    margin: [0, margemTopo, 0, 0],
   });
+}
+
+// Imagem na largura da página (ou menor, centralizada, se passar da altura
+// máxima).
+function medidasFaixa(imagem) {
+  let largura = A4.largura;
+  let altura = (imagem.altura / imagem.largura) * largura;
+  if (altura > ALTURA_MAX_FAIXA) {
+    largura *= ALTURA_MAX_FAIXA / altura;
+    altura = ALTURA_MAX_FAIXA;
+  }
+  return { largura, altura, x: (A4.largura - largura) / 2 };
+}
+
+// Moldura das páginas dos trabalhos: margens, cabeçalho, rodapé numerado e,
+// no fundo, as imagens de cabeçalho/rodapé que a organização enviou. As
+// imagens vão no background (posição fixa a partir do topo da página) e as
+// margens crescem pra que o texto não passe por cima delas.
+function moldura(imagens, registro, { topo, cabecalhoTextual, deslocamento = 0 }) {
+  const cabecalho = imagens?.cabecalho ? medidasFaixa(imagens.cabecalho) : null;
+  const rodape = imagens?.rodape ? medidasFaixa(imagens.rodape) : null;
+  const margemTopo = cabecalho ? Math.max(topo, cabecalho.altura + 24) : topo;
+  const margemBase = rodape ? Math.max(MARGENS[3], rodape.altura + 40) : MARGENS[3];
+
+  const fundo = [];
+  if (cabecalho) {
+    fundo.push({
+      image: registro.chave(imagens.cabecalho),
+      width: cabecalho.largura,
+      height: cabecalho.altura,
+      margin: [cabecalho.x, 0, 0, 0],
+    });
+  }
+  if (rodape) {
+    // Encosta na borda de baixo (meio ponto de folga contra arredondamento).
+    const acima = A4.altura - rodape.altura - (cabecalho ? cabecalho.altura : 0) - 0.5;
+    fundo.push({
+      image: registro.chave(imagens.rodape),
+      width: rodape.largura,
+      height: rodape.altura,
+      margin: [rodape.x, acima, 0, 0],
+    });
+  }
+
+  return {
+    pageMargins: [MARGENS[0], margemTopo, MARGENS[2], margemBase],
+    header: cabecalho ? null : cabecalhoTextual,
+    footer: rodapeNumerado(deslocamento, rodape ? margemBase - rodape.altura - 24 : 30),
+    background: fundo.length ? () => ({ stack: fundo }) : null,
+  };
 }
 
 function autoresPdf(autores) {
@@ -330,50 +388,17 @@ function artigoPdf(artigo, ctx, { paginas, noSumario, quebraAntes, semRotulo }) 
 // Pré-textuais
 // ---------------------------------------------------------------------------
 
+// Capa = a imagem enviada pela organização, ocupando a página inteira (já
+// recortada na proporção do A4 em imagensAnais.service.js). Sem imagem, sem
+// capa: os Anais começam na folha de rosto.
 function capa(documento, registro) {
-  const { anais, edicao, logo } = documento;
-  const conteudo = [];
-  if (logo) {
-    const alturaMax = 250;
-    const largura = Math.min(300, (logo.largura / logo.altura) * alturaMax);
-    conteudo.push({ image: registro.chave(logo), width: largura, margin: [0, 40, 0, 40] });
-  } else {
-    conteudo.push({ text: "", margin: [0, 170, 0, 0] });
-  }
-  conteudo.push(
-    { text: "ANAIS", font: "Stencil", fontSize: 64, color: COR.tinta, characterSpacing: 6, lineHeight: 0.9 },
-    fio(120, COR.buzio, 4, [0, 14, 0, 18]),
-    { text: anais.titulo, font: "Archivo", fontSize: 20, bold: true, color: COR.tinta, lineHeight: 1.15 },
-    anais.subtitulo ? { text: anais.subtitulo, font: "Archivo", fontSize: 13, color: COR.textoSuave, margin: [0, 8, 0, 0] } : null,
-    {
-      text: [localEvento(edicao), periodoEvento(edicao)].filter(Boolean).join(" · "),
-      font: "Archivo",
-      fontSize: 10,
-      color: COR.textoSuave,
-      margin: [0, 18, 0, 0],
-    },
-    {
-      text: linhaIdentificadores(anais),
-      font: "Archivo",
-      fontSize: 9,
-      bold: true,
-      color: COR.barro,
-      absolutePosition: { x: 84, y: A4.altura - 90 },
-    }
-  );
+  const imagem = documento.imagens?.capa;
+  if (!imagem) return null;
   return {
-    section: conteudo.filter(Boolean),
-    pageMargins: [84, 70, 64, 70],
+    section: [{ image: registro.chave(imagem), width: A4.largura, height: A4.altura }],
+    pageMargins: [0, 0, 0, 0],
     header: null,
     footer: null,
-    // Papel + faixa lateral cor de búzio, eco da faixa da Hero do site.
-    background: () => ({
-      canvas: [
-        { type: "rect", x: 0, y: 0, w: A4.largura, h: A4.altura, color: COR.papel },
-        { type: "rect", x: 0, y: 0, w: 38, h: A4.altura, color: COR.buzio },
-        { type: "rect", x: 38, y: 0, w: 6, h: A4.altura, color: COR.barro },
-      ],
-    }),
   };
 }
 
@@ -619,8 +644,10 @@ function montarDefinicao(documento, paginas) {
     sumario(),
     {
       section: textuais(documento, ctx, paginas),
-      header: cabecalhoTextual(documento.anais),
-      footer: rodapeNumerado(),
+      ...moldura(documento.imagens, registro, {
+        topo: MARGENS[1],
+        cabecalhoTextual: cabecalhoTextual(documento.anais),
+      }),
     },
   ].filter(Boolean);
 
@@ -715,9 +742,15 @@ async function gerarPdfArtigo(documento) {
     });
   }
 
+  const { pageMargins, footer, background } = moldura(documento.imagens, registro, {
+    topo: 56,
+    cabecalhoTextual: null,
+    deslocamento: paginas ? paginas.inicio - 1 : 0,
+  });
+
   const definicao = {
     pageSize: "A4",
-    pageMargins: [MARGENS[0], 56, MARGENS[2], MARGENS[3]],
+    pageMargins,
     info: {
       title: artigo.titulo,
       author: artigo.autores.map((autor) => autor.nome).join("; "),
@@ -725,7 +758,8 @@ async function gerarPdfArtigo(documento) {
       creator: "Narrativas — GPDES/UnB",
     },
     content: conteudo,
-    footer: rodapeNumerado(paginas ? paginas.inicio - 1 : 0),
+    footer,
+    ...(background ? { background } : {}),
     images: registro.imagens,
     styles: ESTILOS,
     defaultStyle: { font: "Serif", fontSize: 10.5, color: COR.tinta },
