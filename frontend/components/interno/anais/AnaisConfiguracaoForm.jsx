@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookMarked, Building2, FileText, ListChecks, Plus, ScrollText, Trash2, Users } from "lucide-react";
+import { BookMarked, Building2, FileText, ImageIcon, ListChecks, Plus, ScrollText, Trash2, Users } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import CampoRichText from "@/components/forms/CampoRichText";
 import CabecalhoSecao from "../CabecalhoSecao";
@@ -9,9 +9,10 @@ import CampoTexto from "../CampoTexto";
 import CampoArea from "../CampoArea";
 import CampoSelecao from "../CampoSelecao";
 import CampoCheckbox from "../CampoCheckbox";
+import CampoImagemAnais from "./CampoImagemAnais";
 import { useToast } from "../ToastProvider";
 import { apiClient } from "@/lib/apiClient";
-import { LICENCAS_ANAIS } from "@/lib/anais";
+import { IMAGENS_ANAIS, LICENCAS_ANAIS } from "@/lib/anais";
 import { anaisConfiguracaoSchema, extrairErros, isbnValido, normalizarIssn } from "@/lib/validacao";
 import styles from "../EdicaoForm.module.scss";
 import estilosTabela from "../AvaliacaoSubmissoesPainel.module.scss";
@@ -47,6 +48,9 @@ function formInicial(anais) {
     apresentacao: anais.apresentacao || "",
     fichaCatalografica: anais.fichaCatalografica || "",
     gruposConteudoIds: anais.gruposConteudoIds || [],
+    imagemCapa: anais.imagemCapa || null,
+    imagemCabecalho: anais.imagemCabecalho || null,
+    imagemRodape: anais.imagemRodape || null,
     decisoesPublicadas: anais.decisoesPublicadas || ["APROVADO_FORMATACAO"],
     exigirCorrecaoConcluida: Boolean(anais.exigirCorrecaoConcluida),
     credenciamentoExigido: anais.credenciamentoExigido || "ALGUM_AUTOR",
@@ -61,8 +65,9 @@ function erroIdentificador(campo, valor) {
   return undefined;
 }
 
-// Dados da publicação dos Anais — tudo o que aparece na capa/folha de rosto
-// do PDF/Word, nas páginas públicas e na referência ABNT dos trabalhos.
+// Dados da publicação dos Anais — tudo o que aparece na folha de rosto do
+// PDF/Word, nas páginas públicas e na referência ABNT dos trabalhos — e as
+// imagens opcionais de capa e de cabeçalho/rodapé dos trabalhos.
 // totalNoCriterio: trabalhos que entram com o critério salvo (visíveis +
 // ocultos), recalculado a cada salvamento.
 export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNoCriterio, aoSalvar }) {
@@ -183,7 +188,7 @@ export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNo
         <CabecalhoSecao
           Icone={BookMarked}
           titulo="Identificação"
-          descricao="Título que aparece na capa, nas páginas públicas e na referência de cada trabalho. O nome do evento entra na referência ABNT sem o número da edição (ex. “In: NOME DO EVENTO, 5., 2026, Brasília”)."
+          descricao="Título que aparece na folha de rosto, nas páginas públicas e na referência de cada trabalho. O nome do evento entra na referência ABNT sem o número da edição (ex. “In: NOME DO EVENTO, 5., 2026, Brasília”)."
         />
         <div className={styles.camposSecao}>
           <CampoTexto
@@ -232,6 +237,46 @@ export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNo
               erro={erros.isbn}
             />
           </div>
+        </div>
+      </div>
+
+      <div className={styles.secao}>
+        <CabecalhoSecao
+          Icone={ImageIcon}
+          titulo="Capa, cabeçalho e rodapé"
+          descricao="Imagens do PDF/Word dos Anais, todas opcionais. A capa ocupa a primeira página inteira — sem ela, os Anais começam na folha de rosto. O cabeçalho e o rodapé aparecem, de borda a borda, em todas as páginas dos trabalhos (inclusive no PDF de cada trabalho); o cabeçalho em imagem substitui a linha com o título e o ISSN/ISBN. Depois de trocar uma imagem, gere os arquivos de novo."
+        />
+        <div className={styles.camposSecao}>
+          <CampoImagemAnais
+            id="anais-imagem-capa"
+            rotulo="Capa"
+            tipo="capa"
+            valor={form.imagemCapa}
+            onChange={(valor) => alterar("imagemCapa", valor)}
+            erro={erros.imagemCapa}
+            dimensaoMax={IMAGENS_ANAIS.capa.dimensaoMax}
+            orientacao={`A4 retrato. Recomendado: ${IMAGENS_ANAIS.capa.recomendada.largura} × ${IMAGENS_ANAIS.capa.recomendada.altura} px (300 dpi); mínimo ${IMAGENS_ANAIS.capa.minima.largura} × ${IMAGENS_ANAIS.capa.minima.altura} px. PNG ou JPG, até 20 MB. A arte entra como está — título e demais textos da capa vão na própria imagem.`}
+          />
+          <CampoImagemAnais
+            id="anais-imagem-cabecalho"
+            rotulo="Cabeçalho dos trabalhos"
+            tipo="faixa"
+            valor={form.imagemCabecalho}
+            onChange={(valor) => alterar("imagemCabecalho", valor)}
+            erro={erros.imagemCabecalho}
+            dimensaoMax={IMAGENS_ANAIS.faixa.dimensaoMax}
+            orientacao={`Faixa na largura da página, encostada no topo. Recomendado: ${IMAGENS_ANAIS.faixa.larguraRecomendada} px de largura e altura de até ~620 px (5,3 cm). PNG (aceita transparência) ou JPG, até 20 MB.`}
+          />
+          <CampoImagemAnais
+            id="anais-imagem-rodape"
+            rotulo="Rodapé dos trabalhos"
+            tipo="faixa"
+            valor={form.imagemRodape}
+            onChange={(valor) => alterar("imagemRodape", valor)}
+            erro={erros.imagemRodape}
+            dimensaoMax={IMAGENS_ANAIS.faixa.dimensaoMax}
+            orientacao={`Faixa na largura da página, encostada na base; o número da página fica logo acima. Recomendado: ${IMAGENS_ANAIS.faixa.larguraRecomendada} px de largura e altura de até ~620 px (5,3 cm). PNG (aceita transparência) ou JPG, até 20 MB.`}
+          />
         </div>
       </div>
 

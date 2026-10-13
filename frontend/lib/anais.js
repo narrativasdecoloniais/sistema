@@ -52,3 +52,39 @@ export function formatarDataPublicacao(iso) {
     new Date(iso)
   );
 }
+
+// Capa e faixas de cabeçalho/rodapé dos Anais (PDF/Word) — espelha os
+// limites de backend/src/services/imagensAnais.service.js e a altura máxima
+// da faixa em pdfAnais.service.js (150 pt numa página de 595 pt de largura).
+export const IMAGENS_ANAIS = {
+  capa: { recomendada: { largura: 2480, altura: 3508 }, minima: { largura: 1240, altura: 1754 }, dimensaoMax: 3508 },
+  faixa: { larguraRecomendada: 2480, larguraMinima: 1240, dimensaoMax: 2480, proporcaoMax: 150 / 595.28 },
+};
+
+// Avisos (não bloqueantes) sobre a imagem escolhida.
+export function avisosImagemAnais(tipo, dimensoes) {
+  if (!dimensoes?.largura || !dimensoes?.altura) return [];
+  const avisos = [];
+  if (tipo === "capa") {
+    const { minima } = IMAGENS_ANAIS.capa;
+    if (Math.abs(dimensoes.altura / dimensoes.largura - 297 / 210) > 0.02) {
+      avisos.push(
+        "A proporção da imagem é diferente do A4 retrato (210 × 297). Ela vai preencher a página inteira, mas as bordas serão cortadas."
+      );
+    }
+    if (dimensoes.largura < minima.largura || dimensoes.altura < minima.altura) {
+      avisos.push(`A resolução está abaixo do mínimo (${minima.largura} × ${minima.altura} px) e pode sair pixelada.`);
+    }
+    return avisos;
+  }
+  const { larguraMinima, proporcaoMax } = IMAGENS_ANAIS.faixa;
+  if (dimensoes.altura / dimensoes.largura > proporcaoMax) {
+    avisos.push(
+      "A imagem é alta demais para uma faixa (mais de 5,3 cm na largura da página). Ela será reduzida e centralizada, sem ocupar a largura toda."
+    );
+  }
+  if (dimensoes.largura < larguraMinima) {
+    avisos.push(`A largura está abaixo do mínimo (${larguraMinima} px) e a faixa pode sair pixelada.`);
+  }
+  return avisos;
+}

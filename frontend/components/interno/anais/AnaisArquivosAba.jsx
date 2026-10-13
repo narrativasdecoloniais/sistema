@@ -29,7 +29,7 @@ const FORMATOS = [
     campoUrl: "pdfUrl",
     campoData: "pdfGeradoEm",
     descricao:
-      "Versão final para leitura e impressão: capa, folha de rosto, ficha catalográfica, expediente, apresentação, sumário com páginas, os trabalhos (cada um em página nova, com referência para citação) e índice de autores. Depois de publicados os Anais, fica disponível para download no site. Cada geração também atualiza as páginas de cada trabalho usadas nas citações.",
+      "Versão final para leitura e impressão: capa (se enviada nas Configurações), folha de rosto, ficha catalográfica, expediente, apresentação, sumário com páginas, os trabalhos (cada um em página nova, com referência para citação) e índice de autores. Depois de publicados os Anais, fica disponível para download no site. Cada geração também atualiza as páginas de cada trabalho usadas nas citações.",
   },
   {
     chave: "docx",
@@ -65,7 +65,7 @@ export default function AnaisArquivosAba({ edicaoId, anais, configurado, gerando
     return (
       <div className={styles.vazio}>
         <p>Salve as configurações dos Anais antes de gerar os arquivos.</p>
-        <p className={styles.vazioApoio}>Título, ISSN/ISBN e dados de publicação vão para a capa e a folha de rosto.</p>
+        <p className={styles.vazioApoio}>Título, ISSN/ISBN e dados de publicação vão para a folha de rosto; capa, cabeçalho e rodapé, se enviados, também.</p>
       </div>
     );
   }
@@ -124,7 +124,7 @@ export default function AnaisArquivosAba({ edicaoId, anais, configurado, gerando
       </div>
       <p className={styles.textoApoio}>
         Os arquivos refletem os trabalhos e as configurações do momento da geração: depois de editar textos, ocultar
-        trabalhos ou mudar o ISSN/ISBN, gere de novo.
+        trabalhos, mudar o ISSN/ISBN ou trocar as imagens de capa, cabeçalho e rodapé, gere de novo.
       </p>
     </>
   );

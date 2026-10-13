@@ -196,3 +196,20 @@
     transform: rotate(360deg);
   }
 }
+
+// Orientação de tamanho das imagens (capa, cabeçalho e rodapé).
+.campoImagem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.orientacaoImagem {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--borda);
+  background: var(--fundo);
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
