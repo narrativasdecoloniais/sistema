@@ -23,6 +23,12 @@ function papelPrincipal(usuario) {
   return "PARTICIPANTE";
 }
 
+// "Sim", "Sim (2)" quando é autora principal de mais de um trabalho, "Não".
+function textoAutorPrincipal(quantidade) {
+  if (!quantidade) return "Não";
+  return quantidade === 1 ? "Sim" : `Sim (${quantidade})`;
+}
+
 const COLUNAS = [
   { chave: "nome", rotulo: "Nome", valor: (usuario) => usuario.nome },
   { chave: "email", rotulo: "E-mail", valor: (usuario) => usuario.email },
@@ -77,6 +83,20 @@ const COLUNAS = [
       { valor: "SEM", rotulo: "Sem submissão" },
     ],
     corresponde: (usuario, valor) => (valor === "COM" ? usuario.submissoes > 0 : usuario.submissoes === 0),
+  },
+  {
+    chave: "autorPrincipal",
+    rotulo: "Autor principal",
+    // Em quantas submissões da edição a conta é a autora principal. Ordena
+    // pelo número; o filtro só separa quem é de quem não é.
+    valor: (usuario) => usuario.autorPrincipal,
+    filtro: "select",
+    opcoes: [
+      { valor: "SIM", rotulo: "Sim" },
+      { valor: "NAO", rotulo: "Não" },
+    ],
+    corresponde: (usuario, valor) => (valor === "SIM" ? usuario.autorPrincipal > 0 : usuario.autorPrincipal === 0),
+    exportar: (usuario) => textoAutorPrincipal(usuario.autorPrincipal),
   },
 ];
 
@@ -144,6 +164,7 @@ export default function UsuariosEdicaoTabela({ usuarios, aoPromover, edicaoId, e
                 <td data-rotulo="Atividades">{usuario.atividades.confirmadas}</td>
                 <td data-rotulo="Lista de espera">{usuario.atividades.listaEspera}</td>
                 <td data-rotulo="Submissões">{usuario.submissoes}</td>
+                <td data-rotulo="Autor principal">{textoAutorPrincipal(usuario.autorPrincipal)}</td>
                 <td data-rotulo="Ações" className={styles.colunaAcoes}>
                   {papel !== "ADMIN" && (
                     <div className={styles.acoesLinha}>
