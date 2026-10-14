@@ -1,7 +1,7 @@
 const pdfmake = require("pdfmake");
 const { FONTES, PASTAS_FONTES, aplicarFontes } = require("../utils/fontesPdf");
 const { citacaoAbnt } = require("../utils/citacao");
-const { linhaIdentificadores, periodoEvento, localEvento } = require("../utils/formatacaoAnais");
+const { linhaIdentificadores, periodoEvento, localEvento, cabecalhoArtigo } = require("../utils/formatacaoAnais");
 
 // Desenha os Anais em PDF (pdfmake no Node) a partir do modelo neutro de
 // anaisDocumento.service.js. Puro: recebe tudo carregado (inclusive
@@ -736,20 +736,14 @@ async function gerarPdfArtigo(documento) {
   const ctx = { registro };
   const paginas = artigo.paginaInicial ? { inicio: artigo.paginaInicial, fim: artigo.paginaFinal } : null;
   const licenca = anais.licencaInfo;
-  const identificadores = linhaIdentificadores(anais);
+  const cabecalho = cabecalhoArtigo(edicao, anais);
 
   const topo = {
     margin: [0, 0, 0, 22],
     stack: [
       { text: "ANAIS", font: "Stencil", fontSize: 18, characterSpacing: 3 },
-      { text: anais.titulo, font: "Archivo", fontSize: 9.5, bold: true, margin: [0, 2, 0, 0] },
-      {
-        text: [edicao.nome, [localEvento(edicao), periodoEvento(edicao)].filter(Boolean).join(", "), identificadores]
-          .filter(Boolean)
-          .join(" · "),
-        style: "pequeno",
-        margin: [0, 2, 0, 0],
-      },
+      { text: cabecalho.titulo, font: "Archivo", fontSize: 9.5, bold: true, margin: [0, 2, 0, 0] },
+      { text: cabecalho.texto, style: "pequeno", margin: [0, 2, 0, 0] },
       fio(LARGURA_CONTEUDO, COR.buzio, 2.5, [0, 10, 0, 0]),
     ],
   };

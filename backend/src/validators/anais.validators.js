@@ -64,6 +64,9 @@ const anaisConfiguracaoSchema = z.object({
   // Limite do texto visível em sanitizarApresentacaoAnais.js.
   apresentacao: z.string().max(300000, "A apresentação está grande demais").nullish(),
   fichaCatalografica: textoOpcional(4000, "Use no máximo 4000 caracteres"),
+  // Em branco = texto automático (utils/formatacaoAnais.js).
+  cabecalhoArtigoTitulo: textoOpcional(300, "Use no máximo 300 caracteres"),
+  cabecalhoArtigoTexto: textoOpcional(600, "Use no máximo 600 caracteres"),
   gruposConteudoIds: z.array(z.string().uuid()).max(50).default([]),
   // Capa e cabeçalho/rodapé dos trabalhos: data URI (arquivo novo), a URL
   // já salva (sem mudança) ou null (remover) — ver imagensAnais.service.js.

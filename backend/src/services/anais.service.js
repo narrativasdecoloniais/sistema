@@ -3,6 +3,7 @@ const env = require("../config/env");
 const ErroHttp = require("../utils/erroHttp");
 const { filtroSubmissoesAnais, CRITERIO_PADRAO, SELECT_CRITERIO_ANAIS } = require("../utils/criterioAnais");
 const { gerarSlug } = require("../utils/slug");
+const { cabecalhoArtigoPadrao } = require("../utils/formatacaoAnais");
 const {
   CONFIG_RESUMO,
   CONFIG_REFERENCIA,
@@ -74,6 +75,8 @@ function configuracaoPadrao(edicao) {
     apresentacao: null,
     fichaCatalografica: null,
     gruposConteudoIds: [],
+    cabecalhoArtigoTitulo: null,
+    cabecalhoArtigoTexto: null,
     imagemCapa: null,
     imagemCabecalho: null,
     imagemRodape: null,
@@ -221,6 +224,9 @@ async function obterPainel(edicaoId, { geracaoEmAndamento = null } = {}) {
     edicao: dadosEdicao,
     configurado: Boolean(anais),
     anais: anais || configuracaoPadrao(edicao),
+    // Texto que o cabeçalho do PDF de cada trabalho usa quando os campos
+    // ficam em branco — mostrado no formulário como referência.
+    cabecalhoArtigoPadrao: cabecalhoArtigoPadrao(dadosEdicao, anais || configuracaoPadrao(edicao)),
     gerando: geracaoEmAndamento,
     contagens: { publicados, ocultos, comentarios, comentariosOcultos },
     grupos,

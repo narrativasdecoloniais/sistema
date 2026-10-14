@@ -28,4 +28,25 @@ function localEvento(edicao) {
   return [edicao.cidade, edicao.estado].filter(Boolean).join(" – ");
 }
 
-module.exports = { linhaIdentificadores, periodoEvento, localEvento };
+// Texto automático do cabeçalho do PDF individual de cada trabalho (quando a
+// organização deixa em branco cabecalhoArtigoTitulo/cabecalhoArtigoTexto):
+// título dos Anais em negrito e "edição · local, período · ISSN/ISBN".
+function cabecalhoArtigoPadrao(edicao, anais) {
+  return {
+    titulo: anais.titulo,
+    texto: [edicao.nome, [localEvento(edicao), periodoEvento(edicao)].filter(Boolean).join(", "), linhaIdentificadores(anais)]
+      .filter(Boolean)
+      .join(" · "),
+  };
+}
+
+// O que de fato sai no PDF: o texto da organização ou o automático.
+function cabecalhoArtigo(edicao, anais) {
+  const padrao = cabecalhoArtigoPadrao(edicao, anais);
+  return {
+    titulo: anais.cabecalhoArtigoTitulo || padrao.titulo,
+    texto: anais.cabecalhoArtigoTexto || padrao.texto,
+  };
+}
+
+module.exports = { linhaIdentificadores, periodoEvento, localEvento, cabecalhoArtigoPadrao, cabecalhoArtigo };

@@ -1385,6 +1385,11 @@ model AnaisEdicao {
   apresentacao            String?             @db.Text
   fichaCatalografica      String?             @db.Text
   gruposConteudoIds       String[]            @default([])
+  // Cabeçalho do PDF individual de cada trabalho, entre "ANAIS" e a
+  // modalidade: linha em negrito e linha de informações (aceita quebras de
+  // linha). Nulo = automático (cabecalhoArtigoPadrao em utils/formatacaoAnais.js).
+  cabecalhoArtigoTitulo   String?
+  cabecalhoArtigoTexto    String?             @db.Text
   // Imagens enviadas pela organização (bucket público, pasta anais-imagens).
   // Sem capa, o PDF/Word começa na folha de rosto; sem cabeçalho/rodapé, as
   // páginas dos trabalhos ficam só com o cabeçalho textual e o número.
