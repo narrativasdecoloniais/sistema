@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { paginaCertificado } = require("../utils/paginaCertificado");
+const { paginaCertificado, ESPACO_CODIGO_QR_MM } = require("../utils/paginaCertificado");
 
 // Espelhado em frontend/lib/validacao.js (modeloCertificadoSchema) — mudou um,
 // muda o outro.
@@ -64,9 +64,10 @@ function modeloCertificadoSchema(tipo) {
       tamanhoFonte: numero(6, 72, "o tamanho da fonte"),
       entrelinha: numero(1, 3, "o espaçamento entre linhas"),
       corTexto: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida"),
-      posicaoQr: z.enum(["INFERIOR_DIREITO", "INFERIOR_ESQUERDO", "SUPERIOR_DIREITO", "SUPERIOR_ESQUERDO"]),
+      esquerdaQr: numero(0, pagina.largura, "a distância do QR code até a borda esquerda"),
+      topoQr: numero(0, pagina.altura, "a distância do QR code até o topo"),
       tamanhoQr: numero(15, 60, "o tamanho do QR code"),
-      margemQr: numero(0, 60, "a distância do QR code até a borda"),
+      alinhamentoCodigoQr: z.enum(["ESQUERDA", "CENTRO", "DIREITA"]),
       corQr: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida para o QR code"),
       cargaHoraria: z
         .number({ invalid_type_error: "Carga horária inválida" })
@@ -83,6 +84,14 @@ function modeloCertificadoSchema(tipo) {
     .refine((d) => d.margemEsquerda + d.margemDireita <= pagina.largura - SOBRA_MINIMA_MM, {
       message: "As margens esquerda e direita somadas deixam pouco espaço para o texto",
       path: ["margemDireita"],
+    })
+    .refine((d) => d.esquerdaQr + d.tamanhoQr <= pagina.largura, {
+      message: "O QR code passa da borda direita da página — aproxime-o da esquerda ou diminua o tamanho",
+      path: ["esquerdaQr"],
+    })
+    .refine((d) => d.topoQr + d.tamanhoQr + ESPACO_CODIGO_QR_MM <= pagina.altura, {
+      message: "O QR code (com o código embaixo) passa da borda inferior da página — suba-o ou diminua o tamanho",
+      path: ["topoQr"],
     });
 }
 

@@ -21,7 +21,7 @@ const {
   chaveCartaAceite,
 } = require("./certificadosElegiveis");
 const { gerarPdfCertificado } = require("./pdfCertificado.service");
-const { paginaCertificado } = require("../utils/paginaCertificado");
+const { paginaCertificado, posicaoQrPadrao } = require("../utils/paginaCertificado");
 const { criterioCartaDe } = require("../utils/criterioCartaAceite");
 const emailService = require("./email.service");
 const { camposContaPorEmail } = require("./atividades.service");
@@ -115,15 +115,16 @@ const CAMPOS_LAYOUT = [
   "tamanhoFonte",
   "entrelinha",
   "corTexto",
-  "posicaoQr",
+  "esquerdaQr",
+  "topoQr",
   "tamanhoQr",
-  "margemQr",
+  "alinhamentoCodigoQr",
   "corQr",
   "cargaHoraria",
 ];
 
 function modeloPadrao(tipo) {
-  return {
+  const modelo = {
     id: null,
     tipo,
     imagemFundo: null,
@@ -140,15 +141,14 @@ function modeloPadrao(tipo) {
     tamanhoFonte: 16,
     entrelinha: 1.4,
     corTexto: "#2B2622",
-    posicaoQr: "INFERIOR_DIREITO",
     tamanhoQr: 24,
-    margemQr: 12,
     corQr: "#000000",
     cargaHoraria: null,
     liberadoEm: null,
     updatedAt: null,
     ...LAYOUT_PADRAO_TIPO[tipo],
   };
+  return { ...modelo, ...posicaoQrPadrao(paginaCertificado(tipo), modelo.tamanhoQr) };
 }
 
 function projetarModelo(modelo) {

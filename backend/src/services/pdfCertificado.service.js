@@ -3,10 +3,11 @@ const PDFDocument = require("pdfkit");
 const QRCode = require("qrcode");
 const { JSDOM } = require("jsdom");
 const { substituirMarcadores } = require("../utils/marcadoresCertificado");
+const { faixaCodigoQr, TAMANHO_CODIGO_QR_PT } = require("../utils/paginaCertificado");
 
 // Desenha um certificado (A4 paisagem — retrato na carta de aceite —, só
 // frente): imagem de fundo cobrindo a página, texto do modelo dentro da caixa definida pelas margens e QR code de
-// validação num dos cantos. Puro — recebe o fundo já carregado e os valores
+// validação na posição escolhida. Puro — recebe o fundo já carregado e os valores
 // dos marcadores; quem busca dados/arquivos é certificados.service.js.
 
 const MM = 72 / 25.4;
@@ -16,7 +17,7 @@ const PAGINA_PADRAO = { largura: 297, altura: 210 };
 const ESPACO_PARAGRAFO_EM = 0.5;
 // Se o texto não couber na caixa, a fonte vai diminuindo até este limite.
 const TAMANHO_MINIMO_FONTE = 6;
-const TAMANHO_ROTULO_QR = 7;
+const ALINHAMENTOS_CODIGO_QR = { ESQUERDA: "left", CENTRO: "center", DIREITA: "right" };
 
 // Archivo (fonte do site) vem embutida via @fontsource (WOFF, lido pelo
 // fontkit do pdfkit); Times e Helvetica são as fontes padrão do PDF.
@@ -254,31 +255,28 @@ function desenharDiagramados(doc, diagramados, { fontes, x, y, largura, tamanho,
 // QR code
 // ---------------------------------------------------------------------------
 
-function desenharQr(doc, { imagemQr, posicao, tamanho, margem, cor, codigo, fontes, larguraPagina, alturaPagina }) {
-  const lado = tamanho * MM;
-  const afastamento = margem * MM;
-  const larguraRotulo = Math.max(lado, 120);
-  const alturaRotulo = TAMANHO_ROTULO_QR * 2.6;
-  const direita = posicao.endsWith("DIREITO");
-  const inferior = posicao.startsWith("INFERIOR");
-
-  const xQr = direita ? larguraPagina - afastamento - lado : afastamento;
-  const yQr = inferior ? alturaPagina - afastamento - alturaRotulo - lado : afastamento;
+// modelo: esquerdaQr/topoQr (canto superior esquerdo do QR, em mm),
+// tamanhoQr e alinhamentoCodigoQr; a faixa do código embaixo vem de
+// faixaCodigoQr, a mesma conta da prévia do admin.
+function desenharQr(doc, { imagemQr, modelo, cor, codigo, fontes, pagina }) {
+  const lado = modelo.tamanhoQr * MM;
+  const xQr = modelo.esquerdaQr * MM;
+  const yQr = modelo.topoQr * MM;
   doc.image(imagemQr, xQr, yQr, { width: lado, height: lado });
 
-  // Rótulo encostado no mesmo lado do QR, pra nunca sair da página.
-  const xRotulo = direita ? xQr + lado - larguraRotulo : xQr;
+  const faixa = faixaCodigoQr(modelo, pagina);
+  const opcoes = {
+    width: faixa.largura * MM,
+    align: ALINHAMENTOS_CODIGO_QR[modelo.alinhamentoCodigoQr] || "center",
+    lineBreak: false,
+  };
   doc
     .fillColor(cor)
     .font(fontes.normal)
-    .fontSize(TAMANHO_ROTULO_QR)
-    .text("Código de validação", xRotulo, yQr + lado + 2, {
-      width: larguraRotulo,
-      align: direita ? "right" : "left",
-      lineBreak: false,
-    })
+    .fontSize(TAMANHO_CODIGO_QR_PT)
+    .text("Código de validação", faixa.esquerda * MM, yQr + lado + 2, opcoes)
     .font(fontes.negrito)
-    .text(codigo, xRotulo, doc.y, { width: larguraRotulo, align: direita ? "right" : "left", lineBreak: false });
+    .text(codigo, faixa.esquerda * MM, doc.y, opcoes);
 }
 
 // ---------------------------------------------------------------------------
@@ -342,17 +340,7 @@ async function gerarPdfCertificado({ modelo, valores, codigo, urlValidacao, imag
     errorCorrectionLevel: "M",
     color: { dark: corQr, light: "#0000" },
   });
-  desenharQr(doc, {
-    imagemQr,
-    posicao: modelo.posicaoQr,
-    tamanho: modelo.tamanhoQr,
-    margem: modelo.margemQr,
-    cor: corQr,
-    codigo,
-    fontes,
-    larguraPagina,
-    alturaPagina,
-  });
+  desenharQr(doc, { imagemQr, modelo, cor: corQr, codigo, fontes, pagina });
 
   doc.end();
   return terminou;

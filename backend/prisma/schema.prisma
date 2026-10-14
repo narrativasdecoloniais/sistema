@@ -148,13 +148,6 @@ enum OrigemCertificado {
   MANUAL
 }
 
-enum PosicaoQrCertificado {
-  INFERIOR_DIREITO
-  INFERIOR_ESQUERDO
-  SUPERIOR_DIREITO
-  SUPERIOR_ESQUERDO
-}
-
 enum AlinhamentoCertificado {
   ESQUERDA
   CENTRO
@@ -1179,9 +1172,14 @@ model ModeloCertificado {
   tamanhoFonte        Float                          @default(16)
   entrelinha          Float                          @default(1.4)
   corTexto            String                         @default("#2B2622")
-  posicaoQr           PosicaoQrCertificado           @default(INFERIOR_DIREITO)
+  // QR code em posição livre: canto superior esquerdo do QR, em mm a partir
+  // das bordas esquerda e superior da página (sem default — o padrão depende
+  // da página do tipo, ver modeloPadrao em certificados.service.js). O código
+  // escrito embaixo segue alinhamentoCodigoQr (sem JUSTIFICADO).
+  esquerdaQr          Float
+  topoQr              Float
   tamanhoQr           Float                          @default(24)
-  margemQr            Float                          @default(12)
+  alinhamentoCodigoQr AlinhamentoCertificado         @default(CENTRO)
   // Cor dos módulos do QR (e do código escrito embaixo); o fundo do QR é
   // transparente, então a cor precisa contrastar com a imagem de fundo.
   corQr               String                         @default("#000000")
