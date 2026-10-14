@@ -9,6 +9,8 @@ const prisma = require("../config/prisma");
 // "Vinculada a uma submissão" = quem enviou (Submissao.usuarioId) OU autor/
 // coautor associado pelo e-mail (SubmissaoAutor.usuarioId) — contando cada
 // submissão uma vez só, mesmo quando a pessoa é as duas coisas.
+// "Autor principal" = autoria marcada como principal (SubmissaoAutor.principal)
+// ligada à conta — uma por submissão.
 async function listarComSituacaoNaEdicao(edicaoId) {
   const [usuarios, inscricoesGerais, contagensAtividades, submissoesEnviadas, autorias] =
     await Promise.all([
@@ -42,7 +44,7 @@ async function listarComSituacaoNaEdicao(edicaoId) {
     }),
     prisma.submissaoAutor.findMany({
       where: { usuarioId: { not: null }, submissao: { edicaoId } },
-      select: { submissaoId: true, usuarioId: true },
+      select: { submissaoId: true, usuarioId: true, principal: true },
     }),
   ]);
 
@@ -63,11 +65,19 @@ async function listarComSituacaoNaEdicao(edicaoId) {
   submissoesEnviadas.forEach((submissao) => vincular(submissao.usuarioId, submissao.id));
   autorias.forEach((autoria) => vincular(autoria.usuarioId, autoria.submissaoId));
 
+  const principalPorUsuario = new Map();
+  for (const autoria of autorias) {
+    if (!autoria.principal) continue;
+    if (!principalPorUsuario.has(autoria.usuarioId)) principalPorUsuario.set(autoria.usuarioId, new Set());
+    principalPorUsuario.get(autoria.usuarioId).add(autoria.submissaoId);
+  }
+
   return usuarios.map((usuario) => ({
     ...usuario,
     inscritoNaEdicao: inscritosNaEdicao.has(usuario.id),
     atividades: atividadesPorUsuario.get(usuario.id) || { confirmadas: 0, listaEspera: 0 },
     submissoes: submissoesPorUsuario.get(usuario.id)?.size || 0,
+    autorPrincipal: principalPorUsuario.get(usuario.id)?.size || 0,
   }));
 }
 
