@@ -14,7 +14,7 @@ const submissoesService = require("../services/submissoes.service");
 const convitesCoautorService = require("../services/convitesCoautor.service");
 const anaisService = require("../services/anais.service");
 const certificadosService = require("../services/certificados.service");
-const { aprovadoComCorrecaoConcluida } = require("../services/certificadosElegiveis");
+const { SELECT_CRITERIO_CARTA, atendeCriterioCarta } = require("../utils/criterioCartaAceite");
 const { enviarPdf } = require("./certificados.controller");
 
 const INCLUDE_PARTICIPANTE = {
@@ -27,6 +27,7 @@ const INCLUDE_PARTICIPANTE = {
       slug: true,
       resultadoDivulgadoEm: true,
       prazoCorrecaoSubmissao: true,
+      ...SELECT_CRITERIO_CARTA,
       apresentacaoPublicadaEm: true,
       anais: { select: { publicadoEm: true } },
     },
@@ -78,7 +79,7 @@ function formatarParaParticipante(submissao, usuarioId, { completa = false, conv
             ehAutorPrincipal &&
             correcaoEditavel(submissao, { ...edicao, anaisPublicados: Boolean(edicao.anais?.publicadoEm) }),
           // Mesma regra do tipo CARTA_ACEITE (certificadosElegiveis.js).
-          cartaAceiteDisponivel: ehAutorPrincipal && aprovadoComCorrecaoConcluida(submissao),
+          cartaAceiteDisponivel: ehAutorPrincipal && atendeCriterioCarta(submissao, edicao),
         }
       : null,
   };
@@ -126,7 +127,7 @@ const buscar = asyncHandler(async (req, res) => {
   return res.json({ submissao: formatarParaParticipante(submissao, req.usuario.id, { completa: true, convites }) });
 });
 
-// Carta de aceite (PDF) — só o autor principal, trabalho aprovado.
+// Carta de aceite (PDF) — só o autor principal, trabalho no critério da carta.
 const cartaAceite = asyncHandler(async (req, res) => {
   return enviarPdf(res, await certificadosService.pdfCartaAceite(req.usuario.id, req.params.id));
 });

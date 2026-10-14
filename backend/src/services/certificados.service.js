@@ -22,6 +22,7 @@ const {
 } = require("./certificadosElegiveis");
 const { gerarPdfCertificado } = require("./pdfCertificado.service");
 const { paginaCertificado } = require("../utils/paginaCertificado");
+const { criterioCartaDe } = require("../utils/criterioCartaAceite");
 const emailService = require("./email.service");
 const { camposContaPorEmail } = require("./atividades.service");
 const escaparHtml = require("../utils/escaparHtml");
@@ -627,15 +628,17 @@ async function aplicarElegiveis(tx, edicaoId, tipo, elegiveis) {
 // pra organização já ver/enviar as cartas sem clicar em Gerar. Em segundo
 // plano e sem derrubar quem chamou — o download pelo autor (pdfCartaAceite)
 // também cria a carta que faltar.
-function sincronizarCartasAceite(edicaoId, { submissaoId } = {}) {
-  (async () => {
-    const edicao = await buscarEdicao(edicaoId);
-    if (!edicao.resultadoDivulgadoEm) return;
-    const elegiveis = await listarElegiveis(prisma, edicao, "CARTA_ACEITE", { submissaoId });
-    await prisma.$transaction((tx) => aplicarElegiveis(tx, edicaoId, "CARTA_ACEITE", elegiveis), { timeout: 60000 });
-  })().catch((erro) => {
+function sincronizarCartasAceite(edicaoId, opcoes) {
+  sincronizarCartasAceiteAgora(edicaoId, opcoes).catch((erro) => {
     console.error(`[certificados] Falha ao sincronizar as cartas de aceite da edição ${edicaoId}:`, erro.message);
   });
+}
+
+async function sincronizarCartasAceiteAgora(edicaoId, { submissaoId } = {}) {
+  const edicao = await buscarEdicao(edicaoId);
+  if (!edicao.resultadoDivulgadoEm) return;
+  const elegiveis = await listarElegiveis(prisma, edicao, "CARTA_ACEITE", { submissaoId });
+  await prisma.$transaction((tx) => aplicarElegiveis(tx, edicaoId, "CARTA_ACEITE", elegiveis), { timeout: 60000 });
 }
 
 async function incluirManual(edicaoId, { tipo, usuarioId, atividadeId }) {
@@ -960,6 +963,7 @@ async function listarCartasAceite(edicaoId) {
 
   return {
     divulgadoEm: edicao.resultadoDivulgadoEm,
+    criterio: criterioCartaDe(edicao),
     modelo: projetarModelo(modelo),
     marcadores: MARCADORES_POR_TIPO.CARTA_ACEITE,
     exemplo: valoresExemplo(edicao, "CARTA_ACEITE", modelo),
@@ -991,6 +995,21 @@ async function listarCartasAceite(edicaoId) {
       foraDaRegra: !c.revogadoEm && !chavesElegiveis.has(c.chave),
     })),
   };
+}
+
+// Quem tem direito à carta (decisões e correção concluída). Com o resultado
+// já divulgado, cria na hora as cartas de quem passou a ter direito; as de
+// quem deixou de ter continuam valendo até a organização revogar (aparecem
+// como "Não atende mais").
+async function salvarCriterioCartaAceite(edicaoId, { decisoes, exigirCorrecaoConcluida }) {
+  await buscarEdicao(edicaoId);
+  const edicao = await prisma.edicao.update({
+    where: { id: edicaoId },
+    data: { cartaAceiteDecisoes: decisoes, cartaAceiteExigirCorrecao: exigirCorrecaoConcluida },
+    select: { cartaAceiteDecisoes: true, cartaAceiteExigirCorrecao: true },
+  });
+  await sincronizarCartasAceiteAgora(edicaoId);
+  return criterioCartaDe(edicao);
 }
 
 // ---------------------------------------------------------------------------
@@ -1258,6 +1277,7 @@ module.exports = {
   TIPOS_TELA_CERTIFICADOS,
   TIPOS_CARTA,
   listarCartasAceite,
+  salvarCriterioCartaAceite,
   definirLiberacao,
   gerar,
   incluirManual,

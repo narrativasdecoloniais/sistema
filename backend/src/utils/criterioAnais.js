@@ -64,6 +64,8 @@ function filtroSubmissoesAnais(edicaoId, anais) {
 
 module.exports = {
   DECISOES_PUBLICAVEIS,
+  DECISOES_COM_CORRECAO,
+  filtroDecisao,
   CREDENCIAMENTOS_ANAIS,
   CRITERIO_PADRAO,
   SELECT_CRITERIO_ANAIS,

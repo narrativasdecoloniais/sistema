@@ -5,6 +5,7 @@ const {
   formatarDocumento,
   formatarDataLongaBrasilia,
 } = require("../utils/marcadoresCertificado");
+const { SELECT_CRITERIO_CARTA, filtroCartaAceite } = require("../utils/criterioCartaAceite");
 
 // Quem tem direito a cada tipo de certificado numa edição, e o snapshot dos
 // marcadores (Certificado.dados) de cada um. Cada item devolvido tem a chave
@@ -22,6 +23,7 @@ const CAMPOS_EDICAO = {
   estado: true,
   cargaHorariaTotal: true,
   resultadoDivulgadoEm: true,
+  ...SELECT_CRITERIO_CARTA,
 };
 
 const CAMPOS_USUARIO = {
@@ -47,15 +49,6 @@ const chaveAutoria = (submissaoAutorId) => `sa:${submissaoAutorId}`;
 const chaveAtuacao = (atividadePessoaId) => `ap:${atividadePessoaId}`;
 const chaveEquipe = (membroEquipeId) => `me:${membroEquipeId}`;
 const chaveCartaAceite = (submissaoId) => `s:${submissaoId}`;
-
-// O mesmo FILTRO_APROVADO, num registro já carregado (Minhas submissões).
-function aprovadoComCorrecaoConcluida(submissao) {
-  if (submissao.decisaoFinal === "APROVADO") return true;
-  return (
-    ["APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"].includes(submissao.decisaoFinal) &&
-    submissao.statusCorrecao === "CONCLUIDA"
-  );
-}
 
 function contaValida(usuario) {
   return Boolean(usuario && usuario.ativo && !usuario.anonimizadoEm);
@@ -281,14 +274,14 @@ async function equipeEvento(db, edicao) {
     }));
 }
 
-// Carta de aceite: uma por trabalho aprovado (ressalvas/formatação só com a
-// correção concluída), em nome do autor principal, a partir da divulgação do
-// resultado. submissaoId restringe a um trabalho (download pelo autor e
+// Carta de aceite: uma por trabalho que atende o critério da edição
+// (utils/criterioCartaAceite.js), em nome do autor principal, a partir da
+// divulgação do resultado. submissaoId restringe a um trabalho (download pelo autor e
 // sincronização depois de uma correção).
 async function cartaAceite(db, edicao, { submissaoId } = {}) {
   if (!edicao.resultadoDivulgadoEm) return [];
   const submissoes = await db.submissao.findMany({
-    where: { edicaoId: edicao.id, OR: FILTRO_APROVADO, ...(submissaoId ? { id: submissaoId } : {}) },
+    where: { edicaoId: edicao.id, ...filtroCartaAceite(edicao), ...(submissaoId ? { id: submissaoId } : {}) },
     select: {
       id: true,
       titulo: true,
@@ -376,5 +369,4 @@ module.exports = {
   chaveUsuario,
   chavePresenca,
   chaveCartaAceite,
-  aprovadoComCorrecaoConcluida,
 };

@@ -10,6 +10,7 @@ router.use(autorizarSecao("SUBMISSOES_RESULTADO"));
 router.get("/", cartasAceiteController.listar);
 router.put("/modelo", cartasAceiteController.salvarModelo);
 router.post("/modelo/previa", cartasAceiteController.previa);
+router.put("/criterio", cartasAceiteController.salvarCriterio);
 router.post("/gerar", cartasAceiteController.gerar);
 router.post("/envio-email", cartasAceiteController.enviarPorEmail);
 router.post("/envio-email/retomar", cartasAceiteController.retomarEnvioEmail);

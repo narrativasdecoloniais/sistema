@@ -309,6 +309,11 @@ model Edicao {
   // (APROVADO_COM_RESSALVAS e APROVADO_FORMATACAO).
   resultadoDivulgadoEm              DateTime?
   prazoCorrecaoSubmissao            DateTime?
+  // Quem tem direito à carta de aceite (utils/criterioCartaAceite.js),
+  // configurado em Submissões › Carta de aceite: as decisões aceitas e se
+  // ressalvas/formatação só entram com a correção concluída.
+  cartaAceiteDecisoes               DecisaoAvaliacao[]   @default([APROVADO, APROVADO_COM_RESSALVAS, APROVADO_FORMATACAO])
+  cartaAceiteExigirCorrecao         Boolean              @default(true)
   // Distribuição dos trabalhos nas atividades (apresentacaoSubmissoes.service.js)
   // em duas etapas, nulo = oculta (cada uma pode voltar a ser ocultada):
   // apresentacaoPublicadaEm libera para os autores (Minhas submissões, Início,
