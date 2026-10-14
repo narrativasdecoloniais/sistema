@@ -918,6 +918,8 @@ export const anaisConfiguracaoSchema = z.object({
   licenca: z.string().min(1, "Escolha a licença"),
   apresentacao: z.string().optional().nullable(),
   fichaCatalografica: textoOpcionalAnais(4000),
+  cabecalhoArtigoTitulo: textoOpcionalAnais(300),
+  cabecalhoArtigoTexto: textoOpcionalAnais(600),
   gruposConteudoIds: z.array(z.string()),
   imagemCapa: z.string().nullable().optional(),
   imagemCabecalho: z.string().nullable().optional(),

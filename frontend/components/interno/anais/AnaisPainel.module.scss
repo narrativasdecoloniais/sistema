@@ -204,6 +204,15 @@
   gap: 0.6rem;
 }
 
+// Texto automático mostrado embaixo de um campo que pode ficar em branco.
+.textoAutomatico {
+  margin: -0.35rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
 .orientacaoImagem {
   margin: 0;
   padding: 0.65rem 0.85rem;

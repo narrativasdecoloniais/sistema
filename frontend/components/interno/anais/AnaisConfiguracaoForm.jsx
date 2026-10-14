@@ -47,6 +47,8 @@ function formInicial(anais) {
     licenca: anais.licenca || "CC_BY",
     apresentacao: anais.apresentacao || "",
     fichaCatalografica: anais.fichaCatalografica || "",
+    cabecalhoArtigoTitulo: anais.cabecalhoArtigoTitulo || "",
+    cabecalhoArtigoTexto: anais.cabecalhoArtigoTexto || "",
     gruposConteudoIds: anais.gruposConteudoIds || [],
     imagemCapa: anais.imagemCapa || null,
     imagemCabecalho: anais.imagemCabecalho || null,
@@ -71,7 +73,16 @@ function erroIdentificador(campo, valor) {
 // imagens opcionais de capa e de cabeçalho/rodapé dos trabalhos.
 // totalNoCriterio: trabalhos que entram com o critério salvo (visíveis +
 // ocultos), recalculado a cada salvamento.
-export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNoCriterio, aoSalvar }) {
+// cabecalhoArtigoPadrao: texto automático do cabeçalho do PDF de cada
+// trabalho (calculado pelo backend com a configuração salva).
+export default function AnaisConfiguracaoForm({
+  edicaoId,
+  anais,
+  grupos,
+  totalNoCriterio,
+  cabecalhoArtigoPadrao,
+  aoSalvar,
+}) {
   const { notificar } = useToast();
   const [form, setForm] = useState(() => formInicial(anais));
   const [erros, setErros] = useState({});
@@ -288,6 +299,42 @@ export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNo
             dimensaoMax={IMAGENS_ANAIS.faixa.dimensaoMax}
             orientacao={`Faixa na largura da página, encostada na base; o número da página fica logo acima. Recomendado: ${IMAGENS_ANAIS.faixa.larguraRecomendada} px de largura e altura de até ~620 px (5,3 cm). PNG (aceita transparência) ou JPG, até 20 MB.`}
           />
+        </div>
+      </div>
+
+      <div className={styles.secao}>
+        <CabecalhoSecao
+          Icone={FileText}
+          titulo="Cabeçalho do PDF de cada trabalho"
+          descricao="Linhas que aparecem no topo do PDF individual de cada trabalho (o que se baixa na página do trabalho), entre “ANAIS” e a modalidade. Não entram nos Anais completos. Deixe em branco para usar o texto automático; depois de salvar, os PDFs dos trabalhos já saem com o texto novo."
+        />
+        <div className={styles.camposSecao}>
+          <CampoTexto
+            id="anais-cabecalho-titulo"
+            rotulo="Linha em destaque (opcional)"
+            value={form.cabecalhoArtigoTitulo}
+            placeholder={form.titulo}
+            maxLength={300}
+            onChange={(e) => alterar("cabecalhoArtigoTitulo", e.target.value)}
+            erro={erros.cabecalhoArtigoTitulo}
+          />
+          <p className={estilos.textoAutomatico}>Em branco, usa o título dos Anais: {form.titulo || "—"}</p>
+          <CampoArea
+            id="anais-cabecalho-texto"
+            rotulo="Linha de informações (opcional)"
+            linhas={3}
+            value={form.cabecalhoArtigoTexto}
+            placeholder={cabecalhoArtigoPadrao?.texto || ""}
+            maxLength={600}
+            onChange={(e) => alterar("cabecalhoArtigoTexto", e.target.value)}
+            erro={erros.cabecalhoArtigoTexto}
+          />
+          {cabecalhoArtigoPadrao?.texto && (
+            <p className={estilos.textoAutomatico}>
+              Em branco, usa: {cabecalhoArtigoPadrao.texto}
+              {"\n"}(nome da edição, local, período e ISSN/ISBN salvos — quebras de linha são mantidas no PDF)
+            </p>
+          )}
         </div>
       </div>
 
