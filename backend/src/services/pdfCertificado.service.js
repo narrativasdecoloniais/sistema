@@ -4,14 +4,13 @@ const QRCode = require("qrcode");
 const { JSDOM } = require("jsdom");
 const { substituirMarcadores } = require("../utils/marcadoresCertificado");
 
-// Desenha um certificado (A4 paisagem, só frente): imagem de fundo cobrindo a
-// página, texto do modelo dentro da caixa definida pelas margens e QR code de
+// Desenha um certificado (A4 paisagem — retrato na carta de aceite —, só
+// frente): imagem de fundo cobrindo a página, texto do modelo dentro da caixa definida pelas margens e QR code de
 // validação num dos cantos. Puro — recebe o fundo já carregado e os valores
 // dos marcadores; quem busca dados/arquivos é certificados.service.js.
 
 const MM = 72 / 25.4;
-const LARGURA_PAGINA = 297 * MM;
-const ALTURA_PAGINA = 210 * MM;
+const PAGINA_PADRAO = { largura: 297, altura: 210 };
 // Parágrafos separados por meia linha — mesmo valor da prévia HTML do admin
 // (PreviaCertificado.module.scss).
 const ESPACO_PARAGRAFO_EM = 0.5;
@@ -255,7 +254,7 @@ function desenharDiagramados(doc, diagramados, { fontes, x, y, largura, tamanho,
 // QR code
 // ---------------------------------------------------------------------------
 
-function desenharQr(doc, { imagemQr, posicao, tamanho, margem, codigo, fontes }) {
+function desenharQr(doc, { imagemQr, posicao, tamanho, margem, cor, codigo, fontes, larguraPagina, alturaPagina }) {
   const lado = tamanho * MM;
   const afastamento = margem * MM;
   const larguraRotulo = Math.max(lado, 120);
@@ -263,14 +262,14 @@ function desenharQr(doc, { imagemQr, posicao, tamanho, margem, codigo, fontes })
   const direita = posicao.endsWith("DIREITO");
   const inferior = posicao.startsWith("INFERIOR");
 
-  const xQr = direita ? LARGURA_PAGINA - afastamento - lado : afastamento;
-  const yQr = inferior ? ALTURA_PAGINA - afastamento - alturaRotulo - lado : afastamento;
+  const xQr = direita ? larguraPagina - afastamento - lado : afastamento;
+  const yQr = inferior ? alturaPagina - afastamento - alturaRotulo - lado : afastamento;
   doc.image(imagemQr, xQr, yQr, { width: lado, height: lado });
 
   // Rótulo encostado no mesmo lado do QR, pra nunca sair da página.
   const xRotulo = direita ? xQr + lado - larguraRotulo : xQr;
   doc
-    .fillColor("#2B2622")
+    .fillColor(cor)
     .font(fontes.normal)
     .fontSize(TAMANHO_ROTULO_QR)
     .text("Código de validação", xRotulo, yQr + lado + 2, {
@@ -286,9 +285,12 @@ function desenharQr(doc, { imagemQr, posicao, tamanho, margem, codigo, fontes })
 // Documento
 // ---------------------------------------------------------------------------
 
-async function gerarPdfCertificado({ modelo, valores, codigo, urlValidacao, imagemFundo, titulo }) {
+// pagina: { largura, altura } em mm (utils/paginaCertificado.js).
+async function gerarPdfCertificado({ modelo, valores, codigo, urlValidacao, imagemFundo, titulo, pagina = PAGINA_PADRAO }) {
+  const larguraPagina = pagina.largura * MM;
+  const alturaPagina = pagina.altura * MM;
   const doc = new PDFDocument({
-    size: [LARGURA_PAGINA, ALTURA_PAGINA],
+    size: [larguraPagina, alturaPagina],
     margin: 0,
     info: { Title: titulo || "Certificado", Author: "Narrativas Interculturais, Decoloniais e Antirracistas em Educação" },
   });
@@ -300,14 +302,14 @@ async function gerarPdfCertificado({ modelo, valores, codigo, urlValidacao, imag
   });
 
   if (imagemFundo) {
-    doc.image(imagemFundo, 0, 0, { cover: [LARGURA_PAGINA, ALTURA_PAGINA], align: "center", valign: "center" });
+    doc.image(imagemFundo, 0, 0, { cover: [larguraPagina, alturaPagina], align: "center", valign: "center" });
   }
 
   const fontes = registrarFontes(doc, modelo.fonte);
   const x = modelo.margemEsquerda * MM;
   const topo = modelo.margemSuperior * MM;
-  const largura = Math.max(20, LARGURA_PAGINA - (modelo.margemEsquerda + modelo.margemDireita) * MM);
-  const alturaCaixa = Math.max(20, ALTURA_PAGINA - (modelo.margemSuperior + modelo.margemInferior) * MM);
+  const largura = Math.max(20, larguraPagina - (modelo.margemEsquerda + modelo.margemDireita) * MM);
+  const alturaCaixa = Math.max(20, alturaPagina - (modelo.margemSuperior + modelo.margemInferior) * MM);
   const paragrafos = extrairParagrafos(modelo.texto, valores);
 
   // Reduz a fonte em passos de 0,5 pt até o texto caber na caixa.
@@ -330,14 +332,26 @@ async function gerarPdfCertificado({ modelo, valores, codigo, urlValidacao, imag
   doc.fillColor(modelo.corTexto || "#2B2622");
   desenharDiagramados(doc, diagramados, { ...parametros(), x, y });
 
-  const imagemQr = await QRCode.toBuffer(urlValidacao, { type: "png", margin: 1, width: 512, errorCorrectionLevel: "M" });
+  // Fundo transparente (#0000 = alfa zero): o QR fica sobre a imagem de fundo
+  // do certificado, só com os módulos na cor escolhida.
+  const corQr = modelo.corQr || "#000000";
+  const imagemQr = await QRCode.toBuffer(urlValidacao, {
+    type: "png",
+    margin: 1,
+    width: 512,
+    errorCorrectionLevel: "M",
+    color: { dark: corQr, light: "#0000" },
+  });
   desenharQr(doc, {
     imagemQr,
     posicao: modelo.posicaoQr,
     tamanho: modelo.tamanhoQr,
     margem: modelo.margemQr,
+    cor: corQr,
     codigo,
     fontes,
+    larguraPagina,
+    alturaPagina,
   });
 
   doc.end();

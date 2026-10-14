@@ -17,7 +17,8 @@ const { linhaIdentificadores, periodoEvento, localEvento } = require("../utils/f
 // contagem absoluta de páginas (é a que o sumário e as citações usam).
 // Imagens de cabeçalho/rodapé enviadas pela organização entram em todas as
 // páginas dos trabalhos (e do PDF individual), de borda a borda; o cabeçalho
-// em imagem substitui o textual.
+// em imagem substitui o textual. O modelo de página (arte A4 inteira) fica no
+// fundo de todas as páginas menos a capa, por baixo das faixas.
 
 // Paleta pública (styles/_tokens-publico.scss) — o PDF não enxerga as
 // variáveis CSS, os valores ficam repetidos aqui (como em pdfProgramacao.js).
@@ -258,41 +259,56 @@ function medidasFaixa(imagem) {
   return { largura, altura, x: (A4.largura - largura) / 2 };
 }
 
+// Fundo de página inteira com o modelo de página enviado (já recortado na
+// proporção do A4 em imagensAnais.service.js), ou null sem modelo. Nós novos
+// a cada página — o pdfmake altera os nós ao diagramar.
+function fundoModelo(imagens, registro) {
+  if (!imagens?.modeloPagina) return null;
+  const chave = registro.chave(imagens.modeloPagina);
+  return () => ({ image: chave, width: A4.largura, height: A4.altura, absolutePosition: { x: 0, y: 0 } });
+}
+
 // Moldura das páginas dos trabalhos: margens, cabeçalho, rodapé numerado e,
-// no fundo, as imagens de cabeçalho/rodapé que a organização enviou. As
-// imagens vão no background (posição fixa a partir do topo da página) e as
-// margens crescem pra que o texto não passe por cima delas.
+// no fundo, o modelo de página e as imagens de cabeçalho/rodapé que a
+// organização enviou. As imagens vão no background (posição fixa na página)
+// e as margens crescem pra que o texto não passe por cima das faixas.
 function moldura(imagens, registro, { topo, cabecalhoTextual, deslocamento = 0 }) {
   const cabecalho = imagens?.cabecalho ? medidasFaixa(imagens.cabecalho) : null;
   const rodape = imagens?.rodape ? medidasFaixa(imagens.rodape) : null;
+  const modelo = fundoModelo(imagens, registro);
   const margemTopo = cabecalho ? Math.max(topo, cabecalho.altura + 24) : topo;
   const margemBase = rodape ? Math.max(MARGENS[3], rodape.altura + 40) : MARGENS[3];
 
-  const fundo = [];
-  if (cabecalho) {
-    fundo.push({
-      image: registro.chave(imagens.cabecalho),
-      width: cabecalho.largura,
-      height: cabecalho.altura,
-      margin: [cabecalho.x, 0, 0, 0],
-    });
-  }
-  if (rodape) {
-    // Encosta na borda de baixo (meio ponto de folga contra arredondamento).
-    const acima = A4.altura - rodape.altura - (cabecalho ? cabecalho.altura : 0) - 0.5;
-    fundo.push({
-      image: registro.chave(imagens.rodape),
-      width: rodape.largura,
-      height: rodape.altura,
-      margin: [rodape.x, acima, 0, 0],
-    });
-  }
+  const chaveCabecalho = cabecalho ? registro.chave(imagens.cabecalho) : null;
+  const chaveRodape = rodape ? registro.chave(imagens.rodape) : null;
+  const fundo = () => {
+    const nos = [];
+    if (modelo) nos.push(modelo());
+    if (cabecalho) {
+      nos.push({
+        image: chaveCabecalho,
+        width: cabecalho.largura,
+        height: cabecalho.altura,
+        absolutePosition: { x: cabecalho.x, y: 0 },
+      });
+    }
+    if (rodape) {
+      // Encosta na borda de baixo (meio ponto de folga contra arredondamento).
+      nos.push({
+        image: chaveRodape,
+        width: rodape.largura,
+        height: rodape.altura,
+        absolutePosition: { x: rodape.x, y: A4.altura - rodape.altura - 0.5 },
+      });
+    }
+    return { stack: nos };
+  };
 
   return {
     pageMargins: [MARGENS[0], margemTopo, MARGENS[2], margemBase],
     header: cabecalho ? null : cabecalhoTextual,
     footer: rodapeNumerado(deslocamento, rodape ? margemBase - rodape.altura - 24 : 30),
-    background: fundo.length ? () => ({ stack: fundo }) : null,
+    background: modelo || cabecalho || rodape ? fundo : null,
   };
 }
 
@@ -390,7 +406,8 @@ function artigoPdf(artigo, ctx, { paginas, noSumario, quebraAntes, semRotulo }) 
 
 // Capa = a imagem enviada pela organização, ocupando a página inteira (já
 // recortada na proporção do A4 em imagensAnais.service.js). Sem imagem, sem
-// capa: os Anais começam na folha de rosto.
+// capa: os Anais começam na folha de rosto. O modelo de página não entra
+// por baixo dela.
 function capa(documento, registro) {
   const imagem = documento.imagens?.capa;
   if (!imagem) return null;
@@ -399,6 +416,7 @@ function capa(documento, registro) {
     pageMargins: [0, 0, 0, 0],
     header: null,
     footer: null,
+    background: null,
   };
 }
 
@@ -635,6 +653,8 @@ async function renderizar(definicao, { capturarIds } = {}) {
 function montarDefinicao(documento, paginas) {
   const registro = criarRegistroImagens();
   const ctx = { registro };
+  // Pré-textuais herdam o fundo do documento; capa e trabalhos definem o seu.
+  const modelo = fundoModelo(documento.imagens, registro);
   const secoes = [
     capa(documento, registro),
     folhaDeRosto(documento),
@@ -661,6 +681,7 @@ function montarDefinicao(documento, paginas) {
       creator: "Narrativas — GPDES/UnB",
     },
     content: secoes,
+    ...(modelo ? { background: modelo } : {}),
     images: registro.imagens,
     styles: ESTILOS,
     defaultStyle: { font: "Serif", fontSize: 10.5, color: COR.tinta },

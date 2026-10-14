@@ -13,6 +13,9 @@ const edicoesService = require("../services/edicoes.service");
 const submissoesService = require("../services/submissoes.service");
 const convitesCoautorService = require("../services/convitesCoautor.service");
 const anaisService = require("../services/anais.service");
+const certificadosService = require("../services/certificados.service");
+const { aprovadoComCorrecaoConcluida } = require("../services/certificadosElegiveis");
+const { enviarPdf } = require("./certificados.controller");
 
 const INCLUDE_PARTICIPANTE = {
   ...INCLUDE_PADRAO,
@@ -74,6 +77,8 @@ function formatarParaParticipante(submissao, usuarioId, { completa = false, conv
           podeCorrigir:
             ehAutorPrincipal &&
             correcaoEditavel(submissao, { ...edicao, anaisPublicados: Boolean(edicao.anais?.publicadoEm) }),
+          // Mesma regra do tipo CARTA_ACEITE (certificadosElegiveis.js).
+          cartaAceiteDisponivel: ehAutorPrincipal && aprovadoComCorrecaoConcluida(submissao),
         }
       : null,
   };
@@ -121,6 +126,11 @@ const buscar = asyncHandler(async (req, res) => {
   return res.json({ submissao: formatarParaParticipante(submissao, req.usuario.id, { completa: true, convites }) });
 });
 
+// Carta de aceite (PDF) — só o autor principal, trabalho aprovado.
+const cartaAceite = asyncHandler(async (req, res) => {
+  return enviarPdf(res, await certificadosService.pdfCartaAceite(req.usuario.id, req.params.id));
+});
+
 // Prévia da página do trabalho nos Anais, com o layout público.
 const previa = asyncHandler(async (req, res) => {
   return res.json(await anaisService.buscarPreviaArtigo(req.usuario.id, req.params.id));
@@ -154,6 +164,7 @@ module.exports = {
   listarMinhas,
   buscar,
   previa,
+  cartaAceite,
   corrigir,
   criar,
   verificarEmailAutor,

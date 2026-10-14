@@ -18,8 +18,10 @@ const {
   dadosEdicao,
   chaveUsuario,
   chavePresenca,
+  chaveCartaAceite,
 } = require("./certificadosElegiveis");
 const { gerarPdfCertificado } = require("./pdfCertificado.service");
+const { paginaCertificado } = require("../utils/paginaCertificado");
 const emailService = require("./email.service");
 const { camposContaPorEmail } = require("./atividades.service");
 const escaparHtml = require("../utils/escaparHtml");
@@ -30,6 +32,14 @@ const escaparHtml = require("../utils/escaparHtml");
 // inclui/revoga manualmente e libera o tipo — só então o participante baixa o
 // PDF na área dele. Cada certificado tem um código público validado em
 // /validar-certificado/<codigo> (QR code impresso no PDF).
+//
+// A carta de aceite (CARTA_ACEITE) usa a mesma estrutura, com três
+// diferenças: é A4 retrato, é liberada sozinha com a divulgação do resultado
+// (TIPOS_LIBERADOS_COM_RESULTADO) e é baixada pelo autor principal em Minhas
+// submissões, não em Meus certificados (pdfCartaAceite). Tem tela própria em
+// Submissões › Carta de aceite (listarCartasAceite, seção
+// SUBMISSOES_RESULTADO) e fica fora da tela de Certificados
+// (TIPOS_TELA_CERTIFICADOS).
 
 const TIPOS = [
   "PARTICIPACAO_EVENTO",
@@ -39,7 +49,14 @@ const TIPOS = [
   "MONITOR",
   "ATUACAO_ATIVIDADE",
   "EQUIPE_EVENTO",
+  "CARTA_ACEITE",
 ];
+
+// Liberados pela divulgação do resultado da edição, não pelo botão Liberar.
+const TIPOS_LIBERADOS_COM_RESULTADO = ["CARTA_ACEITE"];
+const liberadoComResultado = (tipo) => TIPOS_LIBERADOS_COM_RESULTADO.includes(tipo);
+// Os que aparecem na tela de Certificados.
+const TIPOS_TELA_CERTIFICADOS = TIPOS.filter((tipo) => !liberadoComResultado(tipo));
 
 const ROTULOS_TIPO = {
   PARTICIPACAO_EVENTO: "Participação no evento",
@@ -49,6 +66,7 @@ const ROTULOS_TIPO = {
   MONITOR: "Monitoria",
   ATUACAO_ATIVIDADE: "Atuação em atividade",
   EQUIPE_EVENTO: "Equipe do evento",
+  CARTA_ACEITE: "Carta de aceite",
 };
 
 const TEXTOS_PADRAO = {
@@ -66,6 +84,23 @@ const TEXTOS_PADRAO = {
     "<p>Certificamos que <strong>{{nome}}</strong> atuou como {{funcao}} na atividade <em>{{atividade}}</em>, realizada {{dataAtividade}}, no {{edicao}}, com carga horária de {{cargaHoraria}} horas.</p>",
   EQUIPE_EVENTO:
     "<p>Certificamos que <strong>{{nome}}</strong> integrou a {{funcao}} do {{edicao}}, realizado {{periodoEvento}}, com carga horária de {{cargaHoraria}} horas.</p>",
+  CARTA_ACEITE:
+    "<p><strong>CARTA DE ACEITE</strong></p><p></p><p>{{cidade}}, {{dataResultado}}.</p><p></p><p>Prezado(a) <strong>{{nome}}</strong>,</p><p>A Comissão Organizadora do {{edicao}} tem a satisfação de informar que o trabalho <strong><em>{{titulo}}</em></strong>, de autoria de {{autores}}, submetido na modalidade {{modalidade}}, área temática {{area}}, foi <strong>aceito</strong> para apresentação no evento, que será realizado {{periodoEvento}}, em {{local}}.</p><p>Agradecemos a sua contribuição e contamos com a sua presença.</p><p></p><p>Atenciosamente,</p><p>Comissão Organizadora<br>{{edicao}}</p>",
+};
+
+// Layout padrão da carta (A4 retrato, texto corrido de cima para baixo).
+const LAYOUT_PADRAO_TIPO = {
+  CARTA_ACEITE: {
+    margemSuperior: 45,
+    margemInferior: 50,
+    margemEsquerda: 25,
+    margemDireita: 25,
+    alinhamento: "JUSTIFICADO",
+    alinhamentoVertical: "TOPO",
+    tamanhoFonte: 12,
+    entrelinha: 1.5,
+    tamanhoQr: 20,
+  },
 };
 
 const CAMPOS_LAYOUT = [
@@ -82,6 +117,7 @@ const CAMPOS_LAYOUT = [
   "posicaoQr",
   "tamanhoQr",
   "margemQr",
+  "corQr",
   "cargaHoraria",
 ];
 
@@ -106,15 +142,22 @@ function modeloPadrao(tipo) {
     posicaoQr: "INFERIOR_DIREITO",
     tamanhoQr: 24,
     margemQr: 12,
+    corQr: "#000000",
     cargaHoraria: null,
     liberadoEm: null,
     updatedAt: null,
+    ...LAYOUT_PADRAO_TIPO[tipo],
   };
 }
 
 function projetarModelo(modelo) {
   const { edicaoId, ...resto } = modelo;
   return { ...resto, salvo: Boolean(modelo.id) };
+}
+
+// Nos tipos liberados com o resultado, liberadoEm é o da divulgação.
+function comLiberacaoDaEdicao(modelo, edicao) {
+  return liberadoComResultado(modelo.tipo) ? { ...modelo, liberadoEm: edicao.resultadoDivulgadoEm ?? null } : modelo;
 }
 
 // ---------------------------------------------------------------------------
@@ -239,7 +282,7 @@ function cargaHorariaDe(modelo, dados) {
 // O que identifica o certificado além do nome (atividade ou trabalho).
 function referenciaDe(certificado) {
   const dados = certificado.dados || {};
-  if (certificado.tipo === "APRESENTACAO_TRABALHO") return dados.titulo || "";
+  if (["APRESENTACAO_TRABALHO", "CARTA_ACEITE"].includes(certificado.tipo)) return dados.titulo || "";
   if (certificado.tipo === "PRESENCA_ATIVIDADE") return dados.atividade || "";
   if (certificado.tipo === "ATUACAO_ATIVIDADE") {
     return [dados.funcao, dados.atividade].filter(Boolean).join(" — ");
@@ -268,6 +311,7 @@ function valoresExemplo(edicao, tipo, modelo) {
     areas: "Educação e relações étnico-raciais",
     funcoes: "Credenciamento e Apoio às atividades",
     funcao: tipo === "EQUIPE_EVENTO" ? "Comissão Organizadora" : "Mediadora",
+    dataResultado: formatarDataLongaBrasilia(edicao.resultadoDivulgadoEm || new Date()),
   };
 }
 
@@ -309,7 +353,7 @@ async function listar(edicaoId) {
   const [modelos, certificados, elegiveisPorTipo, atividades, equipe, convidados] = await Promise.all([
     modelosDaEdicao(edicaoId),
     prisma.certificado.findMany({
-      where: { edicaoId },
+      where: { edicaoId, tipo: { in: TIPOS_TELA_CERTIFICADOS } },
       select: {
         id: true,
         tipo: true,
@@ -327,19 +371,19 @@ async function listar(edicaoId) {
       },
       orderBy: { emitidoEm: "desc" },
     }),
-    Promise.all(TIPOS.map((tipo) => listarElegiveis(prisma, edicao, tipo))),
+    Promise.all(TIPOS_TELA_CERTIFICADOS.map((tipo) => listarElegiveis(prisma, edicao, tipo))),
     // Pra inclusão manual de presença.
     prisma.atividade.findMany({ where: { edicaoId }, select: { id: true, nome: true }, orderBy: { nome: "asc" } }),
     listarEquipe(edicaoId),
     listarConvidados(edicaoId),
   ]);
 
-  const chavesElegiveis = Object.fromEntries(
-    TIPOS.map((tipo, i) => [tipo, new Set(elegiveisPorTipo[i].map((item) => item.chave))])
+    const chavesElegiveis = Object.fromEntries(
+    TIPOS_TELA_CERTIFICADOS.map((tipo, i) => [tipo, new Set(elegiveisPorTipo[i].map((item) => item.chave))])
   );
 
   const resumo = Object.fromEntries(
-    TIPOS.map((tipo) => {
+    TIPOS_TELA_CERTIFICADOS.map((tipo) => {
       const doTipo = certificados.filter((c) => c.tipo === tipo);
       const chavesEmitidas = new Set(doTipo.map((c) => c.chave));
       const ativos = doTipo.filter((c) => !c.revogadoEm);
@@ -358,11 +402,11 @@ async function listar(edicaoId) {
 
   return {
     edicao: { id: edicao.id, nome: edicao.nome },
-    tipos: TIPOS.map((tipo) => ({ tipo, rotulo: ROTULOS_TIPO[tipo] })),
+    tipos: TIPOS_TELA_CERTIFICADOS.map((tipo) => ({ tipo, rotulo: ROTULOS_TIPO[tipo] })),
     atividades,
-    modelos: Object.fromEntries(TIPOS.map((tipo) => [tipo, projetarModelo(modelos[tipo])])),
+    modelos: Object.fromEntries(TIPOS_TELA_CERTIFICADOS.map((tipo) => [tipo, projetarModelo(modelos[tipo])])),
     marcadores: MARCADORES_POR_TIPO,
-    exemplos: Object.fromEntries(TIPOS.map((tipo) => [tipo, valoresExemplo(edicao, tipo, modelos[tipo])])),
+    exemplos: Object.fromEntries(TIPOS_TELA_CERTIFICADOS.map((tipo) => [tipo, valoresExemplo(edicao, tipo, modelos[tipo])])),
     resumo,
     equipe,
     convidados,
@@ -494,11 +538,15 @@ async function previa(edicaoId, tipo, corpo) {
     urlValidacao: urlValidacao("ABCDEFGHJKMN"),
     imagemFundo,
     titulo: `Prévia — ${ROTULOS_TIPO[tipo]}`,
+    pagina: paginaCertificado(tipo),
   });
 }
 
 async function definirLiberacao(edicaoId, tipo, liberado) {
   exigirTipo(tipo);
+  if (liberadoComResultado(tipo)) {
+    throw new ErroHttp(409, "A carta de aceite é liberada automaticamente com a divulgação do resultado.");
+  }
   await buscarEdicao(edicaoId);
   const modelo = await prisma.modeloCertificado.findUnique({ where: { edicaoId_tipo: { edicaoId, tipo } } });
   if (!modelo) throw new ErroHttp(409, "Salve o modelo deste tipo antes de liberar os certificados.");
@@ -519,58 +567,75 @@ async function definirLiberacao(edicaoId, tipo, liberado) {
 async function gerar(edicaoId, tipo) {
   exigirTipo(tipo);
   const edicao = await buscarEdicao(edicaoId);
+  if (liberadoComResultado(tipo) && !edicao.resultadoDivulgadoEm) {
+    throw new ErroHttp(409, "As cartas de aceite só são geradas depois da divulgação do resultado.");
+  }
   const elegiveis = await listarElegiveis(prisma, edicao, tipo);
+  return prisma.$transaction((tx) => aplicarElegiveis(tx, edicaoId, tipo, elegiveis), { timeout: 60000 });
+}
 
-  return prisma.$transaction(
-    async (tx) => {
-      const existentes = await tx.certificado.findMany({
-        where: { edicaoId, tipo },
-        select: { id: true, chave: true, revogadoEm: true, dados: true, usuarioId: true },
+async function aplicarElegiveis(tx, edicaoId, tipo, elegiveis) {
+  const existentes = await tx.certificado.findMany({
+    where: { edicaoId, tipo, chave: { in: elegiveis.map((item) => item.chave) } },
+    select: { id: true, chave: true, revogadoEm: true, dados: true, usuarioId: true },
+  });
+  const porChave = new Map(existentes.map((c) => [c.chave, c]));
+
+  const novos = [];
+  let atualizados = 0;
+  for (const item of elegiveis) {
+    const atual = porChave.get(item.chave);
+    if (!atual) {
+      novos.push(item);
+      continue;
+    }
+    if (atual.revogadoEm) continue;
+    const mudou =
+      JSON.stringify(atual.dados) !== JSON.stringify(item.dados) || atual.usuarioId !== (item.usuarioId ?? null);
+    if (mudou) {
+      await tx.certificado.update({
+        where: { id: atual.id },
+        data: { dados: item.dados, usuarioId: item.usuarioId ?? null },
       });
-      const porChave = new Map(existentes.map((c) => [c.chave, c]));
+      atualizados += 1;
+    }
+  }
 
-      const novos = [];
-      let atualizados = 0;
-      for (const item of elegiveis) {
-        const atual = porChave.get(item.chave);
-        if (!atual) {
-          novos.push(item);
-          continue;
-        }
-        if (atual.revogadoEm) continue;
-        const mudou =
-          JSON.stringify(atual.dados) !== JSON.stringify(item.dados) || atual.usuarioId !== (item.usuarioId ?? null);
-        if (mudou) {
-          await tx.certificado.update({
-            where: { id: atual.id },
-            data: { dados: item.dados, usuarioId: item.usuarioId ?? null },
-          });
-          atualizados += 1;
-        }
-      }
+  if (novos.length > 0) {
+    const codigos = await gerarCodigosUnicos(tx, novos.length);
+    await tx.certificado.createMany({
+      data: novos.map((item, i) => ({
+        edicaoId,
+        tipo,
+        chave: item.chave,
+        codigo: codigos[i],
+        usuarioId: item.usuarioId ?? null,
+        submissaoAutorId: item.submissaoAutorId ?? null,
+        atividadePessoaId: item.atividadePessoaId ?? null,
+        membroEquipeId: item.membroEquipeId ?? null,
+        atividadeId: item.atividadeId ?? null,
+        origem: "REGRA",
+        dados: item.dados,
+      })),
+    });
+  }
+  return { criados: novos.length, atualizados };
+}
 
-      if (novos.length > 0) {
-        const codigos = await gerarCodigosUnicos(tx, novos.length);
-        await tx.certificado.createMany({
-          data: novos.map((item, i) => ({
-            edicaoId,
-            tipo,
-            chave: item.chave,
-            codigo: codigos[i],
-            usuarioId: item.usuarioId ?? null,
-            submissaoAutorId: item.submissaoAutorId ?? null,
-            atividadePessoaId: item.atividadePessoaId ?? null,
-            membroEquipeId: item.membroEquipeId ?? null,
-            atividadeId: item.atividadeId ?? null,
-            origem: "REGRA",
-            dados: item.dados,
-          })),
-        });
-      }
-      return { criados: novos.length, atualizados };
-    },
-    { timeout: 60000 }
-  );
+// Cartas de aceite da edição (ou de um trabalho) em dia com a regra:
+// chamada depois da divulgação do resultado e de cada correção concluída,
+// pra organização já ver/enviar as cartas sem clicar em Gerar. Em segundo
+// plano e sem derrubar quem chamou — o download pelo autor (pdfCartaAceite)
+// também cria a carta que faltar.
+function sincronizarCartasAceite(edicaoId, { submissaoId } = {}) {
+  (async () => {
+    const edicao = await buscarEdicao(edicaoId);
+    if (!edicao.resultadoDivulgadoEm) return;
+    const elegiveis = await listarElegiveis(prisma, edicao, "CARTA_ACEITE", { submissaoId });
+    await prisma.$transaction((tx) => aplicarElegiveis(tx, edicaoId, "CARTA_ACEITE", elegiveis), { timeout: 60000 });
+  })().catch((erro) => {
+    console.error(`[certificados] Falha ao sincronizar as cartas de aceite da edição ${edicaoId}:`, erro.message);
+  });
 }
 
 async function incluirManual(edicaoId, { tipo, usuarioId, atividadeId }) {
@@ -628,14 +693,16 @@ async function incluirManual(edicaoId, { tipo, usuarioId, atividadeId }) {
   });
 }
 
-async function buscarDaEdicao(edicaoId, id) {
-  const certificado = await prisma.certificado.findFirst({ where: { id, edicaoId } });
+// tipos: os que a tela que chamou pode mexer (Certificados não mexe nas
+// cartas de aceite e vice-versa — permissões de seções diferentes).
+async function buscarDaEdicao(edicaoId, id, tipos = TIPOS_TELA_CERTIFICADOS) {
+  const certificado = await prisma.certificado.findFirst({ where: { id, edicaoId, tipo: { in: tipos } } });
   if (!certificado) throw new ErroHttp(404, "Certificado não encontrado.");
   return certificado;
 }
 
-async function revogar(edicaoId, id, motivo) {
-  const certificado = await buscarDaEdicao(edicaoId, id);
+async function revogar(edicaoId, id, motivo, tipos) {
+  const certificado = await buscarDaEdicao(edicaoId, id, tipos);
   if (certificado.revogadoEm) throw new ErroHttp(409, "Este certificado já está revogado.");
   await prisma.certificado.update({
     where: { id },
@@ -643,15 +710,15 @@ async function revogar(edicaoId, id, motivo) {
   });
 }
 
-async function restaurar(edicaoId, id) {
-  const certificado = await buscarDaEdicao(edicaoId, id);
+async function restaurar(edicaoId, id, tipos) {
+  const certificado = await buscarDaEdicao(edicaoId, id, tipos);
   if (!certificado.revogadoEm) throw new ErroHttp(409, "Este certificado não está revogado.");
   await prisma.certificado.update({ where: { id }, data: { revogadoEm: null, motivoRevogacao: null } });
 }
 
-async function revogarEmLote(edicaoId, ids, motivo) {
+async function revogarEmLote(edicaoId, ids, motivo, tipos = TIPOS_TELA_CERTIFICADOS) {
   const { count } = await prisma.certificado.updateMany({
-    where: { edicaoId, id: { in: ids }, revogadoEm: null },
+    where: { edicaoId, id: { in: ids }, tipo: { in: tipos }, revogadoEm: null },
     data: { revogadoEm: new Date(), motivoRevogacao: motivo || null },
   });
   return count;
@@ -669,15 +736,20 @@ async function montarPdf(certificado, modelo) {
     codigo: valores.codigo,
     urlValidacao: urlValidacao(certificado.codigo),
     imagemFundo: await carregarFundo(modelo.imagemFundo),
-    titulo: `Certificado — ${ROTULOS_TIPO[certificado.tipo]} — ${valores.nome || ""}`,
+    titulo:
+      certificado.tipo === "CARTA_ACEITE"
+        ? `Carta de aceite — ${valores.titulo || ""}`
+        : `Certificado — ${ROTULOS_TIPO[certificado.tipo]} — ${valores.nome || ""}`,
+    pagina: paginaCertificado(certificado.tipo),
   });
-  return { buffer, nomeArquivo: `certificado-${valores.codigo}.pdf` };
+  const prefixo = certificado.tipo === "CARTA_ACEITE" ? "carta-de-aceite" : "certificado";
+  return { buffer, nomeArquivo: `${prefixo}-${valores.codigo}.pdf` };
 }
 
 // Admin baixa qualquer um (inclusive revogado ou ainda não liberado), pra
 // conferência.
-async function pdfAdmin(edicaoId, id) {
-  const certificado = await buscarDaEdicao(edicaoId, id);
+async function pdfAdmin(edicaoId, id, tipos) {
+  const certificado = await buscarDaEdicao(edicaoId, id, tipos);
   return montarPdf(certificado, await modeloDoTipo(edicaoId, certificado.tipo));
 }
 
@@ -699,16 +771,38 @@ function filtroDoUsuario(usuarioId) {
   };
 }
 
+// Modelos liberados por edição/tipo ("<edicaoId>:<tipo>"). Os tipos liberados
+// com o resultado entram quando a edição já divulgou, salvos ou não (aí vale
+// o modelo padrão).
 async function modelosLiberados(edicaoIds) {
-  const modelos = await prisma.modeloCertificado.findMany({
-    where: { edicaoId: { in: edicaoIds }, liberadoEm: { not: null } },
-  });
-  return new Map(modelos.map((m) => [`${m.edicaoId}:${m.tipo}`, m]));
+  const [modelos, divulgadas] = await Promise.all([
+    prisma.modeloCertificado.findMany({
+      where: {
+        edicaoId: { in: edicaoIds },
+        OR: [{ liberadoEm: { not: null } }, { tipo: { in: TIPOS_LIBERADOS_COM_RESULTADO } }],
+      },
+    }),
+    prisma.edicao.findMany({
+      where: { id: { in: edicaoIds }, resultadoDivulgadoEm: { not: null } },
+      select: { id: true, resultadoDivulgadoEm: true },
+    }),
+  ]);
+  const mapa = new Map(
+    modelos.filter((m) => !liberadoComResultado(m.tipo)).map((m) => [`${m.edicaoId}:${m.tipo}`, m])
+  );
+  for (const edicao of divulgadas) {
+    for (const tipo of TIPOS_LIBERADOS_COM_RESULTADO) {
+      const salvo = modelos.find((m) => m.edicaoId === edicao.id && m.tipo === tipo);
+      mapa.set(`${edicao.id}:${tipo}`, comLiberacaoDaEdicao(salvo || { ...modeloPadrao(tipo), edicaoId: edicao.id }, edicao));
+    }
+  }
+  return mapa;
 }
 
 async function listarDoParticipante(usuarioId) {
+  // A carta de aceite fica em Minhas submissões, junto do trabalho.
   const certificados = await prisma.certificado.findMany({
-    where: filtroDoUsuario(usuarioId),
+    where: { ...filtroDoUsuario(usuarioId), tipo: { notIn: TIPOS_LIBERADOS_COM_RESULTADO } },
     select: {
       id: true,
       tipo: true,
@@ -745,6 +839,36 @@ async function pdfDoParticipante(usuarioId, id) {
   return montarPdf(certificado, modelo);
 }
 
+// Carta de aceite do trabalho, baixada pelo autor principal em Minhas
+// submissões. A regra é conferida na hora; a carta (código) é criada se ainda
+// não existir e o snapshot atualizado (título corrigido, área trocada…).
+async function pdfCartaAceite(usuarioId, submissaoId) {
+  const submissao = await prisma.submissao.findFirst({
+    where: { id: submissaoId, usuarioId },
+    select: { id: true, edicaoId: true },
+  });
+  if (!submissao) throw new ErroHttp(404, "Submissão não encontrada.");
+
+  const edicao = await buscarEdicao(submissao.edicaoId);
+  const [item] = await listarElegiveis(prisma, edicao, "CARTA_ACEITE", { submissaoId: submissao.id });
+  if (!item) throw new ErroHttp(409, "A carta de aceite ainda não está disponível para este trabalho.");
+
+  try {
+    await prisma.$transaction((tx) => aplicarElegiveis(tx, edicao.id, "CARTA_ACEITE", [item]));
+  } catch (erro) {
+    // Dois downloads ao mesmo tempo: o outro criou a carta primeiro.
+    if (erro.code !== "P2002") throw erro;
+  }
+  const certificado = await prisma.certificado.findUnique({
+    where: { edicaoId_tipo_chave: { edicaoId: edicao.id, tipo: "CARTA_ACEITE", chave: chaveCartaAceite(submissao.id) } },
+  });
+  if (certificado.revogadoEm) {
+    throw new ErroHttp(409, "A carta de aceite deste trabalho foi revogada pela organização. Fale com a organização do evento.");
+  }
+  const modelo = (await modelosLiberados([edicao.id])).get(`${edicao.id}:CARTA_ACEITE`);
+  return montarPdf(certificado, modelo);
+}
+
 // ---------------------------------------------------------------------------
 // Validação pública
 // ---------------------------------------------------------------------------
@@ -761,10 +885,8 @@ async function validar(codigoDigitado) {
   });
   if (!certificado) throw new ErroHttp(404, "Não encontramos certificado com esse código.");
 
-  const modelo = await prisma.modeloCertificado.findUnique({
-    where: { edicaoId_tipo: { edicaoId: certificado.edicaoId, tipo: certificado.tipo } },
-  });
-  if (!modelo?.liberadoEm && !certificado.revogadoEm) {
+  const modelo = (await modelosLiberados([certificado.edicaoId])).get(`${certificado.edicaoId}:${certificado.tipo}`);
+  if (!modelo && !certificado.revogadoEm) {
     throw new ErroHttp(404, "Não encontramos certificado com esse código.");
   }
 
@@ -798,6 +920,77 @@ async function pdfPublico(codigoDigitado) {
   const modelo = (await modelosLiberados([certificado.edicaoId])).get(`${certificado.edicaoId}:${certificado.tipo}`);
   if (!modelo) throw naoEncontrado;
   return montarPdf(certificado, modelo);
+}
+
+// ---------------------------------------------------------------------------
+// Carta de aceite — tela Submissões › Carta de aceite
+// ---------------------------------------------------------------------------
+
+const TIPOS_CARTA = ["CARTA_ACEITE"];
+
+// Modelo, resumo e cartas emitidas da edição. Revogar/restaurar/PDF/e-mail
+// usam as funções gerais com tipos = TIPOS_CARTA.
+async function listarCartasAceite(edicaoId) {
+  const edicao = await buscarEdicao(edicaoId);
+  const [modeloSalvo, elegiveis, cartas] = await Promise.all([
+    modeloDoTipo(edicaoId, "CARTA_ACEITE"),
+    listarElegiveis(prisma, edicao, "CARTA_ACEITE"),
+    prisma.certificado.findMany({
+      where: { edicaoId, tipo: "CARTA_ACEITE" },
+      select: {
+        id: true,
+        chave: true,
+        codigo: true,
+        dados: true,
+        revogadoEm: true,
+        motivoRevogacao: true,
+        emitidoEm: true,
+        emailSolicitadoEm: true,
+        emailEnviadoEm: true,
+        emailErro: true,
+        ...SELECT_DESTINO,
+      },
+      orderBy: { emitidoEm: "desc" },
+    }),
+  ]);
+  const modelo = comLiberacaoDaEdicao(modeloSalvo, edicao);
+  const chavesElegiveis = new Set(elegiveis.map((item) => item.chave));
+  const chavesEmitidas = new Set(cartas.map((c) => c.chave));
+  const validas = cartas.filter((c) => !c.revogadoEm);
+
+  return {
+    divulgadoEm: edicao.resultadoDivulgadoEm,
+    modelo: projetarModelo(modelo),
+    marcadores: MARCADORES_POR_TIPO.CARTA_ACEITE,
+    exemplo: valoresExemplo(edicao, "CARTA_ACEITE", modelo),
+    resumo: {
+      elegiveis: chavesElegiveis.size,
+      novas: [...chavesElegiveis].filter((chave) => !chavesEmitidas.has(chave)).length,
+      emitidas: validas.length,
+      revogadas: cartas.length - validas.length,
+    },
+    envioEmail: {
+      enviando: enviosEmAndamento.has(edicaoId),
+      pendentes: validas.filter((c) => situacaoEmail(c) === "PENDENTE").length,
+      comErro: validas.filter((c) => situacaoEmail(c) === "ERRO").length,
+    },
+    cartas: cartas.map((c) => ({
+      id: c.id,
+      codigo: formatarCodigo(c.codigo),
+      nome: c.dados?.nome || "",
+      email: emailDestino(c),
+      titulo: c.dados?.titulo || "",
+      modalidade: c.dados?.modalidade || "",
+      area: c.dados?.area || "",
+      situacaoEmail: situacaoEmail(c),
+      emailEnviadoEm: c.emailEnviadoEm,
+      emailErro: c.emailErro,
+      revogadoEm: c.revogadoEm,
+      motivoRevogacao: c.motivoRevogacao,
+      emitidoEm: c.emitidoEm,
+      foraDaRegra: !c.revogadoEm && !chavesElegiveis.has(c.chave),
+    })),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -903,6 +1096,22 @@ function esperar(ms) {
   return new Promise((resolver) => setTimeout(resolver, ms));
 }
 
+function htmlEmailCartaAceite({ nome, titulo, edicao, codigo, comConta }) {
+  const link = urlValidacao(codigo);
+  const corpoHtml = `
+    <p>Olá, ${escaparHtml(nome)}.</p>
+    <p>A carta de aceite do trabalho <strong>${escaparHtml(titulo)}</strong> no ${escaparHtml(edicao)} está disponível.</p>
+    ${emailService.botaoEmail(link, "Ver e baixar a carta de aceite")}
+    <p>Código de validação: <strong>${escaparHtml(formatarCodigo(codigo))}</strong>. Qualquer pessoa pode conferir a autenticidade da carta por esse código, no site do evento.</p>
+    ${
+      comConta
+        ? "<p>A carta também fica disponível em Minhas submissões, na sua área do participante.</p>"
+        : ""
+    }
+  `;
+  return emailService.layoutEmailPublico({ eyebrow: "Carta de aceite", titulo: escaparHtml(edicao), corpoHtml });
+}
+
 function htmlEmailCertificado({ nome, rotulo, referencia, edicao, codigo, comConta }) {
   const link = urlValidacao(codigo);
   const corpoHtml = `
@@ -921,28 +1130,31 @@ function htmlEmailCertificado({ nome, rotulo, referencia, edicao, codigo, comCon
   return emailService.layoutEmailPublico({ eyebrow: "Certificado", titulo: escaparHtml(edicao), corpoHtml });
 }
 
-// tipos: envia todos os válidos desses tipos; ids: só esses certificados.
+// tipos: envia todos os válidos desses tipos (sem tipos, os da tela de
+// Certificados); ids: só esses certificados, dentro dos tipos.
 // reenviar: inclui quem já recebeu (senão só quem ainda não recebeu).
-async function solicitarEnvioEmail(edicaoId, { tipos, ids, reenviar }) {
+async function solicitarEnvioEmail(edicaoId, { tipos = TIPOS_TELA_CERTIFICADOS, ids, reenviar }) {
   const edicao = await buscarEdicao(edicaoId);
   if (enviosEmAndamento.has(edicaoId)) {
     throw new ErroHttp(409, "Já há um envio de certificados em andamento. Aguarde terminar.");
   }
 
-  const liberados = await prisma.modeloCertificado.findMany({
-    where: { edicaoId, liberadoEm: { not: null } },
-    select: { tipo: true },
-  });
-  const tiposLiberados = liberados.map((m) => m.tipo);
+  const liberados = await modelosLiberados([edicaoId]);
+  const tiposLiberados = tipos.filter((tipo) => liberados.has(`${edicaoId}:${tipo}`));
   if (tiposLiberados.length === 0) {
-    throw new ErroHttp(409, "Nenhum tipo de certificado está liberado. Libere o tipo antes de enviar por e-mail.");
+    throw new ErroHttp(
+      409,
+      tipos.every(liberadoComResultado)
+        ? "As cartas de aceite só ficam disponíveis depois da divulgação do resultado."
+        : "Nenhum tipo de certificado está liberado. Libere o tipo antes de enviar por e-mail."
+    );
   }
 
   const candidatos = await prisma.certificado.findMany({
     where: {
       edicaoId,
       revogadoEm: null,
-      tipo: { in: tipos ? tipos.filter((t) => tiposLiberados.includes(t)) : tiposLiberados },
+      tipo: { in: tiposLiberados },
       ...(ids ? { id: { in: ids } } : {}),
       ...(reenviar ? {} : { emailEnviadoEm: null }),
     },
@@ -967,12 +1179,12 @@ function iniciarEnvioEmSegundoPlano(edicaoId) {
   });
 }
 
-async function retomarEnvioEmail(edicaoId) {
+async function retomarEnvioEmail(edicaoId, tipos = TIPOS_TELA_CERTIFICADOS) {
   await buscarEdicao(edicaoId);
-  if (enviosEmAndamento.has(edicaoId)) throw new ErroHttp(409, "O envio dos certificados já está em andamento.");
+  if (enviosEmAndamento.has(edicaoId)) throw new ErroHttp(409, "O envio por e-mail já está em andamento.");
   // Falhas voltam pra fila.
   const { count } = await prisma.certificado.updateMany({
-    where: { edicaoId, revogadoEm: null, emailSolicitadoEm: { not: null }, emailEnviadoEm: null },
+    where: { edicaoId, tipo: { in: tipos }, revogadoEm: null, emailSolicitadoEm: { not: null }, emailEnviadoEm: null },
     data: { emailErro: null },
   });
   if (count === 0) throw new ErroHttp(409, "Não há envios pendentes.");
@@ -998,17 +1210,26 @@ async function enviarEmailsPendentes(edicaoId) {
       try {
         if (!liberados.has(`${edicaoId}:${certificado.tipo}`)) throw new Error("Tipo de certificado não está liberado.");
         if (!email) throw new Error("Sem e-mail de destino.");
+        const carta = certificado.tipo === "CARTA_ACEITE";
         await emailService.enviarEmail({
           para: email,
-          assunto: `Seu certificado — ${edicao.nome}`,
-          html: htmlEmailCertificado({
-            nome: certificado.dados?.nome || "",
-            rotulo: ROTULOS_TIPO[certificado.tipo],
-            referencia: referenciaDe(certificado),
-            edicao: edicao.nome,
-            codigo: certificado.codigo,
-            comConta: Boolean(certificado.usuarioId),
-          }),
+          assunto: carta ? `Carta de aceite — ${edicao.nome}` : `Seu certificado — ${edicao.nome}`,
+          html: carta
+            ? htmlEmailCartaAceite({
+                nome: certificado.dados?.nome || "",
+                titulo: certificado.dados?.titulo || "",
+                edicao: edicao.nome,
+                codigo: certificado.codigo,
+                comConta: Boolean(certificado.usuarioId),
+              })
+            : htmlEmailCertificado({
+                nome: certificado.dados?.nome || "",
+                rotulo: ROTULOS_TIPO[certificado.tipo],
+                referencia: referenciaDe(certificado),
+                edicao: edicao.nome,
+                codigo: certificado.codigo,
+                comConta: Boolean(certificado.usuarioId),
+              }),
         });
         await prisma.certificado.update({
           where: { id: certificado.id },
@@ -1034,6 +1255,9 @@ module.exports = {
   listar,
   salvarModelo,
   previa,
+  TIPOS_TELA_CERTIFICADOS,
+  TIPOS_CARTA,
+  listarCartasAceite,
   definirLiberacao,
   gerar,
   incluirManual,
@@ -1043,6 +1267,8 @@ module.exports = {
   pdfAdmin,
   listarDoParticipante,
   pdfDoParticipante,
+  pdfCartaAceite,
+  sincronizarCartasAceite,
   validar,
   pdfPublico,
   salvarMembroEquipe,

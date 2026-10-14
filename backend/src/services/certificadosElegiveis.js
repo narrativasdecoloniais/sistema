@@ -3,6 +3,7 @@ const {
   romano,
   juntarLista,
   formatarDocumento,
+  formatarDataLongaBrasilia,
 } = require("../utils/marcadoresCertificado");
 
 // Quem tem direito a cada tipo de certificado numa edição, e o snapshot dos
@@ -20,6 +21,7 @@ const CAMPOS_EDICAO = {
   cidade: true,
   estado: true,
   cargaHorariaTotal: true,
+  resultadoDivulgadoEm: true,
 };
 
 const CAMPOS_USUARIO = {
@@ -44,6 +46,16 @@ const chavePresenca = (usuarioId, atividadeId) => `u:${usuarioId}:a:${atividadeI
 const chaveAutoria = (submissaoAutorId) => `sa:${submissaoAutorId}`;
 const chaveAtuacao = (atividadePessoaId) => `ap:${atividadePessoaId}`;
 const chaveEquipe = (membroEquipeId) => `me:${membroEquipeId}`;
+const chaveCartaAceite = (submissaoId) => `s:${submissaoId}`;
+
+// O mesmo FILTRO_APROVADO, num registro já carregado (Minhas submissões).
+function aprovadoComCorrecaoConcluida(submissao) {
+  if (submissao.decisaoFinal === "APROVADO") return true;
+  return (
+    ["APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"].includes(submissao.decisaoFinal) &&
+    submissao.statusCorrecao === "CONCLUIDA"
+  );
+}
 
 function contaValida(usuario) {
   return Boolean(usuario && usuario.ativo && !usuario.anonimizadoEm);
@@ -269,6 +281,51 @@ async function equipeEvento(db, edicao) {
     }));
 }
 
+// Carta de aceite: uma por trabalho aprovado (ressalvas/formatação só com a
+// correção concluída), em nome do autor principal, a partir da divulgação do
+// resultado. submissaoId restringe a um trabalho (download pelo autor e
+// sincronização depois de uma correção).
+async function cartaAceite(db, edicao, { submissaoId } = {}) {
+  if (!edicao.resultadoDivulgadoEm) return [];
+  const submissoes = await db.submissao.findMany({
+    where: { edicaoId: edicao.id, OR: FILTRO_APROVADO, ...(submissaoId ? { id: submissaoId } : {}) },
+    select: {
+      id: true,
+      titulo: true,
+      modalidadeSubmissao: { select: { nome: true } },
+      areaSubmissao: { select: { titulo: true } },
+      autores: {
+        select: { id: true, nome: true, principal: true, usuario: { select: CAMPOS_USUARIO } },
+        orderBy: { ordem: "asc" },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const itens = [];
+  for (const submissao of submissoes) {
+    const principal = submissao.autores.find((a) => a.principal) || submissao.autores[0];
+    if (!principal || (principal.usuario && !contaValida(principal.usuario))) continue;
+    const usuario = principal.usuario || null;
+    itens.push({
+      chave: chaveCartaAceite(submissao.id),
+      usuarioId: usuario?.id || null,
+      submissaoAutorId: principal.id,
+      dados: {
+        ...dadosEdicao(edicao),
+        ...dadosPessoa(usuario, principal.nome),
+        titulo: submissao.titulo,
+        autores: juntarLista(submissao.autores.map((a) => (contaValida(a.usuario) ? a.usuario.nome : a.nome))),
+        modalidade: submissao.modalidadeSubmissao?.nome || "",
+        area: submissao.areaSubmissao?.titulo || "",
+        dataResultado: formatarDataLongaBrasilia(edicao.resultadoDivulgadoEm),
+        cargaHoraria: null,
+      },
+    });
+  }
+  return itens;
+}
+
 const POR_TIPO = {
   PARTICIPACAO_EVENTO: participacaoEvento,
   PRESENCA_ATIVIDADE: presencaAtividade,
@@ -277,10 +334,11 @@ const POR_TIPO = {
   MONITOR: monitor,
   ATUACAO_ATIVIDADE: atuacaoAtividade,
   EQUIPE_EVENTO: equipeEvento,
+  CARTA_ACEITE: cartaAceite,
 };
 
-async function listarElegiveis(db, edicao, tipo) {
-  return POR_TIPO[tipo](db, edicao);
+async function listarElegiveis(db, edicao, tipo, opcoes) {
+  return POR_TIPO[tipo](db, edicao, opcoes);
 }
 
 // Inclusão manual pela organização (fora da regra): monta o mesmo snapshot
@@ -317,4 +375,6 @@ module.exports = {
   dadosEdicao,
   chaveUsuario,
   chavePresenca,
+  chaveCartaAceite,
+  aprovadoComCorrecaoConcluida,
 };

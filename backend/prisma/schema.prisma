@@ -136,6 +136,11 @@ enum TipoCertificado {
   ATUACAO_ATIVIDADE
   // Membro da equipe do evento (MembroEquipe).
   EQUIPE_EVENTO
+  // Carta de aceite de trabalho aprovado: uma por submissão, em nome do autor
+  // principal (submissaoAutorId), A4 retrato, liberada sozinha com a
+  // divulgação do resultado (Edicao.resultadoDivulgadoEm) — o liberadoEm do
+  // modelo não vale para ela.
+  CARTA_ACEITE
 }
 
 enum OrigemCertificado {
@@ -1144,7 +1149,8 @@ model SubmissaoAutor {
 
 // Layout de um tipo de certificado numa edição. Sem registro, vale o modelo
 // padrão de certificados.service.js. Medidas em mm sobre a página A4 paisagem
-// (297 × 210); tamanhoFonte em pt. imagemFundo é a URL pública no GCS
+// (297 × 210) — retrato (210 × 297) na carta de aceite, ver
+// utils/paginaCertificado.js; tamanhoFonte em pt. imagemFundo é a URL pública no GCS
 // (normalizada pra JPEG no upload) — o mesmo arquivo pode ser compartilhado
 // por vários tipos ("Copiar layout"), então só sai do bucket quando nenhum
 // modelo usa mais. liberadoEm nulo = participantes ainda não veem nem baixam
@@ -1171,6 +1177,9 @@ model ModeloCertificado {
   posicaoQr           PosicaoQrCertificado           @default(INFERIOR_DIREITO)
   tamanhoQr           Float                          @default(24)
   margemQr            Float                          @default(12)
+  // Cor dos módulos do QR (e do código escrito embaixo); o fundo do QR é
+  // transparente, então a cor precisa contrastar com a imagem de fundo.
+  corQr               String                         @default("#000000")
   // Sobrescreve a carga horária natural do tipo (edição, atividade…) — ex.
   // as 60 h da monitoria, que não vêm de nenhum outro lugar.
   cargaHoraria        Int?
@@ -1376,9 +1385,12 @@ model AnaisEdicao {
   // Imagens enviadas pela organização (bucket público, pasta anais-imagens).
   // Sem capa, o PDF/Word começa na folha de rosto; sem cabeçalho/rodapé, as
   // páginas dos trabalhos ficam só com o cabeçalho textual e o número.
+  // O modelo de página é uma arte A4 inteira no fundo de todas as páginas
+  // depois da capa (soma-se ao cabeçalho/rodapé, se houver).
   imagemCapa              String?
   imagemCabecalho         String?
   imagemRodape            String?
+  imagemModeloPagina      String?
   // Critério de quais trabalhos entram nos Anais (utils/criterioAnais.js):
   // status da decisão final, se ressalvas/formatação exigem a correção
   // concluída e quem precisa ter se credenciado no evento.

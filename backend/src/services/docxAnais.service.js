@@ -36,8 +36,10 @@ const { linhaIdentificadores, periodoEvento, localEvento } = require("../utils/f
 // - fontes padrão de sistema (Times New Roman no corpo, Arial nos títulos),
 //   já que o .docx é para edição/diagramação posterior e o Word não embute
 //   as fontes do site.
-// Capa e faixas de cabeçalho/rodapé só entram se a organização enviou as
-// imagens (imagens flutuantes presas à página, atrás do texto).
+// Capa, faixas de cabeçalho/rodapé e modelo de página só entram se a
+// organização enviou as imagens (imagens flutuantes presas à página, atrás do
+// texto). O modelo vai no cabeçalho de cada seção depois da capa, que é como
+// o Word repete uma imagem em todas as páginas.
 
 const COR = {
   tinta: "201914",
@@ -548,12 +550,22 @@ function textuais(documento, ctx) {
   return filhos;
 }
 
-function cabecalho(anais, imagem) {
+// Modelo de página: arte A4 inteira, atrás do texto, ou nada.
+function runsModelo(modelo) {
+  return modelo ? [imagemFlutuante(modelo, { largura: A4_PX.largura, altura: A4_PX.altura, vertical: VerticalPositionAlign.TOP })] : [];
+}
+
+// Cabeçalho das pré-textuais: vazio, só pra levar o modelo de página.
+function cabecalhoPretextual(modelo) {
+  return new Header({ children: [new Paragraph({ children: runsModelo(modelo) })] });
+}
+
+function cabecalho(anais, imagem, modelo) {
   if (imagem) {
     return new Header({
       children: [
         new Paragraph({
-          children: [imagemFlutuante(imagem, { ...medidasFaixa(imagem), vertical: VerticalPositionAlign.TOP })],
+          children: [...runsModelo(modelo), imagemFlutuante(imagem, { ...medidasFaixa(imagem), vertical: VerticalPositionAlign.TOP })],
         }),
       ],
     });
@@ -564,7 +576,7 @@ function cabecalho(anais, imagem) {
         style: "Cabecalho",
         border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: COR.linha, space: 4 } },
         tabStops: [{ type: "right", position: convertMillimetersToTwip(160) }],
-        children: [new TextRun(anais.titulo), new TextRun({ text: `\t${linhaIdentificadores(anais)}` })],
+        children: [...runsModelo(modelo), new TextRun(anais.titulo), new TextRun({ text: `\t${linhaIdentificadores(anais)}` })],
       }),
     ],
   });
@@ -654,13 +666,14 @@ async function gerarDocxAnais(documento) {
   );
   const ctx = { marcadores, novaInstanciaLista: () => (contadorLista += 1) };
 
+  const modelo = documento.imagens?.modeloPagina;
+  // Sem cabeçalho próprio, a seção do Word herda o da anterior — então,
+  // havendo modelo, cada pré-textual leva o seu (e a capa fica sem).
   const secoesPretextuais = [
     capa(documento),
-    folhaDeRosto(documento),
-    creditos(documento),
-    expediente(documento),
-    apresentacao(documento, ctx),
-    sumario(),
+    ...[folhaDeRosto(documento), creditos(documento), expediente(documento), apresentacao(documento, ctx), sumario()]
+      .filter(Boolean)
+      .map((secao) => (modelo ? { ...secao, headers: { default: cabecalhoPretextual(modelo) } } : secao)),
   ].filter(Boolean);
 
   const doc = new Document({
@@ -675,7 +688,7 @@ async function gerarDocxAnais(documento) {
       ...secoesPretextuais,
       {
         properties: { page: paginaTextuais(documento.imagens) },
-        headers: { default: cabecalho(documento.anais, documento.imagens?.cabecalho) },
+        headers: { default: cabecalho(documento.anais, documento.imagens?.cabecalho, modelo) },
         footers: { default: rodape(documento.imagens?.rodape) },
         children: textuais(documento, ctx),
       },

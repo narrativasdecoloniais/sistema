@@ -2,10 +2,11 @@ const sharp = require("sharp");
 const ErroHttp = require("../utils/erroHttp");
 const storageService = require("./storage.service");
 
-// Capa e imagens de cabeçalho/rodapé dos trabalhos nos Anais, enviadas pela
-// organização nas Configurações. Opcionais: sem capa o PDF/Word começa na
-// folha de rosto, sem cabeçalho/rodapé as páginas dos trabalhos ficam só com
-// o cabeçalho textual e o número da página.
+// Capa, imagens de cabeçalho/rodapé dos trabalhos e modelo de página dos
+// Anais, enviadas pela organização nas Configurações. Opcionais: sem capa o
+// PDF/Word começa na folha de rosto, sem cabeçalho/rodapé as páginas dos
+// trabalhos ficam só com o cabeçalho textual e o número da página, sem
+// modelo as páginas ficam em branco por baixo do texto.
 //
 // Ao salvar, cada arquivo é normalizado pelo sharp e vai pro bucket público
 // (pasta anais-imagens); na geração, anaisDocumento.service.js carrega daqui
@@ -23,6 +24,10 @@ const CAMPOS = {
   // transparência, que faz sentido numa arte sobre o papel.
   imagemCabecalho: { rotulo: "do cabeçalho", dimensaoMax: 2480, jpeg: false },
   imagemRodape: { rotulo: "do rodapé", dimensaoMax: 2480, jpeg: false },
+  // Arte de página inteira no fundo de todas as páginas depois da capa.
+  // Como a capa, vira JPEG sobre branco (a transparência seria o próprio
+  // papel) — bem mais leve que um PNG A4.
+  imagemModeloPagina: { rotulo: "do modelo de página", dimensaoMax: 3508, jpeg: true },
 };
 
 const DATA_URI_RASTER = /^data:image\/(png|jpeg|webp);base64,/;
@@ -44,7 +49,7 @@ async function normalizar(buffer, { dimensaoMax, jpeg, rotulo }) {
   }
 }
 
-// Resolve os três campos do formulário contra o que já está salvo:
+// Resolve os campos de imagem do formulário contra o que já está salvo:
 // data URI = arquivo novo (sobe já), a mesma URL = sem mudança, null =
 // remover. Devolve os valores pro banco, os arquivos recém-enviados (pra
 // desfazer se o salvamento falhar) e os antigos a remover depois que salvar.
@@ -88,16 +93,16 @@ async function descartar(urls) {
   }
 }
 
-// Lê do bucket e mede. A capa é recortada (centralizada) na proporção do A4
-// pra preencher a página sem distorcer. Imagem que não carregar fica de fora
-// da geração em vez de derrubá-la.
-async function carregarImagem(url, { capa = false } = {}) {
+// Lê do bucket e mede. A capa e o modelo de página são recortados
+// (centralizados) na proporção do A4 pra preencher a página sem distorcer.
+// Imagem que não carregar fica de fora da geração em vez de derrubá-la.
+async function carregarImagem(url, { paginaInteira = false } = {}) {
   if (!url) return null;
   try {
     const buffer = await storageService.lerArquivoPublico(url);
     let entrada = sharp(buffer, { failOn: "none" });
     const { width, height, format } = await entrada.metadata();
-    if (capa && Math.abs(height / width - PROPORCAO_CAPA) > 0.01) {
+    if (paginaInteira && Math.abs(height / width - PROPORCAO_CAPA) > 0.01) {
       const largura = Math.min(width, Math.round(height / PROPORCAO_CAPA));
       entrada = entrada.resize({ width: largura, height: Math.round(largura * PROPORCAO_CAPA), fit: "cover" });
     }
@@ -111,12 +116,13 @@ async function carregarImagem(url, { capa = false } = {}) {
 }
 
 async function carregarImagensDocumento(anais, { capa = true } = {}) {
-  const [imagemCapa, cabecalho, rodape] = await Promise.all([
-    capa ? carregarImagem(anais.imagemCapa, { capa: true }) : null,
+  const [imagemCapa, cabecalho, rodape, modeloPagina] = await Promise.all([
+    capa ? carregarImagem(anais.imagemCapa, { paginaInteira: true }) : null,
     carregarImagem(anais.imagemCabecalho),
     carregarImagem(anais.imagemRodape),
+    carregarImagem(anais.imagemModeloPagina, { paginaInteira: true }),
   ]);
-  return { capa: imagemCapa, cabecalho, rodape };
+  return { capa: imagemCapa, cabecalho, rodape, modeloPagina };
 }
 
 module.exports = { prepararImagens, descartar, carregarImagensDocumento };

@@ -42,10 +42,21 @@ const ESPECIFICOS = {
     { chave: "dataAtividade", descricao: "data da atividade (ex. em 11 de novembro de 2026)" },
   ],
   EQUIPE_EVENTO: [{ chave: "funcao", descricao: "função na equipe (ex. Comissão Organizadora)" }],
+  CARTA_ACEITE: [
+    { chave: "titulo", descricao: "título do trabalho" },
+    { chave: "autores", descricao: "todos os autores (ex. Ana Souza, João Lima e Maria Reis)" },
+    { chave: "modalidade", descricao: "modalidade de submissão" },
+    { chave: "area", descricao: "área temática" },
+    { chave: "dataResultado", descricao: "data da divulgação do resultado (ex. 20 de setembro de 2026)" },
+  ],
 };
 
+// A carta de aceite não tem carga horária.
+const SEM_CARGA_HORARIA = ["CARTA_ACEITE"];
+
 function marcadoresDoTipo(tipo) {
-  return [...COMUNS, ...(ESPECIFICOS[tipo] || [])];
+  const comuns = SEM_CARGA_HORARIA.includes(tipo) ? COMUNS.filter((m) => m.chave !== "cargaHoraria") : COMUNS;
+  return [...comuns, ...(ESPECIFICOS[tipo] || [])];
 }
 
 const MARCADORES_POR_TIPO = Object.fromEntries(

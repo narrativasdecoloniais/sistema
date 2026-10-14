@@ -7,6 +7,7 @@ const sanitizarReferenciaBibliografica = require("../utils/sanitizarReferenciaBi
 const processarImagensEmbutidas = require("../utils/processarImagensEmbutidas");
 const prazoSubmissaoAberto = require("../utils/prazoSubmissaoAberto");
 const avaliacoesService = require("./avaliacoes.service");
+const certificadosService = require("./certificados.service");
 const { prazoCorrecaoAberto, formatarPrazoCorrecao, correcaoEditavel } = require("../utils/prazoCorrecao");
 
 const TIPO_TOKEN = "submissao";
@@ -184,6 +185,8 @@ async function corrigirSubmissao(usuarioId, submissaoId, dados) {
       },
     }),
   ]);
+  // Formatação concluída libera a carta de aceite.
+  if (!comRessalvas) certificadosService.sincronizarCartasAceite(submissao.edicaoId, { submissaoId });
 }
 
 module.exports = {

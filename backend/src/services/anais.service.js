@@ -77,6 +77,7 @@ function configuracaoPadrao(edicao) {
     imagemCapa: null,
     imagemCabecalho: null,
     imagemRodape: null,
+    imagemModeloPagina: null,
     ...CRITERIO_PADRAO,
     publicadoEm: null,
     pdfUrl: null,

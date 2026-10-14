@@ -70,6 +70,7 @@ const anaisConfiguracaoSchema = z.object({
   imagemCapa: imagemOpcional(),
   imagemCabecalho: imagemOpcional(),
   imagemRodape: imagemOpcional(),
+  imagemModeloPagina: imagemOpcional(),
   // Critério dos trabalhos publicados (utils/criterioAnais.js).
   decisoesPublicadas: z
     .array(z.enum(DECISOES_PUBLICAVEIS, { errorMap: () => ({ message: "Status inválido" }) }))

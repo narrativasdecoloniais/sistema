@@ -6,6 +6,7 @@ const { prazoCorrecaoAberto, formatarPrazoCorrecao } = require("../utils/prazoCo
 const { temIdentificacao } = require("../utils/identificacao");
 const emailService = require("./email.service");
 const emailResultadoService = require("./emailResultado.service");
+const certificadosService = require("./certificados.service");
 
 // Decisões que pedem ação do autor principal depois da divulgação.
 const DECISOES_COM_CORRECAO = ["APROVADO_COM_RESSALVAS", "APROVADO_FORMATACAO"];
@@ -174,7 +175,9 @@ async function divulgar(edicaoId) {
     });
   });
   // E-mail não sai aqui: a organização decide depois se envia e a quem
-  // (enviarEmails), revisando os textos antes.
+  // (enviarEmails), revisando os textos antes. As cartas de aceite dos
+  // aprovados já ficam disponíveis.
+  certificadosService.sincronizarCartasAceite(edicaoId);
 }
 
 function iniciarEnvioEmSegundoPlano(edicaoId) {
@@ -341,6 +344,7 @@ async function conferirCorrecao(edicaoId, id, { aceitar, motivo }) {
     select: { id: true, statusCorrecao: true, motivoDevolucao: true, usuario: { select: { nome: true, email: true } } },
   });
 
+  if (aceitar) certificadosService.sincronizarCartasAceite(edicaoId, { submissaoId: id });
   if (!aceitar) {
     try {
       await emailService.enviarEmailCorrecaoDevolvida(atualizada.usuario, {

@@ -11,6 +11,15 @@ const {
   envioEmailSchema,
 } = require("../validators/certificados.validators");
 const certificadosService = require("../services/certificados.service");
+const ErroHttp = require("../utils/erroHttp");
+
+// A carta de aceite tem tela própria em Submissões › Carta de aceite
+// (cartasAceite.controller.js), com a permissão da seção de Resultado.
+function exigirTipoDestaTela(tipo) {
+  if (!certificadosService.TIPOS_TELA_CERTIFICADOS.includes(tipo)) {
+    throw new ErroHttp(404, "A carta de aceite fica em Submissões › Carta de aceite.");
+  }
+}
 
 function enviarPdf(res, { buffer, nomeArquivo }, { inline = false } = {}) {
   res.set({
@@ -27,20 +36,23 @@ const listar = asyncHandler(async (req, res) => {
 
 const salvarModelo = asyncHandler(async (req, res) => {
   const tipo = tipoCertificadoSchema.parse(req.params.tipo);
-  const dados = modeloCertificadoSchema.parse(req.body);
+  exigirTipoDestaTela(tipo);
+  const dados = modeloCertificadoSchema(tipo).parse(req.body);
   const modelo = await certificadosService.salvarModelo(req.params.edicaoId, tipo, dados);
   return res.json({ modelo, mensagem: "Modelo do certificado salvo." });
 });
 
 const previa = asyncHandler(async (req, res) => {
   const tipo = tipoCertificadoSchema.parse(req.params.tipo);
-  const dados = modeloCertificadoSchema.parse(req.body);
+  exigirTipoDestaTela(tipo);
+  const dados = modeloCertificadoSchema(tipo).parse(req.body);
   const buffer = await certificadosService.previa(req.params.edicaoId, tipo, dados);
   return enviarPdf(res, { buffer, nomeArquivo: "previa-certificado.pdf" }, { inline: true });
 });
 
 const definirLiberacao = asyncHandler(async (req, res) => {
   const tipo = tipoCertificadoSchema.parse(req.params.tipo);
+  exigirTipoDestaTela(tipo);
   const { liberado } = liberacaoSchema.parse(req.body);
   const modelo = await certificadosService.definirLiberacao(req.params.edicaoId, tipo, liberado);
   return res.json({
@@ -53,6 +65,7 @@ const definirLiberacao = asyncHandler(async (req, res) => {
 
 const gerar = asyncHandler(async (req, res) => {
   const tipo = tipoCertificadoSchema.parse(req.params.tipo);
+  exigirTipoDestaTela(tipo);
   const { criados, atualizados } = await certificadosService.gerar(req.params.edicaoId, tipo);
   const partes = [
     `${criados} ${criados === 1 ? "certificado criado" : "certificados criados"}`,
@@ -110,6 +123,7 @@ const atualizarConvidado = asyncHandler(async (req, res) => {
 
 const enviarPorEmail = asyncHandler(async (req, res) => {
   const dados = envioEmailSchema.parse(req.body);
+  dados.tipos?.forEach(exigirTipoDestaTela);
   const { solicitados, semEmail } = await certificadosService.solicitarEnvioEmail(req.params.edicaoId, dados);
   const partes = [
     `${solicitados} ${solicitados === 1 ? "certificado será enviado" : "certificados serão enviados"} por e-mail em segundo plano`,
