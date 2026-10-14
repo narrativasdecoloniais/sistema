@@ -100,6 +100,7 @@ export const cartasAceiteAdmin = {
   salvarModelo: (edicaoId, _tipo, modelo) => apiClient.put(`${baseCartas(edicaoId)}/modelo`, modelo),
   previa: (edicaoId, _tipo, modelo) =>
     apiClient.blob(`${baseCartas(edicaoId)}/modelo/previa`, { method: "POST", body: modelo }),
+  salvarCriterio: (edicaoId, criterio) => apiClient.put(`${baseCartas(edicaoId)}/criterio`, criterio),
   gerar: (edicaoId) => apiClient.post(`${baseCartas(edicaoId)}/gerar`),
   // { ids? , reenviar }
   enviarPorEmail: (edicaoId, dados) => apiClient.post(`${baseCartas(edicaoId)}/envio-email`, dados),

@@ -24,8 +24,8 @@ export function buscarPreviaSubmissao(id) {
   return apiClient.get(`/participante/submissoes/${id}/previa`);
 }
 
-// Carta de aceite em PDF — só o autor principal, trabalho aprovado
-// (resultado.cartaAceiteDisponivel).
+// Carta de aceite em PDF — só o autor principal, trabalho no critério da
+// carta (resultado.cartaAceiteDisponivel).
 export async function baixarCartaAceite(id) {
   const blob = await apiClient.blob(`/participante/submissoes/${id}/carta-aceite`);
   salvarBlob(blob, "carta-de-aceite.pdf");

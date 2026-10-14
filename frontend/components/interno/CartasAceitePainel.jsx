@@ -14,14 +14,24 @@ import useTabela from "./useTabela";
 import useSelecaoLinhas from "./useSelecaoLinhas";
 import { useToast } from "./ToastProvider";
 import { cartasAceiteAdmin } from "@/lib/certificados";
+import { criterioCartaAceiteSchema } from "@/lib/validacao";
 import styles from "./AvaliacaoSubmissoesPainel.module.scss";
 import estilos from "./CertificadosPainel.module.scss";
+import estilosCampo from "./CampoPrime.module.scss";
 
 // Tela Submissões › Carta de aceite (seção SUBMISSOES_RESULTADO): uma carta
-// por trabalho aprovado, em nome do autor principal, liberada sozinha com a
-// divulgação do resultado. A carta é o tipo CARTA_ACEITE dos certificados
+// por trabalho que atende o critério da edição (aba Critério), em nome do
+// autor principal, liberada sozinha com a divulgação do resultado. A carta é o tipo CARTA_ACEITE dos certificados
 // (backend: certificados.service.js, cartasAceite.controller.js) — mesmo
 // editor de modelo, PDF, código de validação e envio por e-mail.
+
+// Status que podem dar direito à carta (espelha DECISOES_CARTA em
+// backend/src/utils/criterioCartaAceite.js).
+const DECISOES_CARTA = [
+  { valor: "APROVADO", rotulo: "Aprovado" },
+  { valor: "APROVADO_COM_RESSALVAS", rotulo: "Aprovado com ressalvas" },
+  { valor: "APROVADO_FORMATACAO", rotulo: "Aprovado para formatação (pendente de revisão)" },
+];
 
 const ROTULOS_SITUACAO = { VALIDA: "Válida", REVOGADA: "Revogada" };
 const ROTULOS_REGRA = { ATENDE: "Atende", NAO_ATENDE: "Não atende mais" };
@@ -111,9 +121,8 @@ export default function CartasAceitePainel({ edicaoId, dadosIniciais }) {
         <div>
           <h1 className={styles.titulo}>Carta de aceite</h1>
           <p className={styles.descricao}>
-            Uma carta por trabalho aprovado, em nome do autor principal — com ressalvas ou pendente de revisão, só
-            depois da correção concluída. Fica disponível em Minhas submissões a partir da divulgação do resultado,
-            com QR code e código de validação pública.
+            Uma carta por trabalho que atende o critério da edição, em nome do autor principal. Fica disponível em
+            Minhas submissões a partir da divulgação do resultado, com QR code e código de validação pública.
           </p>
         </div>
       </div>
@@ -121,6 +130,7 @@ export default function CartasAceitePainel({ edicaoId, dadosIniciais }) {
       <div className={styles.abas} role="tablist" aria-label="Seções da carta de aceite">
         {[
           { chave: "cartas", rotulo: `Cartas (${dados.cartas.length})` },
+          { chave: "criterio", rotulo: "Critério" },
           { chave: "modelo", rotulo: modeloAlterado ? "Modelo •" : "Modelo" },
         ].map((aba) => (
           <button
@@ -139,6 +149,8 @@ export default function CartasAceitePainel({ edicaoId, dadosIniciais }) {
 
       {abaAtiva === "cartas" ? (
         <AbaCartas edicaoId={edicaoId} dados={dados} recarregar={recarregar} />
+      ) : abaAtiva === "criterio" ? (
+        <AbaCriterio edicaoId={edicaoId} dados={dados} recarregar={recarregar} />
       ) : (
         <ModeloCertificadoForm
           edicaoId={edicaoId}
@@ -338,8 +350,8 @@ function AbaCartas({ edicaoId, dados, recarregar }) {
           <p>Nenhuma carta emitida ainda.</p>
           <p className={styles.vazioApoio}>
             {resumo.novas > 0
-              ? 'Use "Atualizar cartas" para criar as cartas dos trabalhos aprovados.'
-              : "Nenhum trabalho aprovado tem direito à carta ainda (ressalvas e revisões de formatação entram depois da correção concluída)."}
+              ? 'Use "Atualizar cartas" para criar as cartas dos trabalhos que têm direito.'
+              : "Nenhum trabalho atende o critério da carta ainda — confira a aba Critério."}
           </p>
         </div>
       ) : (
@@ -451,6 +463,91 @@ function AbaCartas({ edicaoId, dados, recarregar }) {
         />
       )}
     </>
+  );
+}
+
+// Quem tem direito à carta. Com o resultado divulgado, salvar já cria as
+// cartas de quem passou a ter direito; as de quem deixou de ter continuam
+// válidas até serem revogadas (coluna Regra da aba Cartas).
+function AbaCriterio({ edicaoId, dados, recarregar }) {
+  const { notificar } = useToast();
+  const [form, setForm] = useState(dados.criterio);
+  const [erro, setErro] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const alterado = !iguais(
+    { ...form, decisoes: [...form.decisoes].sort() },
+    { ...dados.criterio, decisoes: [...dados.criterio.decisoes].sort() }
+  );
+
+  function alternarDecisao(valor, marcado) {
+    setErro(null);
+    setForm((atual) => ({
+      ...atual,
+      decisoes: marcado ? [...atual.decisoes, valor] : atual.decisoes.filter((item) => item !== valor),
+    }));
+  }
+
+  async function salvar(evento) {
+    evento.preventDefault();
+    const resultado = criterioCartaAceiteSchema.safeParse(form);
+    if (!resultado.success) {
+      setErro(resultado.error.issues[0].message);
+      notificar(resultado.error.issues[0].message, "erro");
+      return;
+    }
+    setSalvando(true);
+    try {
+      const resposta = await cartasAceiteAdmin.salvarCriterio(edicaoId, form);
+      notificar(resposta.mensagem);
+      setForm(resposta.criterio);
+      await recarregar();
+    } catch (falha) {
+      notificar(falha.message, "erro");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <form className={estilos.secao} onSubmit={salvar} noValidate>
+      <div>
+        <h3 className={estilos.tituloSecao}>Quem recebe a carta</h3>
+        <p className={estilos.descricaoSecao}>
+          Os trabalhos com estes status recebem a carta de aceite, em nome do autor principal.{" "}
+          {dados.divulgadoEm
+            ? "Ao salvar, as cartas de quem passou a ter direito são criadas na hora; as já emitidas de quem deixou de ter continuam válidas até você revogá-las (coluna Regra da aba Cartas)."
+            : "Vale a partir da divulgação do resultado."}
+        </p>
+      </div>
+      <fieldset className={estilos.grupoEnvio}>
+        <legend className={styles.textoApoio}>Status da submissão</legend>
+        {DECISOES_CARTA.map((decisao) => (
+          <CampoCheckbox
+            key={decisao.valor}
+            id={`carta-decisao-${decisao.valor}`}
+            rotulo={decisao.rotulo}
+            checked={form.decisoes.includes(decisao.valor)}
+            onChange={(marcado) => alternarDecisao(decisao.valor, marcado)}
+          />
+        ))}
+        {erro && (
+          <p className={estilosCampo.mensagemErro} role="alert">
+            {erro}
+          </p>
+        )}
+      </fieldset>
+      <CampoCheckbox
+        id="carta-exigir-correcao"
+        rotulo="Só com a revisão ou correção concluída (vale para “com ressalvas” e “para formatação”)"
+        checked={form.exigirCorrecaoConcluida}
+        onChange={(marcado) => setForm((atual) => ({ ...atual, exigirCorrecaoConcluida: marcado }))}
+      />
+      <div className={estilos.acoesCartao}>
+        <Botao type="submit" carregando={salvando} disabled={!alterado}>
+          Salvar critério
+        </Botao>
+      </div>
+    </form>
   );
 }
 

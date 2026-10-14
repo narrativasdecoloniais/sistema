@@ -343,8 +343,8 @@ function ResultadoSubmissao({ id, resultado, ehAutorPrincipal }) {
   );
 }
 
-// Só para o autor principal de trabalho aprovado (ressalvas/formatação depois
-// da correção concluída) — a API manda cartaAceiteDisponivel.
+// Só para o autor principal de trabalho que atende o critério da carta da
+// edição — a API manda cartaAceiteDisponivel.
 function BotaoCartaAceite({ id }) {
   const { notificar } = useToast();
   const [baixando, setBaixando] = useState(false);

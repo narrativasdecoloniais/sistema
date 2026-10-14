@@ -782,6 +782,12 @@ export const modeloCertificadoSchema = (pagina) =>
       path: ["margemDireita"],
     });
 
+// Espelha criterioSchema em backend/src/controllers/cartasAceite.controller.js.
+export const criterioCartaAceiteSchema = z.object({
+  decisoes: z.array(z.string()).min(1, "Escolha pelo menos um status"),
+  exigirCorrecaoConcluida: z.boolean(),
+});
+
 export const conferirCorrecaoSchema = z
   .object({
     aceitar: z.boolean(),
