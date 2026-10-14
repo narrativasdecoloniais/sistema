@@ -53,9 +53,10 @@ export function formatarDataPublicacao(iso) {
   );
 }
 
-// Capa e faixas de cabeçalho/rodapé dos Anais (PDF/Word) — espelha os
-// limites de backend/src/services/imagensAnais.service.js e a altura máxima
-// da faixa em pdfAnais.service.js (150 pt numa página de 595 pt de largura).
+// Capa, modelo de página e faixas de cabeçalho/rodapé dos Anais (PDF/Word) —
+// espelha os limites de backend/src/services/imagensAnais.service.js e a
+// altura máxima da faixa em pdfAnais.service.js (150 pt numa página de 595 pt
+// de largura). Capa e modelo de página têm os mesmos limites (A4 inteira).
 export const IMAGENS_ANAIS = {
   capa: { recomendada: { largura: 2480, altura: 3508 }, minima: { largura: 1240, altura: 1754 }, dimensaoMax: 3508 },
   faixa: { larguraRecomendada: 2480, larguraMinima: 1240, dimensaoMax: 2480, proporcaoMax: 150 / 595.28 },
@@ -65,7 +66,7 @@ export const IMAGENS_ANAIS = {
 export function avisosImagemAnais(tipo, dimensoes) {
   if (!dimensoes?.largura || !dimensoes?.altura) return [];
   const avisos = [];
-  if (tipo === "capa") {
+  if (tipo === "capa" || tipo === "pagina") {
     const { minima } = IMAGENS_ANAIS.capa;
     if (Math.abs(dimensoes.altura / dimensoes.largura - 297 / 210) > 0.02) {
       avisos.push(

@@ -746,38 +746,41 @@ const numeroCertificado = (min, max, rotulo) =>
     .min(min, `${rotulo[0].toUpperCase()}${rotulo.slice(1)} deve ser no mínimo ${min}`)
     .max(max, `${rotulo[0].toUpperCase()}${rotulo.slice(1)} deve ser no máximo ${max}`);
 
-export const modeloCertificadoSchema = z
-  .object({
-    texto: z.string().trim().min(1, "Escreva o texto do certificado"),
-    margemSuperior: numeroCertificado(0, 180, "a margem superior"),
-    margemInferior: numeroCertificado(0, 180, "a margem inferior"),
-    margemEsquerda: numeroCertificado(0, 260, "a margem esquerda"),
-    margemDireita: numeroCertificado(0, 260, "a margem direita"),
-    alinhamento: z.enum(["ESQUERDA", "CENTRO", "DIREITA", "JUSTIFICADO"]),
-    alinhamentoVertical: z.enum(["TOPO", "CENTRO"]),
-    fonte: z.enum(["ARCHIVO", "TIMES", "HELVETICA"]),
-    tamanhoFonte: numeroCertificado(6, 72, "o tamanho da fonte"),
-    entrelinha: numeroCertificado(1, 3, "o espaçamento entre linhas"),
-    corTexto: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida"),
-    posicaoQr: z.enum(["INFERIOR_DIREITO", "INFERIOR_ESQUERDO", "SUPERIOR_DIREITO", "SUPERIOR_ESQUERDO"]),
-    tamanhoQr: numeroCertificado(15, 60, "o tamanho do QR code"),
-    margemQr: numeroCertificado(0, 60, "a distância do QR code até a borda"),
-    cargaHoraria: z
-      .number({ invalid_type_error: "Carga horária inválida" })
-      .int("A carga horária deve ser um número inteiro")
-      .min(1, "A carga horária deve ser de pelo menos 1 hora")
-      .max(2000, "Carga horária grande demais")
-      .nullable()
-      .optional(),
-  })
-  .refine((d) => d.margemSuperior + d.margemInferior <= 190, {
-    message: "As margens superior e inferior somadas deixam pouco espaço para o texto",
-    path: ["margemInferior"],
-  })
-  .refine((d) => d.margemEsquerda + d.margemDireita <= 277, {
-    message: "As margens esquerda e direita somadas deixam pouco espaço para o texto",
-    path: ["margemDireita"],
-  });
+// pagina = paginaCertificado(tipo) de lib/certificados.js.
+export const modeloCertificadoSchema = (pagina) =>
+  z
+    .object({
+      texto: z.string().trim().min(1, "Escreva o texto do certificado"),
+      margemSuperior: numeroCertificado(0, pagina.altura - 30, "a margem superior"),
+      margemInferior: numeroCertificado(0, pagina.altura - 30, "a margem inferior"),
+      margemEsquerda: numeroCertificado(0, pagina.largura - 37, "a margem esquerda"),
+      margemDireita: numeroCertificado(0, pagina.largura - 37, "a margem direita"),
+      alinhamento: z.enum(["ESQUERDA", "CENTRO", "DIREITA", "JUSTIFICADO"]),
+      alinhamentoVertical: z.enum(["TOPO", "CENTRO"]),
+      fonte: z.enum(["ARCHIVO", "TIMES", "HELVETICA"]),
+      tamanhoFonte: numeroCertificado(6, 72, "o tamanho da fonte"),
+      entrelinha: numeroCertificado(1, 3, "o espaçamento entre linhas"),
+      corTexto: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida"),
+      posicaoQr: z.enum(["INFERIOR_DIREITO", "INFERIOR_ESQUERDO", "SUPERIOR_DIREITO", "SUPERIOR_ESQUERDO"]),
+      tamanhoQr: numeroCertificado(15, 60, "o tamanho do QR code"),
+      margemQr: numeroCertificado(0, 60, "a distância do QR code até a borda"),
+      corQr: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida para o QR code"),
+      cargaHoraria: z
+        .number({ invalid_type_error: "Carga horária inválida" })
+        .int("A carga horária deve ser um número inteiro")
+        .min(1, "A carga horária deve ser de pelo menos 1 hora")
+        .max(2000, "Carga horária grande demais")
+        .nullable()
+        .optional(),
+    })
+    .refine((d) => d.margemSuperior + d.margemInferior <= pagina.altura - 20, {
+      message: "As margens superior e inferior somadas deixam pouco espaço para o texto",
+      path: ["margemInferior"],
+    })
+    .refine((d) => d.margemEsquerda + d.margemDireita <= pagina.largura - 20, {
+      message: "As margens esquerda e direita somadas deixam pouco espaço para o texto",
+      path: ["margemDireita"],
+    });
 
 export const conferirCorrecaoSchema = z
   .object({
@@ -903,6 +906,7 @@ export const anaisConfiguracaoSchema = z.object({
   imagemCapa: z.string().nullable().optional(),
   imagemCabecalho: z.string().nullable().optional(),
   imagemRodape: z.string().nullable().optional(),
+  imagemModeloPagina: z.string().nullable().optional(),
   decisoesPublicadas: z.array(z.string()).min(1, "Escolha pelo menos um status"),
   exigirCorrecaoConcluida: z.boolean(),
   credenciamentoExigido: z.string().min(1, "Escolha uma opção"),

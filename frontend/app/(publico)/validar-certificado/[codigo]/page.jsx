@@ -19,6 +19,8 @@ export default async function PaginaResultadoValidacao({ params }) {
   const codigo = normalizarCodigoCertificado(decodeURIComponent(params.codigo));
   const certificado = await buscarCertificadoPublico(codigo);
   const valido = certificado?.situacao === "VALIDO";
+  const carta = certificado?.tipo === "CARTA_ACEITE";
+  const documento = carta ? "Carta de aceite" : "Certificado";
 
   return (
     <article className={styles.pagina}>
@@ -39,11 +41,13 @@ export default async function PaginaResultadoValidacao({ params }) {
         </section>
       ) : (
         <section className={`${styles.resultado} ${valido ? styles.valido : styles.revogado}`} aria-live="polite">
-          <h2 className={styles.situacao}>{valido ? "Certificado válido" : "Certificado revogado"}</h2>
+          <h2 className={styles.situacao}>
+            {documento} {valido ? (carta ? "válida" : "válido") : carta ? "revogada" : "revogado"}
+          </h2>
           <p className={styles.texto}>
             {valido
-              ? "Este certificado foi emitido pela organização do evento e é autêntico."
-              : `Este certificado foi emitido, mas revogado pela organização${
+              ? `${carta ? "Esta carta de aceite foi emitida" : "Este certificado foi emitido"} pela organização do evento e é autêntic${carta ? "a" : "o"}.`
+              : `${carta ? "Esta carta de aceite foi emitida, mas revogada" : "Este certificado foi emitido, mas revogado"} pela organização${
                   certificado.revogadoEm ? ` em ${formatarData(certificado.revogadoEm)}` : ""
                 } e não tem mais validade.`}
           </p>
@@ -53,12 +57,12 @@ export default async function PaginaResultadoValidacao({ params }) {
               <dd>{certificado.nome}</dd>
             </div>
             <div>
-              <dt>Certificado</dt>
+              <dt>{carta ? "Documento" : "Certificado"}</dt>
               <dd>{certificado.rotuloTipo}</dd>
             </div>
             {certificado.referencia && (
               <div>
-                <dt>{certificado.tipo === "APRESENTACAO_TRABALHO" ? "Trabalho" : "Atividade"}</dt>
+                <dt>{["APRESENTACAO_TRABALHO", "CARTA_ACEITE"].includes(certificado.tipo) ? "Trabalho" : "Atividade"}</dt>
                 <dd>{certificado.referencia}</dd>
               </div>
             )}
@@ -83,7 +87,7 @@ export default async function PaginaResultadoValidacao({ params }) {
           </dl>
           {valido && (
             <a className={styles.baixar} href={urlPdfCertificadoPublico(certificado.codigo)} download>
-              Baixar certificado (PDF)
+              Baixar {carta ? "carta de aceite" : "certificado"} (PDF)
             </a>
           )}
         </section>

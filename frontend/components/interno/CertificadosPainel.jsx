@@ -59,7 +59,8 @@ export default function CertificadosPainel({ edicaoId, dadosIniciais }) {
           <h1 className={styles.titulo}>Certificados</h1>
           <p className={styles.descricao}>
             Configure o modelo de cada tipo de certificado, gere os certificados de quem tem direito e libere o
-            download na área do participante. Cada certificado tem um QR code que leva à validação pública.
+            download na área do participante. Cada certificado tem um QR code que leva à validação pública. A carta
+            de aceite dos trabalhos aprovados fica em Submissões › Carta de aceite.
           </p>
         </div>
       </div>

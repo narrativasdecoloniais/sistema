@@ -53,13 +53,20 @@ export function redimensionarLogoParaDataUri(
         const largura = Math.round(imagem.width * escala);
         const altura = Math.round(imagem.height * escala);
 
+        const manterTransparencia =
+          !forcarJpeg && ["image/png", "image/webp", "image/svg+xml"].includes(arquivo.type);
+
         const canvas = document.createElement("canvas");
         canvas.width = largura;
         canvas.height = altura;
-        canvas.getContext("2d").drawImage(imagem, 0, 0, largura, altura);
-
-        const manterTransparencia =
-          !forcarJpeg && ["image/png", "image/webp", "image/svg+xml"].includes(arquivo.type);
+        const contexto = canvas.getContext("2d");
+        // JPEG não tem canal alfa: sem um fundo, o pixel transparente de um
+        // PNG vira preto. Branco = o papel por baixo da arte.
+        if (!manterTransparencia) {
+          contexto.fillStyle = "#ffffff";
+          contexto.fillRect(0, 0, largura, altura);
+        }
+        contexto.drawImage(imagem, 0, 0, largura, altura);
         resolve(
           manterTransparencia
             ? canvas.toDataURL("image/png")

@@ -13,29 +13,52 @@ export const ROTULOS_TIPO_CERTIFICADO = {
   EQUIPE_EVENTO: "Equipe do evento",
 };
 
-// Página A4 paisagem em mm — mesma base do gerador de PDF.
-export const PAGINA_CERTIFICADO = { largura: 297, altura: 210 };
+// Liberados com a divulgação do resultado da edição, sem o botão Liberar —
+// a carta de aceite, que tem tela própria (Submissões › Carta de aceite).
+export const TIPOS_LIBERADOS_COM_RESULTADO = ["CARTA_ACEITE"];
 
-// Orientação de tamanho da imagem de fundo (A4 paisagem).
-export const FUNDO_RECOMENDADO = { largura: 3508, altura: 2480 };
-export const FUNDO_MINIMO = { largura: 1754, altura: 1240 };
-const PROPORCAO_A4 = PAGINA_CERTIFICADO.largura / PAGINA_CERTIFICADO.altura;
+// Página de cada tipo em mm — mesma base do gerador de PDF
+// (backend/src/utils/paginaCertificado.js, mudou um, muda o outro): A4
+// paisagem, retrato na carta de aceite. fundoRecomendado/fundoMinimo são a
+// orientação de tamanho da imagem de fundo (300 e 150 dpi).
+const PAISAGEM = {
+  largura: 297,
+  altura: 210,
+  retrato: false,
+  fundoRecomendado: { largura: 3508, altura: 2480 },
+  fundoMinimo: { largura: 1754, altura: 1240 },
+};
+const RETRATO = {
+  largura: 210,
+  altura: 297,
+  retrato: true,
+  fundoRecomendado: { largura: 2480, altura: 3508 },
+  fundoMinimo: { largura: 1240, altura: 1754 },
+};
+
+export function paginaCertificado(tipo) {
+  return tipo === "CARTA_ACEITE" ? RETRATO : PAISAGEM;
+}
 
 // Avisos (não bloqueantes) sobre a imagem de fundo escolhida.
-export function avisosFundo(dimensoes) {
+export function avisosFundo(dimensoes, pagina) {
   if (!dimensoes?.largura || !dimensoes?.altura) return [];
   const avisos = [];
+  const orientacao = pagina.retrato ? "retrato" : "paisagem";
+  const proporcaoA4 = pagina.largura / pagina.altura;
   const proporcao = dimensoes.largura / dimensoes.altura;
-  if (Math.abs(proporcao - PROPORCAO_A4) / PROPORCAO_A4 > 0.02) {
+  if (Math.abs(proporcao - proporcaoA4) / proporcaoA4 > 0.02) {
+    const outraOrientacao = pagina.retrato ? dimensoes.largura > dimensoes.altura : dimensoes.altura > dimensoes.largura;
     avisos.push(
-      dimensoes.altura > dimensoes.largura
-        ? "A imagem está em retrato. O certificado é A4 paisagem, então as bordas de cima e de baixo serão cortadas."
-        : "A proporção da imagem é diferente do A4 paisagem (297 × 210). Ela vai preencher a página, mas as bordas serão cortadas."
+      outraOrientacao
+        ? `A imagem está em ${pagina.retrato ? "paisagem" : "retrato"}. Este documento é A4 ${orientacao}, então as bordas ${pagina.retrato ? "laterais" : "de cima e de baixo"} serão cortadas.`
+        : `A proporção da imagem é diferente do A4 ${orientacao} (${pagina.largura} × ${pagina.altura}). Ela vai preencher a página, mas as bordas serão cortadas.`
     );
   }
-  if (dimensoes.largura < FUNDO_MINIMO.largura || dimensoes.altura < FUNDO_MINIMO.altura) {
+  const { fundoMinimo } = pagina;
+  if (dimensoes.largura < fundoMinimo.largura || dimensoes.altura < fundoMinimo.altura) {
     avisos.push(
-      `A resolução está abaixo do mínimo (${FUNDO_MINIMO.largura} × ${FUNDO_MINIMO.altura} px) e pode sair pixelada na impressão.`
+      `A resolução está abaixo do mínimo (${fundoMinimo.largura} × ${fundoMinimo.altura} px) e pode sair pixelada na impressão.`
     );
   }
   return avisos;
@@ -65,6 +88,28 @@ export const certificadosAdmin = {
   async baixar(edicaoId, certificado) {
     const blob = await apiClient.blob(`${base(edicaoId)}/${certificado.id}/pdf`);
     salvarBlob(blob, `certificado-${certificado.codigo}.pdf`);
+  },
+};
+
+// Tela Submissões › Carta de aceite (backend: cartasAceite.controller.js).
+// salvarModelo/previa com a mesma assinatura de certificadosAdmin, pro
+// ModeloCertificadoForm.
+const baseCartas = (edicaoId) => `/edicoes/${edicaoId}/cartas-aceite`;
+export const cartasAceiteAdmin = {
+  listar: (edicaoId) => apiClient.get(baseCartas(edicaoId)),
+  salvarModelo: (edicaoId, _tipo, modelo) => apiClient.put(`${baseCartas(edicaoId)}/modelo`, modelo),
+  previa: (edicaoId, _tipo, modelo) =>
+    apiClient.blob(`${baseCartas(edicaoId)}/modelo/previa`, { method: "POST", body: modelo }),
+  gerar: (edicaoId) => apiClient.post(`${baseCartas(edicaoId)}/gerar`),
+  // { ids? , reenviar }
+  enviarPorEmail: (edicaoId, dados) => apiClient.post(`${baseCartas(edicaoId)}/envio-email`, dados),
+  retomarEnvioEmail: (edicaoId) => apiClient.post(`${baseCartas(edicaoId)}/envio-email/retomar`),
+  revogar: (edicaoId, id) => apiClient.post(`${baseCartas(edicaoId)}/${id}/revogar`, {}),
+  restaurar: (edicaoId, id) => apiClient.post(`${baseCartas(edicaoId)}/${id}/restaurar`),
+  revogarEmLote: (edicaoId, ids) => apiClient.post(`${baseCartas(edicaoId)}/revogacao-em-lote`, { ids }),
+  async baixar(edicaoId, carta) {
+    const blob = await apiClient.blob(`${baseCartas(edicaoId)}/${carta.id}/pdf`);
+    salvarBlob(blob, `carta-de-aceite-${carta.codigo}.pdf`);
   },
 };
 

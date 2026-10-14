@@ -7,7 +7,7 @@ import estilos from "./AnaisPainel.module.scss";
 
 const TAMANHO_MAX_ARQUIVO = 20 * 1024 * 1024;
 
-// Capa ou faixa de cabeçalho/rodapé dos Anais: o arquivo (data URI novo ou
+// Capa, modelo de página ou faixa de cabeçalho/rodapé dos Anais: o arquivo (data URI novo ou
 // URL já salva), a orientação de tamanho e os avisos não bloqueantes sobre a
 // imagem escolhida (proporção/resolução, medidas lidas no navegador).
 export default function CampoImagemAnais({ id, rotulo, tipo, valor, onChange, dimensaoMax, orientacao, erro }) {
@@ -40,9 +40,10 @@ export default function CampoImagemAnais({ id, rotulo, tipo, valor, onChange, di
         dimensaoMax={dimensaoMax}
         tamanhoMaxArquivo={TAMANHO_MAX_ARQUIVO}
         textoItem="imagem"
-        // A capa ocupa a página inteira, sem transparência — JPEG deixa o
-        // envio bem mais leve. As faixas mantêm a transparência do PNG.
-        forcarJpeg={tipo === "capa"}
+        // Capa e modelo ocupam a página inteira — JPEG (transparência vira o
+        // branco do papel) deixa o envio bem mais leve. As faixas mantêm a
+        // transparência do PNG.
+        forcarJpeg={tipo === "capa" || tipo === "pagina"}
       />
       <p className={estilos.orientacaoImagem}>{orientacao}</p>
       {dimensoes && avisos.length === 0 && (

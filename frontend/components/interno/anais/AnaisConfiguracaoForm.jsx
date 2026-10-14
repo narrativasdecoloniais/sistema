@@ -51,6 +51,7 @@ function formInicial(anais) {
     imagemCapa: anais.imagemCapa || null,
     imagemCabecalho: anais.imagemCabecalho || null,
     imagemRodape: anais.imagemRodape || null,
+    imagemModeloPagina: anais.imagemModeloPagina || null,
     decisoesPublicadas: anais.decisoesPublicadas || ["APROVADO_FORMATACAO"],
     exigirCorrecaoConcluida: Boolean(anais.exigirCorrecaoConcluida),
     credenciamentoExigido: anais.credenciamentoExigido || "ALGUM_AUTOR",
@@ -243,8 +244,8 @@ export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNo
       <div className={styles.secao}>
         <CabecalhoSecao
           Icone={ImageIcon}
-          titulo="Capa, cabeçalho e rodapé"
-          descricao="Imagens do PDF/Word dos Anais, todas opcionais. A capa ocupa a primeira página inteira — sem ela, os Anais começam na folha de rosto. O cabeçalho e o rodapé aparecem, de borda a borda, em todas as páginas dos trabalhos (inclusive no PDF de cada trabalho); o cabeçalho em imagem substitui a linha com o título e o ISSN/ISBN. Depois de trocar uma imagem, gere os arquivos de novo."
+          titulo="Capa, modelo de página, cabeçalho e rodapé"
+          descricao="Imagens do PDF/Word dos Anais, todas opcionais. A capa ocupa a primeira página inteira — sem ela, os Anais começam na folha de rosto. O modelo de página é uma arte A4 que fica no fundo de todas as outras páginas, por baixo do texto. O cabeçalho e o rodapé aparecem, de borda a borda, em todas as páginas dos trabalhos (inclusive no PDF de cada trabalho), por cima do modelo; o cabeçalho em imagem substitui a linha com o título e o ISSN/ISBN. Depois de trocar uma imagem, gere os arquivos de novo."
         />
         <div className={styles.camposSecao}>
           <CampoImagemAnais
@@ -256,6 +257,16 @@ export default function AnaisConfiguracaoForm({ edicaoId, anais, grupos, totalNo
             erro={erros.imagemCapa}
             dimensaoMax={IMAGENS_ANAIS.capa.dimensaoMax}
             orientacao={`A4 retrato. Recomendado: ${IMAGENS_ANAIS.capa.recomendada.largura} × ${IMAGENS_ANAIS.capa.recomendada.altura} px (300 dpi); mínimo ${IMAGENS_ANAIS.capa.minima.largura} × ${IMAGENS_ANAIS.capa.minima.altura} px. PNG ou JPG, até 20 MB. A arte entra como está — título e demais textos da capa vão na própria imagem.`}
+          />
+          <CampoImagemAnais
+            id="anais-imagem-modelo-pagina"
+            rotulo="Modelo de página"
+            tipo="pagina"
+            valor={form.imagemModeloPagina}
+            onChange={(valor) => alterar("imagemModeloPagina", valor)}
+            erro={erros.imagemModeloPagina}
+            dimensaoMax={IMAGENS_ANAIS.capa.dimensaoMax}
+            orientacao={`A4 retrato, no fundo de todas as páginas depois da capa (inclusive no PDF de cada trabalho). Recomendado: ${IMAGENS_ANAIS.capa.recomendada.largura} × ${IMAGENS_ANAIS.capa.recomendada.altura} px (300 dpi); mínimo ${IMAGENS_ANAIS.capa.minima.largura} × ${IMAGENS_ANAIS.capa.minima.altura} px. PNG ou JPG, até 20 MB; a área transparente fica branca. Deixe os elementos gráficos perto das bordas: no PDF, o texto começa a ~2,3 cm das laterais, ~2,7 cm do topo e ~2,5 cm da base, e a linha do cabeçalho e o número da página ficam a ~1,2 cm e ~1,5 cm das bordas de cima e de baixo (no Word, margens ABNT de 3 cm à esquerda e no topo e 2 cm à direita e na base).`}
           />
           <CampoImagemAnais
             id="anais-imagem-cabecalho"

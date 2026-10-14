@@ -26,6 +26,7 @@ import {
   UserPlus,
   CheckSquare,
   ListChecks,
+  FileCheck,
   Presentation,
   BookOpen,
   QrCode,
@@ -167,6 +168,12 @@ function montarGrupos(base) {
               href: `${base}/submissoes/resultado`,
               rotulo: "Resultado",
               Icone: ListChecks,
+              secao: "SUBMISSOES_RESULTADO",
+            },
+            {
+              href: `${base}/submissoes/carta-aceite`,
+              rotulo: "Carta de aceite",
+              Icone: FileCheck,
               secao: "SUBMISSOES_RESULTADO",
             },
             {

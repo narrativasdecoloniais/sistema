@@ -1,7 +1,6 @@
 "use client";
 
 import ConteudoRichText from "@/components/ConteudoRichText";
-import { PAGINA_CERTIFICADO } from "@/lib/certificados";
 import styles from "./PreviaCertificado.module.scss";
 
 // Prévia aproximada do certificado, atualizada a cada ajuste: mesma geometria
@@ -11,11 +10,7 @@ import styles from "./PreviaCertificado.module.scss";
 // resultado exato.
 
 const PT_POR_MM = 72 / 25.4;
-const LARGURA_PT = PAGINA_CERTIFICADO.largura * PT_POR_MM;
 const TAMANHO_ROTULO_QR = 7;
-
-const cqwDeMm = (mm) => `${(mm / PAGINA_CERTIFICADO.largura) * 100}cqw`;
-const cqwDePt = (pt) => `${(pt / LARGURA_PT) * 100}cqw`;
 
 const FAMILIAS = {
   ARCHIVO: "var(--font-archivo), Archivo, sans-serif",
@@ -39,13 +34,21 @@ export function preencherMarcadores(html, valores) {
   );
 }
 
-export default function PreviaCertificado({ modelo, valores, aoCarregarFundo }) {
+// pagina = paginaCertificado(tipo) de lib/certificados.js (paisagem ou retrato).
+export default function PreviaCertificado({ modelo, valores, pagina, aoCarregarFundo }) {
   const direita = modelo.posicaoQr.endsWith("DIREITO");
   const inferior = modelo.posicaoQr.startsWith("INFERIOR");
+  const cqwDeMm = (mm) => `${(mm / pagina.largura) * 100}cqw`;
+  const cqwDePt = (pt) => `${(pt / (pagina.largura * PT_POR_MM)) * 100}cqw`;
 
   return (
-    <div className={styles.moldura}>
-      <div className={styles.pagina} aria-label="Prévia do certificado" role="img">
+    <div className={`${styles.moldura} ${pagina.retrato ? styles.molduraRetrato : ""}`}>
+      <div
+        className={styles.pagina}
+        style={{ aspectRatio: `${pagina.largura} / ${pagina.altura}` }}
+        aria-label="Prévia do documento"
+        role="img"
+      >
         {modelo.imagemFundo && (
           <img
             src={modelo.imagemFundo}
@@ -91,6 +94,7 @@ export default function PreviaCertificado({ modelo, valores, aoCarregarFundo }) 
             [inferior ? "bottom" : "top"]: cqwDeMm(modelo.margemQr),
             "--tamanho-qr": cqwDeMm(modelo.tamanhoQr),
             "--tamanho-rotulo": cqwDePt(TAMANHO_ROTULO_QR),
+            "--cor-qr": modelo.corQr || "#000000",
           }}
           aria-hidden="true"
         >

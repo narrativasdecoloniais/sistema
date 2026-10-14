@@ -13,11 +13,10 @@ import { useToast } from "./ToastProvider";
 import { salvarBlob } from "@/lib/apiClient";
 import { modeloCertificadoSchema } from "@/lib/validacao";
 import {
-  FUNDO_MINIMO,
-  FUNDO_RECOMENDADO,
-  PAGINA_CERTIFICADO,
+  TIPOS_LIBERADOS_COM_RESULTADO,
   avisosFundo,
   certificadosAdmin,
+  paginaCertificado,
 } from "@/lib/certificados";
 import stylesCampo from "./CampoPrime.module.scss";
 import estilosResultado from "./ResultadoSubmissoesPainel.module.scss";
@@ -42,6 +41,7 @@ export const CAMPOS_MODELO = [
   "posicaoQr",
   "tamanhoQr",
   "margemQr",
+  "corQr",
   "cargaHoraria",
 ];
 
@@ -88,6 +88,9 @@ const AJUDA_CARGA = {
   EQUIPE_EVENTO: "Deixe vazio para usar a carga horária informada em cada membro da equipe.",
 };
 
+// A carta de aceite não tem carga horária.
+const TIPOS_SEM_CARGA = ["CARTA_ACEITE"];
+
 function marcadoresDesconhecidos(texto, marcadores) {
   const validos = new Set(marcadores.map((m) => m.chave));
   const usados = [...String(texto || "").matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((m) => m[1]);
@@ -115,11 +118,17 @@ export default function ModeloCertificadoForm({
   alterado,
   marcadores,
   exemplo,
-  outrosTipos,
+  outrosTipos = [],
   aoSalvar,
+  // Rotas do modelo — por padrão as de Certificados; a carta de aceite usa as
+  // da tela Submissões › Carta de aceite (CartasAceitePainel.jsx).
+  api = certificadosAdmin,
 }) {
   const { notificar } = useToast();
   const editorRef = useRef(null);
+  const pagina = paginaCertificado(tipo);
+  const orientacao = pagina.retrato ? "retrato" : "paisagem";
+  const documento = tipo === "CARTA_ACEITE" ? "carta" : "certificado";
   const [erros, setErros] = useState({});
   const [salvando, setSalvando] = useState(false);
   const [gerandoPrevia, setGerandoPrevia] = useState(false);
@@ -131,7 +140,7 @@ export default function ModeloCertificadoForm({
     [exemplo, form.cargaHoraria]
   );
   const desconhecidos = marcadoresDesconhecidos(form.texto, marcadores);
-  const avisos = form.imagemFundo ? avisosFundo(dimensoes) : [];
+  const avisos = form.imagemFundo ? avisosFundo(dimensoes, pagina) : [];
 
   function alterar(campo, valor) {
     alterarForm({ ...form, [campo]: valor });
@@ -144,7 +153,7 @@ export default function ModeloCertificadoForm({
   }
 
   function validar() {
-    const resultado = modeloCertificadoSchema.safeParse(form);
+    const resultado = modeloCertificadoSchema(pagina).safeParse(form);
     if (resultado.success) {
       setErros({});
       return true;
@@ -163,7 +172,7 @@ export default function ModeloCertificadoForm({
     if (!validar()) return;
     setSalvando(true);
     try {
-      const resposta = await certificadosAdmin.salvarModelo(edicaoId, tipo, form);
+      const resposta = await api.salvarModelo(edicaoId, tipo, form);
       notificar(resposta.mensagem);
       aoSalvar(resposta.modelo);
     } catch (erro) {
@@ -180,9 +189,9 @@ export default function ModeloCertificadoForm({
     const janela = window.open("", "_blank");
     setGerandoPrevia(true);
     try {
-      const blob = await certificadosAdmin.previa(edicaoId, tipo, form);
+      const blob = await api.previa(edicaoId, tipo, form);
       if (janela) janela.location.href = URL.createObjectURL(blob);
-      else salvarBlob(blob, "previa-certificado.pdf");
+      else salvarBlob(blob, `previa-${documento}.pdf`);
     } catch (erro) {
       janela?.close();
       notificar(erro.message, "erro");
@@ -205,26 +214,32 @@ export default function ModeloCertificadoForm({
       <div className={styles.controles}>
         <Secao
           titulo="Imagem de fundo"
-          descricao="A arte do certificado (bordas, logos, assinaturas). O texto e o QR code são desenhados por cima."
+          descricao={
+            tipo === "CARTA_ACEITE"
+              ? "O papel timbrado da carta (cabeçalho, logos, assinaturas). O texto e o QR code são desenhados por cima."
+              : "A arte do certificado (bordas, logos, assinaturas). O texto e o QR code são desenhados por cima."
+          }
         >
           <CampoLogo
             id={`fundo-${tipo}`}
             rotulo="Arquivo"
             valor={form.imagemFundo}
             onChange={alterarFundo}
-            dimensaoMax={FUNDO_RECOMENDADO.largura}
+            dimensaoMax={Math.max(pagina.fundoRecomendado.largura, pagina.fundoRecomendado.altura)}
             tamanhoMaxArquivo={TAMANHO_MAX_FUNDO}
             textoItem="imagem"
             forcarJpeg
           />
           <div className={styles.orientacaoFundo}>
             <p>
-              <strong>Tamanho recomendado: {FUNDO_RECOMENDADO.largura} × {FUNDO_RECOMENDADO.altura} px</strong> — A4
-              paisagem ({PAGINA_CERTIFICADO.largura} × {PAGINA_CERTIFICADO.altura} mm) a 300 dpi, qualidade de impressão.
+              <strong>
+                Tamanho recomendado: {pagina.fundoRecomendado.largura} × {pagina.fundoRecomendado.altura} px
+              </strong>{" "}
+              — A4 {orientacao} ({pagina.largura} × {pagina.altura} mm) a 300 dpi, qualidade de impressão.
             </p>
             <p>
-              Mínimo: {FUNDO_MINIMO.largura} × {FUNDO_MINIMO.altura} px (150 dpi). PNG ou JPG, até 20 MB. Mantenha a
-              proporção do A4 paisagem e deixe livre a área onde vão o texto e o QR code.
+              Mínimo: {pagina.fundoMinimo.largura} × {pagina.fundoMinimo.altura} px (150 dpi). PNG ou JPG, até 20 MB.
+              Mantenha a proporção do A4 {orientacao} e deixe livre a área onde vão o texto e o QR code.
             </p>
           </div>
           {form.imagemFundo && dimensoes && (
@@ -242,12 +257,14 @@ export default function ModeloCertificadoForm({
 
         <Secao
           titulo="Texto"
-          descricao="Clique num campo dinâmico para inseri-lo onde está o cursor. Cada campo é trocado pelo dado da pessoa no certificado."
+          descricao={`Clique num campo dinâmico para inseri-lo onde está o cursor. Cada campo é trocado pelo dado ${
+            tipo === "CARTA_ACEITE" ? "do trabalho na carta" : "da pessoa no certificado"
+          }.`}
         >
           <CampoRichText
             ref={editorRef}
             id={`texto-${tipo}`}
-            rotulo="Texto do certificado"
+            rotulo={`Texto ${tipo === "CARTA_ACEITE" ? "da carta" : "do certificado"}`}
             value={form.texto}
             onChange={(valor) => alterar("texto", valor)}
             ferramentas={["negrito", "italico"]}
@@ -275,15 +292,15 @@ export default function ModeloCertificadoForm({
           {desconhecidos.length > 0 && (
             <p className={styles.aviso} role="alert">
               {desconhecidos.map((chave) => `{{${chave}}}`).join(", ")}{" "}
-              {desconhecidos.length === 1 ? "não é um campo válido" : "não são campos válidos"} para este tipo de
-              certificado — corrija antes de salvar.
+              {desconhecidos.length === 1 ? "não é um campo válido" : "não são campos válidos"} para{" "}
+              {tipo === "CARTA_ACEITE" ? "a carta de aceite" : "este tipo de certificado"} — corrija antes de salvar.
             </p>
           )}
         </Secao>
 
         <Secao
           titulo="Área do texto"
-          descricao="Distância de cada borda da página até o texto, em milímetros (a página tem 297 × 210 mm). A área aparece tracejada na prévia."
+          descricao={`Distância de cada borda da página até o texto, em milímetros (a página tem ${pagina.largura} × ${pagina.altura} mm). A área aparece tracejada na prévia.`}
         >
           <div className={styles.gradeCampos}>
             <CampoIntervalo
@@ -292,7 +309,7 @@ export default function ModeloCertificadoForm({
               valor={form.margemSuperior}
               onChange={(valor) => alterar("margemSuperior", valor)}
               min={0}
-              max={180}
+              max={pagina.altura - 30}
               unidade=" mm"
               erro={erros.margemSuperior}
             />
@@ -302,7 +319,7 @@ export default function ModeloCertificadoForm({
               valor={form.margemInferior}
               onChange={(valor) => alterar("margemInferior", valor)}
               min={0}
-              max={180}
+              max={pagina.altura - 30}
               unidade=" mm"
               erro={erros.margemInferior}
             />
@@ -312,7 +329,7 @@ export default function ModeloCertificadoForm({
               valor={form.margemEsquerda}
               onChange={(valor) => alterar("margemEsquerda", valor)}
               min={0}
-              max={260}
+              max={pagina.largura - 37}
               unidade=" mm"
               erro={erros.margemEsquerda}
             />
@@ -322,7 +339,7 @@ export default function ModeloCertificadoForm({
               valor={form.margemDireita}
               onChange={(valor) => alterar("margemDireita", valor)}
               min={0}
-              max={260}
+              max={pagina.largura - 37}
               unidade=" mm"
               erro={erros.margemDireita}
             />
@@ -412,7 +429,7 @@ export default function ModeloCertificadoForm({
 
         <Secao
           titulo="QR code de validação"
-          descricao="Leva à página pública que confirma a autenticidade. O código também sai escrito embaixo do QR."
+          descricao="Leva à página pública que confirma a autenticidade. O código também sai escrito embaixo do QR, na mesma cor. O QR não tem fundo próprio: escolha uma cor que contraste bem com a imagem de fundo nesse canto, senão a leitura pela câmera pode falhar."
         >
           <div className={styles.gradeCampos}>
             <CampoSelecao
@@ -447,26 +464,43 @@ export default function ModeloCertificadoForm({
               unidade=" mm"
               erro={erros.margemQr}
             />
+            <div className={stylesCampo.grupo}>
+              <label htmlFor={`cor-qr-${tipo}`} className={stylesCampo.rotulo}>
+                Cor do QR code
+              </label>
+              <div className={styles.linhaCor}>
+                <input
+                  id={`cor-qr-${tipo}`}
+                  type="color"
+                  className={styles.seletorCor}
+                  value={form.corQr || "#000000"}
+                  onChange={(evento) => alterar("corQr", evento.target.value.toUpperCase())}
+                />
+                <code className={styles.valorCor}>{form.corQr || "#000000"}</code>
+              </div>
+            </div>
           </div>
         </Secao>
 
-        <Secao titulo="Carga horária" descricao={AJUDA_CARGA[tipo]}>
-          <div className={styles.campoCurto}>
-            <CampoNumero
-              id={`carga-${tipo}`}
-              rotulo="Carga horária (horas)"
-              value={form.cargaHoraria}
-              onValueChange={(evento) => alterar("cargaHoraria", evento.value ?? null)}
-              min={1}
-              max={2000}
-              erro={erros.cargaHoraria}
-            />
-          </div>
-        </Secao>
+        {!TIPOS_SEM_CARGA.includes(tipo) && (
+          <Secao titulo="Carga horária" descricao={AJUDA_CARGA[tipo]}>
+            <div className={styles.campoCurto}>
+              <CampoNumero
+                id={`carga-${tipo}`}
+                rotulo="Carga horária (horas)"
+                value={form.cargaHoraria}
+                onValueChange={(evento) => alterar("cargaHoraria", evento.value ?? null)}
+                min={1}
+                max={2000}
+                erro={erros.cargaHoraria}
+              />
+            </div>
+          </Secao>
+        )}
       </div>
 
       <aside className={styles.lateral} aria-label="Prévia e ações">
-        <PreviaCertificado modelo={form} valores={valoresPrevia} aoCarregarFundo={setDimensoes} />
+        <PreviaCertificado modelo={form} valores={valoresPrevia} pagina={pagina} aoCarregarFundo={setDimensoes} />
         <p className={styles.textoApoio}>
           Prévia aproximada, com dados de exemplo. Use &quot;Pré-visualizar PDF&quot; para ver o arquivo final.
         </p>
@@ -486,14 +520,16 @@ export default function ModeloCertificadoForm({
             ? "Há alterações não salvas."
             : modeloSalvo.salvo
               ? "Modelo salvo."
-              : "Este tipo ainda usa o modelo padrão — salve para poder liberar os certificados."}
+              : TIPOS_LIBERADOS_COM_RESULTADO.includes(tipo)
+                ? "Ainda vale o modelo padrão — as cartas usam ele até você salvar um modelo próprio."
+                : "Este tipo ainda usa o modelo padrão — salve para poder liberar os certificados."}
         </p>
 
         {outrosTipos.length > 0 && (
           <div className={styles.copiarLayout}>
             <CampoSelecao
               id={`copiar-${tipo}`}
-              rotulo="Copiar fundo e layout de outro tipo"
+              rotulo={`Copiar fundo e layout de outro tipo (A4 ${orientacao})`}
               value={origemCopia}
               onChange={(evento) => setOrigemCopia(evento.target.value)}
             >

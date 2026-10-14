@@ -5,10 +5,17 @@
   width: 100%;
 }
 
+// Retrato (carta de aceite): mais estreita, pra página inteira caber na
+// lateral sem rolar demais.
+.molduraRetrato {
+  max-width: 420px;
+  margin-inline: auto;
+}
+
+// aspect-ratio vem do componente (paisagem ou retrato).
 .pagina {
   position: relative;
   width: 100%;
-  aspect-ratio: 297 / 210;
   overflow: hidden;
   background: var(--superficie);
   border: 1px solid var(--borda);
@@ -74,9 +81,10 @@
   justify-content: center;
   width: var(--tamanho-qr);
   aspect-ratio: 1;
-  background: var(--superficie);
-  border: 1px solid var(--texto);
-  color: var(--texto-suave);
+  // Fundo transparente, como no PDF: o QR fica direto sobre a imagem de fundo.
+  background: transparent;
+  border: 1px dashed var(--cor-qr);
+  color: var(--cor-qr);
   font-size: calc(var(--tamanho-qr) * 0.25);
   font-weight: 600;
 }
@@ -86,6 +94,6 @@
   flex-direction: column;
   font-size: var(--tamanho-rotulo);
   line-height: 1.3;
-  color: var(--texto);
+  color: var(--cor-qr);
   white-space: nowrap;
 }

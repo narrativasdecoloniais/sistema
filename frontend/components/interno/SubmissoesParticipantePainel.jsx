@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import { paraNumeroRomano } from "@/lib/romanos";
-import { listarMinhasSubmissoes } from "@/lib/participanteSubmissoes";
+import {
+  baixarCartaAceite,
+  listarMinhasSubmissoes,
+} from "@/lib/participanteSubmissoes";
 import {
   listarModalidadesSubmissaoPublicas,
   prazoSubmissaoAberto,
@@ -335,6 +338,39 @@ function ResultadoSubmissao({ id, resultado, ehAutorPrincipal }) {
           {revisarDeNovo ? ACAO_REVISAR_DE_NOVO : acao.botao}
         </Link>
       )}
+      {resultado.cartaAceiteDisponivel && <BotaoCartaAceite id={id} />}
+    </div>
+  );
+}
+
+// Só para o autor principal de trabalho aprovado (ressalvas/formatação depois
+// da correção concluída) — a API manda cartaAceiteDisponivel.
+function BotaoCartaAceite({ id }) {
+  const { notificar } = useToast();
+  const [baixando, setBaixando] = useState(false);
+
+  async function baixar() {
+    setBaixando(true);
+    try {
+      await baixarCartaAceite(id);
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setBaixando(false);
+    }
+  }
+
+  return (
+    <div className={styles.cartaAceite}>
+      <Botao
+        type="button"
+        variante="secundario"
+        carregando={baixando}
+        onClick={baixar}
+      >
+        <Download size={18} strokeWidth={1.5} aria-hidden="true" />
+        Baixar carta de aceite
+      </Botao>
     </div>
   );
 }
