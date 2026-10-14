@@ -16,6 +16,7 @@ import {
   TIPOS_LIBERADOS_COM_RESULTADO,
   avisosFundo,
   certificadosAdmin,
+  limitesPosicaoQr,
   paginaCertificado,
 } from "@/lib/certificados";
 import stylesCampo from "./CampoPrime.module.scss";
@@ -38,9 +39,10 @@ export const CAMPOS_MODELO = [
   "tamanhoFonte",
   "entrelinha",
   "corTexto",
-  "posicaoQr",
+  "esquerdaQr",
+  "topoQr",
   "tamanhoQr",
-  "margemQr",
+  "alinhamentoCodigoQr",
   "corQr",
   "cargaHoraria",
 ];
@@ -71,11 +73,10 @@ const OPCOES_FONTE = [
   { valor: "HELVETICA", rotulo: "Helvetica" },
 ];
 
-const OPCOES_QR = [
-  { valor: "INFERIOR_DIREITO", rotulo: "Canto inferior direito" },
-  { valor: "INFERIOR_ESQUERDO", rotulo: "Canto inferior esquerdo" },
-  { valor: "SUPERIOR_DIREITO", rotulo: "Canto superior direito" },
-  { valor: "SUPERIOR_ESQUERDO", rotulo: "Canto superior esquerdo" },
+const OPCOES_CODIGO_QR = [
+  { valor: "ESQUERDA", rotulo: "À esquerda do QR" },
+  { valor: "CENTRO", rotulo: "Centralizado no QR" },
+  { valor: "DIREITA", rotulo: "À direita do QR" },
 ];
 
 const AJUDA_CARGA = {
@@ -141,10 +142,24 @@ export default function ModeloCertificadoForm({
   );
   const desconhecidos = marcadoresDesconhecidos(form.texto, marcadores);
   const avisos = form.imagemFundo ? avisosFundo(dimensoes, pagina) : [];
+  const limitesQr = limitesPosicaoQr(pagina, form.tamanhoQr);
 
   function alterar(campo, valor) {
     alterarForm({ ...form, [campo]: valor });
     if (erros[campo]) setErros((atual) => ({ ...atual, [campo]: undefined }));
+  }
+
+  // Aumentar o QR perto da borda direita/inferior puxa a posição pra dentro,
+  // pra ele continuar inteiro na página.
+  function alterarTamanhoQr(valor) {
+    const limites = limitesPosicaoQr(pagina, valor);
+    alterarForm({
+      ...form,
+      tamanhoQr: valor,
+      esquerdaQr: Math.min(form.esquerdaQr, limites.esquerda),
+      topoQr: Math.min(form.topoQr, limites.topo),
+    });
+    setErros((atual) => ({ ...atual, tamanhoQr: undefined, esquerdaQr: undefined, topoQr: undefined }));
   }
 
   function alterarFundo(valor) {
@@ -429,41 +444,53 @@ export default function ModeloCertificadoForm({
 
         <Secao
           titulo="QR code de validação"
-          descricao="Leva à página pública que confirma a autenticidade. O código também sai escrito embaixo do QR, na mesma cor. O QR não tem fundo próprio: escolha uma cor que contraste bem com a imagem de fundo nesse canto, senão a leitura pela câmera pode falhar."
+          descricao={`Leva à página pública que confirma a autenticidade. Posição do canto superior esquerdo do QR, em milímetros a partir das bordas (a página tem ${pagina.largura} × ${pagina.altura} mm); o código de validação sai escrito embaixo, na mesma cor. O QR não tem fundo próprio: escolha uma cor que contraste bem com a imagem de fundo nesse ponto, senão a leitura pela câmera pode falhar.`}
         >
           <div className={styles.gradeCampos}>
-            <CampoSelecao
-              id={`qr-${tipo}`}
-              rotulo="Posição"
-              value={form.posicaoQr}
-              onChange={(evento) => alterar("posicaoQr", evento.target.value)}
-            >
-              {OPCOES_QR.map((opcao) => (
-                <option key={opcao.valor} value={opcao.valor}>
-                  {opcao.rotulo}
-                </option>
-              ))}
-            </CampoSelecao>
+            <CampoIntervalo
+              id={`esquerda-qr-${tipo}`}
+              rotulo="Distância da esquerda"
+              valor={form.esquerdaQr}
+              onChange={(valor) => alterar("esquerdaQr", valor)}
+              min={0}
+              max={limitesQr.esquerda}
+              passo={0.5}
+              unidade=" mm"
+              erro={erros.esquerdaQr}
+            />
+            <CampoIntervalo
+              id={`topo-qr-${tipo}`}
+              rotulo="Distância do topo"
+              valor={form.topoQr}
+              onChange={(valor) => alterar("topoQr", valor)}
+              min={0}
+              max={limitesQr.topo}
+              passo={0.5}
+              unidade=" mm"
+              erro={erros.topoQr}
+            />
             <CampoIntervalo
               id={`tamanho-qr-${tipo}`}
               rotulo="Tamanho"
               valor={form.tamanhoQr}
-              onChange={(valor) => alterar("tamanhoQr", valor)}
+              onChange={alterarTamanhoQr}
               min={15}
               max={60}
               unidade=" mm"
               erro={erros.tamanhoQr}
             />
-            <CampoIntervalo
-              id={`margem-qr-${tipo}`}
-              rotulo="Distância das bordas"
-              valor={form.margemQr}
-              onChange={(valor) => alterar("margemQr", valor)}
-              min={0}
-              max={60}
-              unidade=" mm"
-              erro={erros.margemQr}
-            />
+            <CampoSelecao
+              id={`codigo-qr-${tipo}`}
+              rotulo="Código embaixo do QR"
+              value={form.alinhamentoCodigoQr}
+              onChange={(evento) => alterar("alinhamentoCodigoQr", evento.target.value)}
+            >
+              {OPCOES_CODIGO_QR.map((opcao) => (
+                <option key={opcao.valor} value={opcao.valor}>
+                  {opcao.rotulo}
+                </option>
+              ))}
+            </CampoSelecao>
             <div className={stylesCampo.grupo}>
               <label htmlFor={`cor-qr-${tipo}`} className={stylesCampo.rotulo}>
                 Cor do QR code

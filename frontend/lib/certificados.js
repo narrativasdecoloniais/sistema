@@ -40,6 +40,30 @@ export function paginaCertificado(tipo) {
   return tipo === "CARTA_ACEITE" ? RETRATO : PAISAGEM;
 }
 
+// QR code em posição livre — espelha faixaCodigoQr/ESPACO_CODIGO_QR_MM de
+// backend/src/utils/paginaCertificado.js (mudou um, muda o outro).
+export const TAMANHO_CODIGO_QR_PT = 7;
+export const ESPACO_CODIGO_QR_MM = 7;
+const LARGURA_MIN_CODIGO_QR_MM = 42.5;
+
+export function faixaCodigoQr({ esquerdaQr, tamanhoQr, alinhamentoCodigoQr }, pagina) {
+  const largura = Math.max(tamanhoQr, LARGURA_MIN_CODIGO_QR_MM);
+  let esquerda = esquerdaQr;
+  if (alinhamentoCodigoQr === "DIREITA") esquerda = esquerdaQr + tamanhoQr - largura;
+  else if (alinhamentoCodigoQr === "CENTRO") esquerda = esquerdaQr + (tamanhoQr - largura) / 2;
+  esquerda = Math.min(Math.max(0, esquerda), pagina.largura - largura);
+  return { esquerda, largura };
+}
+
+// Maior distância da esquerda/do topo em que o QR (e o código embaixo) ainda
+// cabe na página.
+export function limitesPosicaoQr(pagina, tamanhoQr) {
+  return {
+    esquerda: Math.max(0, pagina.largura - tamanhoQr),
+    topo: Math.max(0, pagina.altura - tamanhoQr - ESPACO_CODIGO_QR_MM),
+  };
+}
+
 // Avisos (não bloqueantes) sobre a imagem de fundo escolhida.
 export function avisosFundo(dimensoes, pagina) {
   if (!dimensoes?.largura || !dimensoes?.altura) return [];

@@ -4,6 +4,7 @@ import { camposIdentificacao, validarIdentificacao } from "@/lib/identificacao";
 import { idadeEm } from "@/lib/idade";
 import { validarBlocos } from "@/lib/emailResultado";
 import { marcadoresDesconhecidos as marcadoresDesconhecidosApresentacao } from "@/lib/emailApresentacao";
+import { ESPACO_CODIGO_QR_MM } from "@/lib/certificados";
 
 export const senhaForte = z
   .string()
@@ -761,9 +762,10 @@ export const modeloCertificadoSchema = (pagina) =>
       tamanhoFonte: numeroCertificado(6, 72, "o tamanho da fonte"),
       entrelinha: numeroCertificado(1, 3, "o espaçamento entre linhas"),
       corTexto: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida"),
-      posicaoQr: z.enum(["INFERIOR_DIREITO", "INFERIOR_ESQUERDO", "SUPERIOR_DIREITO", "SUPERIOR_ESQUERDO"]),
+      esquerdaQr: numeroCertificado(0, pagina.largura, "a distância do QR code até a borda esquerda"),
+      topoQr: numeroCertificado(0, pagina.altura, "a distância do QR code até o topo"),
       tamanhoQr: numeroCertificado(15, 60, "o tamanho do QR code"),
-      margemQr: numeroCertificado(0, 60, "a distância do QR code até a borda"),
+      alinhamentoCodigoQr: z.enum(["ESQUERDA", "CENTRO", "DIREITA"]),
       corQr: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Escolha uma cor válida para o QR code"),
       cargaHoraria: z
         .number({ invalid_type_error: "Carga horária inválida" })
@@ -780,6 +782,14 @@ export const modeloCertificadoSchema = (pagina) =>
     .refine((d) => d.margemEsquerda + d.margemDireita <= pagina.largura - 20, {
       message: "As margens esquerda e direita somadas deixam pouco espaço para o texto",
       path: ["margemDireita"],
+    })
+    .refine((d) => d.esquerdaQr + d.tamanhoQr <= pagina.largura, {
+      message: "O QR code passa da borda direita da página — aproxime-o da esquerda ou diminua o tamanho",
+      path: ["esquerdaQr"],
+    })
+    .refine((d) => d.topoQr + d.tamanhoQr + ESPACO_CODIGO_QR_MM <= pagina.altura, {
+      message: "O QR code (com o código embaixo) passa da borda inferior da página — suba-o ou diminua o tamanho",
+      path: ["topoQr"],
     });
 
 // Espelha criterioSchema em backend/src/controllers/cartasAceite.controller.js.

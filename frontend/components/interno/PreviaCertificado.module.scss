@@ -59,23 +59,15 @@
   }
 }
 
-.qr {
+// Camada do QR cobrindo a página; QR e código posicionados em absoluto nela.
+.qrArea {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: calc(var(--tamanho-rotulo) * 0.3);
-}
-
-.qrDireita {
-  align-items: flex-end;
-
-  .qrRotulo {
-    text-align: right;
-  }
+  inset: 0;
+  pointer-events: none;
 }
 
 .qrCodigo {
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,6 +82,7 @@
 }
 
 .qrRotulo {
+  position: absolute;
   display: flex;
   flex-direction: column;
   font-size: var(--tamanho-rotulo);

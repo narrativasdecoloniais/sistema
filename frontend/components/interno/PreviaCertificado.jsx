@@ -1,6 +1,7 @@
 "use client";
 
 import ConteudoRichText from "@/components/ConteudoRichText";
+import { TAMANHO_CODIGO_QR_PT, faixaCodigoQr } from "@/lib/certificados";
 import styles from "./PreviaCertificado.module.scss";
 
 // Prévia aproximada do certificado, atualizada a cada ajuste: mesma geometria
@@ -10,7 +11,6 @@ import styles from "./PreviaCertificado.module.scss";
 // resultado exato.
 
 const PT_POR_MM = 72 / 25.4;
-const TAMANHO_ROTULO_QR = 7;
 
 const FAMILIAS = {
   ARCHIVO: "var(--font-archivo), Archivo, sans-serif",
@@ -36,8 +36,7 @@ export function preencherMarcadores(html, valores) {
 
 // pagina = paginaCertificado(tipo) de lib/certificados.js (paisagem ou retrato).
 export default function PreviaCertificado({ modelo, valores, pagina, aoCarregarFundo }) {
-  const direita = modelo.posicaoQr.endsWith("DIREITO");
-  const inferior = modelo.posicaoQr.startsWith("INFERIOR");
+  const faixaCodigo = faixaCodigoQr(modelo, pagina);
   const cqwDeMm = (mm) => `${(mm / pagina.largura) * 100}cqw`;
   const cqwDePt = (pt) => `${(pt / (pagina.largura * PT_POR_MM)) * 100}cqw`;
 
@@ -87,19 +86,35 @@ export default function PreviaCertificado({ modelo, valores, pagina, aoCarregarF
           </div>
         </div>
 
+        {/* Mesma geometria do PDF: QR no ponto escolhido e o código numa faixa
+            logo abaixo (faixaCodigoQr), 2 pt depois do QR. */}
         <div
-          className={`${styles.qr} ${direita ? styles.qrDireita : ""}`}
+          className={styles.qrArea}
           style={{
-            [direita ? "right" : "left"]: cqwDeMm(modelo.margemQr),
-            [inferior ? "bottom" : "top"]: cqwDeMm(modelo.margemQr),
-            "--tamanho-qr": cqwDeMm(modelo.tamanhoQr),
-            "--tamanho-rotulo": cqwDePt(TAMANHO_ROTULO_QR),
+            "--tamanho-rotulo": cqwDePt(TAMANHO_CODIGO_QR_PT),
             "--cor-qr": modelo.corQr || "#000000",
           }}
           aria-hidden="true"
         >
-          <span className={styles.qrCodigo}>QR</span>
-          <span className={styles.qrRotulo}>
+          <span
+            className={styles.qrCodigo}
+            style={{
+              left: cqwDeMm(modelo.esquerdaQr),
+              top: cqwDeMm(modelo.topoQr),
+              "--tamanho-qr": cqwDeMm(modelo.tamanhoQr),
+            }}
+          >
+            QR
+          </span>
+          <span
+            className={styles.qrRotulo}
+            style={{
+              left: cqwDeMm(faixaCodigo.esquerda),
+              top: `calc(${cqwDeMm(modelo.topoQr + modelo.tamanhoQr)} + ${cqwDePt(2)})`,
+              width: cqwDeMm(faixaCodigo.largura),
+              textAlign: ALINHAMENTOS[modelo.alinhamentoCodigoQr] || "center",
+            }}
+          >
             Código de validação
             <strong>{valores.codigo}</strong>
           </span>
