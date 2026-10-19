@@ -3,6 +3,7 @@ const ErroHttp = require("../utils/erroHttp");
 const usuariosService = require("./usuarios.service");
 const tokenService = require("./token.service");
 const emailService = require("./email.service");
+const { temIdentificacao } = require("../utils/identificacao");
 
 const CAMPOS_ORGANIZADOR = {
   id: true,
@@ -40,7 +41,15 @@ async function adicionarOrganizador(dados) {
         secoesPermitidas: dados.secoesPermitidas,
       },
     });
-    await emailService.enviarEmailNotificacaoOrganizador(usuario);
+    // Conta sem CPF/documento (importada do Even3, convidada como autor ou
+    // avaliador) não consegue entrar — o login é pela identificação, que só o
+    // /definir-senha do convite grava. Aí vai o convite, não o aviso.
+    if (temIdentificacao(usuario)) {
+      await emailService.enviarEmailNotificacaoOrganizador(usuario);
+    } else {
+      const token = await tokenService.criarTokenConviteOrganizador(usuario.id);
+      await emailService.enviarEmailConviteOrganizador(usuario, token);
+    }
 
     return prisma.usuario.findUnique({ where: { id: usuario.id }, select: CAMPOS_ORGANIZADOR });
   }
@@ -56,6 +65,23 @@ async function adicionarOrganizador(dados) {
   await emailService.enviarEmailConviteOrganizador(usuarioNovo, token);
 
   return prisma.usuario.findUnique({ where: { id: usuarioNovo.id }, select: CAMPOS_ORGANIZADOR });
+}
+
+// "Convite pendente" na aba Equipe = conta sem CPF nem documento, que ainda não
+// passou pelo /definir-senha. Gera um token novo (os anteriores continuam
+// valendo até expirar) e manda o convite de novo.
+async function reenviarConvite(id) {
+  const usuario = await usuariosService.buscarCompletoPorId(id);
+  const naEquipe = usuario?.papeis.some((papel) => papel === "ORGANIZADOR" || papel === "ADMIN");
+  if (!usuario || !naEquipe || !usuario.ativo || usuario.anonimizadoEm) {
+    throw new ErroHttp(404, "Organizador não encontrado.");
+  }
+  if (temIdentificacao(usuario)) {
+    throw new ErroHttp(409, "Esta pessoa já concluiu o cadastro e pode entrar com a própria conta.");
+  }
+
+  const token = await tokenService.criarTokenConviteOrganizador(usuario.id);
+  await emailService.enviarEmailConviteOrganizador(usuario, token);
 }
 
 async function removerOrganizador(id) {
@@ -134,6 +160,7 @@ async function atualizarPermissoes(id, { acessoCompleto, secoesPermitidas }) {
 module.exports = {
   listarOrganizadores,
   adicionarOrganizador,
+  reenviarConvite,
   removerOrganizador,
   promoverAdmin,
   rebaixarAdmin,

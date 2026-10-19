@@ -14,6 +14,7 @@ router.get("/", autorizarSecao("PARTICIPANTES"), organizadoresController.listar)
 // só da seção PARTICIPANTES, senão um organizador comum promoveria a si
 // mesmo ou a terceiros a admin/acesso completo.
 router.post("/", autorizar("ADMIN"), organizadoresController.criar);
+router.post("/:id/reenviar-convite", autorizar("ADMIN"), organizadoresController.reenviarConvite);
 router.patch("/:id/promover", autorizar("ADMIN"), organizadoresController.promover);
 router.patch("/:id/rebaixar", autorizar("ADMIN"), organizadoresController.rebaixar);
 router.patch("/:id/permissoes", autorizar("ADMIN"), organizadoresController.atualizarPermissoes);
