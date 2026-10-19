@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, MailPlus, GitMerge, Trash2, ShieldPlus, ShieldMinus, Settings2 } from "lucide-react";
+import { UserPlus, MailPlus, GitMerge, Trash2, ShieldPlus, ShieldMinus, Settings2, Send } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
@@ -182,6 +182,37 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
       setProcessandoId(null);
       setConfirmando(null);
     }
+  }
+
+  // "Convite pendente" = conta sem CPF/documento, que só entra depois de
+  // definir senha e identificação pelo link do convite.
+  async function reenviarConvite(participante) {
+    setProcessandoId(participante.id);
+
+    try {
+      await apiClient.post(`/organizadores/${participante.id}/reenviar-convite`, {});
+      notificar(`Convite reenviado para ${participante.email}.`);
+    } catch (erro) {
+      notificar(erro.message, "erro");
+    } finally {
+      setProcessandoId(null);
+    }
+  }
+
+  function botaoReenviarConvite(participante) {
+    if (formatarIdentificacao(participante)) return null;
+    return (
+      <button
+        type="button"
+        className={styles.botaoIcone}
+        aria-label={`Reenviar convite para ${participante.nome}`}
+        title="Reenviar convite"
+        disabled={processandoId === participante.id}
+        onClick={() => reenviarConvite(participante)}
+      >
+        <Send size={16} strokeWidth={1.5} aria-hidden="true" />
+      </button>
+    );
   }
 
   // Vale para as duas abas: da "Usuários" pode vir um participante que ainda
@@ -364,6 +395,7 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
                         <td data-rotulo="Ações" className={styles.colunaAcoes}>
                           {eAdmin && souAdmin && participante.id !== usuarioLogado?.id && (
                             <div className={styles.acoesLinha}>
+                              {botaoReenviarConvite(participante)}
                               <button
                                 type="button"
                                 className={`${styles.botaoIcone} ${styles.botaoIconePerigo}`}
@@ -378,6 +410,7 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
                           )}
                           {!eAdmin && souAdmin && (
                             <div className={styles.acoesLinha}>
+                              {botaoReenviarConvite(participante)}
                               <button
                                 type="button"
                                 className={styles.botaoIcone}
