@@ -12,7 +12,12 @@ body {
   // de rolagem horizontal em telas estreitas. No html/body isso não corta
   // elementos position:fixed (nav, faixas laterais) — diferente de aplicar
   // overflow:hidden num container aninhado, que cortaria.
+  // clip (com hidden de reserva para navegador antigo): hidden nos dois ao
+  // mesmo tempo transforma o body num contêiner de rolagem que nunca rola, e
+  // todo position:sticky da página (ex. o mapa do guia de Localização) para
+  // de funcionar; clip corta igual sem criar esse contêiner.
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
