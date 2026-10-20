@@ -96,13 +96,13 @@
 
 // ---- mapa + lista ----
 
-// Desktop: lista à esquerda, mapa fixo à direita acompanhando a rolagem.
+// Desktop: mapa fixo à esquerda acompanhando a rolagem, lista à direita.
 // Abaixo de 1000px (mesmo breakpoint da faixa da Hero): mapa em cima, lista
 // embaixo.
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  grid-template-areas: "lista mapa";
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-areas: "mapa lista";
   gap: 2.5rem;
   align-items: start;
 
@@ -295,6 +295,34 @@
 
   @media (max-width: 700px) {
     min-height: 44px;
+  }
+}
+
+.verMais {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 0.25rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
   }
 }
 

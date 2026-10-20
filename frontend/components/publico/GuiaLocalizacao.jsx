@@ -1,12 +1,20 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { organizarGuia, rotuloLinkPonto, urlComoChegar } from "@/lib/localizacao";
 import { dividirParagrafos } from "@/lib/publico";
 import styles from "./GuiaLocalizacao.module.scss";
 
 const MapaLocalizacao = dynamic(() => import("./MapaLocalizacao"), { ssr: false });
+
+// Itens visíveis por subcategoria antes do "Ver mais" — mantém a lista
+// curta com o filtro "Todos" (cerca de 3 por grupo em vez de dezenas).
+const ITENS_POR_GRUPO = 3;
+
+function chaveGrupo(tipoId, nomeGrupo) {
+  return `${tipoId}|${nomeGrupo}`;
+}
 
 function rotuloQuantidade(total) {
   return total === 1 ? "1 lugar" : `${total} lugares`;
@@ -21,6 +29,9 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
   const itensRef = useRef({});
   const [filtro, setFiltro] = useState(null);
   const [selecionadoId, setSelecionadoId] = useState(null);
+  const [gruposAbertos, setGruposAbertos] = useState(() => new Set());
+  // Item a rolar até depois que o grupo dele abrir (marcador clicado).
+  const [rolarPara, setRolarPara] = useState(null);
 
   const categorias = useMemo(() => organizarGuia(pontos), [pontos]);
   const categoriasVisiveis = filtro
@@ -31,6 +42,21 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
     if (!filtro) return null;
     return new Set(pontos.filter((ponto) => ponto.tipo.id === filtro).map((ponto) => ponto.id));
   }, [pontos, filtro]);
+
+  useEffect(() => {
+    if (!rolarPara) return;
+    itensRef.current[rolarPara]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    setRolarPara(null);
+  }, [rolarPara]);
+
+  function alternarGrupo(chave) {
+    setGruposAbertos((atual) => {
+      const proximo = new Set(atual);
+      if (proximo.has(chave)) proximo.delete(chave);
+      else proximo.add(chave);
+      return proximo;
+    });
+  }
 
   function escolherFiltro(tipoId) {
     setFiltro(tipoId);
@@ -45,11 +71,15 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
   // Marcador clicado: destaca o item. Só rola a lista no desktop, onde o
   // mapa fica fixo ao lado — no celular a lista está abaixo do mapa e rolar
   // tiraria da tela o cartão que acabou de abrir.
+  // Se o item estiver escondido no "Ver mais", o grupo dele abre antes.
   function aoSelecionarNoMapa(id) {
     setSelecionadoId(id);
-    if (window.matchMedia("(min-width: 1000px)").matches) {
-      itensRef.current[id]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const ponto = pontos.find((item) => item.id === id);
+    if (ponto) {
+      const chave = chaveGrupo(ponto.tipo.id, ponto.grupo?.trim() || "");
+      setGruposAbertos((atual) => (atual.has(chave) ? atual : new Set(atual).add(chave)));
     }
+    if (window.matchMedia("(min-width: 1000px)").matches) setRolarPara(id);
   }
 
   return (
@@ -126,69 +156,92 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
                   </p>
                 ))}
 
-                {categoria.grupos.map((grupo) => (
-                  <div key={grupo.nome || "sem-grupo"} className={styles.grupo}>
-                    {grupo.nome && <h4 className={styles.grupoTitulo}>{grupo.nome}</h4>}
-                    <ul className={styles.lista}>
-                      {grupo.pontos.map((ponto) => (
-                        <li
-                          key={ponto.id}
-                          ref={(elemento) => {
-                            itensRef.current[ponto.id] = elemento;
-                          }}
-                          className={styles.item}
-                          data-selecionado={selecionadoId === ponto.id || undefined}
-                        >
-                          {ponto.imagem && (
-                            <img src={ponto.imagem} alt="" className={styles.itemImagem} loading="lazy" />
-                          )}
-                          <div className={styles.itemCorpo}>
-                            <p className={styles.itemNome}>{ponto.nome}</p>
-                            {ponto.descricao && <p className={styles.itemDescricao}>{ponto.descricao}</p>}
-                            {ponto.endereco && <p className={styles.itemEndereco}>{ponto.endereco}</p>}
-                            {ponto.aproximado && (
-                              <p className={styles.itemAproximado}>
-                                Localização aproximada no mapa
-                              </p>
+                {categoria.grupos.map((grupo) => {
+                  const chave = chaveGrupo(categoria.tipo.id, grupo.nome);
+                  const aberto = gruposAbertos.has(chave);
+                  const escondidos = grupo.pontos.length - ITENS_POR_GRUPO;
+                  const pontosExibidos = aberto ? grupo.pontos : grupo.pontos.slice(0, ITENS_POR_GRUPO);
+                  const idLista = `localizacao-lista-${categoria.tipo.id}-${grupo.nome || "geral"}`
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]+/g, "-");
+
+                  return (
+                    <div key={grupo.nome || "sem-grupo"} className={styles.grupo}>
+                      {grupo.nome && <h4 className={styles.grupoTitulo}>{grupo.nome}</h4>}
+                      <ul id={idLista} className={styles.lista}>
+                        {pontosExibidos.map((ponto) => (
+                          <li
+                            key={ponto.id}
+                            ref={(elemento) => {
+                              itensRef.current[ponto.id] = elemento;
+                            }}
+                            className={styles.item}
+                            data-selecionado={selecionadoId === ponto.id || undefined}
+                          >
+                            {ponto.imagem && (
+                              <img src={ponto.imagem} alt="" className={styles.itemImagem} loading="lazy" />
                             )}
-                            <div className={styles.itemAcoes}>
-                              <button
-                                type="button"
-                                className={styles.acao}
-                                onClick={() => verNoMapa(ponto.id)}
-                                aria-label={`Ver ${ponto.nome} no mapa`}
-                              >
-                                Ver no mapa
-                              </button>
-                              {ponto.link && (
+                            <div className={styles.itemCorpo}>
+                              <p className={styles.itemNome}>{ponto.nome}</p>
+                              {ponto.descricao && <p className={styles.itemDescricao}>{ponto.descricao}</p>}
+                              {ponto.endereco && <p className={styles.itemEndereco}>{ponto.endereco}</p>}
+                              {ponto.aproximado && (
+                                <p className={styles.itemAproximado}>
+                                  Localização aproximada no mapa
+                                </p>
+                              )}
+                              <div className={styles.itemAcoes}>
+                                <button
+                                  type="button"
+                                  className={styles.acao}
+                                  onClick={() => verNoMapa(ponto.id)}
+                                  aria-label={`Ver ${ponto.nome} no mapa`}
+                                >
+                                  Ver no mapa
+                                </button>
+                                {ponto.link && (
+                                  <a
+                                    href={ponto.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={styles.acao}
+                                    aria-label={`${rotuloLinkPonto(ponto.link)} de ${ponto.nome} (abre em nova aba)`}
+                                  >
+                                    {rotuloLinkPonto(ponto.link)}
+                                    <span aria-hidden="true"> ↗</span>
+                                  </a>
+                                )}
                                 <a
-                                  href={ponto.link}
+                                  href={urlComoChegar(ponto)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className={styles.acao}
-                                  aria-label={`${rotuloLinkPonto(ponto.link)} de ${ponto.nome} (abre em nova aba)`}
+                                  aria-label={`Como chegar a ${ponto.nome} (abre o Google Maps em nova aba)`}
                                 >
-                                  {rotuloLinkPonto(ponto.link)}
+                                  Como chegar
                                   <span aria-hidden="true"> ↗</span>
                                 </a>
-                              )}
-                              <a
-                                href={urlComoChegar(ponto)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.acao}
-                                aria-label={`Como chegar a ${ponto.nome} (abre o Google Maps em nova aba)`}
-                              >
-                                Como chegar
-                                <span aria-hidden="true"> ↗</span>
-                              </a>
+                              </div>
                             </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                          </li>
+                        ))}
+                      </ul>
+                      {escondidos > 0 && (
+                        <button
+                          type="button"
+                          className={styles.verMais}
+                          aria-expanded={aberto}
+                          aria-controls={idLista}
+                          onClick={() => alternarGrupo(chave)}
+                        >
+                          {aberto
+                            ? "Ver menos"
+                            : `Ver mais ${escondidos === 1 ? "1 lugar" : `${escondidos} lugares`}`}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </section>
             );
           })}
