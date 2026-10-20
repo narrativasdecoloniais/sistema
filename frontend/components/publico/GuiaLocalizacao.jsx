@@ -28,7 +28,7 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
   const mapaRef = useRef(null);
   const itensRef = useRef({});
   const [filtro, setFiltro] = useState(null);
-  // Subcategoria escolhida dentro da categoria ativa (null = todas).
+  // Subcategoria escolhida dentro da categoria ativa (null = a primeira).
   const [subcategoria, setSubcategoria] = useState(null);
   const [selecionadoId, setSelecionadoId] = useState(null);
   const [gruposAbertos, setGruposAbertos] = useState(() => new Set());
@@ -44,8 +44,11 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
   const gruposAtivos = categoriasVisiveis[0]?.grupos || [];
   // Abas de subcategoria só fazem sentido com duas ou mais e alguma nomeada.
   const temSubcategorias = gruposAtivos.length > 1 && gruposAtivos.some((grupo) => grupo.nome);
-  const subcategoriaAtiva =
-    temSubcategorias && gruposAtivos.some((grupo) => grupo.nome === subcategoria) ? subcategoria : null;
+  // Sem opção "Todas": com abas, sempre há uma subcategoria escolhida
+  // (a primeira, na ordem do admin); sem abas, null = o grupo único inteiro.
+  const subcategoriaAtiva = temSubcategorias
+    ? (gruposAtivos.find((grupo) => grupo.nome === subcategoria) ?? gruposAtivos[0]).nome
+    : null;
 
   const idsVisiveis = useMemo(
     () =>
@@ -173,14 +176,6 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
 
                 {temSubcategorias && (
                   <div className={styles.subcategorias} role="group" aria-label="Escolher subcategoria">
-                    <button
-                      type="button"
-                      className={styles.subcategoria}
-                      aria-pressed={subcategoriaAtiva === null}
-                      onClick={() => escolherSubcategoria(null)}
-                    >
-                      Todas
-                    </button>
                     {categoria.grupos.map((grupo) => (
                       <button
                         key={grupo.nome || "sem-grupo"}
