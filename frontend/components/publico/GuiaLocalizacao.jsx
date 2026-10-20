@@ -9,7 +9,7 @@ import styles from "./GuiaLocalizacao.module.scss";
 const MapaLocalizacao = dynamic(() => import("./MapaLocalizacao"), { ssr: false });
 
 // Itens visíveis por subcategoria antes do "Ver mais" — mantém a lista
-// curta com o filtro "Todos" (cerca de 3 por grupo em vez de dezenas).
+// curta (cerca de 3 por grupo em vez de dezenas).
 const ITENS_POR_GRUPO = 3;
 
 function chaveGrupo(tipoId, nomeGrupo) {
@@ -34,14 +34,16 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
   const [rolarPara, setRolarPara] = useState(null);
 
   const categorias = useMemo(() => organizarGuia(pontos), [pontos]);
-  const categoriasVisiveis = filtro
-    ? categorias.filter((categoria) => categoria.tipo.id === filtro)
-    : categorias;
+  // Uma categoria por vez (sem "Todos", que era informação demais): abre na
+  // primeira pela ordem dos tipos. Com uma categoria só, nem há filtros.
+  const categoriaAtiva =
+    categorias.find((categoria) => categoria.tipo.id === filtro)?.tipo.id ?? categorias[0]?.tipo.id;
+  const categoriasVisiveis = categorias.filter((categoria) => categoria.tipo.id === categoriaAtiva);
 
-  const idsVisiveis = useMemo(() => {
-    if (!filtro) return null;
-    return new Set(pontos.filter((ponto) => ponto.tipo.id === filtro).map((ponto) => ponto.id));
-  }, [pontos, filtro]);
+  const idsVisiveis = useMemo(
+    () => new Set(pontos.filter((ponto) => ponto.tipo.id === categoriaAtiva).map((ponto) => ponto.id)),
+    [pontos, categoriaAtiva]
+  );
 
   useEffect(() => {
     if (!rolarPara) return;
@@ -92,22 +94,13 @@ export default function GuiaLocalizacao({ pontos, introducao, textosTipos = {} }
         ))}
 
       {categorias.length > 1 && (
-        <div className={styles.filtros} role="group" aria-label="Filtrar por categoria">
-          <button
-            type="button"
-            className={styles.filtro}
-            aria-pressed={filtro === null}
-            onClick={() => escolherFiltro(null)}
-          >
-            Todos
-            <span className={styles.filtroTotal}>{pontos.length}</span>
-          </button>
+        <div className={styles.filtros} role="group" aria-label="Escolher categoria">
           {categorias.map((categoria) => (
             <button
               key={categoria.tipo.id}
               type="button"
               className={styles.filtro}
-              aria-pressed={filtro === categoria.tipo.id}
+              aria-pressed={categoriaAtiva === categoria.tipo.id}
               onClick={() => escolherFiltro(categoria.tipo.id)}
             >
               <span
