@@ -2,7 +2,9 @@ const prisma = require("../config/prisma");
 const ErroHttp = require("../utils/erroHttp");
 
 async function listarTiposPontoInteresse() {
-  return prisma.tipoPontoInteresse.findMany({ orderBy: { nome: "asc" } });
+  return prisma.tipoPontoInteresse.findMany({
+    orderBy: [{ ordem: { sort: "asc", nulls: "last" } }, { nome: "asc" }],
+  });
 }
 
 async function buscarPorId(id) {

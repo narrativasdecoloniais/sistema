@@ -1,3 +1,4 @@
+const { Prisma } = require("@prisma/client");
 const prisma = require("../config/prisma");
 const { agoraIngenuo } = require("../utils/horarioBrasilia");
 const sincronizarLista = require("../utils/sincronizarLista");
@@ -9,7 +10,7 @@ const ErroHttp = require("../utils/erroHttp");
 const INCLUDE_PADRAO = {
   realizadores: { orderBy: { createdAt: "asc" } },
   apoiadores: { orderBy: { createdAt: "asc" } },
-  pontosInteresse: { orderBy: { createdAt: "asc" }, include: { tipo: true } },
+  pontosInteresse: { orderBy: [{ ordem: "asc" }, { createdAt: "asc" }], include: { tipo: true } },
 };
 
 async function montarCamposRealizador(realizador) {
@@ -40,14 +41,18 @@ async function removerImagemApoiador(apoiador) {
   await storageService.removerImagemPublica(apoiador.imagem);
 }
 
-async function montarCamposPontoInteresse(ponto) {
+async function montarCamposPontoInteresse(ponto, indice) {
   const campos = {
     tipoId: ponto.tipoId,
     nome: ponto.nome,
+    grupo: ponto.grupo || null,
+    descricao: ponto.descricao || null,
     endereco: ponto.endereco || null,
     latitude: ponto.latitude,
     longitude: ponto.longitude,
+    aproximado: ponto.aproximado ?? false,
     link: ponto.link || null,
+    ordem: indice,
   };
 
   if (ponto.imagem === null) {
@@ -144,6 +149,19 @@ async function atualizarEdicao(id, dados) {
     } catch (erro) {
       throw new ErroHttp(400, erro.message || "Texto de contribuição inválido.");
     }
+  }
+
+  if (camposEdicao.introducaoLocalizacao !== undefined) {
+    camposEdicao.introducaoLocalizacao = camposEdicao.introducaoLocalizacao || null;
+  }
+
+  // Só guarda os tipos com texto; sem nenhum, a coluna volta a nulo (Json
+  // nulo precisa de DbNull no Prisma — null puro é recusado).
+  if (camposEdicao.textosTiposLocalizacao !== undefined) {
+    const textos = Object.fromEntries(
+      Object.entries(camposEdicao.textosTiposLocalizacao || {}).filter(([, texto]) => texto)
+    );
+    camposEdicao.textosTiposLocalizacao = Object.keys(textos).length > 0 ? textos : Prisma.DbNull;
   }
 
   if (logoSvg === null) {

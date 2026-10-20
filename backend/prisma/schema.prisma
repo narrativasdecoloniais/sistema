@@ -521,6 +521,12 @@ model Edicao {
   corFundoLocalizacao               String               @default("PAPEL")
   opacidadeFundoLocalizacao         Int                  @default(100)
   corTextoLocalizacao               String               @default("TINTA")
+  // Guia da dobra Localização: texto de abertura (texto puro, nulo = sem
+  // texto) e um texto de apresentação por tipo de ponto, em
+  // { [tipoPontoInteresseId]: "texto" } — por edição, porque cita datas e
+  // regiões do evento, enquanto o catálogo de tipos é global.
+  introducaoLocalizacao             String?
+  textosTiposLocalizacao            Json?
   // Seção "Comissões" (lista de cartões, um por comissão, ver Comissao
   // abaixo) — mesmo bloco de 7 campos de Publicações, com búzio, mais o
   // eixo de cor de card (abas + acordeão de GruposConteudoAbas.jsx, mesmo
@@ -807,6 +813,9 @@ model TipoPontoInteresse {
   id        String   @id @default(uuid())
   nome      String   @unique
   cor       String
+  // Sequência das categorias na dobra Localização (filtros e lista) — nulo
+  // vem depois dos ordenados, desempate pelo nome.
+  ordem     Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -818,20 +827,28 @@ model TipoPontoInteresse {
 // Pontos plotados no mapa da dobra "Localização" da página pública —
 // local do evento, hospedagens, restaurantes etc. indicados pelo gestor.
 // Coordenadas são coladas manualmente (sem geocodificação automática).
+// `grupo` é a subcategoria em texto livre dentro do tipo (ex.: "Asa Norte",
+// "Bares e botecos"), agrupada na ordem em que aparece; `ordem` é a posição
+// na lista do admin; `aproximado` avisa que o pin marca só o
+// endereço/bloco/setor, não o estabelecimento exato.
 model EdicaoPontoInteresse {
-  id        String             @id @default(uuid())
-  edicaoId  String
-  edicao    Edicao             @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  tipoId    String
-  tipo      TipoPontoInteresse @relation(fields: [tipoId], references: [id])
-  nome      String
-  imagem    String?
-  endereco  String?
-  latitude  Float
-  longitude Float
-  link      String?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  id         String             @id @default(uuid())
+  edicaoId   String
+  edicao     Edicao             @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
+  tipoId     String
+  tipo       TipoPontoInteresse @relation(fields: [tipoId], references: [id])
+  nome       String
+  grupo      String?
+  descricao  String?
+  imagem     String?
+  endereco   String?
+  latitude   Float
+  longitude  Float
+  aproximado Boolean            @default(false)
+  link       String?
+  ordem      Int                @default(0)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
 
   @@map("edicao_pontos_interesse")
 }

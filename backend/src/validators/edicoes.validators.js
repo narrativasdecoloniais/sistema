@@ -62,6 +62,8 @@ const edicaoPontoInteresseSchema = z.object({
   id: z.string().uuid().optional(),
   tipoId: z.string().uuid("Tipo de ponto inválido"),
   nome: z.string().trim().min(2, "Informe o nome do ponto"),
+  grupo: z.string().trim().max(60, "Use no máximo 60 caracteres").optional(),
+  descricao: z.string().trim().max(300, "Use no máximo 300 caracteres").optional(),
   imagem: z
     .string()
     .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
@@ -76,6 +78,7 @@ const edicaoPontoInteresseSchema = z.object({
     .number({ invalid_type_error: "Informe uma longitude válida" })
     .min(-180, "Longitude inválida")
     .max(180, "Longitude inválida"),
+  aproximado: z.boolean().optional(),
   link: z.string().trim().url("Link inválido").optional(),
 });
 
@@ -260,6 +263,12 @@ const edicaoSchema = z
     corFundoLocalizacao: corSecaoSchema,
     opacidadeFundoLocalizacao: opacidadeSchema,
     corTextoLocalizacao: corPublicaSchema,
+    introducaoLocalizacao: z.string().trim().max(600, "Use no máximo 600 caracteres").nullable().optional(),
+    // { [tipoPontoInteresseId]: "texto" } — texto em branco é descartado no service.
+    textosTiposLocalizacao: z
+      .record(z.string().uuid(), z.string().trim().max(800, "Use no máximo 800 caracteres"))
+      .nullable()
+      .optional(),
     // Liga/desliga a faixa lateral fixa (definida em faixaHero*) enquanto
     // cada seção está em tela — ver PaginaInicialConteudo.jsx.
     mostrarFaixaApresentacao: z.boolean().optional(),
