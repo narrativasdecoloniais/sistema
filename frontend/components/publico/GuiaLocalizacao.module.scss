@@ -1,0 +1,306 @@
+// Guia da dobra Localização. A cor do texto vem da seção (corTextoLocalizacao,
+// herdada via currentColor); o texto secundário é o próprio currentColor
+// misturado com --papel, então continua sólido e legível em fundo claro ou
+// escuro sem depender de --texto-suave (pensado só para fundo claro).
+.guia {
+  --guia-texto-suave: color-mix(in srgb, currentColor 78%, var(--papel));
+  --guia-linha: color-mix(in srgb, currentColor 18%, transparent);
+
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.introducao {
+  max-width: 68ch;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.65;
+}
+
+// ---- filtros por categoria ----
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+
+  // No celular vira uma faixa rolável na horizontal (sem quebrar a página).
+  @media (max-width: 700px) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 0.25rem;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+.filtro {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+
+  // Selecionado inverte as cores da seção (texto vira fundo e vice-versa),
+  // pra funcionar em qualquer combinação de corFundo/corTexto da dobra.
+  &[aria-pressed="true"] {
+    background: var(--cor-texto-secao, var(--tinta));
+    border-color: var(--cor-texto-secao, var(--tinta));
+    color: color-mix(
+      in srgb,
+      var(--cor-fundo-secao-base, var(--papel)) var(--opacidade-fundo-secao, 100%),
+      var(--papel)
+    );
+  }
+}
+
+.filtroTotal {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.pontoCor {
+  flex-shrink: 0;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  // Mesmo contorno claro do marcador no mapa.
+  box-shadow: 0 0 0 2px var(--papel);
+}
+
+// ---- mapa + lista ----
+
+// Desktop: lista à esquerda, mapa fixo à direita acompanhando a rolagem.
+// Abaixo de 1000px (mesmo breakpoint da faixa da Hero): mapa em cima, lista
+// embaixo.
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-areas: "lista mapa";
+  gap: 2.5rem;
+  align-items: start;
+
+  @media (max-width: 1000px) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "mapa"
+      "lista";
+    gap: 1.5rem;
+  }
+}
+
+.colunaMapa {
+  grid-area: mapa;
+  position: sticky;
+  top: 5.5rem;
+
+  @media (max-width: 1000px) {
+    position: static;
+  }
+}
+
+.colunaLista {
+  grid-area: lista;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-width: 0;
+}
+
+// ---- categoria → subcategoria → itens ----
+
+.categoria {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.categoriaCabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid currentColor;
+}
+
+.categoriaTitulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.categoriaTotal {
+  font-size: 0.85rem;
+  color: var(--guia-texto-suave);
+}
+
+.categoriaTexto {
+  max-width: 68ch;
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--guia-texto-suave);
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.grupoTitulo {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--guia-texto-suave);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.95rem 0 0.95rem 0.9rem;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--guia-linha);
+  scroll-margin-top: 6rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &[data-selecionado] {
+    border-left-color: var(--barro);
+    background: color-mix(in srgb, currentColor 5%, transparent);
+  }
+
+  @media (max-width: 700px) {
+    padding-left: 0.7rem;
+  }
+}
+
+.itemImagem {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 4px;
+
+  @media (max-width: 700px) {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+.itemCorpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.itemNome {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.itemDescricao,
+.itemEndereco {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--guia-texto-suave);
+}
+
+.itemAproximado {
+  margin: 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--guia-texto-suave);
+}
+
+.itemAcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin-top: 0.35rem;
+}
+
+.acao {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--barro);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 700px) {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filtro,
+  .item {
+    transition: none;
+  }
+}

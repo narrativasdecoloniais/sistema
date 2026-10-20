@@ -185,6 +185,8 @@ export function montarPropsPaginaEdicao(edicao, atividades, ehEdicaoAtual) {
     opacidadeFundoLocalizacao: edicao?.opacidadeFundoLocalizacao ?? 100,
     corTextoLocalizacao: edicao?.corTextoLocalizacao || "TINTA",
     mostrarFaixaLocalizacao: edicao?.mostrarFaixaLocalizacao ?? true,
+    introducaoLocalizacao: edicao?.introducaoLocalizacao || "",
+    textosTiposLocalizacao: edicao?.textosTiposLocalizacao || {},
     tituloComissoes: edicao?.tituloComissoes || TITULO_COMISSOES_PADRAO,
     corpoComissoes: edicao?.corpoComissoes || CORPO_COMISSOES_PADRAO,
     corFundoComissoes: edicao?.corFundoComissoes || "PAPEL",

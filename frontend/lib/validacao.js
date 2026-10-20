@@ -312,6 +312,8 @@ export const edicaoPontoInteresseSchema = z.object({
   id: z.string().optional(),
   tipoId: z.string().min(1, "Selecione o tipo"),
   nome: z.string().trim().min(2, "Informe o nome do ponto"),
+  grupo: z.string().trim().max(60, "Use no máximo 60 caracteres").optional(),
+  descricao: z.string().trim().max(300, "Use no máximo 300 caracteres").optional(),
   imagem: z
     .string()
     .refine((valor) => valor.startsWith("data:image/"), "Imagem inválida")
@@ -326,6 +328,7 @@ export const edicaoPontoInteresseSchema = z.object({
     .number({ invalid_type_error: "Informe a longitude" })
     .min(-180, "Longitude inválida")
     .max(180, "Longitude inválida"),
+  aproximado: z.boolean().optional(),
   link: z.string().trim().url("Link inválido").optional(),
 });
 
@@ -456,6 +459,7 @@ export const tipoAtividadeSchema = z.object({
 export const tipoPontoInteresseSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do tipo de ponto de referência"),
   cor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida"),
+  ordem: z.number().int("Use um número inteiro").min(0, "Use um número a partir de 0").nullable().optional(),
 });
 
 export const itemConteudoSchema = z.object({

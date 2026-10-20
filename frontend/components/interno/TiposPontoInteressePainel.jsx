@@ -12,9 +12,13 @@ import BotaoExportarTabela from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
+import { compararTiposPonto } from "@/lib/localizacao";
 import styles from "./TiposPontoInteressePainel.module.scss";
 
-const COLUNAS = [{ chave: "nome", rotulo: "Nome", valor: (tipo) => tipo.nome }];
+const COLUNAS = [
+  { chave: "nome", rotulo: "Nome", valor: (tipo) => tipo.nome },
+  { chave: "ordem", rotulo: "Ordem na página", valor: (tipo) => tipo.ordem ?? null },
+];
 
 export default function TiposPontoInteressePainel({ tiposIniciais, podeEditar = true }) {
   const router = useRouter();
@@ -48,7 +52,7 @@ export default function TiposPontoInteressePainel({ tiposIniciais, podeEditar = 
       if (jaExiste) {
         return atual.map((item) => (item.id === tipoSalvo.id ? tipoSalvo : item));
       }
-      return [...atual, tipoSalvo].sort((a, b) => a.nome.localeCompare(b.nome));
+      return [...atual, tipoSalvo].sort(compararTiposPonto);
     });
     fecharModal();
     router.refresh();
@@ -76,8 +80,9 @@ export default function TiposPontoInteressePainel({ tiposIniciais, podeEditar = 
         <div>
           <h1 className={styles.titulo}>Tipos de ponto de referência</h1>
           <p className={styles.descricao}>
-            Catálogo de tipos (ex.: local do evento, hospedagem, restaurante) usado para
-            classificar os pontos exibidos no mapa da página pública de todas as edições.
+            Catálogo de tipos (ex.: local do evento, hospedagem, alimentação) usado como categoria
+            dos pontos do guia de Localização na página pública de todas as edições — define a cor
+            no mapa e a ordem das categorias.
           </p>
         </div>
         {podeEditar && (
@@ -116,6 +121,7 @@ export default function TiposPontoInteressePainel({ tiposIniciais, podeEditar = 
                       {tipo.nome}
                     </span>
                   </td>
+                  <td data-rotulo="Ordem na página">{tipo.ordem ?? "—"}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
                     {podeEditar && (
                       <div className={styles.acoesLinha}>

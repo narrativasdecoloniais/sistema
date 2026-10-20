@@ -533,21 +533,24 @@
   }
 }
 
-// ---- seção "Localização" (mapa + lista de pontos de interesse) ----
-// Sem customização de cor/opacidade/faixa (diferente de Apoio/Realizadores
-// acima) — seção nova, mantida simples de propósito; ver DESIGN.md/CLAUDE.md.
+// ---- seção "Localização" (guia: filtros, mapa e lista de pontos) ----
+// O guia em si (filtros, mapa, categorias) fica em
+// components/publico/GuiaLocalizacao.module.scss.
 
 // Fundo/texto customizáveis por edição (ver SecaoLocalizacao.jsx no admin) —
 // mesmo mecanismo de .sobreEvento/.publicacoes acima, sem eixo de búzio
 // porque esta seção não usa o marcador Búzio.
 .localizacao {
   position: relative;
+  // clip em vez de hidden: hidden cria um contêiner de rolagem e quebra o
+  // mapa fixo (position: sticky) do guia no desktop.
   overflow: hidden;
+  overflow: clip;
   width: 100%;
   display: flex;
   justify-content: center;
   --largura-faixa-hero-resolvida: var(--largura-faixa-hero-mobile-valor, var(--largura-faixa-hero, 0px));
-  padding: 2.5rem calc(var(--largura-faixa-hero-resolvida) + 2rem);
+  padding: clamp(3rem, 6vw, 5rem) calc(var(--largura-faixa-hero-resolvida) + 2rem);
   border-top: 1px solid var(--ocre);
   border-bottom: 1px solid var(--ocre);
 
@@ -574,87 +577,21 @@
 
 .localizacaoConteudo {
   width: 100%;
-  max-width: 960px;
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1.5rem;
+  gap: 1.75rem;
 }
 
-.localizacaoLabel {
-  color: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.localizacaoLista {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.25rem;
-  list-style: none;
+// Mesmo stencil de .tituloSecundario, mas herdando a cor de texto da seção.
+.localizacaoTitulo {
   margin: 0;
-  padding: 0;
-}
-
-.localizacaoItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  cursor: pointer;
-
-  &:hover .localizacaoNome,
-  &:focus-visible .localizacaoNome {
-    text-decoration: underline;
-  }
-}
-
-.localizacaoImagem {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 0.3rem;
-}
-
-.localizacaoTipo {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-family: var(--font-stencil), sans-serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--barro);
-}
-
-.localizacaoNome {
-  font-weight: 600;
-
-  a {
-    color: inherit;
-  }
-}
-
-.localizacaoEndereco {
-  font-size: 0.9rem;
-  color: var(--texto-suave);
-}
-
-.localizacaoAbrirMaps {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.4rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--barro);
-  text-decoration: none;
-  width: fit-content;
-
-  &:hover,
-  &:focus-visible {
-    text-decoration: underline;
-  }
+  color: inherit;
 }
 
 // ---- seção "sobre o evento" (faixa verde-cerrado, abertura antes de Inscrições) ----

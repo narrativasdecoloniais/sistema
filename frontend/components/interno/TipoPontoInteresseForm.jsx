@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "primereact/button";
 import CampoTexto from "./CampoTexto";
+import CampoNumero from "./CampoNumero";
 import Alerta from "@/components/forms/Alerta";
 import { apiClient } from "@/lib/apiClient";
 import { tipoPontoInteresseSchema, extrairErros } from "@/lib/validacao";
@@ -19,6 +20,7 @@ export default function TipoPontoInteresseForm({ tipoPontoInteresseInicial, aoSa
   const [dados, setDados] = useState({
     nome: tipoPontoInteresseInicial?.nome || "",
     cor: tipoPontoInteresseInicial?.cor || COR_PADRAO,
+    ordem: tipoPontoInteresseInicial?.ordem ?? null,
   });
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
@@ -76,6 +78,18 @@ export default function TipoPontoInteresseForm({ tipoPontoInteresseInicial, aoSa
         </div>
         {erros.cor && <p className={stylesCampo.mensagemErro}>{erros.cor}</p>}
       </div>
+      <CampoNumero
+        id="ordem"
+        rotulo="Ordem na página (opcional)"
+        min={0}
+        value={dados.ordem}
+        onValueChange={(evento) => setDados((atual) => ({ ...atual, ordem: evento.value ?? null }))}
+        erro={erros.ordem}
+      />
+      <p className={styles.ajuda}>
+        Define a sequência das categorias no guia de Localização (filtros e lista). Menor número
+        aparece primeiro; tipos sem ordem vêm depois, em ordem alfabética.
+      </p>
       <div className={styles.acoes}>
         <Button
           type="button"
