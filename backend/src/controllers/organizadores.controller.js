@@ -23,6 +23,12 @@ const excluir = asyncHandler(async (req, res) => {
   return res.json({ mensagem: "Organizador removido com sucesso." });
 });
 
+const tornarOrganizador = asyncHandler(async (req, res) => {
+  const dados = permissoesSchema.parse(req.body);
+  const organizador = await organizadoresService.tornarOrganizador(req.params.id, dados);
+  return res.json({ organizador });
+});
+
 const promover = asyncHandler(async (req, res) => {
   const organizador = await organizadoresService.promoverAdmin(req.params.id);
   return res.json({ organizador });
@@ -39,4 +45,13 @@ const atualizarPermissoes = asyncHandler(async (req, res) => {
   return res.json({ organizador });
 });
 
-module.exports = { listar, criar, reenviarConvite, excluir, promover, rebaixar, atualizarPermissoes };
+module.exports = {
+  listar,
+  criar,
+  reenviarConvite,
+  excluir,
+  tornarOrganizador,
+  promover,
+  rebaixar,
+  atualizarPermissoes,
+};

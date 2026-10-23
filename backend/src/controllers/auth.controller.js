@@ -15,7 +15,19 @@ const authService = require("../services/auth.service");
 const convitesCoautorService = require("../services/convitesCoautor.service");
 const { conferirHash } = require("../utils/senha");
 const mascararEmail = require("../utils/mascararEmail");
-const { identificacaoDe, rotuloIdentificacao } = require("../utils/identificacao");
+const { identificacaoDe, rotuloIdentificacao, temIdentificacao } = require("../utils/identificacao");
+
+// Conta sem CPF/documento (convite pendente, importada do Even3) não entra pelo
+// login, que é por identificação: em vez do link de redefinição, vai o de
+// concluir o cadastro (/definir-senha), que grava identificação e senha juntas.
+async function enviarLinkDeAcesso(usuario) {
+  const token = await tokenService.criarTokenRecuperacaoSenha(usuario.id);
+  if (temIdentificacao(usuario)) {
+    await emailService.enviarEmailRecuperacaoSenha(usuario, token);
+  } else {
+    await emailService.enviarEmailConcluirCadastro(usuario, token);
+  }
+}
 
 const cadastrar = asyncHandler(async (req, res) => {
   const dados = cadastroSchema.parse(req.body);
@@ -26,6 +38,16 @@ const cadastrar = asyncHandler(async (req, res) => {
   if (convite) dados.email = convite.email;
 
   const emailExistente = await usuariosService.buscarPorEmail(dados.email);
+  // Conta que ainda não tem como entrar (convite da organização pendente,
+  // importada do Even3): em vez de barrar, manda o link de concluir o cadastro
+  // — o clique prova a posse do e-mail antes de gravar CPF e senha.
+  if (emailExistente && emailExistente.ativo && !temIdentificacao(emailExistente)) {
+    await enviarLinkDeAcesso(emailExistente);
+    return res.json({
+      concluirCadastro: true,
+      mensagem: `Já existe uma conta com o e-mail ${emailExistente.email} aguardando a conclusão do cadastro. Enviamos para esse e-mail um link para você informar o CPF (ou documento) e escolher a senha.`,
+    });
+  }
   if (emailExistente) {
     throw new ErroHttp(
       409,
@@ -158,8 +180,7 @@ const recuperarSenha = asyncHandler(async (req, res) => {
   const usuario = await usuariosService.buscarPorEmail(dados.email);
 
   if (usuario && usuario.ativo) {
-    const token = await tokenService.criarTokenRecuperacaoSenha(usuario.id);
-    await emailService.enviarEmailRecuperacaoSenha(usuario, token);
+    await enviarLinkDeAcesso(usuario);
   }
 
   return res.json({
@@ -185,8 +206,7 @@ const recuperarSenhaPorCpf = asyncHandler(async (req, res) => {
     );
   }
 
-  const token = await tokenService.criarTokenRecuperacaoSenha(usuario.id);
-  await emailService.enviarEmailRecuperacaoSenha(usuario, token);
+  await enviarLinkDeAcesso(usuario);
 
   return res.json({ emailMascarado: mascararEmail(usuario.email) });
 });
@@ -209,16 +229,35 @@ const definirSenha = asyncHandler(async (req, res) => {
     "CONVITE_ORGANIZADOR",
     "CONVITE_AVALIADOR",
     "CONVITE_AUTOR",
+    // Recuperação de conta sem identificação (ver enviarLinkDeAcesso).
+    "RECUPERACAO_SENHA",
   ]);
 
   if (!registro) {
-    throw new ErroHttp(400, "Link de convite inválido ou expirado.");
+    throw new ErroHttp(
+      400,
+      'Link inválido ou expirado. Peça um novo em "Esqueci minha senha", informando o seu e-mail.'
+    );
+  }
+
+  const usuario = await usuariosService.buscarCompletoPorId(registro.usuarioId);
+  // O link de recuperação só leva pra cá quando a conta não tem identificação;
+  // não deixa ele trocar o CPF de quem já tem.
+  if (registro.tipo === "RECUPERACAO_SENHA" && temIdentificacao(usuario)) {
+    throw new ErroHttp(409, 'Esta conta já tem cadastro completo. Use "Esqueci minha senha" para trocar a senha.');
   }
 
   const identificacao = identificacaoDe(dados);
   const contaExistente = await usuariosService.buscarPorIdentificacao(identificacao);
   if (contaExistente && contaExistente.id !== registro.usuarioId) {
-    throw new ErroHttp(409, `Já existe um cadastro com esse ${rotuloIdentificacao(identificacao)}.`);
+    const rotulo = rotuloIdentificacao(identificacao);
+    const soParticipante = usuario.papeis.every((papel) => papel === "PARTICIPANTE");
+    throw new ErroHttp(
+      409,
+      soParticipante
+        ? `Já existe outro cadastro com esse ${rotulo}, com o e-mail ${mascararEmail(contaExistente.email)}. Use a página "Regularizar cadastro" para juntar as duas contas.`
+        : `Já existe outro cadastro com esse ${rotulo}, com o e-mail ${mascararEmail(contaExistente.email)}. Peça à organização do evento para dar o acesso a essa conta.`
+    );
   }
 
   const agora = new Date();

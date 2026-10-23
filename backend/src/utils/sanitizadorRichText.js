@@ -25,6 +25,13 @@ const CONFIG_EDITAL = {
   ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "colwidth"],
 };
 
+// Descrição da atividade (texto da organização): como o resumo, com imagem,
+// sem tabela.
+const CONFIG_DESCRICAO_ATIVIDADE = {
+  ALLOWED_TAGS: [...TAGS_TEXTO, "ul", "ol", "li", "img"],
+  ALLOWED_ATTR: ["href", "target", "rel", "src", "alt"],
+};
+
 // Texto de certificado (certificados.service.js): só parágrafo, quebra de
 // linha, negrito e itálico — é tudo o que o gerador de PDF sabe desenhar.
 const CONFIG_CERTIFICADO = {
@@ -107,6 +114,7 @@ module.exports = {
   CONFIG_RESUMO,
   CONFIG_REFERENCIA,
   CONFIG_EDITAL,
+  CONFIG_DESCRICAO_ATIVIDADE,
   CONFIG_CERTIFICADO,
   PREFIXO_BUCKET,
   DATA_URI_IMAGEM,

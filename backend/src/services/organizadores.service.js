@@ -25,6 +25,27 @@ async function listarOrganizadores() {
   });
 }
 
+// Põe uma conta que já existe na equipe como ORGANIZADOR com as permissões
+// informadas e avisa por e-mail. Conta sem CPF/documento (importada do Even3,
+// convidada como autor ou avaliador) não consegue entrar — o login é pela
+// identificação, que só o /definir-senha do convite grava. Aí vai o
+// convite, não o aviso.
+async function incluirContaNaEquipe(usuario, { acessoCompleto, secoesPermitidas }) {
+  await prisma.usuario.update({
+    where: { id: usuario.id },
+    data: { papeis: { push: "ORGANIZADOR" }, acessoCompleto, secoesPermitidas },
+  });
+
+  if (temIdentificacao(usuario)) {
+    await emailService.enviarEmailNotificacaoOrganizador(usuario);
+  } else {
+    const token = await tokenService.criarTokenConviteOrganizador(usuario.id);
+    await emailService.enviarEmailConviteOrganizador(usuario, token);
+  }
+
+  return prisma.usuario.findUnique({ where: { id: usuario.id }, select: CAMPOS_ORGANIZADOR });
+}
+
 async function adicionarOrganizador(dados) {
   const usuario = await usuariosService.buscarPorEmail(dados.email);
 
@@ -32,26 +53,7 @@ async function adicionarOrganizador(dados) {
     if (usuario.papeis.includes("ORGANIZADOR")) {
       throw new ErroHttp(409, "Este usuário já é organizador.");
     }
-
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        papeis: { push: "ORGANIZADOR" },
-        acessoCompleto: dados.acessoCompleto,
-        secoesPermitidas: dados.secoesPermitidas,
-      },
-    });
-    // Conta sem CPF/documento (importada do Even3, convidada como autor ou
-    // avaliador) não consegue entrar — o login é pela identificação, que só o
-    // /definir-senha do convite grava. Aí vai o convite, não o aviso.
-    if (temIdentificacao(usuario)) {
-      await emailService.enviarEmailNotificacaoOrganizador(usuario);
-    } else {
-      const token = await tokenService.criarTokenConviteOrganizador(usuario.id);
-      await emailService.enviarEmailConviteOrganizador(usuario, token);
-    }
-
-    return prisma.usuario.findUnique({ where: { id: usuario.id }, select: CAMPOS_ORGANIZADOR });
+    return incluirContaNaEquipe(usuario, dados);
   }
 
   const usuarioNovo = await usuariosService.criarUsuarioConvidado({
@@ -81,7 +83,9 @@ async function reenviarConvite(id) {
   }
 
   const token = await tokenService.criarTokenConviteOrganizador(usuario.id);
-  await emailService.enviarEmailConviteOrganizador(usuario, token);
+  await emailService.enviarEmailConviteOrganizador(usuario, token, {
+    administrador: usuario.papeis.includes("ADMIN"),
+  });
 }
 
 async function removerOrganizador(id) {
@@ -96,6 +100,29 @@ async function removerOrganizador(id) {
   });
 }
 
+// Aba "Usuários": dá acesso de organizador a uma conta da base escolhida pelo
+// id, com as permissões do modal. Quem já é organizador só tem as permissões
+// atualizadas (sem e-mail); administrador já tem acesso total.
+async function tornarOrganizador(id, permissoes) {
+  const usuario = await usuariosService.buscarCompletoPorId(id);
+  if (!usuario || !usuario.ativo || usuario.anonimizadoEm) {
+    throw new ErroHttp(404, "Usuário não encontrado.");
+  }
+  if (usuario.papeis.includes("ADMIN")) {
+    throw new ErroHttp(409, "Este usuário já é administrador e tem acesso total.");
+  }
+
+  if (usuario.papeis.includes("ORGANIZADOR")) {
+    return prisma.usuario.update({
+      where: { id },
+      data: { acessoCompleto: permissoes.acessoCompleto, secoesPermitidas: permissoes.secoesPermitidas },
+      select: CAMPOS_ORGANIZADOR,
+    });
+  }
+
+  return incluirContaNaEquipe(usuario, permissoes);
+}
+
 async function promoverAdmin(id) {
   const usuario = await usuariosService.buscarCompletoPorId(id);
   if (!usuario) throw new ErroHttp(404, "Organizador não encontrado.");
@@ -107,7 +134,14 @@ async function promoverAdmin(id) {
     where: { id },
     data: { papeis: { push: "ADMIN" } },
   });
-  await emailService.enviarEmailPromocaoAdmin(usuario);
+  // Conta sem CPF/documento não consegue entrar (login é pela identificação):
+  // vai o convite para concluir o cadastro, como em incluirContaNaEquipe.
+  if (temIdentificacao(usuario)) {
+    await emailService.enviarEmailPromocaoAdmin(usuario);
+  } else {
+    const token = await tokenService.criarTokenConviteOrganizador(usuario.id);
+    await emailService.enviarEmailConviteOrganizador(usuario, token, { administrador: true });
+  }
 
   return prisma.usuario.findUnique({ where: { id }, select: CAMPOS_ORGANIZADOR });
 }
@@ -162,6 +196,7 @@ module.exports = {
   adicionarOrganizador,
   reenviarConvite,
   removerOrganizador,
+  tornarOrganizador,
   promoverAdmin,
   rebaixarAdmin,
   atualizarPermissoes,

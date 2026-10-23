@@ -2,6 +2,8 @@ const prisma = require("../config/prisma");
 const sincronizarLista = require("../utils/sincronizarLista");
 const storageService = require("./storage.service");
 const ErroHttp = require("../utils/erroHttp");
+const sanitizarDescricaoAtividade = require("../utils/sanitizarDescricaoAtividade");
+const processarImagensEmbutidas = require("../utils/processarImagensEmbutidas");
 const { buscarPorEmail } = require("./usuarios.service");
 
 const INCLUDE_PADRAO = {
@@ -47,12 +49,16 @@ async function camposContaPorEmail(email) {
 }
 
 // Resposta das rotas públicas: sem o segredo do QR de presença nem o e-mail/
-// conta dos convidados (só existem pro admin e pros certificados).
+// conta dos convidados (só existem pro admin e pros certificados). A
+// descrição é sanitizada de novo na leitura porque a página pública a
+// renderiza já no servidor (ConteudoRichText sanitizadoNoServidor) — e assim
+// as descrições antigas, em texto puro, também chegam como HTML.
 function paraPublico(atividade) {
   if (!atividade) return atividade;
   const { tokenPresenca, ...resto } = atividade;
   return {
     ...resto,
+    descricao: sanitizarDescricaoAtividade(resto.descricao),
     pessoas: (resto.pessoas || []).map(({ email, usuarioId, ...pessoa }) => pessoa),
   };
 }
@@ -166,6 +172,14 @@ async function gerarSlugUnico(edicaoId, slugBase) {
   return `${slugBase}-${contador}`;
 }
 
+// Descrição em rich text: sanitizada e com as imagens novas (data URI)
+// enviadas ao GCS. Ausente (undefined) não mexe no valor gravado; vazia vira null.
+async function normalizarDescricao(descricao) {
+  if (descricao === undefined) return {};
+  const html = sanitizarDescricaoAtividade(descricao);
+  return { descricao: html && (await processarImagensEmbutidas(html, "atividades-descricao")) };
+}
+
 // Destaque vazio vira null; ausente (undefined) não mexe no valor gravado.
 // destaqueLocais sem duplicatas; ausente mantém o gravado (ou o padrão: todos).
 function normalizarDestaque(dados) {
@@ -188,6 +202,7 @@ async function criarAtividade(edicaoId, dados) {
       slug: await gerarSlugUnico(edicaoId, slug),
       ...normalizarInscricao(dados),
       ...normalizarDestaque(dados),
+      ...(await normalizarDescricao(dados.descricao)),
       edicaoId,
       pessoas: pessoasCriadas ? { create: pessoasCriadas } : undefined,
     },
@@ -202,13 +217,15 @@ async function atualizarAtividade(id, dados) {
     ? await sincronizarLista(prisma.atividadePessoa, "atividadeId", id, pessoas, camposPessoa, removerImagemPessoa)
     : [];
 
+  const descricao = await normalizarDescricao(dados.descricao);
+
   if (operacoes.length > 0) {
     await prisma.$transaction(operacoes);
   }
 
   return prisma.atividade.update({
     where: { id },
-    data: { ...camposAtividade, ...normalizarInscricao(dados), ...normalizarDestaque(dados) },
+    data: { ...camposAtividade, ...normalizarInscricao(dados), ...normalizarDestaque(dados), ...descricao },
     include: INCLUDE_PADRAO,
   });
 }

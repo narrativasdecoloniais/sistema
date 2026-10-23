@@ -211,6 +211,22 @@ async function enviarEmailRecuperacaoSenha(usuario, token) {
   });
 }
 
+// Conta sem CPF/documento (convite pendente, importada do Even3) não entra
+// pelo login, que é por identificação — a recuperação por e-mail leva ao
+// /definir-senha, que grava a identificação junto com a senha.
+async function enviarEmailConcluirCadastro(usuario, token) {
+  const link = `${env.frontendUrl}/definir-senha?token=${token}`;
+  await enviarEmail({
+    para: usuario.email,
+    assunto: "Conclua seu cadastro — Narrativas",
+    html: layoutEmailPublico({
+      eyebrow: "Acesso à conta",
+      titulo: "Conclua seu cadastro",
+      corpoHtml: `${ola(usuario.nome)}<p>Recebemos um pedido de acesso à sua conta. Ela ainda não tem CPF (ou documento, para estrangeiros) cadastrado — informe-o e escolha uma senha pelo botão abaixo para entrar:</p>${botaoEmail(link, "Concluir cadastro")}${avisoFinalEmail("O link vale por 2 horas. Se você não pediu isso, ignore este e-mail.")}`,
+    }),
+  });
+}
+
 // Link mágico do fluxo passwordless de submissão de trabalho (sem CPF, só
 // e-mail) — destino preserva a página de formulário de onde a pessoa veio
 // (modalidade/área já escolhidas), ver frontend/app/(publico)/submissao/entrar.
@@ -269,15 +285,20 @@ async function enviarEmailAvisoTrocaEmail(usuario, emailAntigo, novoEmail) {
 // Papéis e convites
 // ---------------------------------------------------------------------------
 
-async function enviarEmailConviteOrganizador(usuario, token) {
+// `administrador`: mesmo convite (o /definir-senha não depende do papel), só
+// com o texto de quem recebeu acesso total.
+async function enviarEmailConviteOrganizador(usuario, token, { administrador = false } = {}) {
   const link = `${env.frontendUrl}/definir-senha?token=${token}`;
+  const convite = administrador
+    ? "Você foi convidado(a) para administrar o Narrativas, com acesso total ao painel administrativo, incluindo a gestão de organizadores."
+    : "Você foi convidado(a) para organizar o Narrativas.";
   await enviarEmail({
     para: usuario.email,
-    assunto: "Convite para organizar o Narrativas",
+    assunto: administrador ? "Convite para administrar o Narrativas" : "Convite para organizar o Narrativas",
     html: layoutEmailPublico({
       eyebrow: "Convite",
       titulo: "Organização do Narrativas",
-      corpoHtml: `${ola(usuario.nome)}<p>Você foi convidado(a) para organizar o Narrativas. Defina sua senha pelo botão abaixo para acessar o painel administrativo:</p>${botaoEmail(link, "Definir senha")}${avisoFinalEmail("Se você não esperava este convite, ignore este e-mail.")}`,
+      corpoHtml: `${ola(usuario.nome)}<p>${convite} Defina sua senha pelo botão abaixo para acessar o painel administrativo:</p>${botaoEmail(link, "Definir senha")}${avisoFinalEmail("Se você não esperava este convite, ignore este e-mail.")}`,
     }),
   });
 }
@@ -481,6 +502,7 @@ module.exports = {
   enviarEmailNovoComentarioAnais,
   enviarEmailConfirmacao,
   enviarEmailRecuperacaoSenha,
+  enviarEmailConcluirCadastro,
   enviarEmailEntrarSubmissao,
   enviarEmailCodigoTrocaEmail,
   enviarEmailAvisoTrocaEmail,
