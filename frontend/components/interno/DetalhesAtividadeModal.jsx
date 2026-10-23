@@ -1,8 +1,10 @@
 "use client";
 
 import Modal from "./Modal";
+import ConteudoRichText from "@/components/ConteudoRichText";
 import { formatarDiaAtividade, formatarFaixaHorario } from "@/lib/publico";
 import { avisoAtividade } from "@/lib/avisoAtividade";
+import { descricaoAtividadeHtml } from "@/lib/richText";
 import styles from "./DetalhesAtividadeModal.module.scss";
 
 export default function DetalhesAtividadeModal({ atividade, onFechar }) {
@@ -34,7 +36,13 @@ export default function DetalhesAtividadeModal({ atividade, onFechar }) {
         {avisoAtividade(atividade, "INSCRICAO") && (
           <p className={styles.destaque}>{atividade.destaque}</p>
         )}
-        {atividade.descricao && <p className={styles.descricao}>{atividade.descricao}</p>}
+        {atividade.descricao && (
+          <ConteudoRichText
+            html={descricaoAtividadeHtml(atividade.descricao)}
+            tipo="descricaoAtividade"
+            className={styles.descricao}
+          />
+        )}
       </div>
     </Modal>
   );

@@ -188,6 +188,13 @@
   gap: 1.1rem;
 }
 
+.descricaoPapel {
+  margin: -0.4rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+
 .acoes {
   display: flex;
   justify-content: flex-end;

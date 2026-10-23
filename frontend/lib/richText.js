@@ -30,6 +30,12 @@ export const CONFIG_EDITAL = {
   ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "colwidth"],
 };
 
+// Descrição da atividade: como o resumo, com imagem, sem tabela.
+export const CONFIG_DESCRICAO_ATIVIDADE = {
+  ALLOWED_TAGS: [...TAGS_TEXTO, "ul", "ol", "li", "img"],
+  ALLOWED_ATTR: ["href", "target", "rel", "src", "alt"],
+};
+
 // Texto de certificado: parágrafo, quebra de linha, negrito e itálico (o que o
 // gerador de PDF desenha).
 export const CONFIG_CERTIFICADO = {
@@ -85,4 +91,46 @@ function obterPurificador() {
 export function sanitizarRichText(html, config) {
   if (!html || typeof window === "undefined") return "";
   return obterPurificador().sanitize(html, config);
+}
+
+// O editor sempre gera HTML começando por um bloco (<p>, lista, imagem);
+// texto puro antigo nunca começa assim, mesmo que tenha um "<" no meio.
+const EH_HTML = /^\s*<(p|ul|ol|img)\b/i;
+const MAPA_ESCAPE = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
+// Descrições de atividade anteriores ao rich text são texto puro, com
+// parágrafos separados por linha em branco — viram HTML escapado pra abrir no
+// editor e exibir. HTML passa direto. Espelho de textoPuroParaHtml em
+// backend/src/utils/sanitizarDescricaoAtividade.js.
+export function descricaoAtividadeHtml(texto) {
+  if (!texto || !texto.trim()) return "";
+  if (EH_HTML.test(texto)) return texto;
+  return texto
+    .split(/\n\s*\n/)
+    .map((paragrafo) => paragrafo.trim())
+    .filter(Boolean)
+    .map((paragrafo) => `<p>${paragrafo.replace(/[&<>"']/g, (c) => MAPA_ESCAPE[c]).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+// Texto corrido do rich text, um item por parágrafo/item de lista, sem
+// imagens — pra saídas que não renderizam HTML (PDF da programação). Só no
+// navegador (DOMParser).
+export function paragrafosDoRichText(html) {
+  if (!html || typeof window === "undefined") return [];
+  const documento = new DOMParser().parseFromString(descricaoAtividadeHtml(html), "text/html");
+  return Array.from(documento.body.querySelectorAll("p, li"))
+    .filter((bloco) => bloco.tagName === "LI" || !bloco.closest("li"))
+    .map((bloco) => {
+      if (bloco.tagName !== "LI") return bloco.textContent.trim();
+      // O TipTap põe o texto do item num <p>; lista aninhada sai como itens
+      // próprios, então só o texto direto do item conta aqui.
+      const paragrafos = Array.from(bloco.children).filter((filho) => filho.tagName === "P");
+      const texto = (paragrafos.length ? paragrafos.map((p) => p.textContent).join(" ") : bloco.textContent).trim();
+      if (!texto) return "";
+      const lista = bloco.parentElement;
+      const marcador = lista?.tagName === "OL" ? `${Array.from(lista.children).indexOf(bloco) + 1}. ` : "• ";
+      return `${marcador}${texto}`;
+    })
+    .filter(Boolean);
 }

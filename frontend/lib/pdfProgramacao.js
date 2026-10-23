@@ -1,13 +1,13 @@
 import { agruparAtividadesPorDia } from "@/lib/inscricao";
 import {
   agruparPessoasPorTipoParticipacao,
-  dividirParagrafos,
   formatarDiaAtividade,
   formatarFaixaHorario,
   formatarHoraCurta,
   formatarLocalEdicao,
   formatarPeriodoEdicao,
 } from "@/lib/publico";
+import { paragrafosDoRichText } from "@/lib/richText";
 
 // Hex da paleta pública (styles/_tokens-publico.scss) — o PDF não enxerga
 // as variáveis CSS, então os valores ficam repetidos aqui.
@@ -73,7 +73,8 @@ function blocoAtividade(atividade) {
     });
   }
 
-  for (const paragrafo of dividirParagrafos(atividade.descricao)) {
+  // Descrição em rich text: só o texto (sem imagens nem formatação).
+  for (const paragrafo of paragrafosDoRichText(atividade.descricao)) {
     conteudo.push({ text: paragrafo, style: "descricao" });
   }
 

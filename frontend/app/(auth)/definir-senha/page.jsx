@@ -40,7 +40,7 @@ function FormularioDefinirSenha() {
     setErroGeral("");
 
     if (!token) {
-      setErroGeral("Link de convite inválido.");
+      setErroGeral('Link inválido. Peça um novo em "Esqueci minha senha", informando o seu e-mail.');
       return;
     }
 
@@ -115,9 +115,9 @@ function FormularioDefinirSenha() {
 export default function PaginaDefinirSenha() {
   return (
     <TelaAutenticacao
-      eyebrow="Convite de organização"
-      titulo="Defina sua senha"
-      subtitulo="Escolha uma senha para acessar o painel administrativo do Narrativas."
+      eyebrow="Acesso à conta"
+      titulo="Conclua seu cadastro"
+      subtitulo="Informe seu CPF (ou documento, para estrangeiros) e escolha uma senha para acessar o Narrativas."
     >
       <Suspense fallback={<p>Carregando...</p>}>
         <FormularioDefinirSenha />

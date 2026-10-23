@@ -6,6 +6,7 @@ import {
   CONFIG_REFERENCIA,
   CONFIG_TEXTO,
   CONFIG_EDITAL,
+  CONFIG_DESCRICAO_ATIVIDADE,
   CONFIG_CERTIFICADO,
   sanitizarRichText,
 } from "@/lib/richText";
@@ -15,6 +16,7 @@ const CONFIGS = {
   referencia: CONFIG_REFERENCIA,
   texto: CONFIG_TEXTO,
   edital: CONFIG_EDITAL,
+  descricaoAtividade: CONFIG_DESCRICAO_ATIVIDADE,
   certificado: CONFIG_CERTIFICADO,
 };
 

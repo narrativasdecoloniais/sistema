@@ -101,11 +101,12 @@ const COLUNAS = [
 ];
 
 // Aba "Usuários" da tela de Participantes (ADMIN-only): todas as contas da
-// base, com a situação de cada uma na edição aberta. Ações: promover a
-// administrador (a confirmação e a chamada ficam no ParticipantesPainel, as
-// mesmas da aba "Equipe") e enviar e-mail às linhas selecionadas
+// base, com a situação de cada uma na edição aberta. Ações: dar acesso à
+// gestão — organizador(a) com permissões ou administrador(a), no
+// ConcederAcessoModal aberto pelo ParticipantesPainel — e enviar e-mail às
+// linhas selecionadas
 // (EnviarEmailModal).
-export default function UsuariosEdicaoTabela({ usuarios, aoPromover, edicaoId, edicaoNome }) {
+export default function UsuariosEdicaoTabela({ usuarios, aoDarAcesso, edicaoId, edicaoNome }) {
   const tabela = useTabela(usuarios, COLUNAS);
   const selecao = useSelecaoLinhas(tabela);
   const [enviandoEmail, setEnviandoEmail] = useState(false);
@@ -171,9 +172,9 @@ export default function UsuariosEdicaoTabela({ usuarios, aoPromover, edicaoId, e
                       <button
                         type="button"
                         className={styles.botaoIcone}
-                        aria-label={`Promover ${usuario.nome} a administrador`}
-                        title="Promover a administrador"
-                        onClick={() => aoPromover(usuario)}
+                        aria-label={`Dar acesso à gestão para ${usuario.nome}`}
+                        title={papel === "ORGANIZADOR" ? "Editar acesso à gestão" : "Dar acesso à gestão"}
+                        onClick={() => aoDarAcesso(usuario)}
                       >
                         <ShieldPlus size={16} strokeWidth={1.5} aria-hidden="true" />
                       </button>

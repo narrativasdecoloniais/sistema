@@ -1,3 +1,5 @@
+@use "../../styles/conteudo-rich-text" as rt;
+
 // Fundo/texto/búzio customizáveis por atividade (ver AtividadeForm.jsx no
 // admin, seção "Aparência") — mesmo padrão de 3 eixos independentes das
 // dobras da home (ver .secao/.sobreEvento em
@@ -156,6 +158,13 @@
     color: var(--tinta);
     line-height: 1.7;
   }
+}
+
+// Descrição em rich text (ConteudoRichText) — mesmo corpo de texto da seção.
+.descricao {
+  @include rt.conteudo-rich-text(var(--tinta), var(--barro), var(--areia), var(--areia));
+  font-size: 1.15rem;
+  line-height: 1.7;
 }
 
 .subtituloSecao {

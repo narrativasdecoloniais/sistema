@@ -3,6 +3,7 @@ import Divisor from "@/components/graficos/Divisor";
 import Marcador from "@/components/publico/Marcador";
 import FaixaLateral from "@/components/publico/FaixaLateral";
 import TrabalhosDaAtividade from "@/components/publico/TrabalhosDaAtividade";
+import ConteudoRichText from "@/components/ConteudoRichText";
 import { agruparPessoasPorTipoParticipacao, formatarPeriodoAtividade } from "@/lib/publico";
 import { estiloCoresPersonalizadas } from "@/lib/cores";
 import { avisoAtividade } from "@/lib/avisoAtividade";
@@ -114,7 +115,14 @@ export default function DetalheAtividade({ atividade, permiteInscricao }) {
           {atividade.descricao && (
             <section className={styles.secaoTexto}>
               <h2 className={styles.subtituloSecao}>Sobre a atividade</h2>
-              <p>{atividade.descricao}</p>
+              {/* Já re-sanitizada pelo backend na leitura (paraPublico em
+                  atividades.service.js) — sai no HTML do servidor. */}
+              <ConteudoRichText
+                html={atividade.descricao}
+                tipo="descricaoAtividade"
+                className={styles.descricao}
+                sanitizadoNoServidor
+              />
             </section>
           )}
 

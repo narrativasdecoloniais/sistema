@@ -45,6 +45,7 @@ function FormularioCadastro() {
   const [dados, setDados] = useState(valoresIniciais);
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
+  const [aviso, setAviso] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [convite, setConvite] = useState(null);
   const [erroConvite, setErroConvite] = useState("");
@@ -70,6 +71,7 @@ function FormularioCadastro() {
   async function aoSubmeter(evento) {
     evento.preventDefault();
     setErroGeral("");
+    setAviso("");
 
     const resultado = cadastroSchema.safeParse(convite ? { ...dados, convite: tokenConvite } : dados);
     if (!resultado.success) {
@@ -81,6 +83,12 @@ function FormularioCadastro() {
 
     try {
       const resposta = await apiClient.post("/auth/cadastro", resultado.data);
+      // A conta já existia sem CPF (convite pendente, importada do Even3): o
+      // link de concluir o cadastro foi para o e-mail dela.
+      if (resposta?.concluirCadastro) {
+        setAviso(resposta.mensagem);
+        return;
+      }
       if (resposta?.emailConfirmado) {
         const parametros = new URLSearchParams({ conta: "criada", destino: "/participante/submissoes" });
         if (resultado.data.cpf) parametros.set("cpf", resultado.data.cpf);
@@ -108,6 +116,7 @@ function FormularioCadastro() {
       <form onSubmit={aoSubmeter} className={styles.formulario}>
         <Alerta>{erroConvite}</Alerta>
         <Alerta>{erroGeral}</Alerta>
+        <Alerta tipo="sucesso">{aviso}</Alerta>
         {convite && (
           <p className={styles.rodape}>
             Já tem conta no Narrativas com outro e-mail?{" "}

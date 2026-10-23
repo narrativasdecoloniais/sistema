@@ -5,10 +5,10 @@ import { Trash2, Copy } from "lucide-react";
 import { Button } from "primereact/button";
 import CampoTexto from "./CampoTexto";
 import CampoNumero from "./CampoNumero";
-import CampoArea from "./CampoArea";
 import CampoSelecao from "./CampoSelecao";
 import CampoCheckbox from "./CampoCheckbox";
 import Campo from "@/components/forms/Campo";
+import CampoRichText from "@/components/forms/CampoRichText";
 import Alerta from "@/components/forms/Alerta";
 import ModalConfirmacao from "./ModalConfirmacao";
 import PessoaEnvolvidaLinha from "./PessoaEnvolvidaLinha";
@@ -16,6 +16,7 @@ import { apiClient } from "@/lib/apiClient";
 import { atividadeSchema, extrairErros } from "@/lib/validacao";
 import { LOCAIS_AVISO_ATIVIDADE, TODOS_LOCAIS_AVISO } from "@/lib/avisoAtividade";
 import { gerarSlug } from "@/lib/slug";
+import { descricaoAtividadeHtml } from "@/lib/richText";
 import { ordenarGruposPorOrdemDoTipo } from "@/lib/publico";
 import { paraData, paraHora, combinar } from "@/lib/dataHoraIngenua";
 import { useToast } from "./ToastProvider";
@@ -34,7 +35,7 @@ function estadoInicial(atividadeInicial) {
     tipoAtividadeId: atividadeInicial?.tipoAtividadeId || "",
     nome: atividadeInicial?.nome || "",
     slug: atividadeInicial?.slug || "",
-    descricao: atividadeInicial?.descricao || "",
+    descricao: descricaoAtividadeHtml(atividadeInicial?.descricao),
     cargaHoraria: atividadeInicial?.cargaHoraria ?? null,
     local: atividadeInicial?.local || "",
     destaque: atividadeInicial?.destaque || "",
@@ -74,7 +75,8 @@ function paraPayload(dados, atividadeInicial) {
 
   return {
     ...dados,
-    descricao: dados.descricao || undefined,
+    // null explícito (não undefined) pra conseguir apagar a descrição ao editar.
+    descricao: dados.descricao || null,
     cargaHoraria: dados.cargaHoraria ?? undefined,
     local: dados.local || undefined,
     // null explícito (não undefined) pra conseguir remover o aviso ao editar.
@@ -328,12 +330,13 @@ export default function AtividadeForm({
         onChange={(evento) => aoMudarNome(evento.target.value)}
         erro={erros.nome}
       />
-      <CampoArea
+      <CampoRichText
         id="descricao"
         rotulo="Descrição"
-        linhas={4}
+        ferramentas={["negrito", "italico", "lista", "listaNumerada", "link"]}
+        permitirImagem
         value={dados.descricao}
-        onChange={(evento) => atualizarCampo("descricao", evento.target.value)}
+        onChange={(valor) => atualizarCampo("descricao", valor)}
         erro={erros.descricao}
       />
       <div className={styles.linha}>

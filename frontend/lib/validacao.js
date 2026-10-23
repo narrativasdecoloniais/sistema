@@ -528,7 +528,8 @@ export const atividadeSchema = z
       .trim()
       .toLowerCase()
       .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen"),
-    descricao: z.string().trim().optional(),
+    // HTML do rich text; null limpa.
+    descricao: z.string().trim().nullable().optional(),
     cargaHoraria: z.coerce
       .number({ invalid_type_error: "Informe uma carga horária válida" })
       .int("Informe uma carga horária válida")

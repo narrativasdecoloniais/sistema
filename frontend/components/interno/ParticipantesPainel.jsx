@@ -10,6 +10,7 @@ import ParticipanteForm from "./ParticipanteForm";
 import AlterarEmailUsuarioForm from "./AlterarEmailUsuarioForm";
 import UnificarContasForm from "./UnificarContasForm";
 import SeletorSecoesAdmin from "./SeletorSecoesAdmin";
+import ConcederAcessoModal from "./ConcederAcessoModal";
 import UsuariosEdicaoTabela from "./UsuariosEdicaoTabela";
 import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela from "./BotaoExportarTabela";
@@ -133,6 +134,8 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
   const [editandoPermissoesId, setEditandoPermissoesId] = useState(null);
   const [permissoesEmEdicao, setPermissoesEmEdicao] = useState(null);
   const [salvandoPermissoes, setSalvandoPermissoes] = useState(false);
+  // Conta da aba "Usuários" recebendo acesso à gestão (ConcederAcessoModal).
+  const [concedendoAcesso, setConcedendoAcesso] = useState(null);
   const tabela = useTabela(participantes, COLUNAS);
 
   function fecharModal() {
@@ -215,17 +218,15 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
     );
   }
 
-  // Vale para as duas abas: da "Usuários" pode vir um participante que ainda
-  // não está na equipe — aí ele entra na lista da "Equipe".
+  // Aba "Equipe": organizador(a) → administrador(a). Na aba "Usuários" a
+  // promoção passa pelo ConcederAcessoModal.
   async function promoverAdmin(id) {
     setProcessandoId(id);
 
     try {
       const resposta = await apiClient.patch(`/organizadores/${id}/promover`, {});
       setParticipantes((atual) =>
-        atual.some((item) => item.id === id)
-          ? atual.map((item) => (item.id === id ? resposta.organizador : item))
-          : [...atual, resposta.organizador]
+        atual.map((item) => (item.id === id ? resposta.organizador : item))
       );
       notificar(`${resposta.organizador.nome} agora é administrador(a).`);
       router.refresh();
@@ -235,6 +236,18 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
       setProcessandoId(null);
       setConfirmando(null);
     }
+  }
+
+  // Vindo da aba "Usuários" a pessoa pode ainda não estar na equipe — aí
+  // entra na lista da "Equipe".
+  function aoConcederAcesso(organizador) {
+    setParticipantes((atual) =>
+      atual.some((item) => item.id === organizador.id)
+        ? atual.map((item) => (item.id === organizador.id ? organizador : item))
+        : [...atual, organizador]
+    );
+    setConcedendoAcesso(null);
+    router.refresh();
   }
 
   // O admin continua na equipe como organizador, com as permissões por seção
@@ -356,7 +369,7 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
           usuarios={usuarios}
           edicaoId={edicaoId}
           edicaoNome={edicaoNome}
-          aoPromover={(usuario) => setConfirmando({ id: usuario.id, nome: usuario.nome, tipo: "promover" })}
+          aoDarAcesso={setConcedendoAcesso}
         />
       ) : (
         <>
@@ -493,6 +506,17 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
             </div>
           </div>
         </Modal>
+      )}
+
+      {concedendoAcesso && (
+        <ConcederAcessoModal
+          usuario={concedendoAcesso}
+          permissoesAtuais={participantes.find(
+            (item) => item.id === concedendoAcesso.id && item.papeis?.includes("ORGANIZADOR")
+          )}
+          aoConcluir={aoConcederAcesso}
+          aoCancelar={() => setConcedendoAcesso(null)}
+        />
       )}
 
       {confirmando && (

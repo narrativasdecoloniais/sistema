@@ -1,3 +1,5 @@
+@use "../../styles/conteudo-rich-text" as rt;
+
 .corpo {
   display: flex;
   flex-direction: column;
@@ -29,12 +31,11 @@
 }
 
 .descricao {
+  @include rt.conteudo-rich-text(var(--texto), var(--acento), var(--borda), var(--fundo));
   margin: 0.75rem 0 0;
   padding-top: 0.75rem;
   border-top: 1px solid var(--borda);
   font-size: 0.9375rem;
-  line-height: 1.6;
-  color: var(--texto);
 }
 
 // Aviso da atividade (Atividade.destaque), mesmo filete do cartão da inscrição.
