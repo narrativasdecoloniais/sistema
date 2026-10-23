@@ -10,3 +10,119 @@
   gap: 0.75rem;
   padding-top: 0.25rem;
 }
+
+// Mesmo alternador "Conta existente / Convidar por e-mail" do cadastro de
+// avaliadores e da inserção de submissão pela organização.
+.alternador {
+  display: inline-flex;
+  align-self: flex-start;
+  max-width: 100%;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.opcaoAlternador {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  & + & {
+    border-left: 1px solid var(--borda);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: -2px;
+  }
+}
+
+.opcaoAtiva {
+  background: var(--fundo);
+  color: var(--acento);
+  font-weight: 700;
+}
+
+.textoApoio {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.aviso {
+  margin: 0;
+  color: var(--erro);
+  font-size: 0.875rem;
+}
+
+.parecidas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.parecidasTitulo {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.parecidasLista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parecida {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.parecidaDados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.parecidaNome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.parecidaDetalhe {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.selo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--acento);
+}

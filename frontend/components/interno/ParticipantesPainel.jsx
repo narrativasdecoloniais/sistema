@@ -143,7 +143,11 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
   }
 
   function aoSalvar(participanteSalvo) {
-    setParticipantes((atual) => [...atual, participanteSalvo]);
+    setParticipantes((atual) =>
+      atual.some((item) => item.id === participanteSalvo.id)
+        ? atual.map((item) => (item.id === participanteSalvo.id ? { ...item, ...participanteSalvo } : item))
+        : [...atual, participanteSalvo]
+    );
     fecharModal();
     router.refresh();
   }
@@ -467,7 +471,11 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
 
       {modalAberto && (
         <Modal titulo="Adicionar organizador" onFechar={fecharModal}>
-          <ParticipanteForm aoSalvar={aoSalvar} aoCancelar={fecharModal} />
+          <ParticipanteForm
+            idsEquipe={participantes.map((participante) => participante.id)}
+            aoSalvar={aoSalvar}
+            aoCancelar={fecharModal}
+          />
         </Modal>
       )}
 
