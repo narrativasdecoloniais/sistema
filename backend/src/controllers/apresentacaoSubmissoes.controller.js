@@ -70,6 +70,17 @@ const publicarAoPublico = asyncHandler(async (req, res) => {
   });
 });
 
+const liberarOutrosTrabalhos = asyncHandler(async (req, res) => {
+  const { publicar: liberar } = publicacaoSchema.parse(req.body);
+  const outrosTrabalhosEm = await apresentacaoService.liberarOutrosTrabalhos(req.params.edicaoId, liberar);
+  return res.json({
+    outrosTrabalhosEm,
+    mensagem: liberar
+      ? "Cada autor passa a ver os outros trabalhos da atividade em Minhas submissões."
+      : "Os autores deixam de ver os outros trabalhos da atividade.",
+  });
+});
+
 const enviarAvisos = asyncHandler(async (req, res) => {
   await apresentacaoService.iniciarAvisos(req.params.edicaoId);
   return res.status(202).json({ mensagem: "Envio dos avisos iniciado." });
@@ -112,6 +123,7 @@ module.exports = {
   distribuirPelaArea,
   publicar,
   publicarAoPublico,
+  liberarOutrosTrabalhos,
   enviarAvisos,
   buscarModeloEmail,
   salvarModeloEmail,

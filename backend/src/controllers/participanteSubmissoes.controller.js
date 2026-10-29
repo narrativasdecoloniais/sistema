@@ -29,6 +29,7 @@ const INCLUDE_PARTICIPANTE = {
       prazoCorrecaoSubmissao: true,
       ...SELECT_CRITERIO_CARTA,
       apresentacaoPublicadaEm: true,
+      apresentacaoOutrosTrabalhosEm: true,
       anais: { select: { publicadoEm: true } },
     },
   },
@@ -63,9 +64,14 @@ function formatarParaParticipante(submissao, usuarioId, { completa = false, conv
     ehAutorPrincipal,
     ...(completa ? { resumo: submissao.resumo, referenciaBibliografica: submissao.referenciaBibliografica } : {}),
     // Onde/quando apresenta — só depois que a distribuição é publicada.
+    // outrosTrabalhosVisiveis: a organização liberou ver os demais trabalhos
+    // da mesma atividade (GET /participante/submissoes/:id/atividade).
     apresentacao:
       edicao.apresentacaoPublicadaEm && submissao.atividadeApresentacao
-        ? { atividade: submissao.atividadeApresentacao }
+        ? {
+            atividade: submissao.atividadeApresentacao,
+            outrosTrabalhosVisiveis: Boolean(edicao.apresentacaoOutrosTrabalhosEm),
+          }
         : null,
     resultado: divulgado
       ? {
@@ -127,6 +133,45 @@ const buscar = asyncHandler(async (req, res) => {
   return res.json({ submissao: formatarParaParticipante(submissao, req.usuario.id, { completa: true, convites }) });
 });
 
+// Trabalhos da atividade em que a submissão da pessoa vai ser apresentada,
+// na ordem de apresentação — só com a distribuição liberada para os autores
+// e os outros trabalhos liberados pela organização. Autores só com nome
+// (sem e-mail), como na página pública da atividade.
+const trabalhosDaAtividade = asyncHandler(async (req, res) => {
+  const submissao = await prisma.submissao.findFirst({
+    where: { id: req.params.id, autores: { some: { usuarioId: req.usuario.id } } },
+    select: {
+      atividadeApresentacao: INCLUDE_PARTICIPANTE.atividadeApresentacao,
+      edicao: { select: { slug: true, apresentacaoPublicadaEm: true, apresentacaoOutrosTrabalhosEm: true } },
+    },
+  });
+  if (!submissao) throw new ErroHttp(404, "Submissão não encontrada.");
+  const { edicao, atividadeApresentacao: atividade } = submissao;
+  if (!edicao.apresentacaoPublicadaEm || !edicao.apresentacaoOutrosTrabalhosEm || !atividade) {
+    throw new ErroHttp(404, "Os trabalhos desta atividade não estão disponíveis.");
+  }
+
+  const trabalhos = await prisma.submissao.findMany({
+    where: { atividadeApresentacaoId: atividade.id },
+    select: {
+      id: true,
+      titulo: true,
+      resumo: true,
+      referenciaBibliografica: true,
+      ordemApresentacao: true,
+      modalidadeSubmissao: { select: { id: true, nome: true } },
+      areaSubmissao: { select: { id: true, titulo: true } },
+      autores: { select: { nome: true, principal: true }, orderBy: { ordem: "asc" } },
+    },
+    orderBy: [{ ordemApresentacao: "asc" }, { titulo: "asc" }],
+  });
+  return res.json({
+    edicao: { slug: edicao.slug },
+    atividade,
+    trabalhos: trabalhos.map((trabalho) => ({ ...trabalho, proprio: trabalho.id === req.params.id })),
+  });
+});
+
 // Carta de aceite (PDF) — só o autor principal, trabalho no critério da carta.
 const cartaAceite = asyncHandler(async (req, res) => {
   return enviarPdf(res, await certificadosService.pdfCartaAceite(req.usuario.id, req.params.id));
@@ -165,6 +210,7 @@ module.exports = {
   listarMinhas,
   buscar,
   previa,
+  trabalhosDaAtividade,
   cartaAceite,
   corrigir,
   criar,

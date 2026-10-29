@@ -312,8 +312,12 @@ model Edicao {
   // apresentacaoPublicadaEm libera para os autores (Minhas submissões, Início,
   // prévia do trabalho, aviso por e-mail); apresentacaoPublicaEm divulga ao
   // público (página da atividade, Anais) e exige a primeira.
+  // apresentacaoOutrosTrabalhosEm mostra a cada autor, em Minhas submissões,
+  // os demais trabalhos da atividade dele (título, autores, resumo) sem
+  // divulgar ao público; também exige a primeira e some junto com ela.
   apresentacaoPublicadaEm           DateTime?
   apresentacaoPublicaEm             DateTime?
+  apresentacaoOutrosTrabalhosEm     DateTime?
   // Monitoria (monitoria.service.js): janela de inscrição própria — mesma
   // regra de inscricoesAbertas.js, sem as duas datas fica fechada —, vagas
   // (só informativo, não bloqueia), catálogo de funções que o candidato

@@ -13,6 +13,7 @@ router.patch("/atividades/:atividadeId/ordem", apresentacaoController.reordenar)
 router.post("/distribuir-por-area", apresentacaoController.distribuirPelaArea);
 router.patch("/publicacao", apresentacaoController.publicar);
 router.patch("/publicacao-publica", apresentacaoController.publicarAoPublico);
+router.patch("/outros-trabalhos", apresentacaoController.liberarOutrosTrabalhos);
 router.post("/avisos", apresentacaoController.enviarAvisos);
 router.get("/modelo-email", apresentacaoController.buscarModeloEmail);
 router.put("/modelo-email", apresentacaoController.salvarModeloEmail);

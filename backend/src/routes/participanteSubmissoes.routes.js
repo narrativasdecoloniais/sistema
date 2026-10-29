@@ -9,6 +9,7 @@ router.post("/verificar-email-autor", participanteSubmissoesController.verificar
 router.post("/", participanteSubmissoesController.criar);
 router.get("/:id", participanteSubmissoesController.buscar);
 router.get("/:id/previa", participanteSubmissoesController.previa);
+router.get("/:id/atividade", participanteSubmissoesController.trabalhosDaAtividade);
 router.get("/:id/carta-aceite", limitadorPorUsuario, participanteSubmissoesController.cartaAceite);
 router.patch("/:id/correcao", participanteSubmissoesController.corrigir);
 // Só o autor principal, no máximo um reenvio a cada 24 h por coautor.

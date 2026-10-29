@@ -24,6 +24,7 @@ async function buscarEdicao(db, edicaoId) {
       resultadoDivulgadoEm: true,
       apresentacaoPublicadaEm: true,
       apresentacaoPublicaEm: true,
+      apresentacaoOutrosTrabalhosEm: true,
     },
   });
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
@@ -122,6 +123,7 @@ async function listar(edicaoId) {
     estado: {
       publicadaEm: edicao.apresentacaoPublicadaEm,
       publicaEm: edicao.apresentacaoPublicaEm,
+      outrosTrabalhosEm: edicao.apresentacaoOutrosTrabalhosEm,
       resultadoDivulgado: Boolean(edicao.resultadoDivulgadoEm),
       avisosPendentes,
       avisosComErro: trabalhos.filter((trabalho) => trabalho.statusAviso === "ERRO").length,
@@ -303,7 +305,8 @@ async function distribuirPelaArea(edicaoId, { simular }) {
 }
 
 // Libera (ou oculta) a distribuição para os autores. Ocultar dos autores
-// também tira do público — o público nunca vê o que os autores não veem.
+// também tira do público e os outros trabalhos da atividade — ninguém vê o
+// que os autores não veem.
 async function publicar(edicaoId, publicarDistribuicao) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (publicarDistribuicao && !edicao.resultadoDivulgadoEm) {
@@ -313,10 +316,14 @@ async function publicar(edicaoId, publicarDistribuicao) {
     where: { id: edicaoId },
     data: publicarDistribuicao
       ? { apresentacaoPublicadaEm: new Date() }
-      : { apresentacaoPublicadaEm: null, apresentacaoPublicaEm: null },
-    select: { apresentacaoPublicadaEm: true, apresentacaoPublicaEm: true },
+      : { apresentacaoPublicadaEm: null, apresentacaoPublicaEm: null, apresentacaoOutrosTrabalhosEm: null },
+    select: { apresentacaoPublicadaEm: true, apresentacaoPublicaEm: true, apresentacaoOutrosTrabalhosEm: true },
   });
-  return { publicadaEm: atualizada.apresentacaoPublicadaEm, publicaEm: atualizada.apresentacaoPublicaEm };
+  return {
+    publicadaEm: atualizada.apresentacaoPublicadaEm,
+    publicaEm: atualizada.apresentacaoPublicaEm,
+    outrosTrabalhosEm: atualizada.apresentacaoOutrosTrabalhosEm,
+  };
 }
 
 // Divulga (ou oculta) os trabalhos na página pública de cada atividade e nos
@@ -332,6 +339,22 @@ async function publicarAoPublico(edicaoId, divulgar) {
     select: { apresentacaoPublicaEm: true },
   });
   return atualizada.apresentacaoPublicaEm;
+}
+
+// Mostra (ou oculta) a cada autor os demais trabalhos da atividade dele, em
+// Minhas submissões — independente da divulgação ao público. Exige a
+// distribuição já liberada para os autores.
+async function liberarOutrosTrabalhos(edicaoId, liberar) {
+  const edicao = await buscarEdicao(prisma, edicaoId);
+  if (liberar && !edicao.apresentacaoPublicadaEm) {
+    throw new ErroHttp(409, "Libere a distribuição para os autores antes de mostrar os outros trabalhos da atividade.");
+  }
+  const atualizada = await prisma.edicao.update({
+    where: { id: edicaoId },
+    data: { apresentacaoOutrosTrabalhosEm: liberar ? new Date() : null },
+    select: { apresentacaoOutrosTrabalhosEm: true },
+  });
+  return atualizada.apresentacaoOutrosTrabalhosEm;
 }
 
 async function iniciarAvisos(edicaoId) {
@@ -424,6 +447,7 @@ module.exports = {
   distribuirPelaArea,
   publicar,
   publicarAoPublico,
+  liberarOutrosTrabalhos,
   iniciarAvisos,
   enviarAvisosPendentes,
   removerSeNaoAprovada,
