@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Link2, Unlink, Wand2, Eye, EyeOff, Send, Globe } from "lucide-react";
+import { Link2, Unlink, Wand2, Eye, EyeOff, Send, Globe, Users } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
@@ -33,7 +33,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
   const { notificar } = useToast();
   const [dados, setDados] = useState(dadosIniciais);
   const [abaAtiva, setAbaAtiva] = useState("trabalhos");
-  // "publicar" | "ocultar" | "divulgar" | "ocultarPublico" | "avisos"
+  // "publicar" | "ocultar" | "divulgar" | "ocultarPublico" | "mostrarOutros" | "ocultarOutros" | "avisos"
   const [confirmando, setConfirmando] = useState(null);
   const [processando, setProcessando] = useState(false);
 
@@ -60,15 +60,19 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
 
   const { estado } = dados;
   // Duas etapas: liberar para os autores (Minhas submissões, e-mail) e,
-  // depois, divulgar ao público (página de cada atividade, Anais).
+  // depois, divulgar ao público (página de cada atividade, Anais). Mostrar
+  // os outros trabalhos da atividade aos autores é à parte do público.
   const publicada = Boolean(estado.publicadaEm);
   const publica = Boolean(estado.publicaEm);
+  const outrosTrabalhos = Boolean(estado.outrosTrabalhosEm);
 
   const REQUISICOES = {
     publicar: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao`, { publicar: true }),
     ocultar: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao`, { publicar: false }),
     divulgar: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao-publica`, { publicar: true }),
     ocultarPublico: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao-publica`, { publicar: false }),
+    mostrarOutros: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/outros-trabalhos`, { publicar: true }),
+    ocultarOutros: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/outros-trabalhos`, { publicar: false }),
     avisos: () => apiClient.post(`/edicoes/${edicaoId}/apresentacao/avisos`, {}),
   };
 
@@ -97,7 +101,9 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
       titulo: "Ocultar dos autores",
       mensagem: publica
         ? "Os autores deixam de ver a apresentação em Minhas submissões, e os trabalhos também saem das páginas públicas das atividades."
-        : "Os autores deixam de ver a apresentação em Minhas submissões até você liberar de novo.",
+        : outrosTrabalhos
+          ? "Os autores deixam de ver a apresentação e os outros trabalhos da atividade em Minhas submissões até você liberar de novo."
+          : "Os autores deixam de ver a apresentação em Minhas submissões até você liberar de novo.",
       rotulo: "Ocultar",
     },
     divulgar: {
@@ -109,6 +115,17 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
     ocultarPublico: {
       titulo: "Ocultar do público",
       mensagem: "Os trabalhos saem das páginas públicas das atividades. Os autores continuam vendo a apresentação em Minhas submissões.",
+      rotulo: "Ocultar",
+    },
+    mostrarOutros: {
+      titulo: "Mostrar os outros trabalhos aos autores",
+      mensagem:
+        "Cada autor e coautor com conta passa a ver, em Minhas submissões, a lista dos trabalhos da mesma atividade, na ordem de apresentação, com título, nomes dos autores e resumo. Nada muda para o público.",
+      rotulo: "Mostrar",
+    },
+    ocultarOutros: {
+      titulo: "Ocultar os outros trabalhos dos autores",
+      mensagem: "Os autores voltam a ver só o próprio trabalho na apresentação. Onde e quando apresentam continua visível.",
       rotulo: "Ocultar",
     },
     avisos: {
@@ -155,6 +172,19 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
               </>
             )}
           </p>
+          <p className={estilos.semMargem}>
+            {outrosTrabalhos ? (
+              <>
+                <strong>Outros trabalhos da atividade:</strong> visíveis aos autores desde{" "}
+                {new Date(estado.outrosTrabalhosEm).toLocaleDateString("pt-BR")} — cada um vê os trabalhos da própria
+                atividade.
+              </>
+            ) : (
+              <>
+                <strong>Outros trabalhos da atividade:</strong> cada autor vê só o próprio trabalho.
+              </>
+            )}
+          </p>
           <p className={styles.textoApoio} aria-live="polite">
             Avisos por e-mail: {estado.avisosPendentes} {estado.avisosPendentes === 1 ? "pendente" : "pendentes"}
             {estado.avisosComErro > 0 && ` (${estado.avisosComErro} com erro)`}
@@ -189,6 +219,16 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
           >
             {publica ? <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" /> : <Globe size={18} strokeWidth={1.5} aria-hidden="true" />}
             {publica ? "Ocultar do público" : "Divulgar ao público"}
+          </Botao>
+          <Botao
+            type="button"
+            variante="secundario"
+            onClick={() => setConfirmando(outrosTrabalhos ? "ocultarOutros" : "mostrarOutros")}
+            disabled={!publicada && !outrosTrabalhos}
+            title={!publicada ? "Libere para os autores antes de mostrar os outros trabalhos" : undefined}
+          >
+            {outrosTrabalhos ? <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" /> : <Users size={18} strokeWidth={1.5} aria-hidden="true" />}
+            {outrosTrabalhos ? "Ocultar outros trabalhos dos autores" : "Mostrar outros trabalhos aos autores"}
           </Botao>
           <Botao
             type="button"
@@ -235,7 +275,7 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
           titulo={MENSAGENS_CONFIRMACAO[confirmando].titulo}
           mensagem={MENSAGENS_CONFIRMACAO[confirmando].mensagem}
           rotuloConfirmar={MENSAGENS_CONFIRMACAO[confirmando].rotulo}
-          perigo={confirmando === "ocultar" || confirmando === "ocultarPublico"}
+          perigo={["ocultar", "ocultarPublico", "ocultarOutros"].includes(confirmando)}
           confirmando={processando}
           onConfirmar={executarConfirmacao}
           onCancelar={() => setConfirmando(null)}

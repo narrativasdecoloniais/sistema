@@ -24,6 +24,13 @@ export function buscarPreviaSubmissao(id) {
   return apiClient.get(`/participante/submissoes/${id}/previa`);
 }
 
+// { edicao, atividade, trabalhos } — os trabalhos da atividade em que a
+// submissão é apresentada, na ordem, com `proprio` marcando o da pessoa. Só
+// quando a organização libera (apresentacao.outrosTrabalhosVisiveis).
+export function listarTrabalhosDaAtividade(id) {
+  return apiClient.get(`/participante/submissoes/${id}/atividade`);
+}
+
 // Carta de aceite em PDF — só o autor principal, trabalho no critério da
 // carta (resultado.cartaAceiteDisponivel).
 export async function baixarCartaAceite(id) {

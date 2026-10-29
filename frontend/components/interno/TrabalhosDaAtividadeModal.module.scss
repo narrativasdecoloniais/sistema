@@ -1,0 +1,144 @@
+@use "../../styles/conteudo-rich-text" as rt;
+
+.mensagem {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+}
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.atividade {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.linkAtividade {
+  color: var(--acento);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.detalhe {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--borda);
+}
+
+.ordem {
+  flex-shrink: 0;
+  min-width: 1.75rem;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.itemCorpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.itemTitulo {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  color: var(--acento);
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.itemMeta {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+}
+
+.itemAutores {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.875rem;
+}
+
+.botaoTexto {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--acento);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.rotulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texto-suave);
+}
+
+// HTML de resumo/referência via ConteudoRichText (sanitizado de novo no
+// navegador) — tipografia, tabelas e imagens no mixin compartilhado.
+.conteudo {
+  @include rt.conteudo-rich-text(var(--texto), var(--acento), var(--borda), var(--fundo));
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  font-size: 0.9375rem;
+}

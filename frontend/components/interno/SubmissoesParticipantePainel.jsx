@@ -25,6 +25,7 @@ import {
 } from "@/lib/coautores";
 import { apiClient } from "@/lib/apiClient";
 import { useToast } from "./ToastProvider";
+import TrabalhosDaAtividadeModal from "./TrabalhosDaAtividadeModal";
 import styles from "./SubmissoesParticipantePainel.module.scss";
 
 function formatarData(iso) {
@@ -35,6 +36,8 @@ export default function SubmissoesParticipantePainel() {
   const router = useRouter();
   const [submissoes, setSubmissoes] = useState(null);
   const [modalidades, setModalidades] = useState(null);
+  // id da submissão cujos trabalhos da atividade estão abertos no modal.
+  const [trabalhosAtividadeDe, setTrabalhosAtividadeDe] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -175,11 +178,27 @@ export default function SubmissoesParticipantePainel() {
                   <p className={styles.resultadoTexto}>
                     {detalheAtividade(submissao.apresentacao.atividade)}
                   </p>
+                  {submissao.apresentacao.outrosTrabalhosVisiveis && (
+                    <button
+                      type="button"
+                      className={styles.botaoTextoAcao}
+                      onClick={() => setTrabalhosAtividadeDe(submissao.id)}
+                    >
+                      Ver os trabalhos desta atividade
+                    </button>
+                  )}
                 </div>
               )}
             </article>
           ))}
         </div>
+      )}
+
+      {trabalhosAtividadeDe && (
+        <TrabalhosDaAtividadeModal
+          submissaoId={trabalhosAtividadeDe}
+          onFechar={() => setTrabalhosAtividadeDe(null)}
+        />
       )}
     </div>
   );
