@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, UserCheck, ListOrdered, UserX } from "lucide-react";
+import { Eye, UserCheck, ListOrdered, UserX, Mail } from "lucide-react";
 import ModalConfirmacao from "./ModalConfirmacao";
 import DetalheInscricaoMonitoriaModal from "./DetalheInscricaoMonitoriaModal";
+import EnviarEmailModal from "./EnviarEmailModal";
 import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
 import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
 import useTabela from "./useTabela";
@@ -128,7 +129,16 @@ function montarColunas(edicao, inscricoes) {
   ];
 }
 
-export default function MonitoriaInscricoesTabela({ edicaoId, edicao, inscricoes, recarregar }) {
+// podeEnviarEmail: o envio em massa (/emails) é ADMIN-only, então o botão
+// só aparece para admin, mesmo com a seção liberada para organizador.
+export default function MonitoriaInscricoesTabela({
+  edicaoId,
+  edicaoNome,
+  edicao,
+  inscricoes,
+  recarregar,
+  podeEnviarEmail = false,
+}) {
   const { notificar } = useToast();
   const colunas = useMemo(() => montarColunas(edicao, inscricoes), [edicao, inscricoes]);
   const tabela = useTabela(inscricoes, colunas);
@@ -136,6 +146,16 @@ export default function MonitoriaInscricoesTabela({ edicaoId, edicao, inscricoes
   const [detalheId, setDetalheId] = useState(null);
   const [loteStatus, setLoteStatus] = useState(null);
   const [processandoLote, setProcessandoLote] = useState(false);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
+
+  // Uma inscrição por pessoa por edição, então cada linha já é uma conta.
+  const destinatariosEmail = useMemo(
+    () =>
+      inscricoes
+        .filter((inscricao) => selecao.selecionados.has(inscricao.id))
+        .map(({ usuario }) => ({ id: usuario.id, nome: usuario.nome, email: usuario.email })),
+    [inscricoes, selecao.selecionados]
+  );
 
   const referencia = dataReferenciaIdade(edicao);
   const divulgado = Boolean(edicao.resultadoMonitoriaDivulgadoEm);
@@ -175,6 +195,12 @@ export default function MonitoriaInscricoesTabela({ edicaoId, edicao, inscricoes
     <>
       <div className={styles.tabelaWrapper}>
         <BotaoExportarTabela tabela={tabela} nomeArquivo="monitoria" nomeAba="Monitoria">
+          {podeEnviarEmail && selecao.quantidade > 0 && (
+            <BotaoAcaoTabela onClick={() => setEnviandoEmail(true)}>
+              <Mail size={16} strokeWidth={1.5} aria-hidden="true" />
+              Enviar e-mail ({selecao.quantidade})
+            </BotaoAcaoTabela>
+          )}
           {selecao.quantidade > 0 &&
             Object.entries(ACOES_LOTE).map(([status, { rotulo, Icone }]) => (
               <BotaoAcaoTabela key={status} onClick={() => setLoteStatus(status)}>
@@ -251,6 +277,16 @@ export default function MonitoriaInscricoesTabela({ edicaoId, edicao, inscricoes
           </tbody>
         </table>
       </div>
+
+      {enviandoEmail && (
+        <EnviarEmailModal
+          edicaoId={edicaoId}
+          edicaoNome={edicaoNome}
+          destinatarios={destinatariosEmail}
+          onFechar={() => setEnviandoEmail(false)}
+          onEnviado={selecao.limpar}
+        />
+      )}
 
       {inscricaoEmDetalhe && (
         <DetalheInscricaoMonitoriaModal

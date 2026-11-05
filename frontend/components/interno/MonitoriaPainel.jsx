@@ -19,7 +19,7 @@ const INTERVALO_ATUALIZACAO_MS = 5000;
 // Tela da Coordenação de Monitoria (seção MONITORIA): inscrições com a
 // seleção, divulgação do resultado (e-mails em segundo plano) e as
 // configurações da chamada (período, vagas, funções e edital).
-export default function MonitoriaPainel({ edicaoId, dadosIniciais }) {
+export default function MonitoriaPainel({ edicaoId, edicaoNome, dadosIniciais, podeEnviarEmail = false }) {
   const router = useRouter();
   const { notificar } = useToast();
   const [dados, setDados] = useState(dadosIniciais);
@@ -170,6 +170,8 @@ export default function MonitoriaPainel({ edicaoId, dadosIniciais }) {
       {abaAtiva === "inscricoes" ? (
         <MonitoriaInscricoesTabela
           edicaoId={edicaoId}
+          edicaoNome={edicaoNome}
+          podeEnviarEmail={podeEnviarEmail}
           edicao={edicao}
           inscricoes={inscricoes}
           recarregar={recarregar}

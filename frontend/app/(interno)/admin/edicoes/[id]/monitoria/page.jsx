@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
+import { temPapel } from "@/lib/permissoes";
 import { buscarEdicaoPorId } from "@/lib/edicoes";
 import { buscarMonitoria } from "@/lib/monitoriaAdmin";
 import MonitoriaPainel from "@/components/interno/MonitoriaPainel";
@@ -15,5 +16,12 @@ export default async function PaginaMonitoria({ params }) {
 
   const dados = await buscarMonitoria(params.id);
 
-  return <MonitoriaPainel edicaoId={params.id} dadosIniciais={dados} />;
+  return (
+    <MonitoriaPainel
+      edicaoId={params.id}
+      edicaoNome={edicao.nome}
+      dadosIniciais={dados}
+      podeEnviarEmail={temPapel(usuario, "ADMIN")}
+    />
+  );
 }
