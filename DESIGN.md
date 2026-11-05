@@ -72,10 +72,11 @@ Regras: cor nunca em hex solto no SCSS — sempre via token. SVGs herdam cor por
 | Componente | Uso permitido | Onde NÃO usar |
 |---|---|---|
 | `Buzio` | Marcador de seção pública, detalhe do cue de rolagem, favicon, marca | Como bullet repetido de listas longas; área interna (exceto wordmark) |
-| `Carimbo` | Envolver botão "Entrar" e selos de estado ("EM BREVE", "V EDIÇÃO") no público | Botões internos, inputs |
 | `Divisor` | Reservado — atualmente fora da landing; só reintroduzir com aprovação | Uso livre |
 | `TexturaPapel` | Reservado para usos futuros aprovados | Fundos de seção |
 | `MarcaRodape` | Rodapé público | Área interna |
+
+**Selos/badges** (estado, rótulo curto) não são grafismo: pílula convencional — `border-radius: 999px`, texto em caixa alta 0.68–0.85rem/700, contorno de 1px em `currentColor` ou fundo sólido com contraste AA. Rótulo de subseção (ex.: "Atividades contínuas") é só tipografia, sem contorno. O antigo `Carimbo` (contorno "desenhado à mão" em SVG) foi removido — não recriar contornos irregulares em volta de texto.
 
 Regras: todo grafismo novo segue o padrão — JSX puro, `<svg>` inline, `viewBox` definido, cor por `currentColor`/prop, `aria-hidden` quando decorativo, sem hex fixo, sem gradiente/sombra, estética de molde vazado (vãos, pontas retas, imperfeição controlada).
 
@@ -85,7 +86,7 @@ Regras: todo grafismo novo segue o padrão — JSX puro, `<svg>` inline, `viewBo
 - **Fundo único `--papel`** por página — sem faixas de cor alternadas, sem divisores tracejados. Separação entre seções por espaço em branco e escala tipográfica.
 - **Grid assimétrico**: marcador (búzio) ancorado à esquerda, conteúdo à direita. Nada centralizado flutuando, exceto o hero.
 - Altura de seção **nasce do conteúdo** (padding `clamp(4rem, 8vw, 7rem)`); proibido `min-height` que gere vazio residual.
-- **Navegação**: sem navbar tradicional (logo à esquerda + links à direita). No topo, só o carimbo "Entrar". A barra mínima de âncoras surge ao rolar além do hero e some ao voltar — **sem logo dentro dela**. Rodapé é o índice completo.
+- **Navegação**: sem navbar tradicional (logo à esquerda + links à direita). No topo, só o botão "Entrar". A barra mínima de âncoras surge ao rolar além do hero e some ao voltar — **sem logo dentro dela**. Rodapé é o índice completo.
 - A logo aparece **uma vez por página**, em escala de cartaz. Nunca reduzida a selo de canto.
 
 ### Interno

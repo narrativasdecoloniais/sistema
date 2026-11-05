@@ -27,6 +27,8 @@ function formatarDataHora(valor) {
 
 export default function ResultadoSubmissoesPainel({
   edicaoId,
+  edicaoNome,
+  podeEnviarEmail = false,
   resumoInicial,
   trabalhosIniciais,
   modelosIniciais,
@@ -105,6 +107,8 @@ export default function ResultadoSubmissoesPainel({
       {abaAtiva === "trabalhos" && (
         <AbaTrabalhosResultado
           edicaoId={edicaoId}
+          edicaoNome={edicaoNome}
+          podeEnviarEmail={podeEnviarEmail}
           trabalhos={trabalhos}
           modalidades={modalidades}
           divulgado={Boolean(resumo.divulgadoEm)}

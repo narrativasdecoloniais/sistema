@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, Mail } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CampoTexto from "./CampoTexto";
 import CampoArea from "./CampoArea";
-import CabecalhoTabela, { LinhaSemResultado } from "./CabecalhoTabela";
-import BotaoExportarTabela from "./BotaoExportarTabela";
+import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
+import BotaoExportarTabela, { BotaoAcaoTabela } from "./BotaoExportarTabela";
+import EnviarEmailModal from "./EnviarEmailModal";
+import useSelecaoLinhas from "./useSelecaoLinhas";
 import useTabela from "./useTabela";
 import { useToast } from "./ToastProvider";
 import { apiClient } from "@/lib/apiClient";
@@ -30,9 +32,21 @@ function situacaoEmail(trabalho, divulgado) {
   return "Não enviado";
 }
 
-export default function AbaTrabalhosResultado({ edicaoId, trabalhos, modalidades, divulgado, recarregar }) {
+// podeEnviarEmail: o envio em massa (/emails) é ADMIN-only, então a seleção e
+// o botão só aparecem para admin, mesmo com a seção liberada para organizador.
+export default function AbaTrabalhosResultado({
+  edicaoId,
+  edicaoNome,
+  trabalhos,
+  modalidades,
+  divulgado,
+  recarregar,
+  podeEnviarEmail = false,
+}) {
+  const { notificar } = useToast();
   const [busca, setBusca] = useState("");
   const [detalheId, setDetalheId] = useState(null);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
 
   const colunas = useMemo(
     () => [
@@ -103,6 +117,38 @@ export default function AbaTrabalhosResultado({ edicaoId, trabalhos, modalidades
   }, [trabalhos, busca]);
 
   const tabela = useTabela(trabalhosBuscados, colunas);
+  const selecao = useSelecaoLinhas(tabela);
+
+  // E-mail livre (ex.: aviso de prazo prorrogado) só ao autor principal, que é
+  // quem faz a correção. Uma vez por pessoa, mesmo com vários trabalhos; o
+  // envio em massa é por conta, então autor principal sem conta fica de fora.
+  const { destinatariosEmail, semConta } = useMemo(() => {
+    const porUsuario = new Map();
+    let quantosSemConta = 0;
+    for (const trabalho of trabalhos) {
+      if (!selecao.selecionados.has(trabalho.id)) continue;
+      const principal = trabalho.autores.find((autor) => autor.principal);
+      if (!principal?.usuarioId) {
+        quantosSemConta += 1;
+        continue;
+      }
+      if (!porUsuario.has(principal.usuarioId)) {
+        porUsuario.set(principal.usuarioId, { id: principal.usuarioId, nome: principal.nome, email: principal.email });
+      }
+    }
+    return { destinatariosEmail: [...porUsuario.values()], semConta: quantosSemConta };
+  }, [trabalhos, selecao.selecionados]);
+
+  function abrirEnvioEmail() {
+    if (semConta > 0) {
+      notificar(
+        `${semConta} ${semConta === 1 ? "trabalho selecionado tem" : "trabalhos selecionados têm"} autor principal sem conta e ${semConta === 1 ? "fica" : "ficam"} de fora do envio.`,
+        "erro"
+      );
+    }
+    if (destinatariosEmail.length > 0) setEnviandoEmail(true);
+  }
+
   const trabalhoEmDetalhe = trabalhos.find((trabalho) => trabalho.id === detalheId);
 
   return (
@@ -126,18 +172,33 @@ export default function AbaTrabalhosResultado({ edicaoId, trabalhos, modalidades
         </div>
       ) : (
         <div className={styles.tabelaWrapper}>
-          <BotaoExportarTabela tabela={tabela} nomeArquivo="resultado-das-submissoes" nomeAba="Resultado" />
+          <BotaoExportarTabela tabela={tabela} nomeArquivo="resultado-das-submissoes" nomeAba="Resultado">
+            {podeEnviarEmail && selecao.quantidade > 0 && (
+              <BotaoAcaoTabela onClick={abrirEnvioEmail}>
+                <Mail size={16} strokeWidth={1.5} aria-hidden="true" />
+                Enviar e-mail ao autor principal ({destinatariosEmail.length})
+              </BotaoAcaoTabela>
+            )}
+          </BotaoExportarTabela>
           <table className={styles.tabela}>
-            <CabecalhoTabela tabela={tabela} idTabela="resultado-trabalhos" classeAcoes={styles.colunaAcoes} />
+            <CabecalhoTabela
+              tabela={tabela}
+              idTabela="resultado-trabalhos"
+              classeAcoes={styles.colunaAcoes}
+              selecao={podeEnviarEmail ? selecao : undefined}
+            />
             <tbody>
               {tabela.linhasVisiveis.length === 0 && (
-                <LinhaSemResultado tabela={tabela} colSpan={colunas.length + 1} />
+                <LinhaSemResultado tabela={tabela} colSpan={colunas.length + (podeEnviarEmail ? 2 : 1)} />
               )}
               {tabela.linhasVisiveis.map((trabalho) => {
                 const autorPrincipal = trabalho.autores.find((autor) => autor.principal);
                 const email = situacaoEmail(trabalho, divulgado);
                 return (
                   <tr key={trabalho.id}>
+                    {podeEnviarEmail && (
+                      <CelulaSelecao selecao={selecao} id={trabalho.id} rotulo={`Selecionar "${trabalho.titulo}"`} />
+                    )}
                     <td data-rotulo="Título">{trabalho.titulo}</td>
                     <td data-rotulo="Modalidade">{trabalho.modalidadeSubmissao.nome}</td>
                     <td data-rotulo="Área">{trabalho.areaSubmissao?.titulo || "—"}</td>
@@ -187,6 +248,16 @@ export default function AbaTrabalhosResultado({ edicaoId, trabalhos, modalidades
             </tbody>
           </table>
         </div>
+      )}
+
+      {enviandoEmail && (
+        <EnviarEmailModal
+          edicaoId={edicaoId}
+          edicaoNome={edicaoNome}
+          destinatarios={destinatariosEmail}
+          onFechar={() => setEnviandoEmail(false)}
+          onEnviado={selecao.limpar}
+        />
       )}
 
       {trabalhoEmDetalhe && (

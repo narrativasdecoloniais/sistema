@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { obterUsuarioAtual, temPermissaoSecao } from "@/lib/auth";
+import { temPapel } from "@/lib/permissoes";
 import { buscarEdicaoPorId } from "@/lib/edicoes";
 import { buscarResumoResultado, listarTrabalhosResultado, listarModelosEmailResultado } from "@/lib/resultadoAdmin";
 import { listarModalidadesSubmissao } from "@/lib/modalidadesSubmissao";
@@ -24,6 +25,8 @@ export default async function PaginaSubmissoesResultado({ params }) {
   return (
     <ResultadoSubmissoesPainel
       edicaoId={params.id}
+      edicaoNome={edicao.nome}
+      podeEnviarEmail={temPapel(usuario, "ADMIN")}
       resumoInicial={resumo}
       trabalhosIniciais={trabalhos}
       modelosIniciais={modelos}
