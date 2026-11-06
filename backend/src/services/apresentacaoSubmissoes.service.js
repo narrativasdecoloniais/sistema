@@ -25,6 +25,7 @@ async function buscarEdicao(db, edicaoId) {
       apresentacaoPublicadaEm: true,
       apresentacaoPublicaEm: true,
       apresentacaoOutrosTrabalhosEm: true,
+      apresentacaoComOrdem: true,
     },
   });
   if (!edicao) throw new ErroHttp(404, "Edição não encontrada.");
@@ -124,6 +125,7 @@ async function listar(edicaoId) {
       publicadaEm: edicao.apresentacaoPublicadaEm,
       publicaEm: edicao.apresentacaoPublicaEm,
       outrosTrabalhosEm: edicao.apresentacaoOutrosTrabalhosEm,
+      comOrdem: edicao.apresentacaoComOrdem,
       resultadoDivulgado: Boolean(edicao.resultadoDivulgadoEm),
       avisosPendentes,
       avisosComErro: trabalhos.filter((trabalho) => trabalho.statusAviso === "ERRO").length,
@@ -357,6 +359,19 @@ async function liberarOutrosTrabalhos(edicaoId, liberar) {
   return atualizada.apresentacaoOutrosTrabalhosEm;
 }
 
+// Divulga (ou não) a ordem dos trabalhos em cada atividade aos autores e ao
+// público — "3º a apresentar" e a numeração das listas. A ordem continua
+// existindo e sendo editável aqui; só deixa de sair (utils/ordemApresentacao.js).
+async function definirOrdemVisivel(edicaoId, comOrdem) {
+  await buscarEdicao(prisma, edicaoId);
+  const atualizada = await prisma.edicao.update({
+    where: { id: edicaoId },
+    data: { apresentacaoComOrdem: comOrdem },
+    select: { apresentacaoComOrdem: true },
+  });
+  return atualizada.apresentacaoComOrdem;
+}
+
 async function iniciarAvisos(edicaoId) {
   const edicao = await buscarEdicao(prisma, edicaoId);
   if (!edicao.resultadoDivulgadoEm) throw new ErroHttp(409, "Divulgue o resultado das submissões antes de avisar os autores.");
@@ -448,6 +463,7 @@ module.exports = {
   publicar,
   publicarAoPublico,
   liberarOutrosTrabalhos,
+  definirOrdemVisivel,
   iniciarAvisos,
   enviarAvisosPendentes,
   removerSeNaoAprovada,

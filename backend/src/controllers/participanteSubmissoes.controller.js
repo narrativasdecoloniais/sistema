@@ -16,6 +16,7 @@ const anaisService = require("../services/anais.service");
 const certificadosService = require("../services/certificados.service");
 const { SELECT_CRITERIO_CARTA, atendeCriterioCarta } = require("../utils/criterioCartaAceite");
 const { enviarPdf } = require("./certificados.controller");
+const { projetarOrdemApresentacao } = require("../utils/ordemApresentacao");
 
 const INCLUDE_PARTICIPANTE = {
   ...INCLUDE_PADRAO,
@@ -142,7 +143,9 @@ const trabalhosDaAtividade = asyncHandler(async (req, res) => {
     where: { id: req.params.id, autores: { some: { usuarioId: req.usuario.id } } },
     select: {
       atividadeApresentacao: INCLUDE_PARTICIPANTE.atividadeApresentacao,
-      edicao: { select: { slug: true, apresentacaoPublicadaEm: true, apresentacaoOutrosTrabalhosEm: true } },
+      edicao: {
+        select: { slug: true, apresentacaoPublicadaEm: true, apresentacaoOutrosTrabalhosEm: true, apresentacaoComOrdem: true },
+      },
     },
   });
   if (!submissao) throw new ErroHttp(404, "Submissão não encontrada.");
@@ -168,7 +171,10 @@ const trabalhosDaAtividade = asyncHandler(async (req, res) => {
   return res.json({
     edicao: { slug: edicao.slug },
     atividade,
-    trabalhos: trabalhos.map((trabalho) => ({ ...trabalho, proprio: trabalho.id === req.params.id })),
+    trabalhos: projetarOrdemApresentacao(trabalhos, edicao).map((trabalho) => ({
+      ...trabalho,
+      proprio: trabalho.id === req.params.id,
+    })),
   });
 });
 

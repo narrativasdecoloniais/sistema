@@ -103,6 +103,49 @@ function criarInscricaoMonitoriaSchema({ funcoesPermitidas, dataReferencia, temA
     }));
 }
 
+// Inclusão de monitor(a) pela Coordenação (admin): só a conta e a situação são
+// obrigatórias; o resto é opcional (vazio vira null) e a pessoa completa
+// depois. Espelhado em frontend/lib/validacao.js (criarInclusaoMonitorSchema).
+const textoOpcional = (max) =>
+  z
+    .string()
+    .trim()
+    .max(max, `Use no máximo ${max} caracteres`)
+    .nullish()
+    .transform((valor) => valor || null);
+
+function criarInclusaoMonitorSchema({ funcoesPermitidas, dataReferencia }) {
+  return z.object({
+    usuarioId: z.string({ required_error: "Selecione a pessoa" }).uuid("Selecione a pessoa"),
+    status: z.enum(["EM_ANALISE", "SELECIONADO", "LISTA_ESPERA"], {
+      errorMap: () => ({ message: "Situação inválida" }),
+    }),
+    dataNascimento: z
+      .string()
+      .nullish()
+      .transform((valor) => valor || null)
+      .refine((valor) => valor === null || REGEX_DATA.test(valor), "Data de nascimento inválida")
+      .refine((valor) => {
+        if (valor === null) return true;
+        if (Number.isNaN(new Date(valor).getTime())) return false;
+        const idade = idadeEm(valor, dataReferencia);
+        return idade >= 10 && idade <= 110;
+      }, "Data de nascimento inválida"),
+    telefone: textoOpcional(30).refine((valor) => {
+      if (valor === null) return true;
+      const digitos = valor.replace(/\D/g, "");
+      return digitos.length >= 10 && digitos.length <= 13;
+    }, "Informe um telefone com DDD"),
+    cursoInstituicao: textoOpcional(300),
+    funcoes: z
+      .array(z.string())
+      .default([])
+      .refine((lista) => lista.every((funcao) => funcoesPermitidas.includes(funcao)), "Atividade inválida")
+      .transform((lista) => [...new Set(lista)]),
+    observacaoCoordenacao: textoOpcional(2000),
+  });
+}
+
 const dataOpcional = (mensagem) =>
   z.preprocess(
     (valor) => (valor === "" ? null : valor),
@@ -174,6 +217,7 @@ const decisaoEmLoteSchema = z.object({
 
 module.exports = {
   criarInscricaoMonitoriaSchema,
+  criarInclusaoMonitorSchema,
   configuracaoMonitoriaSchema,
   decisaoMonitoriaSchema,
   decisaoEmLoteSchema,

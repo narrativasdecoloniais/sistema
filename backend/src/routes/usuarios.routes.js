@@ -10,8 +10,9 @@ router.use(autenticar);
 
 // Usado pelos forms de inscrição manual (geral e por atividade) e pela busca
 // de usuário na tela de Participantes (alteração de e-mail pelo gestor) e na
-// inserção de submissão pelo Recebimento (autor principal).
-router.get("/busca", autorizarSecao("INSCRICOES_GERAIS", "INSCRICOES_ATIVIDADES", "PARTICIPANTES", "SUBMISSOES_AVALIACAO", "SUBMISSOES_RECEBIMENTO", "CREDENCIAMENTO", "CERTIFICADOS"), usuariosController.buscar);
+// inserção de submissão pelo Recebimento (autor principal) e na inclusão de
+// monitor(a) pela Coordenação de Monitoria.
+router.get("/busca", autorizarSecao("INSCRICOES_GERAIS", "INSCRICOES_ATIVIDADES", "PARTICIPANTES", "SUBMISSOES_AVALIACAO", "SUBMISSOES_RECEBIMENTO", "CREDENCIAMENTO", "CERTIFICADOS", "MONITORIA"), usuariosController.buscar);
 router.patch("/:id/email", autorizarSecao("PARTICIPANTES"), usuariosController.atualizarEmailUsuario);
 // Unificação de contas duplicadas da mesma pessoa — mesma seção da alteração
 // de e-mail (também é correção de cadastro feita pelo gestor). Contas de

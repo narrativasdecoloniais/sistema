@@ -70,6 +70,17 @@ const publicarAoPublico = asyncHandler(async (req, res) => {
   });
 });
 
+const definirOrdemVisivel = asyncHandler(async (req, res) => {
+  const { publicar: comOrdem } = publicacaoSchema.parse(req.body);
+  const atual = await apresentacaoService.definirOrdemVisivel(req.params.edicaoId, comOrdem);
+  return res.json({
+    comOrdem: atual,
+    mensagem: atual
+      ? "A ordem de apresentação passa a aparecer para os autores e o público."
+      : "A ordem de apresentação deixa de aparecer; os trabalhos são listados por título.",
+  });
+});
+
 const liberarOutrosTrabalhos = asyncHandler(async (req, res) => {
   const { publicar: liberar } = publicacaoSchema.parse(req.body);
   const outrosTrabalhosEm = await apresentacaoService.liberarOutrosTrabalhos(req.params.edicaoId, liberar);
@@ -124,6 +135,7 @@ module.exports = {
   publicar,
   publicarAoPublico,
   liberarOutrosTrabalhos,
+  definirOrdemVisivel,
   enviarAvisos,
   buscarModeloEmail,
   salvarModeloEmail,

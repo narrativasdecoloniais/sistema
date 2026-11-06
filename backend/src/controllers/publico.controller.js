@@ -9,6 +9,7 @@ const prisma = require("../config/prisma");
 const inscricoesAbertas = require("../utils/inscricoesAbertas");
 const inscricoesMonitoriaAbertas = require("../utils/inscricoesMonitoriaAbertas");
 const { enviarPdf } = require("./certificados.controller");
+const { projetarOrdemApresentacao } = require("../utils/ordemApresentacao");
 
 // Link "Anais" da navegação aponta para /anais/<slug> quando os Anais da
 // edição estão publicados. Consulta à parte (e tolerante a falha) pra nunca
@@ -79,7 +80,7 @@ async function anexarTrabalhosApresentados(atividade, edicao) {
     },
     orderBy: [{ ordemApresentacao: "asc" }, { titulo: "asc" }],
   });
-  return { ...atividade, trabalhos };
+  return { ...atividade, trabalhos: projetarOrdemApresentacao(trabalhos, edicao) };
 }
 
 const buscarAtividadePorEdicaoSlug = asyncHandler(async (req, res) => {

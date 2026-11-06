@@ -68,7 +68,7 @@ async function resumoMonitoria(usuarioId, edicao) {
   if (!edicao.editalMonitoria) return null;
   const inscricao = await prisma.inscricaoMonitoria.findUnique({
     where: { usuarioId_edicaoId: { usuarioId, edicaoId: edicao.id } },
-    select: { status: true },
+    select: { status: true, incluidaPorId: true, cienteEm: true },
   });
   const divulgado = Boolean(edicao.resultadoMonitoriaDivulgadoEm);
   // Mesma projeção de monitoria.service.js: a decisão só aparece depois da divulgação.
@@ -81,6 +81,9 @@ async function resumoMonitoria(usuarioId, edicao) {
     aberta: inscricoesMonitoriaAbertas(edicao) && !divulgado && edicao.funcoesMonitoria.length > 0,
     fim: edicao.fimInscricoesMonitoria,
     status,
+    // Incluída pela organização e ainda não completada (ver dadosPendentes
+    // em monitoria.service.js).
+    dadosPendentes: Boolean(inscricao?.incluidaPorId && !inscricao.cienteEm && inscricao.status !== "CANCELADA"),
   };
 }
 

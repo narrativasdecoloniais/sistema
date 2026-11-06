@@ -5,7 +5,7 @@ const sanitizarEditalMonitoria = require("../utils/sanitizarEditalMonitoria");
 const storageService = require("./storage.service");
 const emailService = require("./email.service");
 const emailMonitoria = require("./emailMonitoria.service");
-const { criarInscricaoMonitoriaSchema } = require("../validators/monitoria.validators");
+const { criarInscricaoMonitoriaSchema, criarInclusaoMonitorSchema } = require("../validators/monitoria.validators");
 
 // Inscrição e seleção de monitores de uma edição. O candidato se inscreve
 // logado (área do participante); a Coordenação de Monitoria (seção
@@ -69,6 +69,13 @@ function dataReferenciaIdade(edicao) {
 // Candidato
 // ---------------------------------------------------------------------------
 
+// Inscrição incluída pela organização que a pessoa ainda não completou (não
+// marcou os "estou ciente" no formulário). Enquanto estiver assim, ela pode
+// completar os dados mesmo com a janela fechada ou o resultado divulgado.
+function dadosPendentes(inscricao) {
+  return Boolean(inscricao?.incluidaPorId && !inscricao.cienteEm);
+}
+
 // O candidato só vê a decisão depois da divulgação; antes disso, qualquer
 // situação que não seja desistência aparece como "em análise". Nunca recebe a
 // observação interna nem o caminho do arquivo.
@@ -90,6 +97,8 @@ function projetarParaCandidato(inscricao, edicao) {
     temAutorizacao: Boolean(inscricao.autorizacaoResponsavel),
     status,
     posicaoListaEspera: status === "LISTA_ESPERA" ? inscricao.posicaoListaEspera : null,
+    incluidaPelaOrganizacao: Boolean(inscricao.incluidaPorId),
+    dadosPendentes: dadosPendentes(inscricao),
     createdAt: inscricao.createdAt,
     updatedAt: inscricao.updatedAt,
   };
@@ -131,19 +140,22 @@ async function buscarMinha(usuarioId, edicaoId) {
 
 // Cria ou edita a candidatura. Só com a janela aberta e antes da divulgação.
 // Quem tinha desistido e se inscreve de novo volta para "em análise".
+// Exceção: quem foi incluído(a) pela organização e ainda não completou os
+// dados pode completá-los a qualquer momento (uma vez), sem mudar a situação.
 async function salvar(usuarioId, edicaoId, corpo) {
   const edicao = await buscarEdicao(edicaoId);
-  if (!inscricoesMonitoriaAbertas(edicao)) {
+  const existente = await buscarInscricao(usuarioId, edicaoId);
+  const completando = dadosPendentes(existente) && existente.status !== "CANCELADA";
+  if (!completando && !inscricoesMonitoriaAbertas(edicao)) {
     throw new ErroHttp(409, "As inscrições para a monitoria não estão abertas.");
   }
-  if (edicao.resultadoMonitoriaDivulgadoEm) {
+  if (!completando && edicao.resultadoMonitoriaDivulgadoEm) {
     throw new ErroHttp(409, "O resultado da seleção já foi divulgado — a inscrição não pode mais ser alterada.");
   }
   if (edicao.funcoesMonitoria.length === 0) {
     throw new ErroHttp(409, "A lista de atividades da monitoria ainda não foi cadastrada.");
   }
 
-  const existente = await buscarInscricao(usuarioId, edicaoId);
   const dados = criarInscricaoMonitoriaSchema({
     funcoesPermitidas: edicao.funcoesMonitoria,
     dataReferencia: dataReferenciaIdade(edicao),
@@ -238,7 +250,7 @@ async function listar(edicaoId) {
   const edicao = await buscarEdicao(edicaoId);
   const inscricoes = await prisma.inscricaoMonitoria.findMany({
     where: { edicaoId },
-    include: { usuario: { select: CAMPOS_USUARIO } },
+    include: { usuario: { select: CAMPOS_USUARIO }, incluidaPor: { select: { nome: true } } },
     orderBy: { createdAt: "asc" },
   });
 
@@ -340,6 +352,54 @@ async function definirStatusEmLote(edicaoId, ids, status) {
       });
     }
     return inscricoes.length;
+  });
+}
+
+// Inclusão pela Coordenação de Monitoria de alguém que não se candidatou
+// (conta existente). Ignora a janela de inscrições; os dados do formulário
+// são opcionais e a pessoa os completa depois. Com o resultado já divulgado,
+// o aviso por e-mail fica pendente (emailResultadoEnviadoEm nulo) até
+// "Enviar e-mails pendentes".
+async function incluir(edicaoId, corpo, incluidaPorId) {
+  return prisma.$transaction(async (tx) => {
+    const edicao = await buscarEdicao(edicaoId, tx);
+    const dados = criarInclusaoMonitorSchema({
+      funcoesPermitidas: edicao.funcoesMonitoria,
+      dataReferencia: dataReferenciaIdade(edicao),
+    }).parse(corpo);
+    exigirStatusPermitido(edicao, dados.status);
+
+    const usuario = await tx.usuario.findUnique({
+      where: { id: dados.usuarioId },
+      select: { id: true, ativo: true, anonimizadoEm: true },
+    });
+    if (!usuario || !usuario.ativo || usuario.anonimizadoEm) throw new ErroHttp(404, "Usuário não encontrado.");
+
+    const existente = await buscarInscricao(usuario.id, edicaoId, tx);
+    if (existente) {
+      throw new ErroHttp(
+        409,
+        `Essa pessoa já tem inscrição na monitoria (${existente.status === "CANCELADA" ? "cancelada" : "na tabela"}) — altere a situação dela pela tabela.`
+      );
+    }
+
+    const posicao = dados.status === "LISTA_ESPERA" ? await proximaPosicaoListaEspera(edicaoId, tx) : null;
+    const criada = await tx.inscricaoMonitoria.create({
+      data: {
+        usuarioId: usuario.id,
+        edicaoId,
+        incluidaPorId,
+        status: dados.status,
+        posicaoListaEspera: posicao,
+        dataNascimento: dados.dataNascimento ? new Date(`${dados.dataNascimento}T00:00:00.000Z`) : null,
+        telefone: dados.telefone,
+        cursoInstituicao: dados.cursoInstituicao,
+        funcoes: dados.funcoes,
+        observacaoCoordenacao: dados.observacaoCoordenacao,
+      },
+      include: { usuario: { select: CAMPOS_USUARIO }, incluidaPor: { select: { nome: true } } },
+    });
+    return projetarParaCoordenacao(criada);
   });
 }
 
@@ -457,6 +517,7 @@ module.exports = {
   listar,
   definirStatus,
   definirStatusEmLote,
+  incluir,
   urlAutorizacao,
   atualizarConfiguracao,
   divulgar,

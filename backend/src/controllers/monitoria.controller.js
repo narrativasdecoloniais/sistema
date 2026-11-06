@@ -29,6 +29,11 @@ const definirStatusEmLote = asyncHandler(async (req, res) => {
   return res.json({ mensagem: `${total} ${total === 1 ? "inscrição atualizada" : "inscrições atualizadas"}.` });
 });
 
+const incluir = asyncHandler(async (req, res) => {
+  const inscricao = await monitoriaService.incluir(req.params.edicaoId, req.body, req.usuario.id);
+  return res.status(201).json({ inscricao, mensagem: "Monitor(a) incluído(a)." });
+});
+
 const urlAutorizacao = asyncHandler(async (req, res) => {
   const url = await monitoriaService.urlAutorizacao(req.params.edicaoId, req.params.id);
   return res.json({ url });
@@ -49,6 +54,7 @@ module.exports = {
   atualizarConfiguracao,
   definirStatus,
   definirStatusEmLote,
+  incluir,
   urlAutorizacao,
   divulgar,
   reenviarPendentes,

@@ -235,6 +235,7 @@ model Usuario {
   inscricoesEdicao           InscricaoEdicao[]
   inscricoesAtividade        InscricaoAtividade[]
   inscricoesMonitoria        InscricaoMonitoria[]
+  monitoresIncluidos         InscricaoMonitoria[]     @relation("MonitorIncluidoPor")
   // Quem da equipe credenciou/registrou presença (credenciamento.service.js).
   credenciamentosRegistrados InscricaoEdicao[]        @relation("CredenciadoPor")
   presencasRegistradas       InscricaoAtividade[]     @relation("PresencaRegistradaPor")
@@ -318,6 +319,11 @@ model Edicao {
   apresentacaoPublicadaEm           DateTime?
   apresentacaoPublicaEm             DateTime?
   apresentacaoOutrosTrabalhosEm     DateTime?
+  // A ordem dos trabalhos em cada atividade (Submissao.ordemApresentacao)
+  // sempre existe para a organização, mas só chega aos autores e ao público
+  // ("3º a apresentar", numeração da lista) com isto ligado; desligado, os
+  // trabalhos aparecem por título (utils/ordemApresentacao.js).
+  apresentacaoComOrdem              Boolean   @default(false)
   // Monitoria (monitoria.service.js): janela de inscrição própria — mesma
   // regra de inscricoesAbertas.js, sem as duas datas fica fechada —, vagas
   // (só informativo, não bloqueia), catálogo de funções que o candidato
@@ -1304,21 +1310,27 @@ model InscricaoEdicao {
 // emailResultado*: progresso do envio do resultado (mesmo molde de
 // Submissao.emailResultado*); mudar o status depois da divulgação zera o
 // enviadoEm, e o aviso volta a ficar pendente.
+// incluidaPorId: inscrição criada pela Coordenação de Monitoria (admin), não
+// pela própria pessoa — aí os dados do formulário podem faltar (a pessoa os
+// completa depois na área do participante, mesmo com a janela fechada) e
+// cienteEm fica nulo até ela marcar os "estou ciente".
 model InscricaoMonitoria {
   id                      String                   @id @default(uuid())
   usuarioId               String
   usuario                 Usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  incluidaPorId           String?
+  incluidaPor             Usuario?                 @relation("MonitorIncluidoPor", fields: [incluidaPorId], references: [id], onDelete: SetNull)
   edicaoId                String
   edicao                  Edicao                   @relation(fields: [edicaoId], references: [id], onDelete: Cascade)
-  dataNascimento          DateTime                 @db.Date
+  dataNascimento          DateTime?                @db.Date
   pronome                 String?
-  telefone                String
-  cursoInstituicao        String
-  experienciaAnterior     Boolean
+  telefone                String?
+  cursoInstituicao        String?
+  experienciaAnterior     Boolean?
   funcoes                 String[]
-  precisaAdaptacao        Boolean
+  precisaAdaptacao        Boolean?
   adaptacoesNecessarias   String?
-  cienteEm                DateTime
+  cienteEm                DateTime?
   autorizacaoResponsavel  String?
   status                  StatusInscricaoMonitoria @default(EM_ANALISE)
   posicaoListaEspera      Int?

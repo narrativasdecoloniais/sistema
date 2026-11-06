@@ -10,6 +10,7 @@ router.use(autorizarSecao("MONITORIA"));
 
 router.get("/", monitoriaController.listar);
 router.patch("/configuracao", monitoriaController.atualizarConfiguracao);
+router.post("/", monitoriaController.incluir);
 router.post("/status-em-lote", monitoriaController.definirStatusEmLote);
 router.post("/divulgar", monitoriaController.divulgar);
 router.post("/emails/reenviar", monitoriaController.reenviarPendentes);

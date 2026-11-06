@@ -9,21 +9,43 @@ const inscricoesService = require("./inscricoes.service");
 // de espera do fluxo público, só que autenticada por cookie (sem token
 // intermediário) e com o gate extra de "a edição aceita inscrições agora".
 async function listarParaUsuario(usuarioId) {
-  const [edicoesAbertasAgora, inscricoesDoUsuario] = await Promise.all([
+  const [edicoesAbertasAgora, inscricoesDoUsuario, atividadesDoUsuario] = await Promise.all([
     edicoesService.listarEdicoesComInscricoesAbertas(),
     prisma.inscricaoEdicao.findMany({ where: { usuarioId }, include: { edicao: true } }),
+    prisma.inscricaoAtividade.findMany({
+      where: { usuarioId },
+      select: { status: true, atividade: { select: { edicaoId: true } } },
+    }),
   ]);
+
+  // Resumo da inscrição de cada edição, para a lista mostrar a situação
+  // (atividades e credenciamento) sem abrir a edição.
+  function resumo(inscricao) {
+    const daEdicao = atividadesDoUsuario.filter((item) => item.atividade.edicaoId === inscricao.edicaoId);
+    return {
+      inscritoEm: inscricao.createdAt,
+      credenciadoEm: inscricao.credenciadoEm,
+      confirmadas: daEdicao.filter((item) => item.status === "CONFIRMADA").length,
+      listaEspera: daEdicao.filter((item) => item.status === "LISTA_ESPERA").length,
+    };
+  }
 
   const porEdicaoId = new Map();
   for (const edicao of edicoesAbertasAgora) {
-    porEdicaoId.set(edicao.id, { edicao, aberta: true, jaInscrito: false });
+    porEdicaoId.set(edicao.id, { edicao, aberta: true, jaInscrito: false, inscricao: null });
   }
   for (const inscricao of inscricoesDoUsuario) {
     const existente = porEdicaoId.get(inscricao.edicaoId);
     if (existente) {
       existente.jaInscrito = true;
+      existente.inscricao = resumo(inscricao);
     } else {
-      porEdicaoId.set(inscricao.edicaoId, { edicao: inscricao.edicao, aberta: false, jaInscrito: true });
+      porEdicaoId.set(inscricao.edicaoId, {
+        edicao: inscricao.edicao,
+        aberta: false,
+        jaInscrito: true,
+        inscricao: resumo(inscricao),
+      });
     }
   }
 
@@ -59,11 +81,15 @@ async function listarApresentacoes(usuarioId, edicao) {
     },
   });
 
-  return submissoes.sort(
-    (a, b) =>
-      a.atividadeApresentacao.inicioAtividade - b.atividadeApresentacao.inicioAtividade ||
-      (a.ordemApresentacao ?? 0) - (b.ordemApresentacao ?? 0)
-  );
+  // Sem a ordem divulgada (Edicao.apresentacaoComOrdem), o comprovante não
+  // mostra "Nº a apresentar" — ver utils/ordemApresentacao.js.
+  return submissoes
+    .sort(
+      (a, b) =>
+        a.atividadeApresentacao.inicioAtividade - b.atividadeApresentacao.inicioAtividade ||
+        (a.ordemApresentacao ?? 0) - (b.ordemApresentacao ?? 0)
+    )
+    .map((submissao) => (edicao.apresentacaoComOrdem ? submissao : { ...submissao, ordemApresentacao: null }));
 }
 
 async function buscarEstado(usuarioId, edicaoId) {
