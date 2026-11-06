@@ -10,7 +10,9 @@ import {
   ClipboardCheck,
   Award,
   ArrowRight,
+  ChevronRight,
   Presentation,
+  User,
 } from "lucide-react";
 import { paraNumeroRomano } from "@/lib/romanos";
 import { detalheAtividade, linkAtividade } from "@/lib/apresentacao";
@@ -98,11 +100,12 @@ function cardCredenciamento({ inscricao }) {
       chave: "credenciamento",
       Icone: QrCode,
       rotulo: "Credenciamento",
+      agora: true,
       titulo: "Credenciamento feito",
       detalhes: ["Nas atividades com inscrição, mostre seu crachá à equipe ou leia o QR code da sala para registrar sua presença."],
       acoes: [
-        { href: "/participante/cracha", rotulo: "Mostrar crachá" },
-        { href: "/participante/credenciamento", rotulo: "Ler QR code" },
+        { href: "/participante/credenciamento", rotulo: "Mostrar crachá" },
+        { href: "/participante/credenciamento?aba=ler", rotulo: "Ler QR code" },
       ],
     };
   }
@@ -110,12 +113,13 @@ function cardCredenciamento({ inscricao }) {
     chave: "credenciamento",
     Icone: QrCode,
     rotulo: "Credenciamento",
+    agora: true,
     titulo: "O evento está acontecendo",
     detalhes: ["Mostre seu crachá à equipe na entrada do evento ou leia o QR code afixado lá."],
     pendente: "Você ainda não se credenciou.",
     acoes: [
-      { href: "/participante/cracha", rotulo: "Mostrar crachá", principal: true },
-      { href: "/participante/credenciamento", rotulo: "Ler QR code" },
+      { href: "/participante/credenciamento", rotulo: "Mostrar crachá", principal: true },
+      { href: "/participante/credenciamento?aba=ler", rotulo: "Ler QR code" },
     ],
   };
 }
@@ -210,6 +214,7 @@ function cardApresentacao({ submissoes }) {
     chave: "apresentacao",
     Icone: Presentation,
     rotulo: "Apresentação",
+    agora: true,
     titulo: unica
       ? `Você apresenta em ${formatarDiaHora(proxima.atividade.inicioAtividade)}`
       : `${apresentacoes.length} apresentações marcadas`,
@@ -259,8 +264,10 @@ function cardCertificados({ certificados }) {
   };
 }
 
-// O que tem pendência vem primeiro; o resto mantém a ordem do menu lateral.
-function montarCards(resumo) {
+// "Agora": só o que pede ação ou vale para estes dias — pendências primeiro,
+// depois credenciamento durante o evento e apresentação marcada. O resto da
+// situação de cada área fica nas linhas de "Tudo".
+function montarCardsAgora(resumo) {
   const cards = [
     cardCredenciamento,
     cardApresentacao,
@@ -271,8 +278,135 @@ function montarCards(resumo) {
     cardCertificados,
   ]
     .map((montar) => montar(resumo))
-    .filter(Boolean);
+    .filter((card) => card && (card.pendente || card.agora));
   return [...cards.filter((card) => card.pendente), ...cards.filter((card) => !card.pendente)];
+}
+
+// "Tudo": índice fixo de todas as áreas (no celular substitui o menu), cada
+// uma com a situação em uma frase. Sem resumo (carregando ou erro) as linhas
+// aparecem do mesmo jeito, só sem a situação. Avaliação e Monitoria seguem a
+// mesma regra do menu lateral (NavegacaoParticipante).
+function situacaoInscricao({ inscricao }) {
+  if (!inscricao) return "Nenhuma edição com inscrições no momento";
+  if (inscricao.inscrito) {
+    const partes = ["Inscrição confirmada"];
+    if (inscricao.confirmadas > 0) partes.push(plural(inscricao.confirmadas, "atividade", "atividades"));
+    if (inscricao.listaEspera > 0) partes.push(`${inscricao.listaEspera} na lista de espera`);
+    return partes.join(" · ");
+  }
+  if (inscricao.aberta) return inscricao.fim ? `Inscrições abertas até ${formatarDia(inscricao.fim)}` : "Inscrições abertas";
+  return "Inscrições fechadas";
+}
+
+function situacaoCredenciamento({ inscricao }) {
+  if (inscricao?.credenciadoEm) return "Credenciamento feito";
+  if (inscricao?.periodoDoEvento) return "Mostre seu crachá na entrada do evento";
+  return "Seu crachá e o leitor de QR code";
+}
+
+function situacaoSubmissoes({ submissoes }) {
+  if (!submissoes) return null;
+  const { total, recebendo, fimRecebimento, correcoes } = submissoes;
+  if (total > 0) {
+    const enviados = plural(total, "trabalho enviado", "trabalhos enviados");
+    return correcoes.length > 0 ? `${enviados} · correção pendente` : enviados;
+  }
+  if (recebendo) return fimRecebimento ? `Submissões abertas até ${formatarDia(fimRecebimento)}` : "Submissões abertas";
+  return "Nenhum trabalho enviado";
+}
+
+function situacaoAvaliacoes({ avaliacoes }) {
+  if (!avaliacoes) return "Nenhum trabalho atribuído a você";
+  if (avaliacoes.pendentes > 0) return plural(avaliacoes.pendentes, "trabalho aguardando", "trabalhos aguardando");
+  return "Nenhum trabalho aguardando avaliação";
+}
+
+function situacaoMonitoria({ monitoria }) {
+  if (monitoria.status && !(monitoria.status === "CANCELADA" && monitoria.aberta)) {
+    return SITUACAO_MONITORIA[monitoria.status];
+  }
+  if (monitoria.aberta) return monitoria.fim ? `Seleção aberta até ${formatarDia(monitoria.fim)}` : "Seleção aberta";
+  return "Seleção encerrada";
+}
+
+function situacaoCertificados({ certificados }) {
+  if (certificados?.total > 0) return plural(certificados.total, "certificado disponível", "certificados disponíveis");
+  return "Aparecem aqui depois do evento";
+}
+
+function montarAreas(resumo, avaliador) {
+  const comResumo = (calcular) => (resumo ? calcular(resumo) : null);
+  const edicaoId = resumo?.edicao?.id;
+  return [
+    {
+      chave: "inscricao",
+      Icone: CalendarCheck,
+      rotulo: "Inscrição",
+      href: edicaoId ? `/participante/inscricoes/${edicaoId}` : "/participante/inscricoes",
+      situacao: comResumo(situacaoInscricao),
+    },
+    {
+      chave: "credenciamento",
+      Icone: QrCode,
+      rotulo: "Credenciamento",
+      href: "/participante/credenciamento",
+      situacao: comResumo(situacaoCredenciamento),
+    },
+    {
+      chave: "submissoes",
+      Icone: FileText,
+      rotulo: "Submissões",
+      href: "/participante/submissoes",
+      situacao: comResumo(situacaoSubmissoes),
+    },
+    (avaliador || resumo?.avaliacoes) && {
+      chave: "avaliacoes",
+      Icone: ClipboardCheck,
+      rotulo: "Trabalhos para avaliar",
+      href: "/participante/avaliacoes",
+      situacao: comResumo(situacaoAvaliacoes),
+    },
+    resumo?.monitoria && {
+      chave: "monitoria",
+      Icone: Handshake,
+      rotulo: "Monitoria",
+      href: edicaoId ? `/participante/monitoria/${edicaoId}` : "/participante/monitoria",
+      situacao: situacaoMonitoria(resumo),
+    },
+    {
+      chave: "certificados",
+      Icone: Award,
+      rotulo: "Certificados",
+      href: "/participante/certificados",
+      situacao: comResumo(situacaoCertificados),
+    },
+    {
+      chave: "perfil",
+      Icone: User,
+      rotulo: "Meu perfil",
+      href: "/participante/perfil",
+      situacao: "Dados pessoais, e-mail e senha",
+    },
+  ].filter(Boolean);
+}
+
+function ListaAreas({ areas }) {
+  return (
+    <ul className={styles.areas}>
+      {areas.map(({ chave, Icone, rotulo, href, situacao }) => (
+        <li key={chave}>
+          <Link href={href} className={styles.area}>
+            <Icone size={20} strokeWidth={1.5} aria-hidden="true" className={styles.iconeArea} />
+            <span className={styles.textoArea}>
+              <span className={styles.rotuloArea}>{rotulo}</span>
+              {situacao && <span className={styles.situacaoArea}>{situacao}</span>}
+            </span>
+            <ChevronRight size={18} strokeWidth={1.5} aria-hidden="true" className={styles.setaArea} />
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function Card({ card }) {
@@ -323,9 +457,10 @@ function Card({ card }) {
   );
 }
 
-// Tela inicial da área do participante: um card por recurso, com a situação
-// da pessoa e a próxima ação (backend: participanteResumo.service.js).
-export default function InicioParticipantePainel({ nome }) {
+// Tela inicial da área do participante, em duas camadas: "Agora" (cards com
+// a próxima ação, só quando há) e "Tudo" (índice fixo de todas as áreas com a
+// situação de cada uma) — backend: participanteResumo.service.js.
+export default function InicioParticipantePainel({ nome, avaliador = false }) {
   const [resumo, setResumo] = useState(null);
   const [erro, setErro] = useState(false);
 
@@ -344,7 +479,8 @@ export default function InicioParticipantePainel({ nome }) {
   }, []);
 
   const primeiroNome = nome?.trim().split(/\s+/)[0];
-  const cards = resumo ? montarCards(resumo) : [];
+  const cards = resumo ? montarCardsAgora(resumo) : [];
+  const areas = montarAreas(resumo, avaliador);
 
   return (
     <div className={styles.pagina}>
@@ -357,29 +493,35 @@ export default function InicioParticipantePainel({ nome }) {
         </p>
       </div>
 
-      {erro ? (
-        <div className={styles.vazio}>
-          <p>Não foi possível carregar sua situação.</p>
-          <p className={styles.detalhe}>Recarregue a página ou use o menu para acessar cada área.</p>
-        </div>
-      ) : !resumo ? (
-        <div className={styles.vazio} aria-live="polite">
-          <p>Carregando...</p>
-        </div>
-      ) : cards.length === 0 ? (
-        <div className={styles.vazio}>
-          <p>Nada pendente por aqui.</p>
-          <p className={styles.detalhe}>
-            Quando abrirem inscrições, submissões ou certificados, eles aparecem nesta tela.
+      <section className={styles.secao} aria-labelledby="inicio-agora">
+        <h2 id="inicio-agora" className={styles.tituloSecao}>
+          Agora
+        </h2>
+        {erro ? (
+          <p className={styles.detalhe} role="alert">
+            Não foi possível carregar sua situação. Recarregue a página ou entre em cada área abaixo.
           </p>
-        </div>
-      ) : (
-        <div className={styles.grade}>
-          {cards.map((card) => (
-            <Card key={card.chave} card={card} />
-          ))}
-        </div>
-      )}
+        ) : !resumo ? (
+          <p className={styles.detalhe} aria-live="polite">
+            Carregando...
+          </p>
+        ) : cards.length === 0 ? (
+          <p className={styles.detalhe}>Nada pendente por aqui.</p>
+        ) : (
+          <div className={styles.grade}>
+            {cards.map((card) => (
+              <Card key={card.chave} card={card} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className={styles.secao} aria-labelledby="inicio-tudo">
+        <h2 id="inicio-tudo" className={styles.tituloSecao}>
+          Tudo
+        </h2>
+        <ListaAreas areas={areas} />
+      </section>
     </div>
   );
 }

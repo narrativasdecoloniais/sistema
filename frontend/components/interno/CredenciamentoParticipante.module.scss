@@ -116,3 +116,52 @@
     outline-offset: 2px;
   }
 }
+
+// Abas "Meu crachá" / "Ler QR code" (mesmo desenho das abas do admin). No
+// celular dividem a largura, para os dois alvos ficarem fáceis de tocar.
+.abas {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: -0.5rem;
+  border-bottom: 1.5px solid var(--borda);
+}
+
+.aba {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  margin-bottom: -1.5px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 480px) {
+    flex: 1 1 0;
+    padding-inline: 0.5rem;
+  }
+}
+
+.abaAtiva {
+  color: var(--acento);
+  font-weight: 700;
+  border-bottom-color: var(--acento);
+}
+
+.painelAba {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}

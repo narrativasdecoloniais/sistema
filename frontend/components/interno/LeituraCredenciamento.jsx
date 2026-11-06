@@ -148,7 +148,7 @@ export default function LeituraCredenciamento({ token }) {
         {conteudo()}
       </section>
 
-      <Link href="/participante/credenciamento" className={styles.link}>
+      <Link href="/participante/credenciamento?aba=ler" className={styles.link}>
         ← Ler outro QR code
       </Link>
 

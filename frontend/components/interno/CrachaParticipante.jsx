@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { CircleCheck, RefreshCw } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Avatar from "./Avatar";
@@ -20,8 +19,9 @@ function formatarDataHora(valor) {
 
 // Crachá virtual: QR code próprio da pessoa (só o token), lido pela equipe no
 // leitor de crachás para credenciar no evento ou registrar presença numa
-// atividade (credenciamento.service.js).
-export default function CrachaParticipante() {
+// atividade (credenciamento.service.js). Aba "Meu crachá" da tela de
+// Credenciamento (CredenciamentoParticipantePainel).
+export default function CrachaParticipante({ aoIrParaLeitor }) {
   const { notificar } = useToast();
   const [cracha, setCracha] = useState(null);
   const [imagem, setImagem] = useState(null);
@@ -74,12 +74,9 @@ export default function CrachaParticipante() {
 
   return (
     <div className={styles.pagina}>
-      <div>
-        <h1 className={styles.titulo}>Meu crachá</h1>
-        <p className={styles.descricao}>
-          Mostre este QR code para a equipe na entrada do evento e na porta das atividades com inscrição.
-        </p>
-      </div>
+      <p className={styles.descricao}>
+        Mostre este QR code para a equipe na entrada do evento e na porta das atividades com inscrição.
+      </p>
 
       {erro ? (
         <p className={styles.aviso} role="alert">
@@ -115,7 +112,11 @@ export default function CrachaParticipante() {
 
           <p className={styles.apoio}>
             Sem internet no evento? Faça um print desta tela — o crachá funciona do mesmo jeito. Se preferir, você
-            mesmo(a) pode ler o QR code afixado na entrada em <Link href="/participante/credenciamento">Credenciamento</Link>.
+            mesmo(a) pode{" "}
+            <button type="button" className={styles.linkBotao} onClick={aoIrParaLeitor}>
+              ler o QR code afixado na entrada
+            </button>
+            .
           </p>
 
           <div>

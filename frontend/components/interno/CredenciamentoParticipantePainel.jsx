@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { IdCard, ScanLine } from "lucide-react";
 import CardAjudaInscricao from "./CardAjudaInscricao";
+import CrachaParticipante from "./CrachaParticipante";
 import LeitorQrCode from "./LeitorQrCode";
 import { formatarPeriodoAtividade } from "@/lib/publico";
 import { buscarMinhaSituacaoCredenciamento, ehTokenCracha, extrairTokenDoQr } from "@/lib/credenciamento";
 import styles from "./CredenciamentoParticipante.module.scss";
+
+const ABAS = [
+  { chave: "cracha", rotulo: "Meu crachá", Icone: IdCard },
+  { chave: "ler", rotulo: "Ler QR code", Icone: ScanLine },
+];
 
 function formatarDataHora(valor) {
   return new Date(valor).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
@@ -16,7 +22,7 @@ function formatarDataHora(valor) {
 // Autocredenciamento: a pessoa lê o QR code do evento (credenciamento geral)
 // ou de uma atividade (presença) pela câmera; a leitura leva a
 // /participante/credenciamento/<token>, que faz o resto (LeituraCredenciamento).
-export default function CredenciamentoParticipantePainel() {
+function LeitorParticipante() {
   const router = useRouter();
   const [situacao, setSituacao] = useState(null);
   const [erroLeitura, setErroLeitura] = useState("");
@@ -42,22 +48,13 @@ export default function CredenciamentoParticipantePainel() {
   }
 
   return (
-    <div className={styles.pagina}>
-      <CardAjudaInscricao />
+    <>
+      <p className={styles.descricao}>
+        Leia o QR code do credenciamento, na entrada do evento, ou o QR code afixado em cada atividade para
+        registrar a sua presença.
+      </p>
 
-      <div>
-        <h1 className={styles.titulo}>Credenciamento</h1>
-        <p className={styles.descricao}>
-          Leia o QR code do credenciamento, na entrada do evento, ou o QR code afixado em cada atividade para
-          registrar a sua presença. Se preferir, mostre o <Link href="/participante/cracha">seu crachá</Link> para a
-          equipe.
-        </p>
-      </div>
-
-      <section className={styles.cartao} aria-labelledby="ler-qr">
-        <h2 id="ler-qr" className={styles.subtitulo}>
-          Ler QR code
-        </h2>
+      <section className={styles.cartao} aria-label="Leitor de QR code">
         <LeitorQrCode aoLer={aoLer} />
         {erroLeitura && (
           <p className={styles.aviso} role="alert">
@@ -93,6 +90,51 @@ export default function CredenciamentoParticipantePainel() {
           )}
         </section>
       )}
+    </>
+  );
+}
+
+// Tela única de credenciamento do participante: o crachá virtual (a equipe lê)
+// e o leitor de QR code (a pessoa lê o cartaz). A aba vai na URL (?aba=ler)
+// para os atalhos do Início e o "Ler outro QR code" caírem direto no leitor.
+export default function CredenciamentoParticipantePainel({ abaInicial = "cracha" }) {
+  const [aba, setAba] = useState(ABAS.some((item) => item.chave === abaInicial) ? abaInicial : "cracha");
+
+  function abrirAba(chave) {
+    setAba(chave);
+    // Só atualiza a URL (sem navegar), para recarregar/voltar na mesma aba.
+    const url = chave === "cracha" ? "/participante/credenciamento" : `/participante/credenciamento?aba=${chave}`;
+    window.history.replaceState(window.history.state, "", url);
+  }
+
+  return (
+    <div className={styles.pagina}>
+      <CardAjudaInscricao />
+
+      <h1 className={styles.titulo}>Credenciamento</h1>
+
+      <div className={styles.abas} role="tablist" aria-label="Formas de credenciamento">
+        {ABAS.map((item) => (
+          <button
+            key={item.chave}
+            type="button"
+            role="tab"
+            id={`aba-${item.chave}`}
+            aria-selected={aba === item.chave}
+            aria-controls={`painel-${item.chave}`}
+            tabIndex={aba === item.chave ? 0 : -1}
+            className={`${styles.aba} ${aba === item.chave ? styles.abaAtiva : ""}`}
+            onClick={() => abrirAba(item.chave)}
+          >
+            <item.Icone size={18} strokeWidth={1.5} aria-hidden="true" />
+            {item.rotulo}
+          </button>
+        ))}
+      </div>
+
+      <div id={`painel-${aba}`} role="tabpanel" aria-labelledby={`aba-${aba}`} className={styles.painelAba}>
+        {aba === "cracha" ? <CrachaParticipante aoIrParaLeitor={() => abrirAba("ler")} /> : <LeitorParticipante />}
+      </div>
     </div>
   );
 }

@@ -31,7 +31,7 @@ function descreverApresentacao(trabalho) {
 // Comprovante da área do participante — impressão via popup com HTML
 // standalone; a casca em tela usa os tokens da pele interna, e o
 // cancelamento por atividade abre o ModalConfirmacao do painel. Traz o QR do
-// crachá virtual (o mesmo de /participante/cracha), que a equipe lê para
+// crachá virtual (o mesmo da aba "Meu crachá" de /participante/credenciamento), que a equipe lê para
 // credenciar no evento e registrar presença nas atividades; sem ele (falha ao
 // buscar) o comprovante segue sem a seção.
 export default function CartaoInscricaoParticipante({
@@ -243,7 +243,7 @@ export default function CartaoInscricaoParticipante({
             <p className={styles.subtituloCracha}>Crachá para o credenciamento</p>
             <p className={styles.textoCracha}>
               Apresente este QR code à equipe na entrada do evento e na porta das atividades com
-              inscrição. Ele também está em <Link href="/participante/cracha">Meu crachá</Link>.
+              inscrição. Ele também está em <Link href="/participante/credenciamento">Credenciamento</Link>.
             </p>
           </div>
         </div>

@@ -17,21 +17,19 @@
   font-size: 0.9375rem;
 }
 
-.vazio {
-  padding: 2.5rem 1.5rem;
-  text-align: center;
-  border: 1px solid var(--borda);
-  border-radius: 6px;
-  background: var(--superficie);
-  color: var(--texto);
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
 
-  p {
-    margin: 0;
-  }
-
-  .detalhe {
-    margin-top: 0.35rem;
-  }
+.tituloSecao {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
 }
 
 .grade {
@@ -158,4 +156,82 @@
   .acao {
     flex: 1 1 100%;
   }
+}
+
+// "Tudo": lista de linhas num só cartão, separadas por borda fina — índice
+// das áreas, com a situação em texto suave (hierarquia por peso/cor).
+.areas {
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+
+  li + li {
+    border-top: 1px solid var(--borda);
+  }
+}
+
+.area {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 56px;
+  padding: 0.7rem 1rem;
+  color: var(--texto);
+  text-decoration: none;
+
+  &:hover {
+    background: var(--fundo);
+
+    .setaArea {
+      color: var(--acento);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: -2px;
+  }
+}
+
+li:first-child > .area {
+  border-radius: 6px 6px 0 0;
+}
+
+li:last-child > .area {
+  border-radius: 0 0 6px 6px;
+}
+
+.iconeArea {
+  flex-shrink: 0;
+  color: var(--texto-suave);
+}
+
+.textoArea {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.rotuloArea {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.situacaoArea {
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.setaArea {
+  flex-shrink: 0;
+  color: var(--texto-suave);
 }
