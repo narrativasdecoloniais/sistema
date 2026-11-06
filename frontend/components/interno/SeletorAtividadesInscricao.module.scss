@@ -1,0 +1,259 @@
+.seletor {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vazio,
+.diaUnico {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.diaUnico {
+  font-weight: 600;
+}
+
+.dia {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.marcadasNoDia {
+  margin: 0;
+  color: var(--acento);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+// ── Grupo de horário ──────────────────────────────────────────────────────
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.grupoCabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.grupoHorario {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.grupoDica {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+}
+
+// Horário já ocupado por uma inscrição: uma linha de aviso, sem caixa
+// colorida (DESIGN.md) — filete neutro, texto suave.
+.ocupado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.35rem 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--borda);
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  p {
+    flex: 1 1 240px;
+    margin: 0;
+  }
+
+  strong {
+    color: var(--texto);
+    font-weight: 600;
+  }
+}
+
+.linkTexto {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--acento);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 600px) {
+    min-height: 44px;
+  }
+}
+
+// ── Atividade ─────────────────────────────────────────────────────────────
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Linha inteira clicável (label do checkbox); o botão de detalhes fica à
+// direita, fora do label. Marcada: borda e filete no acento, sem fundo.
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+  transition: border-color 0.15s ease;
+
+  &:hover:not(.itemTravado) {
+    border-color: var(--texto-suave);
+  }
+}
+
+.itemMarcado,
+.itemMarcado:hover:not(.itemTravado) {
+  border-color: var(--acento);
+  box-shadow: inset 3px 0 0 var(--acento);
+}
+
+.itemTravado {
+  background: var(--fundo);
+
+  .linha {
+    cursor: not-allowed;
+  }
+
+  .nome {
+    color: var(--texto-suave);
+  }
+}
+
+.linha {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.85rem 0 0.85rem 0.9rem;
+  cursor: pointer;
+}
+
+.checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0.1rem 0 0;
+  accent-color: var(--acento);
+  cursor: inherit;
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.nome {
+  color: var(--texto);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+.meta {
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+}
+
+.lotada {
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.aviso {
+  margin-top: 0.2rem;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--acento);
+  color: var(--texto);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.conflito {
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+}
+
+.botaoDetalhes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0.35rem 0.35rem 0 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+
+  svg {
+    transition: transform 0.15s ease;
+  }
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: -2px;
+  }
+}
+
+.setaAberta {
+  transform: rotate(180deg);
+}
+
+.detalhes {
+  grid-column: 1 / -1;
+  margin: 0 0.9rem 0.9rem calc(0.9rem + 20px + 0.75rem);
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--borda);
+
+  @media (max-width: 480px) {
+    margin-left: 0.9rem;
+  }
+}

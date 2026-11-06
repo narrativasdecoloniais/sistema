@@ -65,5 +65,63 @@
 
 .conteudo {
   padding: 1.5rem;
-  
+}
+
+// Com rodapé: só o conteúdo rola, cabeçalho e ações ficam sempre à vista.
+.painelComRodape {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .cabecalho,
+  .rodape {
+    flex-shrink: 0;
+  }
+
+  .conteudo {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+.rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--borda);
+  background: var(--superficie);
+
+  // No celular os botões empilham com a ação principal (a última) em cima.
+  @media (max-width: 600px) {
+    flex-direction: column-reverse;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+
+    > * {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .fundo:has(.telaCheiaNoCelular) {
+    padding: 0;
+  }
+
+  .telaCheiaNoCelular {
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+
+    .cabecalho {
+      padding: 0.9rem 1rem;
+    }
+
+    .conteudo {
+      padding: 1.25rem 1rem;
+    }
+  }
 }

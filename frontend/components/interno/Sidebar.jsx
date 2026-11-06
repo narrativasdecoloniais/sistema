@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import MenuConta from "./MenuConta";
+import BotaoAjuda from "./BotaoAjuda";
 import EdicaoControles from "./EdicaoControles";
 import NavegacaoEdicao from "./NavegacaoEdicao";
 import NavegacaoParticipante from "./NavegacaoParticipante";
@@ -36,6 +37,7 @@ export default function Sidebar({ usuario }) {
           <EdicaoControles variante="mobile" usuario={usuario} />
         </div>
         <div className={styles.topoDireita}>
+          {emParticipante && <BotaoAjuda variante="mobile" />}
           <MenuConta usuario={usuario} variante="mobile" />
           {mostrarFerramentas && (
             <button

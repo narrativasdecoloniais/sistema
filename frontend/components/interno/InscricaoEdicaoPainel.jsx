@@ -1,23 +1,19 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Accessibility, CalendarCheck, HandHeart } from "lucide-react";
 import Botao from "@/components/forms/Botao";
-import CardAjudaInscricao from "./CardAjudaInscricao";
 import ModalConfirmacao from "./ModalConfirmacao";
 import CartaoInscricaoParticipante from "./CartaoInscricaoParticipante";
-import CardContribuicaoParticipante from "./CardContribuicaoParticipante";
-import CamposAdaptacao, { ADAPTACAO_VAZIA } from "./CamposAdaptacao";
+import CardContribuicaoParticipante, { temContribuicao } from "./CardContribuicaoParticipante";
+import CamposAdaptacao from "./CamposAdaptacao";
 import Modal from "./Modal";
-import DetalhesAtividadeModal from "./DetalhesAtividadeModal";
-import NavegacaoDiasParticipante, {
-  idAbaDiaParticipante,
-  idPainelDiaParticipante,
-} from "./NavegacaoDiasParticipante";
+import ModalInscricao from "./ModalInscricao";
+import SeletorAtividadesInscricao from "./SeletorAtividadesInscricao";
 import { useToast } from "./ToastProvider";
-import { formatarPeriodoAtividade, formatarDiaAtividade } from "@/lib/publico";
-import { haSobreposicao, agruparAtividadesPorDia } from "@/lib/inscricao";
-import { avisoAtividade } from "@/lib/avisoAtividade";
+import { formatarPeriodoEdicao } from "@/lib/publico";
+import { paraNumeroRomano } from "@/lib/romanos";
 import { adaptacaoInscricaoSchema, extrairErros } from "@/lib/validacao";
 import {
   buscarInscricaoEdicao,
@@ -28,26 +24,75 @@ import {
 } from "@/lib/participanteInscricoes";
 import styles from "./InscricaoEdicaoPainel.module.scss";
 
-export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
+function plural(n, singular, plural) {
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
+function formatarDiaHora(iso) {
+  const data = new Date(iso);
+  const [, mes, dia] = data.toISOString().slice(0, 10).split("-");
+  return `${dia}/${mes} às ${data.toISOString().slice(11, 16).replace(":", "h")}`;
+}
+
+function respostaAdaptacao(inscricaoEdicao) {
+  if (inscricaoEdicao?.precisaAdaptacao === true) return inscricaoEdicao.adaptacoesNecessarias;
+  if (inscricaoEdicao?.precisaAdaptacao === false) return "Não necessita de adaptação ou recurso específico.";
+  return "Você ainda não respondeu.";
+}
+
+function situacaoAtividades(inscricoesAtividade) {
+  const confirmadas = inscricoesAtividade.filter((item) => item.status === "CONFIRMADA").length;
+  const espera = inscricoesAtividade.filter((item) => item.status === "LISTA_ESPERA").length;
+  if (confirmadas + espera === 0) return "Nenhuma atividade escolhida ainda.";
+  return [
+    confirmadas > 0 && plural(confirmadas, "confirmada", "confirmadas"),
+    espera > 0 && `${espera} na lista de espera`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+// Linha do resumo da inscrição — as mesmas etapas do passo a passo, cada uma
+// com a situação e a ação ao lado.
+function LinhaResumo({ Icone, titulo, children, acao }) {
+  return (
+    <li className={styles.linhaResumo}>
+      <Icone size={20} strokeWidth={1.5} aria-hidden="true" className={styles.iconeResumo} />
+      <div className={styles.textoResumo}>
+        <span className={styles.tituloResumo}>{titulo}</span>
+        <span className={styles.situacaoResumo}>{children}</span>
+      </div>
+      {acao && <div className={styles.acaoResumo}>{acao}</div>}
+    </li>
+  );
+}
+
+// Inscrição do participante numa edição. Sem inscrição geral: um convite e o
+// botão que abre o passo a passo (ModalInscricao) — `abrirInscricao` (vindo de
+// ?inscrever=1, usado pelo Início e por /inscricao) já abre o modal. Inscrito:
+// resumo com as etapas (acessibilidade, atividades, contribuição), cada uma
+// com sua ação num modal próprio, e o comprovante logo abaixo.
+export default function InscricaoEdicaoPainel({ edicaoId, usuario, abrirInscricao = false }) {
   const router = useRouter();
   const { notificar } = useToast();
 
   const [estado, setEstado] = useState(null);
   const [erro, setErro] = useState(false);
-  const [processandoGeral, setProcessandoGeral] = useState(false);
-  const [processandoAtividadeId, setProcessandoAtividadeId] = useState(null);
+  const [inscrevendo, setInscrevendo] = useState(false);
+  const aberturaAutomatica = useRef(abrirInscricao);
+
   const [confirmando, setConfirmando] = useState(null);
   const [confirmandoCarregando, setConfirmandoCarregando] = useState(false);
-  const [detalheAtividade, setDetalheAtividade] = useState(null);
-  const [diaAtivo, setDiaAtivo] = useState(null);
-  const idDias = useId();
-  // Pergunta de acessibilidade: `adaptacao` é o formulário da primeira
-  // inscrição; `editandoAdaptacao` é o modal de alterar a resposta depois.
-  const [adaptacao, setAdaptacao] = useState(ADAPTACAO_VAZIA);
-  const [errosAdaptacao, setErrosAdaptacao] = useState({});
+
   const [editandoAdaptacao, setEditandoAdaptacao] = useState(null);
-  const [errosEdicaoAdaptacao, setErrosEdicaoAdaptacao] = useState({});
+  const [errosAdaptacao, setErrosAdaptacao] = useState({});
   const [salvandoAdaptacao, setSalvandoAdaptacao] = useState(false);
+
+  const [escolhendoAtividades, setEscolhendoAtividades] = useState(false);
+  const [selecionadas, setSelecionadas] = useState(() => new Set());
+  const [salvandoAtividades, setSalvandoAtividades] = useState(false);
+
+  const [vendoContribuicao, setVendoContribuicao] = useState(false);
 
   async function carregar() {
     try {
@@ -64,55 +109,33 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edicaoId]);
 
-  async function confirmarInscricaoGeral(evento) {
-    evento.preventDefault();
-    const resultado = adaptacaoInscricaoSchema.safeParse(adaptacao);
-    if (!resultado.success) {
-      setErrosAdaptacao(extrairErros(resultado));
-      return;
-    }
+  // ?inscrever=1 abre o passo a passo uma vez, se ainda dá para se inscrever,
+  // e sai da URL para recarregar a página não abrir de novo.
+  useEffect(() => {
+    if (!estado || !aberturaAutomatica.current) return;
+    aberturaAutomatica.current = false;
+    window.history.replaceState(window.history.state, "", `/participante/inscricoes/${edicaoId}`);
+    if (estado.aberta && !estado.jaInscritoNaEdicao) setInscrevendo(true);
+  }, [estado, edicaoId]);
+
+  function aposInscrever() {
+    carregar();
+    router.refresh();
+  }
+
+  function abrirAdaptacao(inscricaoEdicao) {
     setErrosAdaptacao({});
-
-    setProcessandoGeral(true);
-    try {
-      await salvarInscricao(edicaoId, [], resultado.data);
-      notificar("Inscrição confirmada com sucesso.");
-      await carregar();
-      router.refresh();
-    } catch (erroRequisicao) {
-      notificar(erroRequisicao.message, "erro");
-    } finally {
-      setProcessandoGeral(false);
-    }
-  }
-
-  async function inscreverEmAtividade(atividadeId) {
-    setProcessandoAtividadeId(atividadeId);
-    try {
-      await salvarInscricao(edicaoId, [atividadeId]);
-      notificar("Inscrição na atividade confirmada.");
-      await carregar();
-      router.refresh();
-    } catch (erroRequisicao) {
-      notificar(erroRequisicao.message, "erro");
-    } finally {
-      setProcessandoAtividadeId(null);
-    }
-  }
-
-  function abrirEdicaoAdaptacao(inscricaoEdicao) {
-    setErrosEdicaoAdaptacao({});
     setEditandoAdaptacao({
       precisaAdaptacao: inscricaoEdicao?.precisaAdaptacao ?? null,
       adaptacoesNecessarias: inscricaoEdicao?.adaptacoesNecessarias || "",
     });
   }
 
-  async function salvarEdicaoAdaptacao(evento) {
+  async function salvarAdaptacao(evento) {
     evento.preventDefault();
     const resultado = adaptacaoInscricaoSchema.safeParse(editandoAdaptacao);
     if (!resultado.success) {
-      setErrosEdicaoAdaptacao(extrairErros(resultado));
+      setErrosAdaptacao(extrairErros(resultado));
       return;
     }
 
@@ -126,6 +149,32 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
       notificar(erroRequisicao.message, "erro");
     } finally {
       setSalvandoAdaptacao(false);
+    }
+  }
+
+  function abrirEscolhaAtividades() {
+    setSelecionadas(new Set());
+    setEscolhendoAtividades(true);
+  }
+
+
+  async function salvarAtividades() {
+    if (selecionadas.size === 0) return;
+    setSalvandoAtividades(true);
+    try {
+      await salvarInscricao(edicaoId, [...selecionadas]);
+      notificar(
+        selecionadas.size === 1 ? "Inscrição na atividade confirmada." : "Inscrições nas atividades confirmadas.",
+      );
+      setEscolhendoAtividades(false);
+      await carregar();
+      router.refresh();
+    } catch (erroRequisicao) {
+      notificar(erroRequisicao.message, "erro");
+      // Vagas/conflitos podem ter mudado desde que a lista foi aberta.
+      await carregar();
+    } finally {
+      setSalvandoAtividades(false);
     }
   }
 
@@ -167,187 +216,208 @@ export default function InscricaoEdicaoPainel({ edicaoId, usuario }) {
     );
   }
 
-  const { edicao, aberta, jaInscritoNaEdicao, inscricaoAtual, atividades, apresentacoes = [] } = estado;
+  const { edicao, aberta, jaInscritoNaEdicao, inscricaoAtual, atividades = [], apresentacoes = [] } = estado;
   const inscricoesAtividade = inscricaoAtual?.inscricoesAtividade || [];
   const inscricaoEdicao = inscricaoAtual?.inscricaoEdicao;
-  const dias = agruparAtividadesPorDia(atividades || []);
-  const chaveAtiva = diaAtivo && dias.some((dia) => dia.chave === diaAtivo) ? diaAtivo : (dias[0]?.chave ?? null);
-  const diaAtual = dias.find((dia) => dia.chave === chaveAtiva) ?? null;
+  const periodo = formatarPeriodoEdicao(edicao.dataInicio, edicao.dataFim);
 
   return (
     <div className={styles.pagina}>
-      <CardAjudaInscricao />
-
-      <h1 className={styles.titulo}>{edicao.nome}</h1>
+      <div>
+        <p className={styles.eyebrow}>{paraNumeroRomano(edicao.numero)} edição</p>
+        <h1 className={styles.titulo}>{edicao.nome}</h1>
+        {periodo && <p className={styles.periodo}>{periodo}</p>}
+      </div>
 
       {!aberta && (
         <div className={styles.aviso}>
-          <p>As inscrições desta edição estão encerradas.</p>
+          <p>
+            {jaInscritoNaEdicao
+              ? "As inscrições desta edição estão encerradas — não dá mais para escolher ou cancelar atividades."
+              : "As inscrições desta edição estão encerradas."}
+          </p>
         </div>
       )}
 
       {jaInscritoNaEdicao ? (
         <>
-          <CartaoInscricaoParticipante
-            edicao={edicao}
-            inscricoesAtividade={inscricoesAtividade}
-            apresentacoes={apresentacoes}
-            nomeParticipante={usuario?.nome}
-            onCancelarAtividade={
-              aberta ? (item) => setConfirmando({ tipo: "atividade", item }) : undefined
-            }
-          />
-          <section className={styles.adaptacao} aria-labelledby="titulo-adaptacao">
-            <div className={styles.adaptacaoTexto}>
-              <h2 id="titulo-adaptacao" className={styles.subtitulo}>
-                Adaptações e recursos
-              </h2>
-              <p className={styles.adaptacaoResposta}>
-                {inscricaoEdicao?.precisaAdaptacao === true
-                  ? inscricaoEdicao.adaptacoesNecessarias
-                  : inscricaoEdicao?.precisaAdaptacao === false
-                    ? "Você informou que não necessita de adaptação ou recurso específico."
-                    : "Você ainda não informou se necessita de alguma adaptação ou recurso específico."}
-              </p>
-            </div>
-            <Botao type="button" variante="secundario" onClick={() => abrirEdicaoAdaptacao(inscricaoEdicao)}>
-              {inscricaoEdicao?.precisaAdaptacao == null ? "Responder" : "Alterar"}
-            </Botao>
+          {/* Comprovante primeiro: crachá e agenda são o que a pessoa vem
+              buscar; os ajustes (acessibilidade, atividades, contribuição)
+              vêm depois. O cartão já se identifica como "Comprovante de
+              inscrição". */}
+          <section className={styles.secao} aria-label="Comprovante">
+            <CartaoInscricaoParticipante
+              edicao={edicao}
+              inscricoesAtividade={inscricoesAtividade}
+              apresentacoes={apresentacoes}
+              nomeParticipante={usuario?.nome}
+              onCancelarAtividade={aberta ? (item) => setConfirmando({ tipo: "atividade", item }) : undefined}
+              onEscolherAtividades={aberta && atividades.length > 0 ? abrirEscolhaAtividades : undefined}
+            />
           </section>
-          <CardContribuicaoParticipante edicao={edicao} />
+
+          <section className={styles.secao} aria-labelledby="titulo-resumo">
+            <h2 id="titulo-resumo" className={styles.tituloSecao}>
+              Ajustes da inscrição
+            </h2>
+            <ul className={styles.resumo}>
+              <LinhaResumo
+                Icone={Accessibility}
+                titulo="Acessibilidade"
+                acao={
+                  <Botao type="button" variante="secundario" onClick={() => abrirAdaptacao(inscricaoEdicao)}>
+                    {inscricaoEdicao?.precisaAdaptacao == null ? "Responder" : "Alterar"}
+                  </Botao>
+                }
+              >
+                {respostaAdaptacao(inscricaoEdicao)}
+              </LinhaResumo>
+
+              {(atividades.length > 0 || inscricoesAtividade.length > 0) && (
+                <LinhaResumo
+                  Icone={CalendarCheck}
+                  titulo="Atividades"
+                  acao={
+                    aberta &&
+                    atividades.length > 0 && (
+                      <Botao type="button" variante="secundario" onClick={abrirEscolhaAtividades}>
+                        Escolher atividades
+                      </Botao>
+                    )
+                  }
+                >
+                  {situacaoAtividades(inscricoesAtividade)}
+                  {aberta && atividades.length === 0 && " Não há outras para escolher."}
+                </LinhaResumo>
+              )}
+
+              {temContribuicao(edicao) && (
+                <LinhaResumo
+                  Icone={HandHeart}
+                  titulo={edicao.tituloContribuicao || "Contribuição voluntária"}
+                  acao={
+                    <Botao type="button" variante="secundario" onClick={() => setVendoContribuicao(true)}>
+                      Ver como contribuir
+                    </Botao>
+                  }
+                >
+                  Opcional — ajuda a manter o evento.
+                </LinhaResumo>
+              )}
+            </ul>
+          </section>
+
           {aberta && (
             <div className={styles.cancelarGeral}>
-              <Botao type="button" variante="perigo" onClick={() => setConfirmando({ tipo: "geral" })}>
+              <button type="button" className={styles.linkPerigo} onClick={() => setConfirmando({ tipo: "geral" })}>
                 Cancelar minha inscrição no evento
-              </Botao>
+              </button>
             </div>
           )}
         </>
       ) : (
         aberta && (
-          <form className={styles.confirmarGeral} onSubmit={confirmarInscricaoGeral} noValidate>
-            <p>
-              Você ainda não está inscrito(a) nesta edição. Depois de confirmar, você poderá escolher as
-              atividades específicas.
+          <section className={styles.convite} aria-labelledby="titulo-convite">
+            <h2 id="titulo-convite" className={styles.tituloConvite}>
+              Você ainda não está inscrito(a)
+            </h2>
+            <p className={styles.textoConvite}>
+              A inscrição é feita em poucos passos: acessibilidade
+              {atividades.length > 0 ? ", escolha das atividades" : ""}
+              {temContribuicao(edicao) ? ", contribuição voluntária (opcional)" : ""} e comprovante.
             </p>
-            <CamposAdaptacao
-              id="adaptacao-inscricao"
-              valor={adaptacao}
-              onChange={setAdaptacao}
-              erros={errosAdaptacao}
-            />
-            <div className={styles.acoesFormulario}>
-              <Botao type="submit" carregando={processandoGeral}>
-                Confirmar inscrição no evento
+            {edicao.fimInscricoes && (
+              <p className={styles.apoio}>Inscrições abertas até {formatarDiaHora(edicao.fimInscricoes)}.</p>
+            )}
+            <div>
+              <Botao type="button" onClick={() => setInscrevendo(true)}>
+                Inscrever-se
               </Botao>
             </div>
-          </form>
+          </section>
         )
       )}
 
-      {aberta && jaInscritoNaEdicao && dias.length > 0 && (
-        <div className={styles.secaoAtividades}>
-          <h2 className={styles.subtitulo}>Atividades específicas</h2>
-
-          {dias.length > 1 ? (
-            <NavegacaoDiasParticipante
-              dias={dias}
-              chaveAtiva={chaveAtiva}
-              onSelecionar={setDiaAtivo}
-              idBase={idDias}
-            />
-          ) : (
-            diaAtual && <p className={styles.diaUnico}>{formatarDiaAtividade(diaAtual.inicioIso).completo}</p>
-          )}
-
-          {diaAtual && (
-            <div
-              className={styles.grade}
-              {...(dias.length > 1
-                ? {
-                    role: "tabpanel",
-                    id: idPainelDiaParticipante(idDias, diaAtual.chave),
-                    "aria-labelledby": idAbaDiaParticipante(idDias, diaAtual.chave),
-                  }
-                : {})}
-            >
-              {diaAtual.atividades.map((atividade) => {
-                const conflito = inscricoesAtividade.find((item) =>
-                  haSobreposicao(atividade, item.atividade)
-                );
-
-                return (
-                  <article key={atividade.id} className={styles.cartao}>
-                    <div className={styles.cartaoCabecalho}>
-                      <span className={styles.tipo}>{atividade.tipoAtividade.nome}</span>
-                      <h3 className={styles.cartaoTitulo}>{atividade.nome}</h3>
-                    </div>
-                    <p className={styles.cartaoMeta}>
-                      {formatarPeriodoAtividade(atividade.inicioAtividade, atividade.fimAtividade)}
-                    </p>
-                    {avisoAtividade(atividade, "INSCRICAO") && (
-                      <p className={styles.cartaoDestaque}>{atividade.destaque}</p>
-                    )}
-                    <p className={styles.cartaoMeta}>
-                      {atividade.semLimiteVagas
-                        ? "Sem limite de vagas"
-                        : atividade.lotada
-                          ? "Lotada (lista de espera)"
-                          : `${atividade.vagasRestantes} vaga(s)`}
-                    </p>
-                    <div className={styles.cartaoAcoes}>
-                      <button
-                        type="button"
-                        className={styles.detalhes}
-                        onClick={() => setDetalheAtividade(atividade)}
-                      >
-                        Ver detalhes <span aria-hidden="true">→</span>
-                      </button>
-                      {conflito ? (
-                        <span className={styles.conflito}>
-                          Conflita com &quot;{conflito.atividade.nome}&quot;
-                        </span>
-                      ) : (
-                        <Botao
-                          type="button"
-                          variante="secundario"
-                          carregando={processandoAtividadeId === atividade.id}
-                          onClick={() => inscreverEmAtividade(atividade.id)}
-                        >
-                          Inscrever-se
-                        </Botao>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {detalheAtividade && (
-        <DetalhesAtividadeModal atividade={detalheAtividade} onFechar={() => setDetalheAtividade(null)} />
+      {inscrevendo && (
+        <ModalInscricao
+          edicao={edicao}
+          atividades={atividades}
+          apresentacoes={apresentacoes}
+          nomeParticipante={usuario?.nome}
+          onInscrito={aposInscrever}
+          onFechar={() => setInscrevendo(false)}
+        />
       )}
 
       {editandoAdaptacao && (
-        <Modal titulo="Adaptações e recursos" onFechar={() => setEditandoAdaptacao(null)}>
-          <form className={styles.formularioModal} onSubmit={salvarEdicaoAdaptacao} noValidate>
+        <Modal
+          titulo="Acessibilidade"
+          onFechar={() => setEditandoAdaptacao(null)}
+          rodape={
+            <>
+              <Botao type="button" variante="secundario" onClick={() => setEditandoAdaptacao(null)}>
+                Cancelar
+              </Botao>
+              <Botao type="submit" form="form-adaptacao" carregando={salvandoAdaptacao}>
+                Salvar
+              </Botao>
+            </>
+          }
+        >
+          <form id="form-adaptacao" className={styles.formularioModal} onSubmit={salvarAdaptacao} noValidate>
             <CamposAdaptacao
               id="adaptacao-edicao"
               valor={editandoAdaptacao}
               onChange={setEditandoAdaptacao}
-              erros={errosEdicaoAdaptacao}
+              erros={errosAdaptacao}
             />
-            <div className={styles.acoesFormulario}>
-              <Botao type="button" variante="secundario" onClick={() => setEditandoAdaptacao(null)}>
+          </form>
+        </Modal>
+      )}
+
+      {escolhendoAtividades && (
+        <Modal
+          titulo="Escolher atividades"
+          onFechar={() => setEscolhendoAtividades(false)}
+          telaCheiaNoCelular
+          rodape={
+            <>
+              <Botao type="button" variante="secundario" onClick={() => setEscolhendoAtividades(false)}>
                 Cancelar
               </Botao>
-              <Botao type="submit" carregando={salvandoAdaptacao}>
-                Salvar
+              <Botao
+                type="button"
+                carregando={salvandoAtividades}
+                disabled={selecionadas.size === 0}
+                onClick={salvarAtividades}
+              >
+                {selecionadas.size > 0
+                  ? `Inscrever-se · ${plural(selecionadas.size, "atividade", "atividades")}`
+                  : "Marque ao menos uma"}
               </Botao>
-            </div>
-          </form>
+            </>
+          }
+        >
+          <SeletorAtividadesInscricao
+            atividades={atividades}
+            inscricoesAtividade={inscricoesAtividade}
+            selecionadas={selecionadas}
+            onMudar={setSelecionadas}
+          />
+        </Modal>
+      )}
+
+      {vendoContribuicao && (
+        <Modal
+          titulo={edicao.tituloContribuicao || "Contribuição voluntária"}
+          onFechar={() => setVendoContribuicao(false)}
+          rodape={
+            <Botao type="button" variante="secundario" onClick={() => setVendoContribuicao(false)}>
+              Fechar
+            </Botao>
+          }
+        >
+          <CardContribuicaoParticipante edicao={edicao} embutido />
         </Modal>
       )}
 

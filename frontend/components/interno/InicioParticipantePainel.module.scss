@@ -235,3 +235,155 @@ li:last-child > .area {
   flex-shrink: 0;
   color: var(--texto-suave);
 }
+
+// Card de conteúdo mais rico (apresentação): ocupa a linha inteira da grade,
+// com mais respiro, mas sem passar de uma medida confortável de leitura.
+.cardLargo {
+  grid-column: 1 / -1;
+  max-width: 760px;
+  gap: 0.35rem;
+  padding: 1.5rem;
+
+  .acoes {
+    padding-top: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1.25rem 1rem;
+  }
+}
+
+.apresentacoes {
+  display: flex;
+  flex-direction: column;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+// "+ N outras apresentações": continuação da lista, alinhada ao texto dos
+// itens (depois da folha de calendário), com filete como os itens.
+.maisApresentacoes {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0.6rem 0 0 calc(60px + 1.1rem);
+  border-top: 1px solid var(--borda);
+  color: var(--acento);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+// Cada trabalho: data num bloco de calendário à esquerda; à direita, título,
+// detalhes práticos e a sessão — três níveis separados por espaço e peso.
+.apresentacao {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.1rem;
+  align-items: start;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--borda);
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.apresentacaoCorpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.apresentacaoTitulo {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--texto);
+  overflow-wrap: break-word;
+}
+
+.metaLista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--texto);
+    font-size: 0.875rem;
+  }
+
+  svg {
+    flex-shrink: 0;
+    color: var(--texto-suave);
+  }
+}
+
+.sessao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--borda);
+}
+
+.sessaoRotulo {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+// Nome da sessão costuma ser longo: no máximo duas linhas, link sem
+// sublinhado até o hover (o rótulo "Sessão" já diz o que é).
+.sessaoLink {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--acento);
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+.somenteLeitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -7,7 +7,6 @@ import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
 import ConteudoRichText from "@/components/ConteudoRichText";
-import CardAjudaInscricao from "./CardAjudaInscricao";
 import FormularioMonitoria from "./FormularioMonitoria";
 import { useToast } from "./ToastProvider";
 import { formatarPeriodoEdicao } from "@/lib/publico";
@@ -67,7 +66,13 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
     try {
       const resposta = await salvarInscricaoMonitoria(edicaoId, dados);
       const eraNova = !estado.inscricao || estado.inscricao.status === "CANCELADA";
-      notificar(eraNova ? "Inscrição na monitoria enviada." : "Inscrição atualizada.");
+      notificar(
+        eraNova
+          ? "Inscrição na monitoria enviada."
+          : estado.inscricao.dadosPendentes
+            ? "Dados de monitor(a) completados."
+            : "Inscrição atualizada."
+      );
       setEstado((atual) => ({ ...atual, inscricao: resposta.inscricao }));
       setEditando(false);
       router.refresh();
@@ -108,7 +113,10 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
   }
 
   const { edicao, aberta, inscricao } = estado;
-  const podeEditar = aberta && !edicao.resultadoDivulgado;
+  // Incluído(a) pela organização e ainda sem completar os dados: completa uma
+  // vez, mesmo com a janela fechada ou o resultado divulgado (o backend aceita).
+  const completando = Boolean(inscricao?.dadosPendentes);
+  const podeEditar = (aberta && !edicao.resultadoDivulgado) || completando;
   const periodo =
     edicao.inicioInscricoesMonitoria && edicao.fimInscricoesMonitoria
       ? formatarPeriodoEdicao(edicao.inicioInscricoesMonitoria, edicao.fimInscricoesMonitoria)
@@ -118,8 +126,6 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
 
   return (
     <div className={styles.pagina}>
-      <CardAjudaInscricao />
-
       <div>
         <h1 className={styles.titulo}>Monitoria — {edicao.nome}</h1>
         <p className={styles.descricao}>
@@ -145,12 +151,24 @@ export default function MonitoriaParticipantePainel({ edicaoId, usuario }) {
             </h2>
             <span className={styles.tag}>{ROTULOS_STATUS_MONITORIA[inscricao.status]}</span>
           </div>
+          {completando && (
+            <p className={styles.mensagem}>
+              A Coordenação de Monitoria incluiu você na monitoria desta edição. Complete seus dados para finalizar a
+              inscrição.
+            </p>
+          )}
           <p className={styles.mensagem}>{mensagemStatus(inscricao)}</p>
-          <p className={styles.apoio}>Atividades de interesse: {inscricao.funcoes.join("; ")}.</p>
+          {inscricao.funcoes.length > 0 && (
+            <p className={styles.apoio}>Atividades de interesse: {inscricao.funcoes.join("; ")}.</p>
+          )}
           <div className={styles.acoes}>
             {podeEditar && (
-              <Botao type="button" variante="secundario" onClick={() => setEditando(true)}>
-                {inscricao.status === "CANCELADA" ? "Inscrever-se novamente" : "Editar inscrição"}
+              <Botao type="button" variante={completando ? "primario" : "secundario"} onClick={() => setEditando(true)}>
+                {completando
+                  ? "Completar dados"
+                  : inscricao.status === "CANCELADA"
+                    ? "Inscrever-se novamente"
+                    : "Editar inscrição"}
               </Botao>
             )}
             {!["CANCELADA", "NAO_SELECIONADO"].includes(inscricao.status) && (

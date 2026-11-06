@@ -1,0 +1,43 @@
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 6px;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    background: var(--fundo);
+    color: var(--acento);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+  }
+}
+
+// Topbar (só existe acima de 700px).
+.desktop {
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--borda);
+}
+
+// Topo da Sidebar no celular: ícone com alvo de 44px; some no desktop, onde
+// a Topbar já tem o botão.
+.mobile {
+  display: none;
+
+  @media (max-width: 700px) {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+  }
+}

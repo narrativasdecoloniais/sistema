@@ -82,6 +82,10 @@ export function definirStatusMonitoria(edicaoId, id, dados) {
   return apiClient.patch(`/edicoes/${edicaoId}/monitoria/${id}/status`, dados);
 }
 
+export function incluirMonitor(edicaoId, dados) {
+  return apiClient.post(`/edicoes/${edicaoId}/monitoria`, dados);
+}
+
 export function definirStatusMonitoriaEmLote(edicaoId, ids, status) {
   return apiClient.post(`/edicoes/${edicaoId}/monitoria/status-em-lote`, { ids, status });
 }

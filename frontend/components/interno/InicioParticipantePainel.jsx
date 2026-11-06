@@ -13,10 +13,14 @@ import {
   ChevronRight,
   Presentation,
   User,
+  Clock,
+  MapPin,
 } from "lucide-react";
 import { paraNumeroRomano } from "@/lib/romanos";
-import { detalheAtividade, linkAtividade } from "@/lib/apresentacao";
+import { linkAtividade } from "@/lib/apresentacao";
+import { formatarFaixaHorario } from "@/lib/publico";
 import { buscarResumoParticipante } from "@/lib/participanteResumo";
+import BlocoCalendario from "./BlocoCalendario";
 import styles from "./InicioParticipantePainel.module.scss";
 
 // Datas do backend são "ingênuas" (horário de Brasília gravado como UTC) —
@@ -79,7 +83,7 @@ function cardInscricao({ edicao, inscricao }) {
       titulo: "Inscrições abertas",
       detalhes: [inscricao.fim ? `Até ${formatarDiaHora(inscricao.fim)}.` : null],
       pendente: "Você ainda não se inscreveu nesta edição.",
-      acoes: [{ href, rotulo: "Inscrever-se", principal: true }],
+      acoes: [{ href: `${href}?inscrever=1`, rotulo: "Inscrever-se", principal: true }],
     };
   }
 
@@ -138,6 +142,18 @@ function cardMonitoria({ edicao, monitoria }) {
       titulo: monitoria.status === "CANCELADA" ? "Você desistiu da candidatura" : "Seleção de monitores aberta",
       detalhes: [prazo],
       acoes: [{ href, rotulo: monitoria.status === "CANCELADA" ? "Candidatar-se de novo" : "Candidatar-se" }],
+    };
+  }
+
+  if (monitoria.dadosPendentes) {
+    return {
+      chave: "monitoria",
+      Icone: Handshake,
+      rotulo: "Monitoria",
+      titulo: SITUACAO_MONITORIA[monitoria.status],
+      detalhes: ["A Coordenação de Monitoria incluiu você na monitoria desta edição."],
+      pendente: "Complete seus dados de monitor(a).",
+      acoes: [{ href, rotulo: "Completar dados", principal: true }],
     };
   }
 
@@ -202,29 +218,96 @@ function cardSubmissoes({ submissoes }) {
   };
 }
 
+// "Hoje" em Brasília (UTC−3, sem horário de verão), no mesmo formato
+// "ingênuo" das datas do backend.
+function hojeEmBrasilia() {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function diasAte(iso) {
+  const alvo = Date.parse(new Date(iso).toISOString().slice(0, 10));
+  return Math.round((alvo - Date.parse(hojeEmBrasilia())) / 86400000);
+}
+
+// Contagem regressiva — o dia e a hora em si ficam no bloco de calendário,
+// então o título não os repete.
+function quandoApresenta(iso) {
+  const dias = diasAte(iso);
+  if (dias <= 0) return "é hoje";
+  if (dias === 1) return "é amanhã";
+  return `é em ${dias} dias`;
+}
+
+// Um trabalho a apresentar: bloco de calendário (data) + título do trabalho em
+// destaque + horário e local em linhas com ícone + sessão como link.
+function ItemApresentacao({ apresentacao }) {
+  const { atividade } = apresentacao;
+  return (
+    <li className={styles.apresentacao}>
+      <BlocoCalendario iso={atividade.inicioAtividade} />
+      <div className={styles.apresentacaoCorpo}>
+        <p className={styles.apresentacaoTitulo}>{apresentacao.titulo}</p>
+        <ul className={styles.metaLista}>
+          <li>
+            <Clock size={16} strokeWidth={1.5} aria-hidden="true" />
+            <span className={styles.somenteLeitor}>Horário: </span>
+            {formatarFaixaHorario(atividade.inicioAtividade, atividade.fimAtividade)}
+          </li>
+          <li>
+            <MapPin size={16} strokeWidth={1.5} aria-hidden="true" />
+            <span className={styles.somenteLeitor}>Local: </span>
+            {atividade.local || "A definir"}
+          </li>
+        </ul>
+        <p className={styles.sessao}>
+          <span className={styles.sessaoRotulo}>Sessão</span>
+          <Link href={linkAtividade({ slug: apresentacao.edicaoSlug }, atividade)} className={styles.sessaoLink}>
+            {atividade.nome}
+          </Link>
+        </p>
+      </div>
+    </li>
+  );
+}
+
 // Onde e quando a pessoa apresenta (autor ou coautor) — só com a
 // distribuição publicada e enquanto a atividade não terminou.
+// No Início cabem as duas próximas; as demais ficam a um link, em Minhas
+// submissões (cada trabalho tem o próprio cartão lá) — o Início não pode
+// crescer sem limite no celular.
+const MAX_APRESENTACOES_INICIO = 2;
+
 function cardApresentacao({ submissoes }) {
   const apresentacoes = submissoes?.apresentacoes || [];
   if (apresentacoes.length === 0) return null;
   const [proxima] = apresentacoes;
+  const visiveis = apresentacoes.slice(0, MAX_APRESENTACOES_INICIO);
+  const restantes = apresentacoes.length - visiveis.length;
   const unica = apresentacoes.length === 1;
+  const quando = quandoApresenta(proxima.atividade.inicioAtividade);
 
   return {
     chave: "apresentacao",
     Icone: Presentation,
-    rotulo: "Apresentação",
+    rotulo: unica ? "Apresentação de trabalho" : `${apresentacoes.length} apresentações de trabalho`,
     agora: true,
-    titulo: unica
-      ? `Você apresenta em ${formatarDiaHora(proxima.atividade.inicioAtividade)}`
-      : `${apresentacoes.length} apresentações marcadas`,
-    detalhes: [unica ? null : `A próxima é em ${formatarDiaHora(proxima.atividade.inicioAtividade)}.`],
-    lista: apresentacoes.map((apresentacao) => ({
-      chave: apresentacao.id,
-      href: linkAtividade({ slug: apresentacao.edicaoSlug }, apresentacao.atividade),
-      texto: apresentacao.titulo,
-      apoio: `${apresentacao.atividade.nome} · ${detalheAtividade(apresentacao.atividade)}`,
-    })),
+    largo: true,
+    titulo: unica ? `Sua apresentação ${quando}` : `A próxima ${quando}`,
+    corpo: (
+      <>
+        <ul className={styles.apresentacoes}>
+          {visiveis.map((apresentacao) => (
+            <ItemApresentacao key={apresentacao.id} apresentacao={apresentacao} />
+          ))}
+        </ul>
+        {restantes > 0 && (
+          <Link href="/participante/submissoes" className={styles.maisApresentacoes}>
+            + {restantes === 1 ? "1 outra apresentação" : `${restantes} outras apresentações`}
+            <ArrowRight size={14} strokeWidth={1.5} aria-hidden="true" />
+          </Link>
+        )}
+      </>
+    ),
     acoes: [{ href: "/participante/submissoes", rotulo: "Ver minhas submissões" }],
   };
 }
@@ -410,10 +493,10 @@ function ListaAreas({ areas }) {
 }
 
 function Card({ card }) {
-  const { Icone, rotulo, titulo, detalhes = [], pendente, lista, acoes } = card;
+  const { Icone, rotulo, titulo, detalhes = [], pendente, lista, corpo, acoes } = card;
   const idTitulo = `inicio-${card.chave}`;
   return (
-    <article className={styles.card} aria-labelledby={idTitulo}>
+    <article className={`${styles.card} ${card.largo ? styles.cardLargo : ""}`} aria-labelledby={idTitulo}>
       <p className={styles.rotulo}>
         <Icone size={16} strokeWidth={1.5} aria-hidden="true" />
         {rotulo}
@@ -439,6 +522,7 @@ function Card({ card }) {
           ))}
         </ul>
       )}
+      {corpo}
       {acoes.length > 0 && (
         <div className={styles.acoes}>
           {acoes.map((acao) => (

@@ -34,7 +34,11 @@ export default function DetalheInscricaoMonitoriaModal({ edicaoId, edicao, inscr
   const [salvando, setSalvando] = useState(false);
   const [abrindoAutorizacao, setAbrindoAutorizacao] = useState(false);
 
-  const idade = idadeEm(inscricao.dataNascimento, dataReferenciaIdade(edicao));
+  // Sem data de nascimento: inscrição incluída pela organização e ainda não
+  // completada pela pessoa.
+  const idade = inscricao.dataNascimento ? idadeEm(inscricao.dataNascimento, dataReferenciaIdade(edicao)) : null;
+  const naoInformado = "Não informado.";
+  const pendente = Boolean(inscricao.incluidaPorId && !inscricao.cienteEm);
   // Depois da divulgação não dá pra voltar para "em análise".
   const opcoesStatus = Object.entries(ROTULOS_STATUS_MONITORIA).filter(
     ([valor]) => !(divulgado && valor === "EM_ANALISE") || inscricao.status === "EM_ANALISE"
@@ -79,6 +83,15 @@ export default function DetalheInscricaoMonitoriaModal({ edicaoId, edicao, inscr
   return (
     <Modal titulo={inscricao.usuario.nome} onFechar={onFechar}>
       <div className={styles.detalhe}>
+        {inscricao.incluidaPorId && (
+          <p className={styles.textoApoio}>
+            Incluída pela organização
+            {inscricao.incluidaPor?.nome ? ` (${inscricao.incluidaPor.nome})` : ""} em {formatarData(inscricao.createdAt)}.
+            {pendente
+              ? " A pessoa ainda não completou os dados na área do participante."
+              : " A pessoa já completou os dados."}
+          </p>
+        )}
         <dl className={styles.metadados}>
           <div>
             <dt>E-mail</dt>
@@ -91,7 +104,7 @@ export default function DetalheInscricaoMonitoriaModal({ edicaoId, edicao, inscr
           <div>
             <dt>Nascimento</dt>
             <dd>
-              {formatarData(inscricao.dataNascimento)} ({idade} anos no evento)
+              {idade === null ? naoInformado : `${formatarData(inscricao.dataNascimento)} (${idade} anos no evento)`}
             </dd>
           </div>
           <div>
@@ -100,36 +113,46 @@ export default function DetalheInscricaoMonitoriaModal({ edicaoId, edicao, inscr
           </div>
           <div>
             <dt>Telefone</dt>
-            <dd>{inscricao.telefone}</dd>
+            <dd>{inscricao.telefone || naoInformado}</dd>
           </div>
           <div>
             <dt>Experiência anterior</dt>
-            <dd>{inscricao.experienciaAnterior ? "Sim" : "Não"}</dd>
+            <dd>
+              {inscricao.experienciaAnterior === null ? naoInformado : inscricao.experienciaAnterior ? "Sim" : "Não"}
+            </dd>
           </div>
         </dl>
 
         <div className={styles.blocoDetalhe}>
           <p className={styles.rotuloBloco}>Curso e instituição</p>
-          <p className={styles.corpo}>{inscricao.cursoInstituicao}</p>
+          <p className={styles.corpo}>{inscricao.cursoInstituicao || naoInformado}</p>
         </div>
 
         <div className={styles.blocoDetalhe}>
           <p className={styles.rotuloBloco}>Atividades de interesse</p>
-          <ul className={styles.corpo}>
-            {inscricao.funcoes.map((funcao) => (
-              <li key={funcao}>{funcao}</li>
-            ))}
-          </ul>
+          {inscricao.funcoes.length === 0 ? (
+            <p className={styles.corpo}>Nenhuma informada.</p>
+          ) : (
+            <ul className={styles.corpo}>
+              {inscricao.funcoes.map((funcao) => (
+                <li key={funcao}>{funcao}</li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className={styles.blocoDetalhe}>
           <p className={styles.rotuloBloco}>Adaptações ou recursos</p>
           <p className={styles.corpo}>
-            {inscricao.precisaAdaptacao ? inscricao.adaptacoesNecessarias : "Não necessita."}
+            {inscricao.precisaAdaptacao === null
+              ? naoInformado
+              : inscricao.precisaAdaptacao
+                ? inscricao.adaptacoesNecessarias
+                : "Não necessita."}
           </p>
         </div>
 
-        {idade < 18 && (
+        {idade !== null && idade < 18 && (
           <div className={styles.blocoDetalhe}>
             <p className={styles.rotuloBloco}>Autorização do(a) responsável</p>
             {inscricao.temAutorizacao ? (

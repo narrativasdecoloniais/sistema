@@ -229,6 +229,49 @@ export function criarInscricaoMonitoriaSchema({ funcoesPermitidas, dataReferenci
     });
 }
 
+// Inclusão de monitor(a) pela Coordenação — espelha criarInclusaoMonitorSchema
+// em backend/src/validators/monitoria.validators.js. Só conta e situação são
+// obrigatórias; o resto a pessoa completa depois.
+const textoOpcionalMonitoria = (max) =>
+  z
+    .string()
+    .trim()
+    .max(max, `Use no máximo ${max} caracteres`)
+    .nullish()
+    .transform((valor) => valor || null);
+
+export function criarInclusaoMonitorSchema({ funcoesPermitidas, dataReferencia }) {
+  return z.object({
+    usuarioId: z.string({ required_error: "Selecione a pessoa" }).uuid("Selecione a pessoa"),
+    status: z.enum(["EM_ANALISE", "SELECIONADO", "LISTA_ESPERA"], {
+      errorMap: () => ({ message: "Situação inválida" }),
+    }),
+    dataNascimento: z
+      .string()
+      .nullish()
+      .transform((valor) => valor || null)
+      .refine((valor) => valor === null || /^\d{4}-\d{2}-\d{2}$/.test(valor), "Data de nascimento inválida")
+      .refine((valor) => {
+        if (valor === null) return true;
+        if (Number.isNaN(new Date(valor).getTime())) return false;
+        const idade = idadeEm(valor, dataReferencia);
+        return idade >= 10 && idade <= 110;
+      }, "Data de nascimento inválida"),
+    telefone: textoOpcionalMonitoria(30).refine((valor) => {
+      if (valor === null) return true;
+      const digitos = valor.replace(/\D/g, "");
+      return digitos.length >= 10 && digitos.length <= 13;
+    }, "Informe um telefone com DDD"),
+    cursoInstituicao: textoOpcionalMonitoria(300),
+    funcoes: z
+      .array(z.string())
+      .default([])
+      .refine((lista) => lista.every((funcao) => funcoesPermitidas.includes(funcao)), "Atividade inválida")
+      .transform((lista) => [...new Set(lista)]),
+    observacaoCoordenacao: textoOpcionalMonitoria(2000),
+  });
+}
+
 const textoCienteMonitoria = z.string().trim().min(1, "Preencha o texto").max(500, "Use no máximo 500 caracteres");
 
 export const configuracaoMonitoriaSchema = z

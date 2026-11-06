@@ -2,13 +2,29 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 900px;
+  max-width: 760px;
+}
+
+.eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acento);
 }
 
 .titulo {
+  margin: 0;
   font-size: 1.4rem;
   color: var(--texto);
-  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.periodo {
+  margin: 0.35rem 0 0;
+  color: var(--texto-suave);
+  font-size: 0.9375rem;
 }
 
 .vazio {
@@ -34,31 +50,122 @@
   }
 }
 
-.confirmarGeral {
+// Sem inscrição: convite com um único botão, que abre o passo a passo.
+.convite {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  padding: 1.1rem 1.25rem;
+  gap: 0.75rem;
+  padding: 1.25rem;
   border: 1px solid var(--borda);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--superficie);
 
-  > p {
-    margin: 0;
-    color: var(--texto);
-    font-size: 0.9375rem;
+  @media (max-width: 600px) {
+    button {
+      width: 100%;
+    }
   }
 }
 
-.acoesFormulario {
+.tituloConvite {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.textoConvite {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.apoio {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+}
+
+.secao {
   display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.75rem;
+}
+
+.tituloSecao {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+// Resumo da inscrição: uma linha por etapa num só cartão, separadas por
+// filete — mesmo desenho da lista "Tudo" do Início.
+.resumo {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.linhaResumo {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+
+  & + & {
+    border-top: 1px solid var(--borda);
+  }
 
   @media (max-width: 600px) {
-    > * {
-      flex: 1 1 100%;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+}
+
+.iconeResumo {
+  flex-shrink: 0;
+  color: var(--texto-suave);
+}
+
+.textoResumo {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.tituloResumo {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.situacaoResumo {
+  color: var(--texto-suave);
+  font-size: 0.875rem;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.acaoResumo {
+  flex-shrink: 0;
+
+  @media (max-width: 600px) {
+    flex: 1 1 100%;
+    padding-left: calc(20px + 0.85rem);
+
+    button {
+      width: 100%;
     }
   }
 }
@@ -69,150 +176,32 @@
   gap: 1.1rem;
 }
 
-.adaptacao {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
-  padding: 1.1rem 1.25rem;
-  border: 1px solid var(--borda);
-  border-radius: 8px;
-  background: var(--superficie);
-}
-
-.adaptacaoTexto {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  flex: 1 1 280px;
-  min-width: 0;
-}
-
-.adaptacaoResposta {
-  margin: 0;
-  color: var(--texto-suave);
-  font-size: 0.9375rem;
-  white-space: pre-line;
-  overflow-wrap: break-word;
-}
-
+// Ação destrutiva rara: discreta, fora do caminho principal; a confirmação
+// fica no ModalConfirmacao.
 .cancelarGeral {
   display: flex;
   justify-content: flex-start;
-}
-
-.secaoAtividades {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.subtitulo {
-  margin: 0;
-  font-size: 1.05rem;
-  color: var(--texto);
-}
-
-.diaUnico {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--texto-suave);
-}
-
-.grade {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-}
-
-.cartao {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.1rem 1.25rem;
-  border: 1px solid var(--borda);
-  border-radius: 8px;
-  background: var(--superficie);
-}
-
-.cartaoCabecalho {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.tipo {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--acento);
-}
-
-.cartaoTitulo {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--texto);
-}
-
-.cartaoMeta {
-  margin: 0;
-  color: var(--texto-suave);
-  font-size: 0.875rem;
-}
-
-// Aviso da atividade (Atividade.destaque): peso e filete no acento, sem caixa
-// colorida (DESIGN.md).
-.cartaoDestaque {
-  margin: 0;
-  padding-left: 0.6rem;
-  border-left: 3px solid var(--acento);
-  color: var(--texto);
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.cartaoAcoes {
-  margin-top: auto;
   padding-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  border-top: 1px solid var(--borda);
 }
 
-.detalhes {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.4rem 0.7rem;
+.linkPerigo {
+  min-height: 44px;
+  padding: 0;
+  border: none;
   background: none;
-  border: 1.5px solid var(--borda);
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  font-family: inherit;
   color: var(--texto-suave);
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
   cursor: pointer;
 
   &:hover {
-    border-color: var(--acento);
-    color: var(--acento);
+    color: var(--erro);
   }
 
   &:focus-visible {
     outline: 2px solid var(--acento);
     outline-offset: 2px;
   }
-}
-
-.conflito {
-  font-size: 0.8125rem;
-  color: var(--texto-suave);
-  font-style: italic;
 }

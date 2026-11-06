@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Link2, Unlink, Wand2, Eye, EyeOff, Send, Globe, Users } from "lucide-react";
+import { Link2, Unlink, Wand2, Eye, EyeOff, Send, Globe, Users, ListOrdered } from "lucide-react";
 import Botao from "@/components/forms/Botao";
 import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
@@ -65,6 +65,8 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
   const publicada = Boolean(estado.publicadaEm);
   const publica = Boolean(estado.publicaEm);
   const outrosTrabalhos = Boolean(estado.outrosTrabalhosEm);
+  // A ordem sempre existe aqui; divulgar só decide se autores e público a veem.
+  const comOrdem = Boolean(estado.comOrdem);
 
   const REQUISICOES = {
     publicar: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao`, { publicar: true }),
@@ -73,6 +75,8 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
     ocultarPublico: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/publicacao-publica`, { publicar: false }),
     mostrarOutros: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/outros-trabalhos`, { publicar: true }),
     ocultarOutros: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/outros-trabalhos`, { publicar: false }),
+    divulgarOrdem: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/ordem-visivel`, { publicar: true }),
+    ocultarOrdem: () => apiClient.patch(`/edicoes/${edicaoId}/apresentacao/ordem-visivel`, { publicar: false }),
     avisos: () => apiClient.post(`/edicoes/${edicaoId}/apresentacao/avisos`, {}),
   };
 
@@ -126,6 +130,18 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
     ocultarOutros: {
       titulo: "Ocultar os outros trabalhos dos autores",
       mensagem: "Os autores voltam a ver só o próprio trabalho na apresentação. Onde e quando apresentam continua visível.",
+      rotulo: "Ocultar",
+    },
+    divulgarOrdem: {
+      titulo: "Divulgar a ordem de apresentação",
+      mensagem:
+        "Os trabalhos de cada atividade passam a aparecer numerados, na ordem da aba \"Por atividade\", e cada autor vê \"Nº a apresentar\" no comprovante e em Minhas submissões. Vale também para a página pública da atividade, se a distribuição estiver divulgada.",
+      rotulo: "Divulgar",
+    },
+    ocultarOrdem: {
+      titulo: "Ocultar a ordem de apresentação",
+      mensagem:
+        "Autores e público deixam de ver a numeração: os trabalhos de cada atividade passam a ser listados por título. A ordem continua salva aqui e pode ser divulgada depois.",
       rotulo: "Ocultar",
     },
     avisos: {
@@ -185,6 +201,18 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
               </>
             )}
           </p>
+          <p className={estilos.semMargem}>
+            {comOrdem ? (
+              <>
+                <strong>Ordem de apresentação:</strong> divulgada — os trabalhos aparecem numerados para autores e
+                público.
+              </>
+            ) : (
+              <>
+                <strong>Ordem de apresentação:</strong> não divulgada — autores e público veem os trabalhos por título.
+              </>
+            )}
+          </p>
           <p className={styles.textoApoio} aria-live="polite">
             Avisos por e-mail: {estado.avisosPendentes} {estado.avisosPendentes === 1 ? "pendente" : "pendentes"}
             {estado.avisosComErro > 0 && ` (${estado.avisosComErro} com erro)`}
@@ -229,6 +257,14 @@ export default function ApresentacaoSubmissoesPainel({ edicaoId, dadosIniciais, 
           >
             {outrosTrabalhos ? <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" /> : <Users size={18} strokeWidth={1.5} aria-hidden="true" />}
             {outrosTrabalhos ? "Ocultar outros trabalhos dos autores" : "Mostrar outros trabalhos aos autores"}
+          </Botao>
+          <Botao
+            type="button"
+            variante="secundario"
+            onClick={() => setConfirmando(comOrdem ? "ocultarOrdem" : "divulgarOrdem")}
+          >
+            {comOrdem ? <EyeOff size={18} strokeWidth={1.5} aria-hidden="true" /> : <ListOrdered size={18} strokeWidth={1.5} aria-hidden="true" />}
+            {comOrdem ? "Ocultar a ordem" : "Divulgar a ordem"}
           </Botao>
           <Botao
             type="button"

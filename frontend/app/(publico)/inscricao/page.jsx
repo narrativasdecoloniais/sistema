@@ -9,7 +9,8 @@ import { buscarEdicaoAtual } from "@/lib/publico";
 // da edição atual, passando pelo login quando preciso.
 export default async function PaginaInscricao() {
   const [usuario, edicao] = await Promise.all([obterUsuarioAtual(), buscarEdicaoAtual()]);
-  const destino = edicao ? `/participante/inscricoes/${edicao.id}` : "/participante/inscricoes";
+  // ?inscrever=1 abre o passo a passo na hora, para quem ainda não está inscrito.
+  const destino = edicao ? `/participante/inscricoes/${edicao.id}?inscrever=1` : "/participante/inscricoes";
 
   redirect(usuario ? destino : `/login?destino=${encodeURIComponent(destino)}`);
 }

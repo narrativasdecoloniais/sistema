@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, UserCheck, ListOrdered, UserX, Mail } from "lucide-react";
+import { Eye, UserCheck, ListOrdered, UserX, Mail, UserPlus } from "lucide-react";
+import Botao from "@/components/forms/Botao";
+import Modal from "./Modal";
 import ModalConfirmacao from "./ModalConfirmacao";
+import IncluirMonitorForm from "./IncluirMonitorForm";
 import DetalheInscricaoMonitoriaModal from "./DetalheInscricaoMonitoriaModal";
 import EnviarEmailModal from "./EnviarEmailModal";
 import CabecalhoTabela, { CelulaSelecao, LinhaSemResultado } from "./CabecalhoTabela";
@@ -24,7 +27,35 @@ const SIM_NAO = [
   { valor: "NAO", rotulo: "Não" },
 ];
 
-const simNao = (valor) => (valor ? "SIM" : "NAO");
+// null = não respondido (inscrição incluída pela organização e ainda não
+// completada pela pessoa).
+const simNao = (valor) => (valor === null || valor === undefined ? null : valor ? "SIM" : "NAO");
+const simNaoTexto = (valor) => (valor === null || valor === undefined ? "" : valor ? "Sim" : "Não");
+
+const ORIGENS = {
+  CANDIDATURA: "Candidatura",
+  ORGANIZACAO_PENDENTE: "Incluída pela organização (dados pendentes)",
+  ORGANIZACAO: "Incluída pela organização",
+};
+
+function origem(inscricao) {
+  if (!inscricao.incluidaPorId) return "CANDIDATURA";
+  return inscricao.cienteEm ? "ORGANIZACAO" : "ORGANIZACAO_PENDENTE";
+}
+
+// "menor": sem data de nascimento não dá pra saber.
+function situacaoAutorizacao(idade, inscricao) {
+  if (idade === null) return "SEM_DATA";
+  if (idade >= 18) return "NAO_SE_APLICA";
+  return inscricao.temAutorizacao ? "ANEXADA" : "FALTANDO";
+}
+
+const ROTULOS_AUTORIZACAO = {
+  ANEXADA: "Anexada",
+  FALTANDO: "Faltando",
+  NAO_SE_APLICA: "Não se aplica",
+  SEM_DATA: "Sem data de nascimento",
+};
 
 function formatarData(valor) {
   return new Date(valor).toLocaleDateString("pt-BR", { timeZone: "UTC" });
@@ -38,7 +69,7 @@ const ACOES_LOTE = {
 
 function montarColunas(edicao, inscricoes) {
   const referencia = dataReferenciaIdade(edicao);
-  const idade = (inscricao) => idadeEm(inscricao.dataNascimento, referencia);
+  const idade = (inscricao) => (inscricao.dataNascimento ? idadeEm(inscricao.dataNascimento, referencia) : null);
   // Catálogo atual + funções que ficaram em inscrições antigas (o catálogo
   // pode ter sido editado depois).
   const funcoes = [...new Set([...edicao.funcoesMonitoria, ...inscricoes.flatMap((inscricao) => inscricao.funcoes)])];
@@ -60,20 +91,16 @@ function montarColunas(edicao, inscricoes) {
       chave: "idade",
       rotulo: "Idade no evento",
       valor: idade,
-      texto: (inscricao) => `${idade(inscricao)}${idade(inscricao) < 18 ? " (menor)" : ""}`,
+      texto: (inscricao) =>
+        idade(inscricao) === null ? "" : `${idade(inscricao)}${idade(inscricao) < 18 ? " (menor)" : ""}`,
     },
     {
       chave: "menor",
       rotulo: "Autorização (menor)",
-      valor: (inscricao) => (idade(inscricao) >= 18 ? "NAO_SE_APLICA" : inscricao.temAutorizacao ? "ANEXADA" : "FALTANDO"),
+      valor: (inscricao) => situacaoAutorizacao(idade(inscricao), inscricao),
       filtro: "select",
-      opcoes: [
-        { valor: "ANEXADA", rotulo: "Anexada" },
-        { valor: "FALTANDO", rotulo: "Faltando" },
-        { valor: "NAO_SE_APLICA", rotulo: "Não se aplica" },
-      ],
-      exportar: (inscricao) =>
-        idade(inscricao) >= 18 ? "Não se aplica" : inscricao.temAutorizacao ? "Anexada" : "Faltando",
+      opcoes: Object.entries(ROTULOS_AUTORIZACAO).map(([valor, rotulo]) => ({ valor, rotulo })),
+      exportar: (inscricao) => ROTULOS_AUTORIZACAO[situacaoAutorizacao(idade(inscricao), inscricao)],
     },
     { chave: "telefone", rotulo: "Telefone", valor: (inscricao) => inscricao.telefone },
     { chave: "pronome", rotulo: "Pronome", valor: (inscricao) => inscricao.pronome || null },
@@ -84,7 +111,7 @@ function montarColunas(edicao, inscricoes) {
       valor: (inscricao) => simNao(inscricao.experienciaAnterior),
       filtro: "select",
       opcoes: SIM_NAO,
-      exportar: (inscricao) => (inscricao.experienciaAnterior ? "Sim" : "Não"),
+      exportar: (inscricao) => simNaoTexto(inscricao.experienciaAnterior),
     },
     {
       chave: "funcoes",
@@ -100,7 +127,7 @@ function montarColunas(edicao, inscricoes) {
       valor: (inscricao) => simNao(inscricao.precisaAdaptacao),
       filtro: "select",
       opcoes: SIM_NAO,
-      exportar: (inscricao) => (inscricao.precisaAdaptacao ? "Sim" : "Não"),
+      exportar: (inscricao) => simNaoTexto(inscricao.precisaAdaptacao),
     },
     {
       chave: "adaptacoes",
@@ -119,6 +146,14 @@ function montarColunas(edicao, inscricoes) {
       chave: "posicao",
       rotulo: "Posição na lista de espera",
       valor: (inscricao) => (inscricao.status === "LISTA_ESPERA" ? inscricao.posicaoListaEspera : null),
+    },
+    {
+      chave: "origem",
+      rotulo: "Origem",
+      valor: origem,
+      filtro: "select",
+      opcoes: Object.entries(ORIGENS).map(([valor, rotulo]) => ({ valor, rotulo })),
+      exportar: (inscricao) => ORIGENS[origem(inscricao)],
     },
     {
       chave: "inscritoEm",
@@ -147,6 +182,7 @@ export default function MonitoriaInscricoesTabela({
   const [loteStatus, setLoteStatus] = useState(null);
   const [processandoLote, setProcessandoLote] = useState(false);
   const [enviandoEmail, setEnviandoEmail] = useState(false);
+  const [incluindo, setIncluindo] = useState(false);
 
   // Uma inscrição por pessoa por edição, então cada linha já é uma conta.
   const destinatariosEmail = useMemo(
@@ -179,20 +215,50 @@ export default function MonitoriaInscricoesTabela({
     }
   }
 
+  async function aoIncluir() {
+    setIncluindo(false);
+    await recarregar();
+  }
+
+  const barraIncluir = (
+    <div className={styles.filtros}>
+      <Botao type="button" variante="secundario" onClick={() => setIncluindo(true)}>
+        <UserPlus size={18} strokeWidth={1.5} aria-hidden="true" />
+        Incluir monitor(a)
+      </Botao>
+    </div>
+  );
+
+  const modalIncluir = incluindo && (
+    <Modal titulo="Incluir monitor(a)" onFechar={() => setIncluindo(false)}>
+      <IncluirMonitorForm
+        edicaoId={edicaoId}
+        edicao={edicao}
+        aoSalvar={aoIncluir}
+        aoCancelar={() => setIncluindo(false)}
+      />
+    </Modal>
+  );
+
   if (inscricoes.length === 0) {
     return (
-      <div className={styles.vazio}>
-        <p>Nenhuma inscrição de monitoria ainda.</p>
-        <p className={styles.vazioApoio}>
-          As inscrições aparecem aqui conforme as pessoas se inscrevem pela área do participante, dentro do período
-          definido em Configurações.
-        </p>
-      </div>
+      <>
+        {barraIncluir}
+        <div className={styles.vazio}>
+          <p>Nenhuma inscrição de monitoria ainda.</p>
+          <p className={styles.vazioApoio}>
+            As inscrições aparecem aqui conforme as pessoas se inscrevem pela área do participante, dentro do período
+            definido em Configurações. Para incluir alguém que não se inscreveu, use &quot;Incluir monitor(a)&quot;.
+          </p>
+        </div>
+        {modalIncluir}
+      </>
     );
   }
 
   return (
     <>
+      {barraIncluir}
       <div className={styles.tabelaWrapper}>
         <BotaoExportarTabela tabela={tabela} nomeArquivo="monitoria" nomeAba="Monitoria">
           {podeEnviarEmail && selecao.quantidade > 0 && (
@@ -221,7 +287,9 @@ export default function MonitoriaInscricoesTabela({
               <LinhaSemResultado tabela={tabela} colSpan={colunas.length + 2} />
             )}
             {tabela.linhasVisiveis.map((inscricao) => {
-              const idade = idadeEm(inscricao.dataNascimento, referencia);
+              const idade = inscricao.dataNascimento ? idadeEm(inscricao.dataNascimento, referencia) : null;
+              const autorizacao = situacaoAutorizacao(idade, inscricao);
+              const traco = <span className={styles.textoSuave}>—</span>;
               return (
                 <tr key={inscricao.id}>
                   <CelulaSelecao selecao={selecao} id={inscricao.id} rotulo={`Selecionar ${inscricao.usuario.nome}`} />
@@ -229,24 +297,30 @@ export default function MonitoriaInscricoesTabela({
                   <td data-rotulo="E-mail">{inscricao.usuario.email}</td>
                   <td data-rotulo="CPF / Documento">{formatarIdentificacao(inscricao.usuario) || "—"}</td>
                   <td data-rotulo="Idade no evento">
-                    {idade}
-                    {idade < 18 && <span className={styles.textoSuave}> (menor)</span>}
-                  </td>
-                  <td data-rotulo="Autorização (menor)">
-                    {idade >= 18 ? (
-                      <span className={styles.textoSuave}>Não se aplica</span>
-                    ) : inscricao.temAutorizacao ? (
-                      "Anexada"
+                    {idade === null ? (
+                      traco
                     ) : (
-                      <strong>Faltando</strong>
+                      <>
+                        {idade}
+                        {idade < 18 && <span className={styles.textoSuave}> (menor)</span>}
+                      </>
                     )}
                   </td>
-                  <td data-rotulo="Telefone">{inscricao.telefone}</td>
+                  <td data-rotulo="Autorização (menor)">
+                    {autorizacao === "FALTANDO" ? (
+                      <strong>Faltando</strong>
+                    ) : autorizacao === "ANEXADA" ? (
+                      "Anexada"
+                    ) : (
+                      <span className={styles.textoSuave}>{ROTULOS_AUTORIZACAO[autorizacao]}</span>
+                    )}
+                  </td>
+                  <td data-rotulo="Telefone">{inscricao.telefone || traco}</td>
                   <td data-rotulo="Pronome">{inscricao.pronome || "—"}</td>
-                  <td data-rotulo="Curso e instituição">{inscricao.cursoInstituicao}</td>
-                  <td data-rotulo="Experiência anterior">{inscricao.experienciaAnterior ? "Sim" : "Não"}</td>
-                  <td data-rotulo="Atividades de interesse">{inscricao.funcoes.join("; ")}</td>
-                  <td data-rotulo="Precisa de adaptação">{inscricao.precisaAdaptacao ? "Sim" : "Não"}</td>
+                  <td data-rotulo="Curso e instituição">{inscricao.cursoInstituicao || traco}</td>
+                  <td data-rotulo="Experiência anterior">{simNaoTexto(inscricao.experienciaAnterior) || traco}</td>
+                  <td data-rotulo="Atividades de interesse">{inscricao.funcoes.join("; ") || traco}</td>
+                  <td data-rotulo="Precisa de adaptação">{simNaoTexto(inscricao.precisaAdaptacao) || traco}</td>
                   <td data-rotulo="Adaptações ou recursos">{inscricao.adaptacoesNecessarias || "—"}</td>
                   <td data-rotulo="Situação">
                     <span className={styles.tag}>{ROTULOS_STATUS_MONITORIA[inscricao.status]}</span>
@@ -256,6 +330,13 @@ export default function MonitoriaInscricoesTabela({
                   </td>
                   <td data-rotulo="Posição na lista de espera">
                     {inscricao.status === "LISTA_ESPERA" ? inscricao.posicaoListaEspera : "—"}
+                  </td>
+                  <td data-rotulo="Origem">
+                    {origem(inscricao) === "CANDIDATURA" ? (
+                      <span className={styles.textoSuave}>{ORIGENS.CANDIDATURA}</span>
+                    ) : (
+                      ORIGENS[origem(inscricao)]
+                    )}
                   </td>
                   <td data-rotulo="Inscrito em">{formatarData(inscricao.createdAt)}</td>
                   <td data-rotulo="Ações" className={styles.colunaAcoes}>
@@ -277,6 +358,8 @@ export default function MonitoriaInscricoesTabela({
           </tbody>
         </table>
       </div>
+
+      {modalIncluir}
 
       {enviandoEmail && (
         <EnviarEmailModal

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Botao from "@/components/forms/Botao";
-import CardAjudaInscricao from "./CardAjudaInscricao";
 import ModalConfirmacao from "./ModalConfirmacao";
 import { useToast } from "./ToastProvider";
 import { formatarPeriodoAtividade } from "@/lib/publico";
@@ -126,8 +125,6 @@ export default function LeituraCredenciamento({ token }) {
 
   return (
     <div className={styles.pagina}>
-      <CardAjudaInscricao />
-
       <section className={styles.cartao} aria-live="polite">
         {previa?.tipo === "ATIVIDADE" ? (
           <>

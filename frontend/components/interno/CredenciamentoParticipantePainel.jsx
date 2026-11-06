@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IdCard, ScanLine } from "lucide-react";
-import CardAjudaInscricao from "./CardAjudaInscricao";
 import CrachaParticipante from "./CrachaParticipante";
 import LeitorQrCode from "./LeitorQrCode";
 import { formatarPeriodoAtividade } from "@/lib/publico";
@@ -109,8 +108,6 @@ export default function CredenciamentoParticipantePainel({ abaInicial = "cracha"
 
   return (
     <div className={styles.pagina}>
-      <CardAjudaInscricao />
-
       <h1 className={styles.titulo}>Credenciamento</h1>
 
       <div className={styles.abas} role="tablist" aria-label="Formas de credenciamento">
