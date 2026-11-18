@@ -9,6 +9,7 @@ import ModalConfirmacao from "./ModalConfirmacao";
 import ParticipanteForm from "./ParticipanteForm";
 import AlterarEmailUsuarioForm from "./AlterarEmailUsuarioForm";
 import UnificarContasForm from "./UnificarContasForm";
+import ContasParecidasPainel from "./ContasParecidasPainel";
 import SeletorSecoesAdmin from "./SeletorSecoesAdmin";
 import ConcederAcessoModal from "./ConcederAcessoModal";
 import UsuariosEdicaoTabela from "./UsuariosEdicaoTabela";
@@ -129,6 +130,7 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
   const [modalAberto, setModalAberto] = useState(false);
   const [modalEmailAberto, setModalEmailAberto] = useState(false);
   const [modalUnificarAberto, setModalUnificarAberto] = useState(false);
+  const [modalParecidasAberto, setModalParecidasAberto] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
   const [editandoPermissoesId, setEditandoPermissoesId] = useState(null);
@@ -335,6 +337,12 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
             Unificar contas
           </Botao>
           {souAdmin && (
+            <Botao type="button" variante="secundario" onClick={() => setModalParecidasAberto(true)}>
+              <GitMerge size={18} strokeWidth={1.5} aria-hidden="true" />
+              Contas sem CPF parecidas
+            </Botao>
+          )}
+          {souAdmin && (
             <Botao type="button" onClick={() => setModalAberto(true)}>
               <UserPlus size={18} strokeWidth={1.5} aria-hidden="true" />
               Adicionar organizador
@@ -482,6 +490,12 @@ export default function ParticipantesPainel({ participantesIniciais, usuarios = 
       {modalEmailAberto && (
         <Modal titulo="Alterar e-mail de usuário" onFechar={fecharModalEmail}>
           <AlterarEmailUsuarioForm aoSalvar={aoSalvarEmail} aoCancelar={fecharModalEmail} />
+        </Modal>
+      )}
+
+      {modalParecidasAberto && (
+        <Modal titulo="Contas sem CPF: possíveis duplicadas" onFechar={() => setModalParecidasAberto(false)}>
+          <ContasParecidasPainel aoFechar={() => setModalParecidasAberto(false)} />
         </Modal>
       )}
 

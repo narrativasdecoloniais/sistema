@@ -33,11 +33,11 @@ function CartaoConta({ titulo, conta }) {
   );
 }
 
-export default function UnificarContasForm({ aoConcluir, aoCancelar }) {
+export default function UnificarContasForm({ aoConcluir, aoCancelar, manterInicial = null, removerInicial = null }) {
   const { notificar } = useToast();
 
-  const [manter, setManter] = useState(null);
-  const [remover, setRemover] = useState(null);
+  const [manter, setManter] = useState(manterInicial);
+  const [remover, setRemover] = useState(removerInicial);
   const [previa, setPrevia] = useState(null);
   const [carregandoPrevia, setCarregandoPrevia] = useState(false);
   const [confirmarEmail, setConfirmarEmail] = useState(false);
