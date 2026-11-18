@@ -11,6 +11,7 @@ const {
 } = require("../validators/usuarios.validators");
 const usuariosService = require("../services/usuarios.service");
 const unificacaoService = require("../services/unificacaoUsuarios.service");
+const contasParecidasService = require("../services/contasParecidas.service");
 const authService = require("../services/auth.service");
 const tokenService = require("../services/token.service");
 const emailService = require("../services/email.service");
@@ -34,6 +35,11 @@ const atualizarEmailUsuario = asyncHandler(async (req, res) => {
   const dados = atualizarEmailSchema.parse(req.body);
   const usuario = await usuariosService.atualizarEmail(req.params.id, dados.email);
   return res.json({ usuario });
+});
+
+const contasParecidas = asyncHandler(async (req, res) => {
+  const itens = await contasParecidasService.listarContasSemCpfComParecidas();
+  return res.json({ itens });
 });
 
 const previaUnificacao = asyncHandler(async (req, res) => {
@@ -122,6 +128,7 @@ module.exports = {
   meuPerfil,
   buscar,
   atualizarEmailUsuario,
+  contasParecidas,
   previaUnificacao,
   unificarUsuarios,
   atualizarMeuPerfil,

@@ -255,4 +255,4 @@ async function confirmar({ codigos, ...dados }) {
   return { tipo: plano.tipo, email: mascararEmailParcial(plano.manter.email) };
 }
 
-module.exports = { buscarContasPorNome, previa, enviarCodigos, confirmar };
+module.exports = { buscarContasPorNome, previa, enviarCodigos, confirmar, palavrasDoNome, palavrasCasam };
