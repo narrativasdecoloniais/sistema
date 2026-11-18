@@ -333,6 +333,10 @@ model Edicao {
   fimInscricoesMonitoria            DateTime?
   vagasMonitoria                    Int?
   funcoesMonitoria                  String[]             @default([])
+  // Seções do painel admin que os monitores com situação SELECIONADO desta
+  // edição acessam (só esta edição) — definido só por ADMIN. Nunca inclui
+  // PARTICIPANTES nem MONITORIA (utils/acessoMonitor.js).
+  secoesMonitores                   SecaoAdmin[]         @default([])
   editalMonitoria                   String?              @db.Text
   // Selo de destaque abaixo do título de /monitoria (texto livre, ex.: "Com
   // certificado de 60h"). Nulo = sem selo. Cores: token da paleta pública ou

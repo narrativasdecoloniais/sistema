@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const {
   configuracaoMonitoriaSchema,
+  acessoMonitoresSchema,
   decisaoMonitoriaSchema,
   decisaoEmLoteSchema,
 } = require("../validators/monitoria.validators");
@@ -9,6 +10,13 @@ const monitoriaService = require("../services/monitoria.service");
 const listar = asyncHandler(async (req, res) => {
   const dados = await monitoriaService.listar(req.params.edicaoId);
   return res.json(dados);
+});
+
+const definirAcessoMonitores = asyncHandler(async (req, res) => {
+  const { secoes } = acessoMonitoresSchema.parse(req.body);
+  const edicao = await monitoriaService.definirAcessoMonitores(req.params.edicaoId, secoes);
+  console.log(`[monitoria] ${req.usuario.id} definiu o acesso dos monitores da edição ${req.params.edicaoId}: ${secoes.join(",") || "nenhum"}`);
+  return res.json({ edicao });
 });
 
 const atualizarConfiguracao = asyncHandler(async (req, res) => {
@@ -52,6 +60,7 @@ const reenviarPendentes = asyncHandler(async (req, res) => {
 module.exports = {
   listar,
   atualizarConfiguracao,
+  definirAcessoMonitores,
   definirStatus,
   definirStatusEmLote,
   incluir,

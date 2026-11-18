@@ -12,6 +12,7 @@ const {
 const usuariosService = require("../services/usuarios.service");
 const unificacaoService = require("../services/unificacaoUsuarios.service");
 const contasParecidasService = require("../services/contasParecidas.service");
+const { acessoMonitorPorEdicao } = require("../utils/acessoMonitor");
 const authService = require("../services/auth.service");
 const tokenService = require("../services/token.service");
 const emailService = require("../services/email.service");
@@ -20,7 +21,10 @@ const { conferirHash } = require("../utils/senha");
 const meuPerfil = asyncHandler(async (req, res) => {
   const usuario = await usuariosService.buscarPorId(req.usuario.id);
   if (!usuario) throw new ErroHttp(404, "Usuário não encontrado.");
-  return res.json({ usuario });
+  // Só para quem não é equipe: seções do painel liberadas por edição (monitor selecionado).
+  const equipe = usuario.papeis.some((papel) => papel === "ADMIN" || papel === "ORGANIZADOR");
+  const acessoMonitor = equipe ? {} : await acessoMonitorPorEdicao(usuario.id);
+  return res.json({ usuario: { ...usuario, acessoMonitor } });
 });
 
 const buscar = asyncHandler(async (req, res) => {

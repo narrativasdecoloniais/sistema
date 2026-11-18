@@ -31,6 +31,7 @@ const CAMPOS_EDICAO = {
   fimInscricoesMonitoria: true,
   vagasMonitoria: true,
   funcoesMonitoria: true,
+  secoesMonitores: true,
   editalMonitoria: true,
   destaqueMonitoria: true,
   corFundoDestaqueMonitoria: true,
@@ -428,6 +429,16 @@ async function atualizarConfiguracao(edicaoId, dados) {
   return { ...edicao, aberta: inscricoesMonitoriaAbertas(edicao) };
 }
 
+async function definirAcessoMonitores(edicaoId, secoes) {
+  await buscarEdicao(edicaoId);
+  const edicao = await prisma.edicao.update({
+    where: { id: edicaoId },
+    data: { secoesMonitores: secoes },
+    select: CAMPOS_EDICAO,
+  });
+  return { ...edicao, aberta: inscricoesMonitoriaAbertas(edicao) };
+}
+
 async function divulgar(edicaoId) {
   await prisma.$transaction(async (tx) => {
     const edicao = await buscarEdicao(edicaoId, tx);
@@ -520,6 +531,7 @@ module.exports = {
   incluir,
   urlAutorizacao,
   atualizarConfiguracao,
+  definirAcessoMonitores,
   divulgar,
   reenviarPendentes,
 };

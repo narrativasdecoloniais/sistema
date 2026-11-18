@@ -25,9 +25,11 @@ const router = Router();
 router.use(autenticar);
 
 // GET não tem seção única: é a base do dashboard "Início" e pré-requisito
-// de qualquer sub-tela da edição — fica aberto a qualquer ADMIN/ORGANIZADOR.
-router.get("/", autorizar("ADMIN", "ORGANIZADOR"), edicoesController.listar);
-router.get("/:id", autorizar("ADMIN", "ORGANIZADOR"), edicoesController.buscarPorId);
+// de qualquer sub-tela da edição — fica aberto a qualquer ADMIN/ORGANIZADOR e,
+// só da edição deles, a monitores com alguma seção liberada (o controller
+// filtra a lista e esconde o token de credenciamento).
+router.get("/", edicoesController.listar);
+router.get("/:id", edicoesController.buscarPorId);
 router.post("/", autorizar("ADMIN"), edicoesController.criar);
 // Atende duas telas do menu (Configurações > Evento e Página do evento),
 // ambas salvando no mesmo PATCH /edicoes/:id.

@@ -1,6 +1,8 @@
 const { z } = require("zod");
 const { camposAdaptacao, validarAdaptacao } = require("./inscricoes.validators");
 const { corPublicaSchema } = require("./edicoes.validators");
+const { SecaoAdmin } = require("@prisma/client");
+const { SECOES_NAO_DELEGAVEIS } = require("../utils/acessoMonitor");
 
 // Espelhado em frontend/lib/validacao.js (criarInscricaoMonitoriaSchema etc.)
 // — mudou um, muda o outro.
@@ -154,6 +156,14 @@ const dataOpcional = (mensagem) =>
 
 const textoCiente = z.string().trim().min(1, "Preencha o texto").max(500, "Use no máximo 500 caracteres");
 
+// Seções do admin liberadas aos monitores selecionados da edição.
+const SECOES_DELEGAVEIS = Object.values(SecaoAdmin).filter((secao) => !SECOES_NAO_DELEGAVEIS.includes(secao));
+const acessoMonitoresSchema = z.object({
+  secoes: z
+    .array(z.enum(SECOES_DELEGAVEIS, { errorMap: () => ({ message: "Seção inválida" }) }))
+    .transform((secoes) => [...new Set(secoes)]),
+});
+
 const configuracaoMonitoriaSchema = z
   .object({
     inicioInscricoesMonitoria: dataOpcional("Informe uma data de início válida").optional(),
@@ -219,6 +229,8 @@ module.exports = {
   criarInscricaoMonitoriaSchema,
   criarInclusaoMonitorSchema,
   configuracaoMonitoriaSchema,
+  acessoMonitoresSchema,
+  SECOES_DELEGAVEIS,
   decisaoMonitoriaSchema,
   decisaoEmLoteSchema,
   idadeEm,
