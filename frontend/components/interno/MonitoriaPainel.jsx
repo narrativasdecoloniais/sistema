@@ -8,6 +8,7 @@ import ModalConfirmacao from "./ModalConfirmacao";
 import CartoesContadores from "./CartoesContadores";
 import MonitoriaInscricoesTabela from "./MonitoriaInscricoesTabela";
 import MonitoriaConfiguracaoForm from "./MonitoriaConfiguracaoForm";
+import AcessoMonitoresForm from "./AcessoMonitoresForm";
 import { useToast } from "./ToastProvider";
 import { listarMonitoria, divulgarResultadoMonitoria, reenviarEmailsMonitoria } from "@/lib/monitoria";
 import { formatarPeriodoEdicao } from "@/lib/publico";
@@ -19,7 +20,7 @@ const INTERVALO_ATUALIZACAO_MS = 5000;
 // Tela da Coordenação de Monitoria (seção MONITORIA): inscrições com a
 // seleção, divulgação do resultado (e-mails em segundo plano) e as
 // configurações da chamada (período, vagas, funções e edital).
-export default function MonitoriaPainel({ edicaoId, edicaoNome, dadosIniciais, podeEnviarEmail = false }) {
+export default function MonitoriaPainel({ edicaoId, edicaoNome, dadosIniciais, podeEnviarEmail = false, podeDefinirAcesso = false }) {
   const router = useRouter();
   const { notificar } = useToast();
   const [dados, setDados] = useState(dadosIniciais);
@@ -177,7 +178,16 @@ export default function MonitoriaPainel({ edicaoId, edicaoNome, dadosIniciais, p
           recarregar={recarregar}
         />
       ) : (
-        <MonitoriaConfiguracaoForm edicaoId={edicaoId} edicao={edicao} aoSalvar={recarregar} />
+        <>
+          <MonitoriaConfiguracaoForm edicaoId={edicaoId} edicao={edicao} aoSalvar={recarregar} />
+          {podeDefinirAcesso && (
+            <AcessoMonitoresForm
+              edicaoId={edicaoId}
+              secoesIniciais={edicao.secoesMonitores}
+              aoSalvar={recarregar}
+            />
+          )}
+        </>
       )}
 
       {confirmando && (

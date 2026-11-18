@@ -82,3 +82,27 @@ export const ROTULOS_SECOES_ADMIN = GRUPOS_SECOES_ADMIN.reduce((mapa, grupo) => 
   }
   return mapa;
 }, {});
+
+// Seções que nunca são delegadas a monitores selecionados — espelha
+// SECOES_NAO_DELEGAVEIS de backend/src/utils/acessoMonitor.js.
+export const SECOES_NAO_DELEGAVEIS_MONITOR = [
+  "PARTICIPANTES",
+  "MONITORIA",
+  "TIPOS_ATIVIDADE",
+  "TIPOS_PARTICIPACAO",
+  "TIPOS_PONTO_INTERESSE",
+];
+
+// GRUPOS_SECOES_ADMIN só com o que pode ser delegado (grupos vazios somem).
+export const GRUPOS_SECOES_MONITOR = GRUPOS_SECOES_ADMIN.map((grupo) => ({
+  ...grupo,
+  itens: grupo.itens
+    .map((item) =>
+      item.subitens
+        ? { ...item, subitens: item.subitens.filter((sub) => !SECOES_NAO_DELEGAVEIS_MONITOR.includes(sub.valor)) }
+        : item
+    )
+    .filter((item) =>
+      item.subitens ? item.subitens.length > 0 : !SECOES_NAO_DELEGAVEIS_MONITOR.includes(item.valor)
+    ),
+})).filter((grupo) => grupo.itens.length > 0);

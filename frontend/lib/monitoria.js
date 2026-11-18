@@ -78,6 +78,10 @@ export function salvarConfiguracaoMonitoria(edicaoId, dados) {
   return apiClient.patch(`/edicoes/${edicaoId}/monitoria/configuracao`, dados);
 }
 
+export function salvarAcessoMonitores(edicaoId, secoes) {
+  return apiClient.put(`/edicoes/${edicaoId}/monitoria/acesso-monitores`, { secoes });
+}
+
 export function definirStatusMonitoria(edicaoId, id, dados) {
   return apiClient.patch(`/edicoes/${edicaoId}/monitoria/${id}/status`, dados);
 }

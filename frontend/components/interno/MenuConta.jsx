@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Avatar from "./Avatar";
+import { temAcessoAoPainel } from "@/lib/permissoes";
 import { useLogout } from "@/lib/useLogout";
 import styles from "./MenuConta.module.scss";
 
@@ -13,9 +14,7 @@ export default function MenuConta({ usuario, variante }) {
   const raizRef = useRef(null);
   const botaoRef = useRef(null);
   const { sair, saindo } = useLogout();
-  const podeAdministrar = usuario?.papeis?.some((papel) =>
-    ["ADMIN", "ORGANIZADOR"].includes(papel)
-  );
+  const podeAdministrar = temAcessoAoPainel(usuario);
 
   useEffect(() => {
     setAberto(false);

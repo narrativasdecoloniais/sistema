@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
-import { obterUsuarioAtual, temPapel } from "@/lib/auth";
+import { obterUsuarioAtual } from "@/lib/auth";
+import { temAcessoAoPainel } from "@/lib/permissoes";
 
 export default async function LayoutAdmin({ children }) {
   const usuario = await obterUsuarioAtual();
 
-  if (!temPapel(usuario, "ADMIN", "ORGANIZADOR")) {
+  if (!temAcessoAoPainel(usuario)) {
     redirect("/participante");
   }
 

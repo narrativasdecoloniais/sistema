@@ -22,6 +22,7 @@ export default async function PaginaMonitoria({ params }) {
       edicaoNome={edicao.nome}
       dadosIniciais={dados}
       podeEnviarEmail={temPapel(usuario, "ADMIN")}
+      podeDefinirAcesso={temPapel(usuario, "ADMIN")}
     />
   );
 }
